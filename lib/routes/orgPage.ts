@@ -76,7 +76,7 @@ export function orgPage(store: ProjectAnalysisResultStore): ExpressCustomizer {
 
         express.get("/activity", ...handlers, async (req, res) => {
             res.render("activity", {
-                dataUrl: "/activitydata"
+                dataUrl: "/activitydata",
             });
         });
 
@@ -102,45 +102,45 @@ export function jsonToQueryString(json: object): string {
 
 const scatterData = [
     {
-        "question": "Activity One",
-        "answer": "Some answer",
-        "value": 5,
-        "consequence": 1
+        question: "Activity One",
+        answer: "Some answer",
+        value: 5,
+        consequence: 1,
     },
     {
-        "question": "Activity Two",
-        "answer": "Some answer",
-        "value": 4,
-        "consequence": 1
+        question: "Activity Two",
+        answer: "Some answer",
+        value: 4,
+        consequence: 1,
     },
     {
-        "question": "Activity Three",
-        "answer": "Another answer",
-        "value": 4,
-        "consequence": 2
+        question: "Activity Three",
+        answer: "Another answer",
+        value: 4,
+        consequence: 2,
     },
     {
-        "question": "Activity Four",
-        "answer": "Another answer",
-        "value": 5,
-        "consequence": 4
+        question: "Activity Four",
+        answer: "Another answer",
+        value: 5,
+        consequence: 4,
     },
     {
-        "question": "Activity Five",
-        "answer": "Another answer",
-        "value": 4,
-        "consequence": 5
+        question: "Activity Five",
+        answer: "Another answer",
+        value: 4,
+        consequence: 5,
     },
     {
-        "question": "Activity Six",
-        "answer": "Another answer",
-        "value": 1,
-        "consequence": 1
+        question: "Activity Six",
+        answer: "Another answer",
+        value: 1,
+        consequence: 1,
     },
     {
-        "question": "Activity Seven",
-        "answer": "Another answer",
-        "value": 1,
-        "consequence": 5
-    }
+        question: "Activity Seven",
+        answer: "Another answer",
+        value: 1,
+        consequence: 5,
+    },
 ];
