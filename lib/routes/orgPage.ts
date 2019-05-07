@@ -73,12 +73,23 @@ export function orgPage(store: ProjectAnalysisResultStore): ExpressCustomizer {
                 query: req.params.query,
             });
         });
+
+        express.get("/activity", ...handlers, async (req, res) => {
+            res.render("activity", {
+                dataUrl: "/activitydata"
+            });
+        });
+
         express.get("/querydata/:query", ...handlers, async (req, res) => {
             const cannedQuery = WellKnownQueries[req.params.query](req.query);
             const repos = await store.loadAll();
             const relevantRepos = repos.filter(ar => req.query.owner ? ar.analysis.id.owner === req.params.owner : true);
             const data = await cannedQuery.toSunburstTree(relevantRepos);
             res.json(data);
+        });
+
+        express.get("/activitydata", ...handlers, async (req, res) => {
+            res.json(scatterData);
         });
     };
 }
@@ -88,3 +99,48 @@ export function jsonToQueryString(json: object): string {
         encodeURIComponent(key) + "=" + encodeURIComponent(json[key]),
     ).join("&");
 }
+
+const scatterData = [
+    {
+        "question": "Activity One",
+        "answer": "Some answer",
+        "value": 5,
+        "consequence": 1
+    },
+    {
+        "question": "Activity Two",
+        "answer": "Some answer",
+        "value": 4,
+        "consequence": 1
+    },
+    {
+        "question": "Activity Three",
+        "answer": "Another answer",
+        "value": 4,
+        "consequence": 2
+    },
+    {
+        "question": "Activity Four",
+        "answer": "Another answer",
+        "value": 5,
+        "consequence": 4
+    },
+    {
+        "question": "Activity Five",
+        "answer": "Another answer",
+        "value": 4,
+        "consequence": 5
+    },
+    {
+        "question": "Activity Six",
+        "answer": "Another answer",
+        "value": 1,
+        "consequence": 1
+    },
+    {
+        "question": "Activity Seven",
+        "answer": "Another answer",
+        "value": 1,
+        "consequence": 5
+    }
+];
