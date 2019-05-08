@@ -37,7 +37,7 @@ export function orgPage(store: ProjectAnalysisResultStore): ExpressCustomizer {
         express.use(helmet.frameguard({
             action: "allow-from",
             domain: "https://blog.atomist.com",
-          }));
+        }));
         const exphbs = require("express-handlebars");
         express.engine("handlebars", exphbs({ defaultLayout: "main" }));
         express.set("view engine", "handlebars");
@@ -102,45 +102,16 @@ export function jsonToQueryString(json: object): string {
 
 const scatterData = [
     {
-        question: "Activity One",
-        answer: "Some answer",
-        value: 5,
-        consequence: 1,
-    },
-    {
-        question: "Activity Two",
-        answer: "Some answer",
-        value: 4,
-        consequence: 1,
-    },
-    {
-        question: "Activity Three",
-        answer: "Another answer",
-        value: 4,
-        consequence: 2,
-    },
-    {
-        question: "Activity Four",
-        answer: "Another answer",
-        value: 5,
-        consequence: 4,
-    },
-    {
-        question: "Activity Five",
-        answer: "Another answer",
-        value: 4,
-        consequence: 5,
-    },
-    {
-        question: "Activity Six",
-        answer: "Another answer",
-        value: 1,
-        consequence: 1,
-    },
-    {
-        question: "Activity Seven",
-        answer: "Another answer",
-        value: 1,
-        consequence: 5,
+        repo: "elm-hello-wrold",
+        org: "jessitron",
+        url: "github.com/jessitron/elm-hello-wrold",
+        frequency: 4, // avg commits per week maybe?
+        recency: 32, // days since last commit
+    }, {
+        repo: "horseguards-sdm",
+        org: "jessitron",
+        url: "github.com/jessitron/horseguards-sdm",
+        frequency: 8, // avg commits per week maybe?
+        recency: 4, // days since last commit
     },
 ];
