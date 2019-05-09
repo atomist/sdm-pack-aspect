@@ -16,7 +16,7 @@
 
 import {
     GitCommandGitProject,
-    logger,
+    logger, Project,
 } from "@atomist/automation-client";
 import { GitHubRepoRef } from "@atomist/automation-client/lib/operations/common/GitHubRepoRef";
 import {
@@ -82,14 +82,14 @@ async function analyzeAndPersist(sourceData: GitHubSearchResult,
                                  criteria: ScmSearchCriteria,
                                  analyzer: ProjectAnalyzer,
                                  opts: SpiderOptions): Promise<void> {
-    const enriched = await cloneAndAnalyze(sourceData, analyzer, criteria);
-    if (!!enriched && (!criteria.interpretationTest || criteria.interpretationTest(enriched.interpretation))) {
+    const repoInfo = await cloneAndAnalyze(sourceData, analyzer, criteria);
+    if (!!repoInfo && (!criteria.interpretationTest || criteria.interpretationTest(repoInfo.interpretation))) {
         const toPersist: SpideredRepo = {
             analysis: {
                 // Use a spread as url has a getter and otherwise disappears
-                ...enriched.analysis,
+                ...repoInfo.analysis,
                 id: {
-                    ...enriched.analysis.id,
+                    ...repoInfo.analysis.id,
                     url: sourceData.html_url,
                 },
             },
@@ -97,7 +97,7 @@ async function analyzeAndPersist(sourceData: GitHubSearchResult,
             sourceData,
             timestamp: sourceData.timestamp,
             query: sourceData.query,
-            readme: enriched.readme,
+            readme: repoInfo.readme,
         };
         await opts.persister.persist(toPersist);
         if (opts.onPersisted) {
@@ -143,6 +143,11 @@ async function cloneAndAnalyze(gitHubRecord: GitHubSearchResult,
         logger.info("Skipping analysis of %s as it doesn't pass projectTest", project.id.url);
         return undefined;
     }
+    return analyzeProject(project, analyzer);
+}
+
+async function analyzeProject(project: Project,
+                              analyzer: ProjectAnalyzer): Promise<RepoInfo> {
     const readmeFile = await project.getFile("README.md");
     const readme = !!readmeFile ? await readmeFile.getContent() : undefined;
     const totalFileCount = await project.totalFileCount();
