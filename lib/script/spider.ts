@@ -29,6 +29,8 @@ import {
     configureLogging,
     MinimalLogging,
 } from "@atomist/automation-client";
+import { GradleSubprojectFinder } from "../analysis/gradleSubprojectFinder";
+import { firstSubprojectFinderOf } from "../analysis/subprojectFinder";
 
 // Ensure we see console logging, and send info to the console
 configureLogging(MinimalLogging);
@@ -46,7 +48,7 @@ async function spider(org: string) {
             // See the GitHub search API documentation at
             // https://developer.github.com/v3/search/
             // You can query for many other things here, beyond org
-            githubQueries: [`org:${org}`],
+            githubQueries: [`org:${org} cognitive in:name`],
 
             maxRetrieved: 1500,
             maxReturned: 1500,
@@ -57,7 +59,11 @@ async function spider(org: string) {
                 // through calling getFile()
                 return true;
             },
-        }, analyzer,
+            subprojectFinder: firstSubprojectFinderOf(
+                GradleSubprojectFinder
+            ),
+        },
+        analyzer,
         {
             persister,
             keepExistingPersisted: async existing => {

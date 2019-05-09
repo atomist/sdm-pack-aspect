@@ -31,6 +31,7 @@ import {
     Spider,
     SpiderOptions,
 } from "../Spider";
+import { SubprojectStatus } from "../../../subprojectFinder";
 
 /**
  * Spider GitHub. Ensure that GITHUB_TOKEN environment variable is set.
@@ -65,7 +66,7 @@ export class GitHubSpider implements Spider {
                         bucket = [];
                     }
                 } catch (err) {
-                    logger.error("Failure analyzing repo at %s: %s", sourceData, err.message);
+                    logger.error("Failure analyzing repo at %s: %s", sourceData.url, err.message);
                 }
             }
         }
@@ -82,31 +83,33 @@ async function analyzeAndPersist(sourceData: GitHubSearchResult,
                                  criteria: ScmSearchCriteria,
                                  analyzer: ProjectAnalyzer,
                                  opts: SpiderOptions): Promise<void> {
-    const repoInfo = await cloneAndAnalyze(sourceData, analyzer, criteria);
-    if (!!repoInfo && (!criteria.interpretationTest || criteria.interpretationTest(repoInfo.interpretation))) {
-        const toPersist: SpideredRepo = {
-            analysis: {
-                // Use a spread as url has a getter and otherwise disappears
-                ...repoInfo.analysis,
-                id: {
-                    ...repoInfo.analysis.id,
-                    url: sourceData.html_url,
+    const repoInfos = await cloneAndAnalyze(sourceData, analyzer, criteria);
+    for (const repoInfo of repoInfos) {
+        if (!criteria.interpretationTest || criteria.interpretationTest(repoInfo.interpretation)) {
+            const toPersist: SpideredRepo = {
+                analysis: {
+                    // Use a spread as url has a getter and otherwise disappears
+                    ...repoInfo.analysis,
+                    id: {
+                        ...repoInfo.analysis.id,
+                        url: sourceData.html_url,
+                    },
                 },
-            },
-            topics: [], // enriched.interpretation.keywords,
-            sourceData,
-            timestamp: sourceData.timestamp,
-            query: sourceData.query,
-            readme: repoInfo.readme,
-            parentId: repoInfo.parentId,
-        };
-        await opts.persister.persist(toPersist);
-        if (opts.onPersisted) {
-            try {
-                await opts.onPersisted(toPersist);
-            } catch (err) {
-                logger.warn("Failed to action after persist repo %j: %s",
-                    toPersist.analysis.id, err.message);
+                topics: [], // enriched.interpretation.keywords,
+                sourceData,
+                timestamp: sourceData.timestamp,
+                query: sourceData.query,
+                readme: repoInfo.readme,
+                parentId: repoInfo.parentId,
+            };
+            await opts.persister.persist(toPersist);
+            if (opts.onPersisted) {
+                try {
+                    await opts.onPersisted(toPersist);
+                } catch (err) {
+                    logger.warn("Failed to action after persist repo %j: %s",
+                        toPersist.analysis.id, err.message);
+                }
             }
         }
     }
@@ -132,9 +135,12 @@ interface RepoInfo {
     parentId: RemoteRepoRef;
 }
 
+/**
+ * Find project or subprojects
+ */
 async function cloneAndAnalyze(gitHubRecord: GitHubSearchResult,
                                analyzer: ProjectAnalyzer,
-                               criteria: ScmSearchCriteria): Promise<RepoInfo | undefined> {
+                               criteria: ScmSearchCriteria): Promise<RepoInfo[]> {
     const project = await GitCommandGitProject.cloned(
         process.env.GITHUB_TOKEN ? { token: process.env.GITHUB_TOKEN } : undefined,
         GitHubRepoRef.from({ owner: gitHubRecord.owner.login, repo: gitHubRecord.name }), {
@@ -143,9 +149,15 @@ async function cloneAndAnalyze(gitHubRecord: GitHubSearchResult,
         });
     if (criteria.projectTest && !await criteria.projectTest(project)) {
         logger.info("Skipping analysis of %s as it doesn't pass projectTest", project.id.url);
-        return undefined;
+        return [];
     }
-    return analyzeProject(project, analyzer, undefined);
+    const subprojects = criteria.subprojectFinder ?
+        await criteria.subprojectFinder(project) :
+        { status: SubprojectStatus.Unknown };
+    if (!!subprojects.paths) {
+        throw new Error("Not yet handling subprojects");
+    }
+    return [await analyzeProject(project, analyzer, undefined)];
 }
 
 /**
