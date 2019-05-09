@@ -78,11 +78,11 @@ export class GitHubSpider implements Spider {
  * Future for doing the work
  * @return {Promise<void>}
  */
-async function analyzeAndPersist(sourceData: any,
+async function analyzeAndPersist(sourceData: GitHubSearchResult,
                                  criteria: ScmSearchCriteria,
                                  analyzer: ProjectAnalyzer,
                                  opts: SpiderOptions): Promise<void> {
-    const enriched = await enrich(sourceData, analyzer, criteria);
+    const enriched = await cloneAndAnalyze(sourceData, analyzer, criteria);
     if (!!enriched && (!criteria.interpretationTest || criteria.interpretationTest(enriched.interpretation))) {
         const toPersist: SpideredRepo = {
             analysis: {
@@ -111,17 +111,31 @@ async function analyzeAndPersist(sourceData: any,
     }
 }
 
-interface Enriched {
+/**
+ * Result row in a GitHub search
+ */
+interface GitHubSearchResult {
+    owner: { login: string };
+    name: string;
+    url: string;
+    html_url: string;
+    timestamp: Date;
+    query: string;
+}
+
+interface RepoInfo {
     readme: string;
     totalFileCount: number;
     interpretation: Interpretation;
     analysis: ProjectAnalysis;
 }
 
-async function enrich(r: any, analyzer: ProjectAnalyzer, criteria: ScmSearchCriteria): Promise<Enriched | undefined> {
+async function cloneAndAnalyze(gitHubRecord: GitHubSearchResult,
+                               analyzer: ProjectAnalyzer,
+                               criteria: ScmSearchCriteria): Promise<RepoInfo | undefined> {
     const project = await GitCommandGitProject.cloned(
         process.env.GITHUB_TOKEN ? { token: process.env.GITHUB_TOKEN } : undefined,
-        GitHubRepoRef.from({ owner: r.owner.login, repo: r.name }), {
+        GitHubRepoRef.from({ owner: gitHubRecord.owner.login, repo: gitHubRecord.name }), {
             alwaysDeep: false,
             depth: 1,
         });
@@ -146,7 +160,7 @@ async function enrich(r: any, analyzer: ProjectAnalyzer, criteria: ScmSearchCrit
     };
 }
 
-async function* queryByCriteria(token: string, criteria: ScmSearchCriteria): AsyncIterable<any> {
+async function* queryByCriteria(token: string, criteria: ScmSearchCriteria): AsyncIterable<GitHubSearchResult> {
     const octokit = new Octokit();
     if (!!token) {
         octokit.authenticate({
