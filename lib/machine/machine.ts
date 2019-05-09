@@ -117,7 +117,11 @@ function updatedStoredAnalysisIfNecessary(opts: {
             if (!found || !found.timestamp || now.getTime() - found.timestamp.getTime() > maxAgeMillis) {
                 const analysis = await opts.analyzer.analyze(pu.project, pu, { full: true });
                 logger.info("Performing fresh analysis of project at %s", pu.id.url);
-                await opts.analyzedRepoStore.persist({ analysis, timestamp: now });
+                await opts.analyzedRepoStore.persist({
+                    analysis,
+                    timestamp: now,
+                    parentId: found.parentId,
+                });
             } else {
                 logger.info("Stored analysis of project at %s is up to date", pu.id.url);
             }

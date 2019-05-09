@@ -16,7 +16,7 @@
 
 import {
     GitCommandGitProject,
-    logger, Project,
+    logger, Project, RemoteRepoRef,
 } from "@atomist/automation-client";
 import { GitHubRepoRef } from "@atomist/automation-client/lib/operations/common/GitHubRepoRef";
 import {
@@ -98,6 +98,7 @@ async function analyzeAndPersist(sourceData: GitHubSearchResult,
             timestamp: sourceData.timestamp,
             query: sourceData.query,
             readme: repoInfo.readme,
+            parentId: repoInfo.parentId,
         };
         await opts.persister.persist(toPersist);
         if (opts.onPersisted) {
@@ -128,6 +129,7 @@ interface RepoInfo {
     totalFileCount: number;
     interpretation: Interpretation;
     analysis: ProjectAnalysis;
+    parentId: RemoteRepoRef;
 }
 
 async function cloneAndAnalyze(gitHubRecord: GitHubSearchResult,
@@ -143,17 +145,19 @@ async function cloneAndAnalyze(gitHubRecord: GitHubSearchResult,
         logger.info("Skipping analysis of %s as it doesn't pass projectTest", project.id.url);
         return undefined;
     }
-    return analyzeProject(project, analyzer);
+    return analyzeProject(project, analyzer, undefined);
 }
 
+/**
+ * Analyze a project. May be a virtual project, within a bigger project.
+ */
 async function analyzeProject(project: Project,
-                              analyzer: ProjectAnalyzer): Promise<RepoInfo> {
+                              analyzer: ProjectAnalyzer,
+                              parentId: RemoteRepoRef): Promise<RepoInfo> {
     const readmeFile = await project.getFile("README.md");
     const readme = !!readmeFile ? await readmeFile.getContent() : undefined;
     const totalFileCount = await project.totalFileCount();
 
-    // When we get there
-    // const interpretation = await analyzer.interpret(project, undefined, { full: false});
     const analysis = await analyzer.analyze(project, undefined, { full: true });
     const interpretation = await analyzer.interpret(analysis, undefined);
 
@@ -162,6 +166,7 @@ async function analyzeProject(project: Project,
         totalFileCount,
         interpretation,
         analysis,
+        parentId,
     };
 }
 

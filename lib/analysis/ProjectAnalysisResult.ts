@@ -1,4 +1,5 @@
 import { ProjectAnalysis } from "@atomist/sdm-pack-analysis";
+import { RemoteRepoRef } from "@atomist/automation-client";
 
 /**
  * The result of running one analysis. Allows us to attach further information,
@@ -6,12 +7,17 @@ import { ProjectAnalysis } from "@atomist/sdm-pack-analysis";
  */
 export interface ProjectAnalysisResult {
 
-    analysis: ProjectAnalysis;
+    readonly analysis: ProjectAnalysis;
 
     /**
      * Date of this analysis
      */
-    timestamp: Date;
+    readonly timestamp: Date;
+
+    /**
+     * Id of the enclosing project if this is a virtual project
+     */
+    readonly parentId: RemoteRepoRef;
 
 }
 
