@@ -17,7 +17,10 @@
 import { gatherFromFiles } from "@atomist/automation-client/lib/project/util/projectUtils";
 import * as _ from "lodash";
 import * as path from "path";
-import { SubprojectFinder, SubprojectStatus } from "./subprojectFinder";
+import {
+    SubprojectFinder,
+    SubprojectStatus,
+} from "./subprojectFinder";
 
 export const GradleSubprojectFinder: SubprojectFinder = async p => {
     if (await p.hasFile("build.gradle")) {
