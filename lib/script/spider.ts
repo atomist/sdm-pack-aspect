@@ -31,6 +31,7 @@ import {
 } from "@atomist/automation-client";
 import { firstSubprojectFinderOf } from "../analysis/subprojectFinder";
 import { fileNamesSubprojectFinder } from "../analysis/fileNamesSubprojectFinder";
+import * as boxen from "boxen";
 
 // Ensure we see console logging, and send info to the console
 configureLogging(MinimalLogging);
@@ -44,7 +45,7 @@ async function spider(org: string) {
     const spider: Spider = new GitHubSpider();
     const persister = new FileSystemProjectAnalysisResultStore();
 
-    await spider.spider({
+    const result = await spider.spider({
         // See the GitHub search API documentation at
         // https://developer.github.com/v3/search/
         // You can query for many other things here, beyond org
@@ -75,6 +76,7 @@ async function spider(org: string) {
             // Controls promise usage inNode
             poolSize: 40,
         });
+    return result;
 }
 
 if (process.argv.length < 3) {
@@ -87,7 +89,8 @@ if (process.argv.length < 3) {
 const org = process.argv[2];
 console.log(`Spidering GitHub organization ${org}...`);
 spider(org).then(r => {
-    console.log(`Succesfully analyzed GitHub organization ${org}. result is ` + JSON.stringify(r));
+    console.log(boxen(`Successfully analyzed GitHub organization ${org}. result is ` + JSON.stringify(r),
+        { padding: 2 }));
 }, err => {
     console.log("Oh no! " + err.message);
 });
