@@ -24,7 +24,10 @@ import {
     isProjectAnalysisResult,
     ProjectAnalysisResult,
 } from "../../ProjectAnalysisResult";
-import { PersistResult, ProjectAnalysisResultStore } from "./ProjectAnalysisResultStore";
+import {
+    PersistResult,
+    ProjectAnalysisResultStore,
+} from "./ProjectAnalysisResultStore";
 
 import * as appRoot from "app-root-path";
 
