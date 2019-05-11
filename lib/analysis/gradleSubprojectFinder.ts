@@ -25,10 +25,9 @@ export const GradleSubprojectFinder: SubprojectFinder = async p => {
             status: SubprojectStatus.RootOnly,
         };
     }
-    const gradleFiles = await gatherFromFiles(p,
+    const paths = await gatherFromFiles(p,
         "**/build.gradle",
-        async f => _.dropRight(f.path.split("/")).join("/"));
-    const paths = _.dropRight(gradleFiles, 1);
+        async f => _.dropRight(f.path.split("/"), 1).join("/"));
     if (paths.length > 0) {
         console.log(`The paths within ${p.id.url} are ${paths}`);
         return {
