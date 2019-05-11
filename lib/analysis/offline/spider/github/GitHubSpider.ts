@@ -30,6 +30,7 @@ import {
 import * as HttpError from "@octokit/request/lib/http-error";
 import * as Octokit from "@octokit/rest";
 import * as _ from "lodash";
+import * as path from "path";
 import { SubprojectStatus } from "../../../subprojectFinder";
 import { ProjectUrl } from "../../persist/ProjectAnalysisResultStore";
 import { SpideredRepo } from "../../SpideredRepo";
@@ -39,9 +40,6 @@ import {
     SpiderOptions,
     SpiderResult,
 } from "../Spider";
-import * as path from "path";
-
-process.stdout.write("Goddammit fuck i hagte nodce GitHubSpider 1\n");
 
 /**
  * Spider GitHub. Ensure that GITHUB_TOKEN environment variable is set.
