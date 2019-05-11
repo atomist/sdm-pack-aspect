@@ -16,7 +16,9 @@
 
 import {
     GitCommandGitProject,
-    logger, Project, RemoteRepoRef,
+    logger,
+    Project,
+    RemoteRepoRef,
 } from "@atomist/automation-client";
 import { GitHubRepoRef } from "@atomist/automation-client/lib/operations/common/GitHubRepoRef";
 import {
