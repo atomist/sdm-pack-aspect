@@ -16,7 +16,10 @@
 
 import * as assert from "assert";
 import { SpiderResult } from "../../../lib/analysis/offline/spider/Spider";
-import { GitHubSearchResult, GitHubSpider } from "./../../../lib/analysis/offline/spider/github/GitHubSpider";
+import {
+    GitHubSearchResult,
+    GitHubSpider,
+} from "./../../../lib/analysis/offline/spider/github/GitHubSpider";
 
 describe("GithubSpider", () => {
     it("gives empty results when query returns empty", async () => {
