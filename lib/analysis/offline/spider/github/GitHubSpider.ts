@@ -15,7 +15,8 @@
  */
 
 import {
-    GitCommandGitProject, isLocalProject,
+    GitCommandGitProject,
+    isLocalProject,
     logger,
     Project,
     RemoteRepoRef,

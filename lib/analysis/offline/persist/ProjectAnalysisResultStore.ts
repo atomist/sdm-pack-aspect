@@ -14,7 +14,10 @@
  * limitations under the License.
  */
 
-import { RepoId, RepoRef } from "@atomist/automation-client";
+import {
+    RepoId,
+    RepoRef,
+} from "@atomist/automation-client";
 import { ProjectAnalysisResult } from "../../ProjectAnalysisResult";
 
 /**
