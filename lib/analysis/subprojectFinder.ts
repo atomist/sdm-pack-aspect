@@ -23,7 +23,7 @@ export enum SubprojectStatus {
     /**
      * This is definitely NOT a monorepo
      */
-    RootOnly = "ReadOnly",
+    RootOnly = "RootOnly",
     /**
      * This is definitely a monorepo
      */
@@ -57,7 +57,7 @@ export function firstSubprojectFinderOf(...finders: SubprojectFinder[]): Subproj
                 };
             }
             if (!!r.paths) {
-                paths.concat(...r.paths);
+                paths.push(...r.paths);
             }
         }
         return {
