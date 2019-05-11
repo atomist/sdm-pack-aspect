@@ -35,6 +35,7 @@ import { ScmSearchCriteria } from "../ScmSearchCriteria";
 import {
     Spider,
     SpiderOptions,
+    SpiderResult,
 } from "../Spider";
 
 /**
@@ -44,8 +45,9 @@ export class GitHubSpider implements Spider {
 
     public async spider(criteria: ScmSearchCriteria,
                         analyzer: ProjectAnalyzer,
-                        opts: SpiderOptions): Promise<number> {
+                        opts: SpiderOptions): Promise<SpiderResult> {
         let count = 0;
+        const errors = [];
         try {
             const it = queryByCriteria(process.env.GITHUB_TOKEN, criteria);
 
@@ -71,6 +73,7 @@ export class GitHubSpider implements Spider {
                             bucket = [];
                         }
                     } catch (err) {
+                        errors.push(sourceData.url);
                         logger.error("Failure analyzing repo at %s: %s", sourceData.url, err.message);
                     }
                 }
@@ -81,7 +84,7 @@ export class GitHubSpider implements Spider {
             }
             throw e;
         }
-        return count;
+        return { detectedCount: count, failed: errors };
     }
 
 }

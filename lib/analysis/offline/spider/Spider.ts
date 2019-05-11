@@ -26,6 +26,13 @@ export interface SpiderOptions {
     onPersisted?: (repo: SpideredRepo) => Promise<void>;
 }
 
+export type RepoUrl = string;
+
+export interface SpiderResult {
+    detectedCount: number;
+    failed: RepoUrl[];
+}
+
 /**
  * Spider a data source and progressively persist what we find.
  */
@@ -33,5 +40,5 @@ export interface Spider {
 
     spider(criteria: ScmSearchCriteria,
            analyzer: ProjectAnalyzer,
-           opts: SpiderOptions): Promise<number>;
+           opts: SpiderOptions): Promise<SpiderResult>;
 }
