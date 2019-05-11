@@ -37,6 +37,7 @@ import {
     SpiderOptions,
     SpiderResult,
 } from "../Spider";
+import * as path from "path";
 
 /**
  * Spider GitHub. Ensure that GITHUB_TOKEN environment variable is set.
@@ -236,18 +237,18 @@ async function* queryByCriteria(token: string, criteria: ScmSearchCriteria): Asy
     }
 }
 
-function projectUnder(p: Project, path: string): Project {
+function projectUnder(p: Project, pathWithin: string): Project {
     if (!isLocalProject(p)) {
         throw new Error(`Cannot descend into path ${path} of non local project`);
     }
     const rid = p.id as RemoteRepoRef;
     const newId: RemoteRepoRef = {
         ...rid,
-        path,
+        path: pathWithin,
     };
     return GitCommandGitProject.fromBaseDir(
         newId,
-        p.baseDir + "/" + path,
+        path.join(p.baseDir, pathWithin),
         (p as any).credentials,
         p.release,
     );
