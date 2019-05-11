@@ -45,24 +45,24 @@ async function spider(org: string) {
     const persister = new FileSystemProjectAnalysisResultStore();
 
     await spider.spider({
-            // See the GitHub search API documentation at
-            // https://developer.github.com/v3/search/
-            // You can query for many other things here, beyond org
-            githubQueries: [`org:${org} cognitive in:name`],
+        // See the GitHub search API documentation at
+        // https://developer.github.com/v3/search/
+        // You can query for many other things here, beyond org
+        githubQueries: [`org:${org} cognitive in:name`],
 
-            maxRetrieved: 1500,
-            maxReturned: 1500,
-            projectTest: async p => {
-                // Perform a computation here to return false if a project should not
-                // be analyzed and persisted, based on its contents. For example,
-                // this enables you to analyze only projects containing a particular file
-                // through calling getFile()
-                return true;
-            },
-            subprojectFinder: firstSubprojectFinderOf(
-                fileNamesSubprojectFinder("pom.xml", "build.gradle", "package.json"),
-            ),
+        maxRetrieved: 1500,
+        maxReturned: 1500,
+        projectTest: async p => {
+            // Perform a computation here to return false if a project should not
+            // be analyzed and persisted, based on its contents. For example,
+            // this enables you to analyze only projects containing a particular file
+            // through calling getFile()
+            return true;
         },
+        subprojectFinder: firstSubprojectFinderOf(
+            fileNamesSubprojectFinder("pom.xml", "build.gradle", "package.json"),
+        ),
+    },
         analyzer,
         {
             persister,
@@ -87,5 +87,7 @@ if (process.argv.length < 3) {
 const org = process.argv[2];
 console.log(`Spidering GitHub organization ${org}...`);
 spider(org).then(r => {
-    console.log(`Succesfully analyzed GitHub organization ${org}`);
+    console.log(`Succesfully analyzed GitHub organization ${org}. result is ` + JSON.stringify(r));
+}, err => {
+    console.log("Oh no! " + err.message);
 });

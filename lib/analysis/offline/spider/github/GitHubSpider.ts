@@ -28,13 +28,13 @@ import {
     ProjectAnalyzer,
 } from "@atomist/sdm-pack-analysis";
 import * as Octokit from "@octokit/rest";
+import { SubprojectStatus } from "../../../subprojectFinder";
 import { SpideredRepo } from "../../SpideredRepo";
 import { ScmSearchCriteria } from "../ScmSearchCriteria";
 import {
     Spider,
     SpiderOptions,
 } from "../Spider";
-import { SubprojectStatus } from "../../../subprojectFinder";
 
 /**
  * Spider GitHub. Ensure that GITHUB_TOKEN environment variable is set.
@@ -44,34 +44,39 @@ export class GitHubSpider implements Spider {
     public async spider(criteria: ScmSearchCriteria,
                         analyzer: ProjectAnalyzer,
                         opts: SpiderOptions): Promise<number> {
-        const it = queryByCriteria(process.env.GITHUB_TOKEN, criteria);
-
-        let bucket: Array<Promise<any>> = [];
         let count = 0;
+        try {
+            const it = queryByCriteria(process.env.GITHUB_TOKEN, criteria);
 
-        for await (const sourceData of it) {
-            ++count;
-            const repo = {
-                owner: sourceData.owner.login,
-                repo: sourceData.name,
-                url: sourceData.url,
-            };
-            const found = await opts.persister.load(repo);
-            if (found && await opts.keepExistingPersisted(found)) {
-                logger.info("Found valid record for " + JSON.stringify(repo));
-            } else {
-                logger.info("Performing fresh analysis of " + JSON.stringify(repo));
-                try {
-                    bucket.push(analyzeAndPersist(sourceData, criteria, analyzer, opts));
-                    if (bucket.length === opts.poolSize) {
-                        // Run all promises together. Effectively promise pooling
-                        await Promise.all(bucket);
-                        bucket = [];
+            let bucket: Array<Promise<any>> = [];
+
+            for await (const sourceData of it) {
+                ++count;
+                const repo = {
+                    owner: sourceData.owner.login,
+                    repo: sourceData.name,
+                    url: sourceData.url,
+                };
+                const found = await opts.persister.load(repo);
+                if (found && await opts.keepExistingPersisted(found)) {
+                    logger.info("Found valid record for " + JSON.stringify(repo));
+                } else {
+                    logger.info("Performing fresh analysis of " + JSON.stringify(repo));
+                    try {
+                        bucket.push(analyzeAndPersist(sourceData, criteria, analyzer, opts));
+                        if (bucket.length === opts.poolSize) {
+                            // Run all promises together. Effectively promise pooling
+                            await Promise.all(bucket);
+                            bucket = [];
+                        }
+                    } catch (err) {
+                        logger.error("Failure analyzing repo at %s: %s", sourceData.url, err.message);
                     }
-                } catch (err) {
-                    logger.error("Failure analyzing repo at %s: %s", sourceData.url, err.message);
                 }
             }
+        } catch (e) {
+            console.log("GOT IT " + e.message);
+            throw e;
         }
         return count;
     }
@@ -158,10 +163,10 @@ async function cloneAndAnalyze(gitHubRecord: GitHubSearchResult,
         await criteria.subprojectFinder(project) :
         { status: SubprojectStatus.Unknown };
     if (!!subprojects.paths) {
-        return await Promise.all(subprojects.paths.map(path => {
+        return Promise.all(subprojects.paths.map(path => {
             return analyzeProject(
                 projectUnder(project, path),
-                analyzer, project.id as RemoteRepoRef)
+                analyzer, project.id as RemoteRepoRef);
         }));
     }
     return [await analyzeProject(project, analyzer, undefined)];
