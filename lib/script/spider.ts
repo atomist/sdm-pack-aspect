@@ -29,8 +29,8 @@ import {
     configureLogging,
     MinimalLogging,
 } from "@atomist/automation-client";
-import { GradleSubprojectFinder } from "../analysis/gradleSubprojectFinder";
 import { firstSubprojectFinderOf } from "../analysis/subprojectFinder";
+import { fileNamesSubprojectFinder } from "../analysis/fileNamesSubprojectFinder";
 
 // Ensure we see console logging, and send info to the console
 configureLogging(MinimalLogging);
@@ -60,7 +60,7 @@ async function spider(org: string) {
                 return true;
             },
             subprojectFinder: firstSubprojectFinderOf(
-                GradleSubprojectFinder
+                fileNamesSubprojectFinder("pom.xml", "build.gradle", "package.json"),
             ),
         },
         analyzer,

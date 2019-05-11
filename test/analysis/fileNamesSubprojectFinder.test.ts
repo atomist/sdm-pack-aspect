@@ -16,13 +16,16 @@
 
 import { InMemoryProject } from "@atomist/automation-client";
 import * as assert from "assert";
-import { GradleSubprojectFinder } from "../../lib/analysis/gradleSubprojectFinder";
 import { SubprojectStatus } from "../../lib/analysis/subprojectFinder";
+import { fileNamesSubprojectFinder } from "../../lib/analysis/fileNamesSubprojectFinder";
 
-describe("gradleSubprojectFinder", () => {
+const GradleAndNodeSubprojectFinder = fileNamesSubprojectFinder("build.gradle", "package.json");
+
+describe("fileNamesSubprojectFinder", () => {
+
     it("says this is a top-level project if there's a build.gradle at root", async () => {
         const project = InMemoryProject.of({ path: "build.gradle", content: "whatever" });
-        const result = await GradleSubprojectFinder(project);
+        const result = await GradleAndNodeSubprojectFinder(project);
         assert.deepStrictEqual(result, {
             status: SubprojectStatus.RootOnly,
         });
@@ -30,7 +33,7 @@ describe("gradleSubprojectFinder", () => {
 
     it("says this is unknown if there's no build.gradle at all", async () => {
         const project = InMemoryProject.of({ path: "something/else", content: "whatever" });
-        const result = await GradleSubprojectFinder(project);
+        const result = await GradleAndNodeSubprojectFinder(project);
         assert.deepStrictEqual(result, {
             status: SubprojectStatus.Unknown,
         });
@@ -40,10 +43,22 @@ describe("gradleSubprojectFinder", () => {
         const project = InMemoryProject.of(
             { path: "something/else/build.gradle", content: "whatever" },
             { path: "somewhere/build.gradle", content: "stuff" });
-        const result = await GradleSubprojectFinder(project);
+        const result = await GradleAndNodeSubprojectFinder(project);
         assert.deepStrictEqual(result, {
             status: SubprojectStatus.IdentifiedPaths,
             paths: ["something/else", "somewhere"],
+        });
+    });
+
+    it("finds multiple projects for Gradle and npm", async () => {
+        const project = InMemoryProject.of(
+            { path: "something/else/build.gradle", content: "whatever" },
+            { path: "somewhere/build.gradle", content: "stuff" },
+            { path: "nodeynode/package.json", content: "stuff" });
+        const result = await GradleAndNodeSubprojectFinder(project);
+        assert.deepStrictEqual(result, {
+            status: SubprojectStatus.IdentifiedPaths,
+            paths: ["something/else", "somewhere", "nodeynode"],
         });
     });
 
@@ -52,7 +67,7 @@ describe("gradleSubprojectFinder", () => {
             { path: "something/else/build.gradle", content: "whatever" },
             { path: "build.gradle", content: "stuff" },
         );
-        const result = await GradleSubprojectFinder(project);
+        const result = await GradleAndNodeSubprojectFinder(project);
         assert.deepStrictEqual(result, {
             status: SubprojectStatus.RootOnly,
         });

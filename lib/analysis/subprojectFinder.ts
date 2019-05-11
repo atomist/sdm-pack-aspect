@@ -23,20 +23,20 @@ export enum SubprojectStatus {
     /**
      * This is definitely NOT a monorepo
      */
-    RootOnly,
+    RootOnly = "ReadOnly",
     /**
      * This is definitely a monorepo
      */
-    IdentifiedPaths,
+    IdentifiedPaths = "IdentifiedPaths",
     /**
      * The monorepo status of this repo cannot be determined
      */
-    Unknown,
+    Unknown = "Unknown",
 }
 
 export interface Subprojects {
     status: SubprojectStatus;
-    paths? : string[];
+    paths?: string[];
 }
 
 export type SubprojectFinder = (project: Project) => Promise<Subprojects>;
@@ -47,15 +47,22 @@ export type SubprojectFinder = (project: Project) => Promise<Subprojects>;
  * @return {SubprojectFinder}
  */
 export function firstSubprojectFinderOf(...finders: SubprojectFinder[]): SubprojectFinder {
+    const paths: string[] = [];
     return async p => {
         for (const finder of finders) {
             const r = await finder(p);
-            if (r.status !== SubprojectStatus.Unknown) {
-                return r;
+            if (r.status === SubprojectStatus.RootOnly) {
+                return {
+                    status: SubprojectStatus.RootOnly,
+                };
+            }
+            if (!!r.paths) {
+                paths.concat(...r.paths);
             }
         }
         return {
-            status: SubprojectStatus.Unknown,
+            status: paths.length > 0 ? SubprojectStatus.IdentifiedPaths : SubprojectStatus.Unknown,
+            paths,
         };
     };
 }
