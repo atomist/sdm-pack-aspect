@@ -187,7 +187,7 @@ async function cloneAndAnalyze(gitHubRecord: GitHubSearchResult,
             return analyzeProject(
                 projectUnder(project, path),
                 analyzer, project.id as RemoteRepoRef);
-        }));
+        })).then(results => results.filter(x => !!x));
     }
     return [await analyzeProject(project, analyzer, undefined)];
 }
@@ -197,21 +197,30 @@ async function cloneAndAnalyze(gitHubRecord: GitHubSearchResult,
  */
 async function analyzeProject(project: Project,
                               analyzer: ProjectAnalyzer,
-                              parentId: RemoteRepoRef): Promise<RepoInfo> {
-    const readmeFile = await project.getFile("README.md");
-    const readme = !!readmeFile ? await readmeFile.getContent() : undefined;
-    const totalFileCount = await project.totalFileCount();
+                              parentId: RemoteRepoRef): Promise<RepoInfo | undefined> {
+    if (!!parentId) {
+        console.log("With parent")
+    }
+    try {
 
-    const analysis = await analyzer.analyze(project, undefined, { full: true });
-    const interpretation = await analyzer.interpret(analysis, undefined);
+        const readmeFile = await project.getFile("README.md");
+        const readme = !!readmeFile ? await readmeFile.getContent() : undefined;
+        const totalFileCount = await project.totalFileCount();
 
-    return {
-        readme,
-        totalFileCount,
-        interpretation,
-        analysis,
-        parentId,
-    };
+        const analysis = await analyzer.analyze(project, undefined, { full: true });
+        const interpretation = await analyzer.interpret(analysis, undefined);
+
+        return {
+            readme,
+            totalFileCount,
+            interpretation,
+            analysis,
+            parentId,
+        };
+    } catch (err) {
+        logger.error(err);
+        return undefined;
+    }
 }
 
 async function* queryByCriteria(token: string, criteria: ScmSearchCriteria): AsyncIterable<GitHubSearchResult> {
