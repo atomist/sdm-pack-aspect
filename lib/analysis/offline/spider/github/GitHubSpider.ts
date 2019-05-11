@@ -169,7 +169,7 @@ async function cloneAndAnalyze(gitHubRecord: GitHubSearchResult,
     const subprojects = criteria.subprojectFinder ?
         await criteria.subprojectFinder(project) :
         { status: SubprojectStatus.Unknown };
-    if (!!subprojects.paths) {
+    if (!!subprojects.paths && subprojects.paths.length > 0) {
         return Promise.all(subprojects.paths.map(path => {
             return analyzeProject(
                 projectUnder(project, path),
