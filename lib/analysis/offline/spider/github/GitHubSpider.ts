@@ -29,7 +29,9 @@ import {
 } from "@atomist/sdm-pack-analysis";
 import * as HttpError from "@octokit/request/lib/http-error";
 import * as Octokit from "@octokit/rest";
+import * as _ from "lodash";
 import { SubprojectStatus } from "../../../subprojectFinder";
+import { ProjectUrl } from "../../persist/ProjectAnalysisResultStore";
 import { SpideredRepo } from "../../SpideredRepo";
 import { ScmSearchCriteria } from "../ScmSearchCriteria";
 import {
@@ -38,6 +40,8 @@ import {
     SpiderResult,
 } from "../Spider";
 import * as path from "path";
+
+process.stdout.write("Goddammit fuck i hagte nodce GitHubSpider 1\n");
 
 /**
  * Spider GitHub. Ensure that GITHUB_TOKEN environment variable is set.
@@ -49,10 +53,10 @@ export class GitHubSpider implements Spider {
                         opts: SpiderOptions): Promise<SpiderResult> {
         let count = 0;
         const errors = [];
+        const analyzeAndPersistResults: AnalyzeAndPersistResult[] = [];
         try {
             const it = queryByCriteria(process.env.GITHUB_TOKEN, criteria);
-
-            let bucket: Array<Promise<any>> = [];
+            let bucket: Array<Promise<AnalyzeAndPersistResult>> = [];
 
             for await (const sourceData of it) {
                 ++count;
@@ -70,7 +74,8 @@ export class GitHubSpider implements Spider {
                         bucket.push(analyzeAndPersist(sourceData, criteria, analyzer, opts));
                         if (bucket.length === opts.poolSize) {
                             // Run all promises together. Effectively promise pooling
-                            await Promise.all(bucket);
+                            const results = await Promise.all(bucket);
+                            results.forEach(r => analyzeAndPersistResults.push(r));
                             bucket = [];
                         }
                     } catch (err) {
@@ -85,9 +90,14 @@ export class GitHubSpider implements Spider {
             }
             throw e;
         }
-        return { detectedCount: count, failed: errors };
+        const persistFailures = _.flatMap(analyzeAndPersistResults, apr => apr.failedToPersist);
+        return { detectedCount: count, failed: [...errors, ...persistFailures] };
     }
 
+}
+
+export interface AnalyzeAndPersistResult {
+    failedToPersist: ProjectUrl[];
 }
 
 /**
@@ -97,8 +107,9 @@ export class GitHubSpider implements Spider {
 async function analyzeAndPersist(sourceData: GitHubSearchResult,
                                  criteria: ScmSearchCriteria,
                                  analyzer: ProjectAnalyzer,
-                                 opts: SpiderOptions): Promise<void> {
+                                 opts: SpiderOptions): Promise<AnalyzeAndPersistResult> {
     const repoInfos = await cloneAndAnalyze(sourceData, analyzer, criteria);
+    const results = [];
     for (const repoInfo of repoInfos) {
         if (!criteria.interpretationTest || criteria.interpretationTest(repoInfo.interpretation)) {
             const toPersist: SpideredRepo = {
@@ -117,7 +128,7 @@ async function analyzeAndPersist(sourceData: GitHubSearchResult,
                 readme: repoInfo.readme,
                 parentId: repoInfo.parentId,
             };
-            await opts.persister.persist(toPersist);
+            const persistResult = await opts.persister.persist(toPersist);
             if (opts.onPersisted) {
                 try {
                     await opts.onPersisted(toPersist);
@@ -126,8 +137,12 @@ async function analyzeAndPersist(sourceData: GitHubSearchResult,
                         toPersist.analysis.id, err.message);
                 }
             }
+            results.push(persistResult);
         }
     }
+    return {
+        failedToPersist: _.flatMap(results, r => r.failed),
+    };
 }
 
 /**

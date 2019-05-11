@@ -24,7 +24,7 @@ import {
     isProjectAnalysisResult,
     ProjectAnalysisResult,
 } from "../../ProjectAnalysisResult";
-import { ProjectAnalysisResultStore } from "./ProjectAnalysisResultStore";
+import { PersistResult, ProjectAnalysisResultStore } from "./ProjectAnalysisResultStore";
 
 import * as appRoot from "app-root-path";
 
@@ -58,9 +58,10 @@ export class FileSystemProjectAnalysisResultStore implements ProjectAnalysisResu
         return (await this.loadAll()).length;
     }
 
-    public async persist(what: ProjectAnalysisResult | AsyncIterable<ProjectAnalysisResult> | ProjectAnalysisResult[]): Promise<number> {
+    public async persist(what: ProjectAnalysisResult | AsyncIterable<ProjectAnalysisResult> | ProjectAnalysisResult[]): Promise<PersistResult> {
         const repos = isProjectAnalysisResult(what) ? [what] : what;
         let persisted = 0;
+        const errors = [];
         for await (const repo of repos) {
             const filePath = this.toFilePath(repo.analysis.id);
             try {
@@ -69,10 +70,11 @@ export class FileSystemProjectAnalysisResultStore implements ProjectAnalysisResu
                 logger.info(`Persisted to ${filePath}`);
                 ++persisted;
             } catch (err) {
+                errors.push(repo.analysis.id.url);
                 logger.error("Cannot persist file to %s: %s", filePath, err.message);
             }
         }
-        return persisted;
+        return { attemptedCount: persisted, failed: errors };
     }
 
     public async load(repo: RepoRef): Promise<ProjectAnalysisResult | undefined> {

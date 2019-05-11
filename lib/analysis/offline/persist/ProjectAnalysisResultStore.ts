@@ -20,6 +20,13 @@ import {
 } from "@atomist/automation-client";
 import { ProjectAnalysisResult } from "../../ProjectAnalysisResult";
 
+export type ProjectUrl = string;
+
+export interface PersistResult {
+    attemptedCount: number;
+    failed: ProjectUrl[];
+}
+
 /**
  * Interface for basic persistence operations.
  * Implementations can provide additional querying options,
@@ -37,6 +44,6 @@ export interface ProjectAnalysisResultStore {
 
     load(repo: RepoRef): Promise<ProjectAnalysisResult | undefined>;
 
-    persist(repos: ProjectAnalysisResult | AsyncIterable<ProjectAnalysisResult> | ProjectAnalysisResult[]): Promise<number>;
+    persist(repos: ProjectAnalysisResult | AsyncIterable<ProjectAnalysisResult> | ProjectAnalysisResult[]): Promise<PersistResult>;
 
 }
