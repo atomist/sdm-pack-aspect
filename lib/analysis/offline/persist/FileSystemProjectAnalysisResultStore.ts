@@ -27,6 +27,7 @@ import {
 import {
     PersistResult,
     ProjectAnalysisResultStore,
+    ProjectUrl,
 } from "./ProjectAnalysisResultStore";
 
 import * as appRoot from "app-root-path";
@@ -64,7 +65,7 @@ export class FileSystemProjectAnalysisResultStore implements ProjectAnalysisResu
     public async persist(what: ProjectAnalysisResult | AsyncIterable<ProjectAnalysisResult> | ProjectAnalysisResult[]): Promise<PersistResult> {
         const repos = isProjectAnalysisResult(what) ? [what] : what;
         let persisted = 0;
-        const errors = [];
+        const errors: ProjectUrl[] = [];
         for await (const repo of repos) {
             const filePath = this.toFilePath(repo.analysis.id);
             try {

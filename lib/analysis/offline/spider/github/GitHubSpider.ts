@@ -32,10 +32,11 @@ import * as Octokit from "@octokit/rest";
 import * as _ from "lodash";
 import * as path from "path";
 import { SubprojectStatus } from "../../../subprojectFinder";
-import { ProjectUrl } from "../../persist/ProjectAnalysisResultStore";
+import { PersistResult, ProjectUrl } from "../../persist/ProjectAnalysisResultStore";
 import { SpideredRepo } from "../../SpideredRepo";
 import { ScmSearchCriteria } from "../ScmSearchCriteria";
 import {
+    RepoUrl,
     Spider,
     SpiderOptions,
     SpiderResult,
@@ -46,14 +47,19 @@ import {
  */
 export class GitHubSpider implements Spider {
 
+    constructor(
+        private readonly queryFunction: (token: string, criteria: ScmSearchCriteria) => AsyncIterable<GitHubSearchResult>
+            = queryByCriteria) { }
+
     public async spider(criteria: ScmSearchCriteria,
-                        analyzer: ProjectAnalyzer,
-                        opts: SpiderOptions): Promise<SpiderResult> {
+        analyzer: ProjectAnalyzer,
+        opts: SpiderOptions): Promise<SpiderResult> {
         let count = 0;
-        const errors = [];
+        const keepExisting: RepoUrl[] = [];
+        const errors: RepoUrl[] = [];
         const analyzeAndPersistResults: AnalyzeAndPersistResult[] = [];
         try {
-            const it = queryByCriteria(process.env.GITHUB_TOKEN, criteria);
+            const it = this.queryFunction(process.env.GITHUB_TOKEN, criteria);
             let bucket: Array<Promise<AnalyzeAndPersistResult>> = [];
 
             for await (const sourceData of it) {
@@ -65,6 +71,7 @@ export class GitHubSpider implements Spider {
                 };
                 const found = await opts.persister.load(repo);
                 if (found && await opts.keepExistingPersisted(found)) {
+                    keepExisting.push(repo.url);
                     logger.info("Found valid record for " + JSON.stringify(repo));
                 } else {
                     logger.info("Performing fresh analysis of " + JSON.stringify(repo));
@@ -103,11 +110,11 @@ export interface AnalyzeAndPersistResult {
  * @return {Promise<void>}
  */
 async function analyzeAndPersist(sourceData: GitHubSearchResult,
-                                 criteria: ScmSearchCriteria,
-                                 analyzer: ProjectAnalyzer,
-                                 opts: SpiderOptions): Promise<AnalyzeAndPersistResult> {
+    criteria: ScmSearchCriteria,
+    analyzer: ProjectAnalyzer,
+    opts: SpiderOptions): Promise<AnalyzeAndPersistResult> {
     const repoInfos = await cloneAndAnalyze(sourceData, analyzer, criteria);
-    const results = [];
+    const results: PersistResult[] = [];
     for (const repoInfo of repoInfos) {
         if (!criteria.interpretationTest || criteria.interpretationTest(repoInfo.interpretation)) {
             const toPersist: SpideredRepo = {
@@ -146,7 +153,7 @@ async function analyzeAndPersist(sourceData: GitHubSearchResult,
 /**
  * Result row in a GitHub search
  */
-interface GitHubSearchResult {
+export interface GitHubSearchResult {
     owner: { login: string };
     name: string;
     url: string;
@@ -167,8 +174,8 @@ interface RepoInfo {
  * Find project or subprojects
  */
 async function cloneAndAnalyze(gitHubRecord: GitHubSearchResult,
-                               analyzer: ProjectAnalyzer,
-                               criteria: ScmSearchCriteria): Promise<RepoInfo[]> {
+    analyzer: ProjectAnalyzer,
+    criteria: ScmSearchCriteria): Promise<RepoInfo[]> {
     const project = await GitCommandGitProject.cloned(
         process.env.GITHUB_TOKEN ? { token: process.env.GITHUB_TOKEN } : undefined,
         GitHubRepoRef.from({ owner: gitHubRecord.owner.login, repo: gitHubRecord.name }), {
@@ -196,8 +203,8 @@ async function cloneAndAnalyze(gitHubRecord: GitHubSearchResult,
  * Analyze a project. May be a virtual project, within a bigger project.
  */
 async function analyzeProject(project: Project,
-                              analyzer: ProjectAnalyzer,
-                              parentId: RemoteRepoRef): Promise<RepoInfo | undefined> {
+    analyzer: ProjectAnalyzer,
+    parentId: RemoteRepoRef): Promise<RepoInfo | undefined> {
     if (!!parentId) {
         console.log("With parent")
     }
