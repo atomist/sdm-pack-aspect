@@ -21,12 +21,7 @@
  * Main entry point script. Added as a binary in package.json
  */
 
-
-process.stdout.write("Goddammit fuck i hagte nodce")
-
 import { FileSystemProjectAnalysisResultStore } from "../analysis/offline/persist/FileSystemProjectAnalysisResultStore";
-
-
 import { GitHubSpider } from "../analysis/offline/spider/github/GitHubSpider";
 import { Spider } from "../analysis/offline/spider/Spider";
 import { createAnalyzer } from "../machine/machine";
