@@ -27,6 +27,7 @@ import {
     ProjectAnalysis,
     ProjectAnalyzer,
 } from "@atomist/sdm-pack-analysis";
+import * as HttpError from "@octokit/request/lib/http-error";
 import * as Octokit from "@octokit/rest";
 import { SubprojectStatus } from "../../../subprojectFinder";
 import { SpideredRepo } from "../../SpideredRepo";
@@ -75,7 +76,9 @@ export class GitHubSpider implements Spider {
                 }
             }
         } catch (e) {
-            console.log("GOT IT " + e.message);
+            if (e instanceof HttpError) {
+                logger.error("Status %s from %j", e.status, e.request.url);
+            }
             throw e;
         }
         return count;

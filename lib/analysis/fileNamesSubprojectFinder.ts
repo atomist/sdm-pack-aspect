@@ -53,4 +53,3 @@ export function fileNamesSubprojectFinder(...filenames: string[]): SubprojectFin
         };
     };
 }
-

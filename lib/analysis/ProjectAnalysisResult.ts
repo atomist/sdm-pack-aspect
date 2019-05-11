@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-import { ProjectAnalysis } from "@atomist/sdm-pack-analysis";
 import { RemoteRepoRef } from "@atomist/automation-client";
+import { ProjectAnalysis } from "@atomist/sdm-pack-analysis";
 
 /**
  * The result of running one analysis. Allows us to attach further information,

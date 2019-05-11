@@ -107,7 +107,7 @@ export class FileSystemProjectAnalysisResultStore implements ProjectAnalysisResu
     }
 
     private toFilePath(repo: RepoRef): string {
-        let base = path.join(this.path, repo.owner, repo.repo, repo.path || "");
+        const base = path.join(this.path, repo.owner, repo.repo, repo.path || "");
         // if (!!repo.path) {
         //     base += "::" + path;
         // }

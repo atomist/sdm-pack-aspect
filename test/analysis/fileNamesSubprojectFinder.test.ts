@@ -16,8 +16,8 @@
 
 import { InMemoryProject } from "@atomist/automation-client";
 import * as assert from "assert";
-import { SubprojectStatus } from "../../lib/analysis/subprojectFinder";
 import { fileNamesSubprojectFinder } from "../../lib/analysis/fileNamesSubprojectFinder";
+import { SubprojectStatus } from "../../lib/analysis/subprojectFinder";
 
 const GradleAndNodeSubprojectFinder = fileNamesSubprojectFinder("build.gradle", "package.json");
 

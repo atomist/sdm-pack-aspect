@@ -41,8 +41,8 @@ import { gitlabCiScanner } from "@atomist/uhura/lib/element/gitlab-ci/gitlabCiSc
 import { FileSystemProjectAnalysisResultStore } from "../analysis/offline/persist/FileSystemProjectAnalysisResultStore";
 import { ProjectAnalysisResultStore } from "../analysis/offline/persist/ProjectAnalysisResultStore";
 import { codeMetricsScanner } from "../element/codeMetricsElement";
-import { packageLockScanner } from "../element/packageLock";
 import { CodeOfConductScanner } from "../element/codeOfConduct";
+import { packageLockScanner } from "../element/packageLock";
 
 /**
  * Add scanners to the analyzer to extract data
