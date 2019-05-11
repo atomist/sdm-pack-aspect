@@ -14,16 +14,10 @@
  * limitations under the License.
  */
 
-import {
-    logger,
-    RepoId,
-} from "@atomist/automation-client";
+import { logger, RepoRef, } from "@atomist/automation-client";
 import * as fs from "fs";
 import * as path from "path";
-import {
-    isProjectAnalysisResult,
-    ProjectAnalysisResult,
-} from "../../ProjectAnalysisResult";
+import { isProjectAnalysisResult, ProjectAnalysisResult, } from "../../ProjectAnalysisResult";
 import { ProjectAnalysisResultStore } from "./ProjectAnalysisResultStore";
 
 import * as appRoot from "app-root-path";
@@ -69,7 +63,7 @@ export class FileSystemProjectAnalysisResultStore implements ProjectAnalysisResu
         return persisted;
     }
 
-    public async load(repo: RepoId): Promise<ProjectAnalysisResult> {
+    public async load(repo: RepoRef): Promise<ProjectAnalysisResult> {
         try {
             const raw = fs.readFileSync(this.toFilePath(repo)).toString();
             const r = JSON.parse(raw) as ProjectAnalysisResult;
@@ -96,8 +90,12 @@ export class FileSystemProjectAnalysisResultStore implements ProjectAnalysisResu
         return results;
     }
 
-    private toFilePath(repo: RepoId): string {
-        return `${this.path}/${repo.owner}:${repo.repo}.json`;
+    private toFilePath(repo: RepoRef): string {
+        let base = `${this.path}/${repo.owner}:${repo.repo}`;
+        if (!!repo.path) {
+            base += ":" + path;
+        }
+        return base + ".json";
     }
 
 }

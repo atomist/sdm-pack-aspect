@@ -15,7 +15,7 @@
  */
 
 import {
-    GitCommandGitProject,
+    GitCommandGitProject, isLocalProject,
     logger,
     Project,
     RemoteRepoRef,
@@ -157,7 +157,11 @@ async function cloneAndAnalyze(gitHubRecord: GitHubSearchResult,
         await criteria.subprojectFinder(project) :
         { status: SubprojectStatus.Unknown };
     if (!!subprojects.paths) {
-        throw new Error("Not yet handling subprojects");
+        return await Promise.all(subprojects.paths.map(path => {
+            return analyzeProject(
+                projectUnder(project, path),
+                analyzer, project.id as RemoteRepoRef)
+        }));
     }
     return [await analyzeProject(project, analyzer, undefined)];
 }
@@ -218,4 +222,21 @@ async function* queryByCriteria(token: string, criteria: ScmSearchCriteria): Asy
             }
         }
     }
+}
+
+function projectUnder(p: Project, path: string): Project {
+    if (!isLocalProject(p)) {
+        throw new Error(`Cannot descend into path ${path} of non local project`);
+    }
+    const rid = p.id as RemoteRepoRef;
+    const newId: RemoteRepoRef = {
+        ...rid,
+        path,
+    };
+    return GitCommandGitProject.fromBaseDir(
+        newId,
+        p.baseDir + "/" + path,
+        (p as any).credentials,
+        p.release,
+    );
 }

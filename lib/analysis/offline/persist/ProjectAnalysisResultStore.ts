@@ -1,4 +1,4 @@
-import { RepoId } from "@atomist/automation-client";
+import { RepoId, RepoRef } from "@atomist/automation-client";
 import { ProjectAnalysisResult } from "../../ProjectAnalysisResult";
 
 /**
@@ -16,7 +16,7 @@ export interface ProjectAnalysisResultStore {
 
     loadAll(): Promise<ProjectAnalysisResult[]>;
 
-    load(repo: RepoId): Promise<ProjectAnalysisResult | undefined>;
+    load(repo: RepoRef): Promise<ProjectAnalysisResult | undefined>;
 
     persist(repos: ProjectAnalysisResult | AsyncIterable<ProjectAnalysisResult> | ProjectAnalysisResult[]): Promise<number>;
 
