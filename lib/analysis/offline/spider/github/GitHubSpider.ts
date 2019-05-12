@@ -83,7 +83,7 @@ export class GitHubSpider implements Spider {
                     logger.info("Performing fresh analysis of " + JSON.stringify(repo));
                     try {
                         bucket.push(analyzeAndPersist(sourceData, criteria, analyzer, opts));
-                        if (bucket.length === opts.poolSize) {
+                        if (bucket.length >= opts.poolSize) {
                             // Run all promises together. Effectively promise pooling
                             await runAllPromisesInBucket();
                         }
