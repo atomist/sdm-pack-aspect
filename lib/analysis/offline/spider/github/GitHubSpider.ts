@@ -65,7 +65,7 @@ export class GitHubSpider implements Spider {
         try {
             const it = this.queryFunction(process.env.GITHUB_TOKEN, criteria);
             let bucket: Array<Promise<AnalyzeAndPersistResult>> = [];
-            async function runAllPromisesInBucket() {
+            async function runAllPromisesInBucket(): Promise<void> {
                 const results = await Promise.all(bucket);
                 results.forEach(r => analyzeAndPersistResults.push(r));
                 bucket = [];
@@ -156,7 +156,13 @@ async function analyzeAndPersist(sourceData: GitHubSearchResult,
                                  opts: SpiderOptions): Promise<AnalyzeAndPersistResult> {
     let repoInfos: RepoInfo[];
     try {
-        repoInfos = await cloneAndAnalyze(sourceData, analyzer, criteria);
+        const project = await GitCommandGitProject.cloned(
+            process.env.GITHUB_TOKEN ? { token: process.env.GITHUB_TOKEN } : undefined,
+            GitHubRepoRef.from({ owner: sourceData.owner.login, repo: sourceData.name }), {
+                alwaysDeep: false,
+                depth: 1,
+            });
+        repoInfos = await analyze(project, analyzer, criteria);
     } catch (err) {
         logger.error("Could not clone/analyze " + sourceData.url + ": " + err.message);
         return {
@@ -230,15 +236,9 @@ interface RepoInfo {
 /**
  * Find project or subprojects
  */
-async function cloneAndAnalyze(gitHubRecord: GitHubSearchResult,
-                               analyzer: ProjectAnalyzer,
-                               criteria: ScmSearchCriteria): Promise<RepoInfo[]> {
-    const project = await GitCommandGitProject.cloned(
-        process.env.GITHUB_TOKEN ? { token: process.env.GITHUB_TOKEN } : undefined,
-        GitHubRepoRef.from({ owner: gitHubRecord.owner.login, repo: gitHubRecord.name }), {
-            alwaysDeep: false,
-            depth: 1,
-        });
+async function analyze(project: Project,
+                       analyzer: ProjectAnalyzer,
+                       criteria: ScmSearchCriteria): Promise<RepoInfo[]> {
     if (criteria.projectTest && !await criteria.projectTest(project)) {
         logger.info("Skipping analysis of %s as it doesn't pass projectTest", project.id.url);
         return [];
