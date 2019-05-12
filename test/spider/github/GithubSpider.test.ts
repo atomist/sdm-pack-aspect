@@ -31,7 +31,8 @@ import {
 
 describe("GithubSpider", () => {
     it("gives empty results when query returns empty", async () => {
-        const subject = new GitHubSpider(async function*(t, q) { });
+        const subject = new GitHubSpider(async function*(t, q) { },
+        );
 
         const result = await subject.spider(undefined, undefined, undefined);
 
@@ -65,7 +66,8 @@ describe("GithubSpider", () => {
             poolSize: 3,
         };
 
-        const subject = new GitHubSpider(async function*(t, q) { yield one; });
+        const subject = new GitHubSpider(async function*(t, q) { yield one; },
+            async sd => { throw new Error("cannot clone"); });
 
         const result = await subject.spider(criteria, analyzer, opts);
 
