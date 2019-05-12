@@ -18,9 +18,16 @@ import { ProjectAnalyzer } from "@atomist/sdm-pack-analysis";
 import * as assert from "assert";
 import { ProjectAnalysisResultStore } from "../../../lib/analysis/offline/persist/ProjectAnalysisResultStore";
 import { ScmSearchCriteria } from "../../../lib/analysis/offline/spider/ScmSearchCriteria";
-import { EmptySpiderResult, SpiderOptions, SpiderResult } from "../../../lib/analysis/offline/spider/Spider";
+import {
+    EmptySpiderResult,
+    SpiderOptions,
+    SpiderResult,
+} from "../../../lib/analysis/offline/spider/Spider";
 import { ProjectAnalysisResult } from "../../../lib/analysis/ProjectAnalysisResult";
-import { GitHubSearchResult, GitHubSpider } from "./../../../lib/analysis/offline/spider/github/GitHubSpider";
+import {
+    GitHubSearchResult,
+    GitHubSpider,
+} from "./../../../lib/analysis/offline/spider/github/GitHubSpider";
 
 describe("GithubSpider", () => {
     it("gives empty results when query returns empty", async () => {
