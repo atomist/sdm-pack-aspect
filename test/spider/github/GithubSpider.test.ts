@@ -71,8 +71,8 @@ describe("GithubSpider", () => {
 
         const expected: SpiderResult = {
             detectedCount: 1,
-            failed: [],
-            persistedAnalyses: ["me/hi.json"],
+            failed: ["https://home"],
+            persistedAnalyses: [],
             keptExisting: [],
         };
 
