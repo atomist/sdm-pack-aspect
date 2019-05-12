@@ -85,7 +85,13 @@ export class GitHubSpider implements Spider {
                 } else {
                     logger.info("Performing fresh analysis of " + JSON.stringify(repo));
                     try {
-                        bucket.push(analyzeAndPersist(sourceData, criteria, analyzer, opts));
+                        const project = await GitCommandGitProject.cloned(
+                            process.env.GITHUB_TOKEN ? { token: process.env.GITHUB_TOKEN } : undefined,
+                            GitHubRepoRef.from({ owner: sourceData.owner.login, repo: sourceData.name }), {
+                                alwaysDeep: false,
+                                depth: 1,
+                            });
+                        bucket.push(analyzeAndPersist(project, sourceData, criteria, analyzer, opts));
                         if (bucket.length >= opts.poolSize) {
                             // Run all promises together. Effectively promise pooling
                             await runAllPromisesInBucket();
@@ -150,18 +156,13 @@ function combineAnalyzeAndPersistResult(one: AnalyzeAndPersistResult, two: Analy
  * Future for doing the work
  * @return {Promise<void>}
  */
-async function analyzeAndPersist(sourceData: GitHubSearchResult,
+async function analyzeAndPersist(project: Project,
+                                 sourceData: GitHubSearchResult,
                                  criteria: ScmSearchCriteria,
                                  analyzer: ProjectAnalyzer,
                                  opts: SpiderOptions): Promise<AnalyzeAndPersistResult> {
     let repoInfos: RepoInfo[];
     try {
-        const project = await GitCommandGitProject.cloned(
-            process.env.GITHUB_TOKEN ? { token: process.env.GITHUB_TOKEN } : undefined,
-            GitHubRepoRef.from({ owner: sourceData.owner.login, repo: sourceData.name }), {
-                alwaysDeep: false,
-                depth: 1,
-            });
         repoInfos = await analyze(project, analyzer, criteria);
     } catch (err) {
         logger.error("Could not clone/analyze " + sourceData.url + ": " + err.message);
