@@ -85,12 +85,7 @@ export class GitHubSpider implements Spider {
                 } else {
                     logger.info("Performing fresh analysis of " + JSON.stringify(repo));
                     try {
-                        const project = await GitCommandGitProject.cloned(
-                            process.env.GITHUB_TOKEN ? { token: process.env.GITHUB_TOKEN } : undefined,
-                            GitHubRepoRef.from({ owner: sourceData.owner.login, repo: sourceData.name }), {
-                                alwaysDeep: false,
-                                depth: 1,
-                            });
+                        const project = await cloneWithCredentialsFromEnv(sourceData);
                         bucket.push(analyzeAndPersist(project, sourceData, criteria, analyzer, opts));
                         if (bucket.length >= opts.poolSize) {
                             // Run all promises together. Effectively promise pooling
@@ -124,6 +119,15 @@ export class GitHubSpider implements Spider {
         };
     }
 
+}
+
+function cloneWithCredentialsFromEnv(sourceData: GitHubSearchResult): Promise<Project> {
+    return GitCommandGitProject.cloned(
+        process.env.GITHUB_TOKEN ? { token: process.env.GITHUB_TOKEN } : undefined,
+        GitHubRepoRef.from({ owner: sourceData.owner.login, repo: sourceData.name }), {
+            alwaysDeep: false,
+            depth: 1,
+        });
 }
 
 export interface AnalyzeAndPersistResult {
