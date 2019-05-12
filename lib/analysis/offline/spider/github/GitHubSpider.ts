@@ -32,7 +32,10 @@ import * as Octokit from "@octokit/rest";
 import * as _ from "lodash";
 import * as path from "path";
 import { SubprojectStatus } from "../../../subprojectFinder";
-import { PersistResult, ProjectUrl } from "../../persist/ProjectAnalysisResultStore";
+import {
+    PersistResult,
+    ProjectUrl,
+} from "../../persist/ProjectAnalysisResultStore";
 import { SpideredRepo } from "../../SpideredRepo";
 import { ScmSearchCriteria } from "../ScmSearchCriteria";
 import {
