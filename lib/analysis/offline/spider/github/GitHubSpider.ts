@@ -52,8 +52,11 @@ import {
 export class GitHubSpider implements Spider {
 
     constructor(
-        private readonly queryFunction: (token: string, criteria: ScmSearchCriteria) => AsyncIterable<GitHubSearchResult>
-            = queryByCriteria) { }
+        private readonly queryFunction: (token: string, criteria: ScmSearchCriteria)
+            => AsyncIterable<GitHubSearchResult>
+            = queryByCriteria,
+        private readonly cloneFunction: (sourceData: GitHubSearchResult) =>
+            Promise<Project> = cloneWithCredentialsFromEnv) { }
 
     public async spider(criteria: ScmSearchCriteria,
                         analyzer: ProjectAnalyzer,
@@ -85,7 +88,7 @@ export class GitHubSpider implements Spider {
                 } else {
                     logger.info("Performing fresh analysis of " + JSON.stringify(repo));
                     try {
-                        const project = await cloneWithCredentialsFromEnv(sourceData);
+                        const project = await this.cloneFunction(sourceData);
                         bucket.push(analyzeAndPersist(project, sourceData, criteria, analyzer, opts));
                         if (bucket.length >= opts.poolSize) {
                             // Run all promises together. Effectively promise pooling
