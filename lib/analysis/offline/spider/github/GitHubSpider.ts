@@ -53,8 +53,8 @@ export class GitHubSpider implements Spider {
             = queryByCriteria) { }
 
     public async spider(criteria: ScmSearchCriteria,
-        analyzer: ProjectAnalyzer,
-        opts: SpiderOptions): Promise<SpiderResult> {
+                        analyzer: ProjectAnalyzer,
+                        opts: SpiderOptions): Promise<SpiderResult> {
         let repoCount = 0;
         const keepExisting: RepoUrl[] = [];
         const errors: RepoUrl[] = [];
@@ -62,6 +62,11 @@ export class GitHubSpider implements Spider {
         try {
             const it = this.queryFunction(process.env.GITHUB_TOKEN, criteria);
             let bucket: Array<Promise<AnalyzeAndPersistResult>> = [];
+            async function runAllPromisesInBucket() {
+                const results = await Promise.all(bucket);
+                results.forEach(r => analyzeAndPersistResults.push(r));
+                bucket = [];
+            }
 
             for await (const sourceData of it) {
                 ++repoCount;
@@ -80,9 +85,7 @@ export class GitHubSpider implements Spider {
                         bucket.push(analyzeAndPersist(sourceData, criteria, analyzer, opts));
                         if (bucket.length === opts.poolSize) {
                             // Run all promises together. Effectively promise pooling
-                            const results = await Promise.all(bucket);
-                            results.forEach(r => analyzeAndPersistResults.push(r));
-                            bucket = [];
+                            await runAllPromisesInBucket();
                         }
                     } catch (err) {
                         errors.push(sourceData.url);
@@ -90,6 +93,7 @@ export class GitHubSpider implements Spider {
                     }
                 }
             }
+            await runAllPromisesInBucket();
         } catch (e) {
             if (e instanceof HttpError) {
                 logger.error("Status %s from %j", e.status, e.request.url);
@@ -144,9 +148,9 @@ function combineAnalyzeAndPersistResult(one: AnalyzeAndPersistResult, two: Analy
  * @return {Promise<void>}
  */
 async function analyzeAndPersist(sourceData: GitHubSearchResult,
-    criteria: ScmSearchCriteria,
-    analyzer: ProjectAnalyzer,
-    opts: SpiderOptions): Promise<AnalyzeAndPersistResult> {
+                                 criteria: ScmSearchCriteria,
+                                 analyzer: ProjectAnalyzer,
+                                 opts: SpiderOptions): Promise<AnalyzeAndPersistResult> {
     let repoInfos: RepoInfo[];
     try {
         repoInfos = await cloneAndAnalyze(sourceData, analyzer, criteria);
@@ -224,8 +228,8 @@ interface RepoInfo {
  * Find project or subprojects
  */
 async function cloneAndAnalyze(gitHubRecord: GitHubSearchResult,
-    analyzer: ProjectAnalyzer,
-    criteria: ScmSearchCriteria): Promise<RepoInfo[]> {
+                               analyzer: ProjectAnalyzer,
+                               criteria: ScmSearchCriteria): Promise<RepoInfo[]> {
     const project = await GitCommandGitProject.cloned(
         process.env.GITHUB_TOKEN ? { token: process.env.GITHUB_TOKEN } : undefined,
         GitHubRepoRef.from({ owner: gitHubRecord.owner.login, repo: gitHubRecord.name }), {
@@ -253,8 +257,8 @@ async function cloneAndAnalyze(gitHubRecord: GitHubSearchResult,
  * Analyze a project. May be a virtual project, within a bigger project.
  */
 async function analyzeProject(project: Project,
-    analyzer: ProjectAnalyzer,
-    parentId: RemoteRepoRef): Promise<RepoInfo | undefined> {
+                              analyzer: ProjectAnalyzer,
+                              parentId: RemoteRepoRef): Promise<RepoInfo | undefined> {
     if (!!parentId) {
         console.log("With parent");
     }
