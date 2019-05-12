@@ -44,11 +44,21 @@ export interface SpiderOptions {
 
 export type RepoUrl = string;
 
+export type PersistenceResult = string; // filename
+
 export interface SpiderResult {
     detectedCount: number;
     failed: RepoUrl[];
+    keptExisting: RepoUrl[];
+    persistedAnalyses: PersistenceResult[];
 }
 
+export const EmptySpiderResult: SpiderResult = {
+    detectedCount: 0,
+    failed: [],
+    keptExisting: [],
+    persistedAnalyses: [],
+};
 /**
  * Spider a data source and progressively persist what we find.
  */

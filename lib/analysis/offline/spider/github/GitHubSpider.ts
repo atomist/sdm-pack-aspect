@@ -36,6 +36,7 @@ import { PersistResult, ProjectUrl } from "../../persist/ProjectAnalysisResultSt
 import { SpideredRepo } from "../../SpideredRepo";
 import { ScmSearchCriteria } from "../ScmSearchCriteria";
 import {
+    PersistenceResult,
     RepoUrl,
     Spider,
     SpiderOptions,
@@ -52,9 +53,9 @@ export class GitHubSpider implements Spider {
             = queryByCriteria) { }
 
     public async spider(criteria: ScmSearchCriteria,
-                        analyzer: ProjectAnalyzer,
-                        opts: SpiderOptions): Promise<SpiderResult> {
-        let count = 0;
+        analyzer: ProjectAnalyzer,
+        opts: SpiderOptions): Promise<SpiderResult> {
+        let repoCount = 0;
         const keepExisting: RepoUrl[] = [];
         const errors: RepoUrl[] = [];
         const analyzeAndPersistResults: AnalyzeAndPersistResult[] = [];
@@ -63,7 +64,7 @@ export class GitHubSpider implements Spider {
             let bucket: Array<Promise<AnalyzeAndPersistResult>> = [];
 
             for await (const sourceData of it) {
-                ++count;
+                ++repoCount;
                 const repo = {
                     owner: sourceData.owner.login,
                     repo: sourceData.name,
@@ -95,13 +96,18 @@ export class GitHubSpider implements Spider {
             }
             throw e;
         }
-        const persistFailures = _.flatMap(analyzeAndPersistResults, apr => apr.failedToPersist);
-        const cloneAndAnalyzeFailures = _.flatMap(analyzeAndPersistResults, apr => apr.failedToCloneOrAnalyze);
+
+        const analyzeResults = _.reduce(analyzeAndPersistResults,
+            combineAnalyzeAndPersistResult,
+            emptyAnalyzeAndPersistResult);
         return {
-            detectedCount: count, failed:
+            detectedCount: repoCount,
+            failed:
                 [...errors,
-                ...persistFailures,
-                ...cloneAndAnalyzeFailures],
+                ...analyzeResults.failedToPersist,
+                ...analyzeResults.failedToCloneOrAnalyze],
+            keptExisting: keepExisting,
+            persistedAnalyses: analyzeResults.persisted,
         };
     }
 
@@ -110,6 +116,27 @@ export class GitHubSpider implements Spider {
 export interface AnalyzeAndPersistResult {
     failedToCloneOrAnalyze: RepoUrl[];
     failedToPersist: ProjectUrl[];
+    repoCount: number;
+    projectCount: number;
+    persisted: PersistenceResult[];
+}
+
+const emptyAnalyzeAndPersistResult: AnalyzeAndPersistResult = {
+    failedToCloneOrAnalyze: [],
+    failedToPersist: [],
+    repoCount: 0,
+    projectCount: 0,
+    persisted: [],
+};
+
+function combineAnalyzeAndPersistResult(one: AnalyzeAndPersistResult, two: AnalyzeAndPersistResult): AnalyzeAndPersistResult {
+    return {
+        failedToCloneOrAnalyze: one.failedToCloneOrAnalyze.concat(two.failedToCloneOrAnalyze),
+        failedToPersist: one.failedToPersist.concat(two.failedToPersist),
+        repoCount: one.repoCount + two.repoCount,
+        projectCount: one.projectCount + two.projectCount,
+        persisted: one.persisted.concat(two.persisted),
+    };
 }
 
 /**
@@ -117,9 +144,9 @@ export interface AnalyzeAndPersistResult {
  * @return {Promise<void>}
  */
 async function analyzeAndPersist(sourceData: GitHubSearchResult,
-                                 criteria: ScmSearchCriteria,
-                                 analyzer: ProjectAnalyzer,
-                                 opts: SpiderOptions): Promise<AnalyzeAndPersistResult> {
+    criteria: ScmSearchCriteria,
+    analyzer: ProjectAnalyzer,
+    opts: SpiderOptions): Promise<AnalyzeAndPersistResult> {
     let repoInfos: RepoInfo[];
     try {
         repoInfos = await cloneAndAnalyze(sourceData, analyzer, criteria);
@@ -128,9 +155,12 @@ async function analyzeAndPersist(sourceData: GitHubSearchResult,
         return {
             failedToCloneOrAnalyze: [sourceData.url],
             failedToPersist: [],
+            repoCount: 1,
+            projectCount: 0,
+            persisted: [],
         };
     }
-    const results: PersistResult[] = [];
+    const persistResults: PersistResult[] = [];
     for (const repoInfo of repoInfos) {
         if (!criteria.interpretationTest || criteria.interpretationTest(repoInfo.interpretation)) {
             const toPersist: SpideredRepo = {
@@ -158,12 +188,15 @@ async function analyzeAndPersist(sourceData: GitHubSearchResult,
                         toPersist.analysis.id, err.message);
                 }
             }
-            results.push(persistResult);
+            persistResults.push(persistResult);
         }
     }
     return {
         failedToCloneOrAnalyze: [],
-        failedToPersist: _.flatMap(results, r => r.failed),
+        failedToPersist: _.flatMap(persistResults, r => r.failed),
+        repoCount: 1,
+        projectCount: 1,
+        persisted: _.flatMap(persistResults, p => p.succeeded),
     };
 }
 
@@ -191,8 +224,8 @@ interface RepoInfo {
  * Find project or subprojects
  */
 async function cloneAndAnalyze(gitHubRecord: GitHubSearchResult,
-                               analyzer: ProjectAnalyzer,
-                               criteria: ScmSearchCriteria): Promise<RepoInfo[]> {
+    analyzer: ProjectAnalyzer,
+    criteria: ScmSearchCriteria): Promise<RepoInfo[]> {
     const project = await GitCommandGitProject.cloned(
         process.env.GITHUB_TOKEN ? { token: process.env.GITHUB_TOKEN } : undefined,
         GitHubRepoRef.from({ owner: gitHubRecord.owner.login, repo: gitHubRecord.name }), {
@@ -220,8 +253,8 @@ async function cloneAndAnalyze(gitHubRecord: GitHubSearchResult,
  * Analyze a project. May be a virtual project, within a bigger project.
  */
 async function analyzeProject(project: Project,
-                              analyzer: ProjectAnalyzer,
-                              parentId: RemoteRepoRef): Promise<RepoInfo | undefined> {
+    analyzer: ProjectAnalyzer,
+    parentId: RemoteRepoRef): Promise<RepoInfo | undefined> {
     if (!!parentId) {
         console.log("With parent");
     }

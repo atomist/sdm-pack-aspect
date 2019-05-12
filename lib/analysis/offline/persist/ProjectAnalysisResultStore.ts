@@ -15,16 +15,17 @@
  */
 
 import {
-    RepoId,
     RepoRef,
 } from "@atomist/automation-client";
 import { ProjectAnalysisResult } from "../../ProjectAnalysisResult";
+import { PersistenceResult } from "../spider/Spider";
 
 export type ProjectUrl = string;
 
 export interface PersistResult {
     attemptedCount: number;
     failed: ProjectUrl[];
+    succeeded: PersistenceResult[];
 }
 
 /**

@@ -2,7 +2,7 @@ import { ProjectAnalyzer } from "@atomist/sdm-pack-analysis";
 import * as assert from "assert";
 import { ProjectAnalysisResultStore } from "../../../lib/analysis/offline/persist/ProjectAnalysisResultStore";
 import { ScmSearchCriteria } from "../../../lib/analysis/offline/spider/ScmSearchCriteria";
-import { SpiderOptions, SpiderResult } from "../../../lib/analysis/offline/spider/Spider";
+import { EmptySpiderResult, SpiderOptions, SpiderResult } from "../../../lib/analysis/offline/spider/Spider";
 import { ProjectAnalysisResult } from "../../../lib/analysis/ProjectAnalysisResult";
 import { GitHubSearchResult, GitHubSpider } from "./../../../lib/analysis/offline/spider/github/GitHubSpider";
 
@@ -12,9 +12,7 @@ describe("GithubSpider", () => {
 
         const result = await subject.spider(undefined, undefined, undefined);
 
-        const expected: SpiderResult = { detectedCount: 0, failed: [] };
-
-        assert.deepStrictEqual(result, expected);
+        assert.deepStrictEqual(result, EmptySpiderResult);
     });
 
     it("gives a result when query returns one", async () => {
@@ -48,7 +46,12 @@ describe("GithubSpider", () => {
 
         const result = await subject.spider(criteria, analyzer, opts);
 
-        const expected: SpiderResult = { detectedCount: 0, failed: [] };
+        const expected: SpiderResult = {
+            detectedCount: 1,
+            failed: [],
+            persistedAnalyses: ["me/hi.json"],
+            keptExisting: [],
+        };
 
         assert.deepStrictEqual(result, expected);
     });
