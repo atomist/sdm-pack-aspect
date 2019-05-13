@@ -18,7 +18,10 @@ import {
     RepoRef,
 } from "@atomist/automation-client";
 import { ProjectAnalysisResult } from "../../ProjectAnalysisResult";
-import { PersistenceResult, SpiderFailure } from "../spider/Spider";
+import {
+    PersistenceResult,
+    SpiderFailure,
+} from "../spider/Spider";
 
 export type ProjectUrl = string;
 

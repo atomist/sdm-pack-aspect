@@ -34,7 +34,10 @@ import * as appRoot from "app-root-path";
 
 const readdir = require("recursive-readdir");
 import * as fse from "fs-extra";
-import { PersistenceResult, SpiderFailure } from "../spider/Spider";
+import {
+    PersistenceResult,
+    SpiderFailure,
+} from "../spider/Spider";
 
 /**
  * Store files under the /spidered directory of current project unless otherwise specified
