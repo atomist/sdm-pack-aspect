@@ -40,7 +40,6 @@
     "@octokit/rest": "^16.10.0",
     "@types/yamljs": "^0.2.30",
     "app-root-path": "^2.2.1",
-    "boxen": "^3.2.0",
     "es6-promise-pool": "^2.5.0",
     "express": "^4.16.4",
     "express-handlebars": "^3.0.2",

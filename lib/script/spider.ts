@@ -31,7 +31,6 @@ import {
 } from "@atomist/automation-client";
 import { firstSubprojectFinderOf } from "../analysis/subprojectFinder";
 import { fileNamesSubprojectFinder } from "../analysis/fileNamesSubprojectFinder";
-import * as boxen from "boxen";
 
 // Ensure we see console logging, and send info to the console
 configureLogging(MinimalLogging);
@@ -95,8 +94,9 @@ if (process.argv.length < 3) {
 const org = process.argv[2];
 console.log(`Spidering GitHub organization ${org}...`);
 spider(org).then(r => {
-    console.log(boxen(`Successfully analyzed GitHub organization ${org}. result is ` + JSON.stringify(r),
-        { padding: 2 }));
+    console.log(`Successfully analyzed GitHub organization ${org}. result is `
+        + JSON.stringify(r, null, 2),
+        { padding: 2 });
 }, err => {
     console.log("Oh no! " + err.message);
 });
