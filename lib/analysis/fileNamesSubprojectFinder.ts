@@ -29,27 +29,34 @@ import {
  * anywhere
  */
 export function fileNamesSubprojectFinder(...filenames: string[]): SubprojectFinder {
-    return async p => {
-        const inRoot = await gatherFromFiles(p,
-            filenames,
-            async f => path.dirname(f.path));
-        if (inRoot.length > 0) {
+    return {
+        name: "fileNames: " + filenames.join(","),
+        findSubprojects: async p => {
+            const inRoot = await gatherFromFiles(p,
+                filenames,
+                async f => path.dirname(f.path));
+            if (inRoot.length > 0) {
+                return {
+                    status: SubprojectStatus.RootOnly,
+                };
+            }
+            const paths = await gatherFromFiles(p,
+                filenames.map(f => "**/" + f),
+                async f => {
+                    return {
+                        path: path.dirname(f.path),
+                        reason: "has file: " + f.name,
+                    };
+                });
+            if (paths.length > 0) {
+                return {
+                    status: SubprojectStatus.IdentifiedPaths,
+                    paths,
+                };
+            }
             return {
-                status: SubprojectStatus.RootOnly,
+                status: SubprojectStatus.Unknown,
             };
-        }
-        const paths = await gatherFromFiles(p,
-            filenames.map(f => "**/" + f),
-            async f => path.dirname(f.path));
-        if (paths.length > 0) {
-            console.log(`The paths within ${p.id.url} are ${paths}`);
-            return {
-                status: SubprojectStatus.IdentifiedPaths,
-                paths,
-            };
-        }
-        return {
-            status: SubprojectStatus.Unknown,
-        };
+        },
     };
 }

@@ -34,12 +34,20 @@ export enum SubprojectStatus {
     Unknown = "Unknown",
 }
 
-export interface Subprojects {
-    status: SubprojectStatus;
-    paths?: string[];
+export interface SubprojectDescriptor {
+    path: string;
+    reason: string;
 }
 
-export type SubprojectFinder = (project: Project) => Promise<Subprojects>;
+export interface Subprojects {
+    status: SubprojectStatus;
+    paths?: SubprojectDescriptor[];
+}
+
+export interface SubprojectFinder {
+    name: string;
+    findSubprojects: (project: Project) => Promise<Subprojects>;
+}
 
 /**
  * Return a subproject finder of all these
@@ -47,22 +55,25 @@ export type SubprojectFinder = (project: Project) => Promise<Subprojects>;
  * @return {SubprojectFinder}
  */
 export function firstSubprojectFinderOf(...finders: SubprojectFinder[]): SubprojectFinder {
-    const paths: string[] = [];
-    return async p => {
-        for (const finder of finders) {
-            const r = await finder(p);
-            if (r.status === SubprojectStatus.RootOnly) {
-                return {
-                    status: SubprojectStatus.RootOnly,
-                };
+    const paths: SubprojectDescriptor[] = [];
+    return {
+        name: "Composite subproject finder",
+        findSubprojects: async p => {
+            for (const finder of finders) {
+                const r = await finder.findSubprojects(p);
+                if (r.status === SubprojectStatus.RootOnly) {
+                    return {
+                        status: SubprojectStatus.RootOnly,
+                    };
+                }
+                if (!!r.paths) {
+                    paths.push(...r.paths);
+                }
             }
-            if (!!r.paths) {
-                paths.push(...r.paths);
-            }
+            return {
+                status: paths.length > 0 ? SubprojectStatus.IdentifiedPaths : SubprojectStatus.Unknown,
+                paths,
+            };
         }
-        return {
-            status: paths.length > 0 ? SubprojectStatus.IdentifiedPaths : SubprojectStatus.Unknown,
-            paths,
-        };
     };
 }

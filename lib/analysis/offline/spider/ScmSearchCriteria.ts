@@ -54,8 +54,6 @@ export interface ScmSearchCriteria {
 
     /**
      * If provided, can discern subproject paths
-     * @param {Project} project
-     * @return {Promise<string[]>}
      */
     subprojectFinder?: SubprojectFinder;
 }

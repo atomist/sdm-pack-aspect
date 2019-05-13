@@ -25,7 +25,7 @@ describe("fileNamesSubprojectFinder", () => {
 
     it("says this is a top-level project if there's a build.gradle at root", async () => {
         const project = InMemoryProject.of({ path: "build.gradle", content: "whatever" });
-        const result = await GradleAndNodeSubprojectFinder(project);
+        const result = await GradleAndNodeSubprojectFinder.findSubprojects(project);
         assert.deepStrictEqual(result, {
             status: SubprojectStatus.RootOnly,
         });
@@ -33,7 +33,7 @@ describe("fileNamesSubprojectFinder", () => {
 
     it("says this is unknown if there's no build.gradle at all", async () => {
         const project = InMemoryProject.of({ path: "something/else", content: "whatever" });
-        const result = await GradleAndNodeSubprojectFinder(project);
+        const result = await GradleAndNodeSubprojectFinder.findSubprojects(project);
         assert.deepStrictEqual(result, {
             status: SubprojectStatus.Unknown,
         });
@@ -43,7 +43,7 @@ describe("fileNamesSubprojectFinder", () => {
         const project = InMemoryProject.of(
             { path: "something/else/build.gradle", content: "whatever" },
             { path: "somewhere/build.gradle", content: "stuff" });
-        const result = await GradleAndNodeSubprojectFinder(project);
+        const result = await GradleAndNodeSubprojectFinder.findSubprojects(project);
         assert.deepStrictEqual(result, {
             status: SubprojectStatus.IdentifiedPaths,
             paths: ["something/else", "somewhere"],
@@ -55,7 +55,7 @@ describe("fileNamesSubprojectFinder", () => {
             { path: "something/else/build.gradle", content: "whatever" },
             { path: "somewhere/build.gradle", content: "stuff" },
             { path: "nodeynode/package.json", content: "stuff" });
-        const result = await GradleAndNodeSubprojectFinder(project);
+        const result = await GradleAndNodeSubprojectFinder.findSubprojects(project);
         assert.deepStrictEqual(result, {
             status: SubprojectStatus.IdentifiedPaths,
             paths: ["something/else", "somewhere", "nodeynode"],
@@ -67,7 +67,7 @@ describe("fileNamesSubprojectFinder", () => {
             { path: "something/else/build.gradle", content: "whatever" },
             { path: "build.gradle", content: "stuff" },
         );
-        const result = await GradleAndNodeSubprojectFinder(project);
+        const result = await GradleAndNodeSubprojectFinder.findSubprojects(project);
         assert.deepStrictEqual(result, {
             status: SubprojectStatus.RootOnly,
         });

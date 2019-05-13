@@ -178,8 +178,15 @@ describe("GithubSpider", () => {
         const myOpts = opts();
         const myCriteria: ScmSearchCriteria = {
             ...criteria,
-            subprojectFinder: async p => {
-                return { status: SubprojectStatus.IdentifiedPaths, paths: ["here", "there"] };
+            subprojectFinder: {
+                name: "Here and There subproject finder",
+                findSubprojects: async p => {
+                    return {
+                        status: SubprojectStatus.IdentifiedPaths, paths: [{
+                            path: "here", reason: "hard coded",
+                        }, { path: "there", reason: "hard coded" }],
+                    };
+                },
             },
         };
         const result = await subject.spider(myCriteria, analyzer, myOpts);
@@ -194,6 +201,11 @@ describe("GithubSpider", () => {
         assert.deepStrictEqual(result, expected);
 
         const persisted = (myOpts.persister as FakePersister).persisted;
+
+        persisted.forEach(pa => {
+            assert(!!pa.subproject, "should have a subproject");
+            assert.strictEqual(pa.subproject.reason, "hard coded");
+        });
 
         assert.strictEqual(persisted.length, 2);
     });

@@ -33,7 +33,15 @@ export interface ProjectAnalysisResult {
     /**
      * Id of the enclosing project if this is a virtual project
      */
-    readonly parentId: RemoteRepoRef;
+    readonly parentId: RemoteRepoRef; // TODO: move into subproject
+
+    /**
+     * If this is a project within a larger repo, describe that
+     */
+    readonly subproject?: {
+        path: string,
+        reason: string,
+    };
 
 }
 

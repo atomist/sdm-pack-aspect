@@ -269,11 +269,11 @@ async function analyze(project: Project,
         return [];
     }
     const subprojects = criteria.subprojectFinder ?
-        await criteria.subprojectFinder(project) :
+        await criteria.subprojectFinder.findSubprojects(project) :
         { status: SubprojectStatus.Unknown };
     if (!!subprojects.paths && subprojects.paths.length > 0) {
-        return Promise.all(subprojects.paths.map(subprojectpath => {
-            return projectUnder(project, subprojectpath).then(p =>
+        return Promise.all(subprojects.paths.map(subproject => {
+            return projectUnder(project, subproject.path).then(p =>
                 analyzeProject(
                     p,
                     analyzer, project.id as RemoteRepoRef));
