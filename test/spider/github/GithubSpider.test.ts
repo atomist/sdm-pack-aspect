@@ -151,7 +151,8 @@ describe("GithubSpider", () => {
         const subject = new GitHubSpider(async function*(t, q) { yield oneSearchResult; },
             async sd => InMemoryProject.of({ path: "README.md", content: "hi there" }));
 
-        const result = await subject.spider(criteria, analyzer, opts());
+        const myOpts = opts();
+        const result = await subject.spider(criteria, analyzer, myOpts);
 
         const expected: SpiderResult = {
             detectedCount: 1,
@@ -161,5 +162,9 @@ describe("GithubSpider", () => {
         };
 
         assert.deepStrictEqual(result, expected);
+
+        const persisted = (myOpts.persister as FakePersister).persisted;
+
+        assert.strictEqual(persisted.length, 1);
     });
 });
