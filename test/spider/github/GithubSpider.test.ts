@@ -56,7 +56,7 @@ const opts: SpiderOptions = {
 
 describe("GithubSpider", () => {
     it("gives empty results when query returns empty", async () => {
-        const subject = new GitHubSpider(async function*(t, q) { },
+        const subject = new GitHubSpider(async function* (t, q) { },
         );
 
         const result = await subject.spider(undefined, undefined, undefined);
@@ -67,14 +67,14 @@ describe("GithubSpider", () => {
     it("reveals failure when one fails to clone", async () => {
         // this function is pretty darn elaborate
 
-        const subject = new GitHubSpider(async function*(t, q) { yield oneSearchResult; },
+        const subject = new GitHubSpider(async function* (t, q) { yield oneSearchResult; },
             async sd => { throw new Error("cannot clone"); });
 
         const result = await subject.spider(criteria, analyzer, opts);
 
         const expected: SpiderResult = {
             detectedCount: 1,
-            failed: [{ repoUrl: "https://home", message: "cannot clone" }],
+            failed: [{ repoUrl: "https://home", whileTryingTo: "clone", message: "cannot clone" }],
             persistedAnalyses: [],
             keptExisting: [],
         };
@@ -85,7 +85,7 @@ describe("GithubSpider", () => {
     it("can make and persist an analysis", async () => {
         // this function is pretty darn elaborate
 
-        const subject = new GitHubSpider(async function*(t, q) { yield oneSearchResult; },
+        const subject = new GitHubSpider(async function* (t, q) { yield oneSearchResult; },
             async sd => InMemoryProject.of({ path: "README.md", content: "hi there" }));
 
         const result = await subject.spider(criteria, analyzer, opts);

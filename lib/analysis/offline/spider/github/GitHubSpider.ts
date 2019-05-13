@@ -47,6 +47,8 @@ import {
     SpiderResult,
 } from "../Spider";
 
+type CloneFunction = (sourceData: GitHubSearchResult) => Promise<Project>;
+
 /**
  * Spider GitHub. Ensure that GITHUB_TOKEN environment variable is set.
  */
@@ -56,8 +58,7 @@ export class GitHubSpider implements Spider {
         private readonly queryFunction: (token: string, criteria: ScmSearchCriteria)
             => AsyncIterable<GitHubSearchResult>
             = queryByCriteria,
-        private readonly cloneFunction: (sourceData: GitHubSearchResult) =>
-            Promise<Project> = cloneWithCredentialsFromEnv) { }
+        private readonly cloneFunction: CloneFunction = cloneWithCredentialsFromEnv) { }
 
     public async spider(criteria: ScmSearchCriteria,
                         analyzer: ProjectAnalyzer,
@@ -89,14 +90,16 @@ export class GitHubSpider implements Spider {
                 } else {
                     logger.info("Performing fresh analysis of " + JSON.stringify(repo));
                     try {
-                        const project = await this.cloneFunction(sourceData);
-                        bucket.push(analyzeAndPersist(project, sourceData, criteria, analyzer, opts));
+                        bucket.push(analyzeAndPersist(this.cloneFunction, sourceData, criteria, analyzer, opts));
                         if (bucket.length >= opts.poolSize) {
                             // Run all promises together. Effectively promise pooling
                             await runAllPromisesInBucket();
                         }
                     } catch (err) {
-                        errors.push({ repoUrl: sourceData.url, message: err.message });
+                        errors.push({
+                            repoUrl: sourceData.url,
+                            whileTryingTo: "clone, analyze, and persist", message: err.message,
+                        });
                         logger.error("Failure analyzing repo at %s: %s", sourceData.url, err.message);
                     }
                 }
@@ -164,18 +167,30 @@ function combineAnalyzeAndPersistResult(one: AnalyzeAndPersistResult, two: Analy
  * Future for doing the work
  * @return {Promise<void>}
  */
-async function analyzeAndPersist(project: Project,
+async function analyzeAndPersist(cloneFunction: CloneFunction,
                                  sourceData: GitHubSearchResult,
                                  criteria: ScmSearchCriteria,
                                  analyzer: ProjectAnalyzer,
                                  opts: SpiderOptions): Promise<AnalyzeAndPersistResult> {
+    let project;
+    try {
+        project = await cloneFunction(sourceData);
+    } catch (err) {
+        return {
+            failedToCloneOrAnalyze: [{ repoUrl: sourceData.url, whileTryingTo: "clone", message: err.message }],
+            failedToPersist: [],
+            repoCount: 1,
+            projectCount: 0,
+            persisted: [],
+        };
+    }
     let repoInfos: RepoInfo[];
     try {
         repoInfos = await analyze(project, analyzer, criteria);
     } catch (err) {
         logger.error("Could not clone/analyze " + sourceData.url + ": " + err.message);
         return {
-            failedToCloneOrAnalyze: [{ repoUrl: sourceData.url, message: err.message }],
+            failedToCloneOrAnalyze: [{ repoUrl: sourceData.url, whileTryingTo: "analyze", message: err.message }],
             failedToPersist: [],
             repoCount: 1,
             projectCount: 0,

@@ -48,6 +48,7 @@ export type PersistenceResult = string; // filename
 
 export interface SpiderFailure {
     repoUrl: string;
+    whileTryingTo: string;
     message: string;
 }
 

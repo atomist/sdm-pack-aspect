@@ -77,7 +77,7 @@ export class FileSystemProjectAnalysisResultStore implements ProjectAnalysisResu
                 ++persisted;
                 written.push(filePath);
             } catch (err) {
-                errors.push({ repoUrl: repo.analysis.id.url, message: err.message });
+                errors.push({ repoUrl: repo.analysis.id.url, whileTryingTo: "persist", message: err.message });
                 logger.error("Cannot persist file to %s: %s", filePath, err.message);
             }
         }
