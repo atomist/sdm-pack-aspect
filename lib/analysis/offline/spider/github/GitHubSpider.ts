@@ -63,8 +63,8 @@ export class GitHubSpider implements Spider {
         private readonly cloneFunction: CloneFunction = cloneWithCredentialsFromEnv) { }
 
     public async spider(criteria: ScmSearchCriteria,
-                        analyzer: ProjectAnalyzer,
-                        opts: SpiderOptions): Promise<SpiderResult> {
+        analyzer: ProjectAnalyzer,
+        opts: SpiderOptions): Promise<SpiderResult> {
         let repoCount = 0;
         const keepExisting: RepoUrl[] = [];
         const errors: SpiderFailure[] = [];
@@ -170,10 +170,10 @@ function combineAnalyzeAndPersistResult(one: AnalyzeAndPersistResult, two: Analy
  * @return {Promise<void>}
  */
 async function analyzeAndPersist(cloneFunction: CloneFunction,
-                                 sourceData: GitHubSearchResult,
-                                 criteria: ScmSearchCriteria,
-                                 analyzer: ProjectAnalyzer,
-                                 opts: SpiderOptions): Promise<AnalyzeAndPersistResult> {
+    sourceData: GitHubSearchResult,
+    criteria: ScmSearchCriteria,
+    analyzer: ProjectAnalyzer,
+    opts: SpiderOptions): Promise<AnalyzeAndPersistResult> {
     let project;
     try {
         project = await cloneFunction(sourceData);
@@ -263,17 +263,17 @@ interface RepoInfo {
  * Find project or subprojects
  */
 async function analyze(project: Project,
-                       analyzer: ProjectAnalyzer,
-                       criteria: ScmSearchCriteria): Promise<RepoInfo[]> {
+    analyzer: ProjectAnalyzer,
+    criteria: ScmSearchCriteria): Promise<RepoInfo[]> {
     if (criteria.projectTest && !await criteria.projectTest(project)) {
         logger.info("Skipping analysis of %s as it doesn't pass projectTest", project.id.url);
         return [];
     }
-    const subprojects = criteria.subprojectFinder ?
+    const subprojectResults = criteria.subprojectFinder ?
         await criteria.subprojectFinder.findSubprojects(project) :
         { status: SubprojectStatus.Unknown };
-    if (!!subprojects.paths && subprojects.paths.length > 0) {
-        return Promise.all(subprojects.paths.map(subproject => {
+    if (!!subprojectResults.subprojects && subprojectResults.subprojects.length > 0) {
+        return Promise.all(subprojectResults.subprojects.map(subproject => {
             return projectUnder(project, subproject.path).then(p =>
                 analyzeProject(
                     p,
@@ -288,8 +288,8 @@ async function analyze(project: Project,
  * Analyze a project. May be a virtual project, within a bigger project.
  */
 async function analyzeProject(project: Project,
-                              analyzer: ProjectAnalyzer,
-                              subproject?: SubprojectDescription): Promise<RepoInfo> {
+    analyzer: ProjectAnalyzer,
+    subproject?: SubprojectDescription): Promise<RepoInfo> {
     if (!!subproject) {
         console.log("With parent");
     }

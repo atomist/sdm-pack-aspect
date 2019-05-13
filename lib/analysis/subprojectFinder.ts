@@ -41,7 +41,7 @@ export interface SubprojectDescriptor {
 
 export interface Subprojects {
     status: SubprojectStatus;
-    paths?: SubprojectDescriptor[];
+    subprojects?: SubprojectDescriptor[];
 }
 
 export interface SubprojectFinder {
@@ -55,7 +55,7 @@ export interface SubprojectFinder {
  * @return {SubprojectFinder}
  */
 export function firstSubprojectFinderOf(...finders: SubprojectFinder[]): SubprojectFinder {
-    const paths: SubprojectDescriptor[] = [];
+    const subprojects: SubprojectDescriptor[] = [];
     return {
         name: "Composite subproject finder",
         findSubprojects: async p => {
@@ -66,13 +66,13 @@ export function firstSubprojectFinderOf(...finders: SubprojectFinder[]): Subproj
                         status: SubprojectStatus.RootOnly,
                     };
                 }
-                if (!!r.paths) {
-                    paths.push(...r.paths);
+                if (!!r.subprojects) {
+                    subprojects.push(...r.subprojects);
                 }
             }
             return {
-                status: paths.length > 0 ? SubprojectStatus.IdentifiedPaths : SubprojectStatus.Unknown,
-                paths,
+                status: subprojects.length > 0 ? SubprojectStatus.IdentifiedPaths : SubprojectStatus.Unknown,
+                subprojects,
             };
         }
     };

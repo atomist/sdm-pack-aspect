@@ -46,7 +46,13 @@ describe("fileNamesSubprojectFinder", () => {
         const result = await GradleAndNodeSubprojectFinder.findSubprojects(project);
         assert.deepStrictEqual(result, {
             status: SubprojectStatus.IdentifiedPaths,
-            paths: ["something/else", "somewhere"],
+            subprojects: [{
+                path: "something/else",
+                reason: "has file: build.gradle",
+            }, {
+                path: "somewhere",
+                reason: "has file: build.gradle",
+            }],
         });
     });
 
@@ -58,7 +64,17 @@ describe("fileNamesSubprojectFinder", () => {
         const result = await GradleAndNodeSubprojectFinder.findSubprojects(project);
         assert.deepStrictEqual(result, {
             status: SubprojectStatus.IdentifiedPaths,
-            paths: ["something/else", "somewhere", "nodeynode"],
+            subprojects: [{
+                path: "something/else",
+                reason: "has file: build.gradle",
+            },
+            {
+                path: "somewhere",
+                reason: "has file: build.gradle",
+            }, {
+                path: "nodeynode",
+                reason: "has file: package.json",
+            }],
         });
     });
 

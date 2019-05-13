@@ -40,7 +40,7 @@ export function fileNamesSubprojectFinder(...filenames: string[]): SubprojectFin
                     status: SubprojectStatus.RootOnly,
                 };
             }
-            const paths = await gatherFromFiles(p,
+            const subprojects = await gatherFromFiles(p,
                 filenames.map(f => "**/" + f),
                 async f => {
                     return {
@@ -48,10 +48,10 @@ export function fileNamesSubprojectFinder(...filenames: string[]): SubprojectFin
                         reason: "has file: " + f.name,
                     };
                 });
-            if (paths.length > 0) {
+            if (subprojects.length > 0) {
                 return {
                     status: SubprojectStatus.IdentifiedPaths,
-                    paths,
+                    subprojects,
                 };
             }
             return {

@@ -182,7 +182,8 @@ describe("GithubSpider", () => {
                 name: "Here and There subproject finder",
                 findSubprojects: async p => {
                     return {
-                        status: SubprojectStatus.IdentifiedPaths, paths: [{
+                        status: SubprojectStatus.IdentifiedPaths,
+                        subprojects: [{
                             path: "here", reason: "hard coded",
                         }, { path: "there", reason: "hard coded" }],
                     };
