@@ -46,9 +46,14 @@ export type RepoUrl = string;
 
 export type PersistenceResult = string; // filename
 
+export interface SpiderFailure {
+    repoUrl: string;
+    message: string;
+}
+
 export interface SpiderResult {
     detectedCount: number;
-    failed: RepoUrl[];
+    failed: SpiderFailure[];
     keptExisting: RepoUrl[];
     persistedAnalyses: PersistenceResult[];
 }
@@ -65,6 +70,6 @@ export const EmptySpiderResult: SpiderResult = {
 export interface Spider {
 
     spider(criteria: ScmSearchCriteria,
-           analyzer: ProjectAnalyzer,
-           opts: SpiderOptions): Promise<SpiderResult>;
+        analyzer: ProjectAnalyzer,
+        opts: SpiderOptions): Promise<SpiderResult>;
 }

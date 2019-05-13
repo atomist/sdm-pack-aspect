@@ -42,6 +42,7 @@ import {
     PersistenceResult,
     RepoUrl,
     Spider,
+    SpiderFailure,
     SpiderOptions,
     SpiderResult,
 } from "../Spider";
@@ -63,7 +64,7 @@ export class GitHubSpider implements Spider {
                         opts: SpiderOptions): Promise<SpiderResult> {
         let repoCount = 0;
         const keepExisting: RepoUrl[] = [];
-        const errors: RepoUrl[] = [];
+        const errors: SpiderFailure[] = [];
         const analyzeAndPersistResults: AnalyzeAndPersistResult[] = [];
         try {
             const it = this.queryFunction(process.env.GITHUB_TOKEN, criteria);
@@ -95,7 +96,7 @@ export class GitHubSpider implements Spider {
                             await runAllPromisesInBucket();
                         }
                     } catch (err) {
-                        errors.push(sourceData.url);
+                        errors.push({ repoUrl: sourceData.url, message: err.message });
                         logger.error("Failure analyzing repo at %s: %s", sourceData.url, err.message);
                     }
                 }
@@ -134,8 +135,8 @@ function cloneWithCredentialsFromEnv(sourceData: GitHubSearchResult): Promise<Pr
 }
 
 export interface AnalyzeAndPersistResult {
-    failedToCloneOrAnalyze: RepoUrl[];
-    failedToPersist: ProjectUrl[];
+    failedToCloneOrAnalyze: SpiderFailure[];
+    failedToPersist: SpiderFailure[];
     repoCount: number;
     projectCount: number;
     persisted: PersistenceResult[];
@@ -174,7 +175,7 @@ async function analyzeAndPersist(project: Project,
     } catch (err) {
         logger.error("Could not clone/analyze " + sourceData.url + ": " + err.message);
         return {
-            failedToCloneOrAnalyze: [sourceData.url],
+            failedToCloneOrAnalyze: [{ repoUrl: sourceData.url, message: err.message }],
             failedToPersist: [],
             repoCount: 1,
             projectCount: 0,
@@ -269,30 +270,24 @@ async function analyze(project: Project,
  */
 async function analyzeProject(project: Project,
                               analyzer: ProjectAnalyzer,
-                              parentId: RemoteRepoRef): Promise<RepoInfo | undefined> {
+                              parentId: RemoteRepoRef): Promise<RepoInfo> {
     if (!!parentId) {
         console.log("With parent");
     }
-    try {
+    const readmeFile = await project.getFile("README.md");
+    const readme = !!readmeFile ? await readmeFile.getContent() : undefined;
+    const totalFileCount = await project.totalFileCount();
 
-        const readmeFile = await project.getFile("README.md");
-        const readme = !!readmeFile ? await readmeFile.getContent() : undefined;
-        const totalFileCount = await project.totalFileCount();
+    const analysis = await analyzer.analyze(project, undefined, { full: true });
+    const interpretation = await analyzer.interpret(analysis, undefined);
 
-        const analysis = await analyzer.analyze(project, undefined, { full: true });
-        const interpretation = await analyzer.interpret(analysis, undefined);
-
-        return {
-            readme,
-            totalFileCount,
-            interpretation,
-            analysis,
-            parentId,
-        };
-    } catch (err) {
-        logger.error(err);
-        return undefined;
-    }
+    return {
+        readme,
+        totalFileCount,
+        interpretation,
+        analysis,
+        parentId,
+    };
 }
 
 async function* queryByCriteria(token: string, criteria: ScmSearchCriteria): AsyncIterable<GitHubSearchResult> {

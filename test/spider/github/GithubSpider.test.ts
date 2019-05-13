@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+import { InMemoryProject } from "@atomist/automation-client";
 import { ProjectAnalyzer } from "@atomist/sdm-pack-analysis";
 import * as assert from "assert";
 import { ProjectAnalysisResultStore } from "../../../lib/analysis/offline/persist/ProjectAnalysisResultStore";
@@ -29,6 +30,30 @@ import {
     GitHubSpider,
 } from "./../../../lib/analysis/offline/spider/github/GitHubSpider";
 
+const oneSearchResult: GitHubSearchResult = {
+    owner: { login: "owner" },
+    name: "reponame",
+    url: "https://home",
+} as GitHubSearchResult;
+
+const oneResult: ProjectAnalysisResult = {
+
+} as ProjectAnalysisResult;
+
+const criteria: ScmSearchCriteria = {
+    githubQueries: [],
+    maxRetrieved: 10,
+    maxReturned: 10,
+};
+const analyzer: ProjectAnalyzer = {
+
+} as ProjectAnalyzer;
+const opts: SpiderOptions = {
+    persister: { load: async rr => oneResult } as ProjectAnalysisResultStore,
+    keepExistingPersisted: async r => false,
+    poolSize: 3,
+};
+
 describe("GithubSpider", () => {
     it("gives empty results when query returns empty", async () => {
         const subject = new GitHubSpider(async function*(t, q) { },
@@ -39,42 +64,36 @@ describe("GithubSpider", () => {
         assert.deepStrictEqual(result, EmptySpiderResult);
     });
 
-    it("gives a result when query returns one", async () => {
+    it("reveals failure when one fails to clone", async () => {
         // this function is pretty darn elaborate
 
-        const one: GitHubSearchResult = {
-            owner: { login: "me" },
-            name: "hi",
-            url: "https://home",
-        } as GitHubSearchResult;
-
-        const oneResult: ProjectAnalysisResult = {
-
-        } as ProjectAnalysisResult;
-
-        const criteria: ScmSearchCriteria = {
-            githubQueries: [],
-            maxRetrieved: 10,
-            maxReturned: 10,
-        };
-        const analyzer: ProjectAnalyzer = {
-
-        } as ProjectAnalyzer;
-        const opts: SpiderOptions = {
-            persister: { load: async rr => oneResult } as ProjectAnalysisResultStore,
-            keepExistingPersisted: async r => false,
-            poolSize: 3,
-        };
-
-        const subject = new GitHubSpider(async function*(t, q) { yield one; },
+        const subject = new GitHubSpider(async function*(t, q) { yield oneSearchResult; },
             async sd => { throw new Error("cannot clone"); });
 
         const result = await subject.spider(criteria, analyzer, opts);
 
         const expected: SpiderResult = {
             detectedCount: 1,
-            failed: ["https://home"],
+            failed: [{ repoUrl: "https://home", message: "cannot clone" }],
             persistedAnalyses: [],
+            keptExisting: [],
+        };
+
+        assert.deepStrictEqual(result, expected);
+    });
+
+    it("can make and persist an analysis", async () => {
+        // this function is pretty darn elaborate
+
+        const subject = new GitHubSpider(async function*(t, q) { yield oneSearchResult; },
+            async sd => InMemoryProject.of({ path: "README.md", content: "hi there" }));
+
+        const result = await subject.spider(criteria, analyzer, opts);
+
+        const expected: SpiderResult = {
+            detectedCount: 1,
+            failed: [],
+            persistedAnalyses: ["owner/reponame.json"],
             keptExisting: [],
         };
 

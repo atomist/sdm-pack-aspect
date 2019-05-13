@@ -18,13 +18,13 @@ import {
     RepoRef,
 } from "@atomist/automation-client";
 import { ProjectAnalysisResult } from "../../ProjectAnalysisResult";
-import { PersistenceResult } from "../spider/Spider";
+import { PersistenceResult, SpiderFailure } from "../spider/Spider";
 
 export type ProjectUrl = string;
 
 export interface PersistResult {
     attemptedCount: number;
-    failed: ProjectUrl[];
+    failed: SpiderFailure[];
     succeeded: PersistenceResult[];
 }
 

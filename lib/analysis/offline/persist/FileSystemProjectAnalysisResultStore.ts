@@ -34,7 +34,7 @@ import * as appRoot from "app-root-path";
 
 const readdir = require("recursive-readdir");
 import * as fse from "fs-extra";
-import { PersistenceResult } from "../spider/Spider";
+import { PersistenceResult, SpiderFailure } from "../spider/Spider";
 
 /**
  * Store files under the /spidered directory of current project unless otherwise specified
@@ -67,7 +67,7 @@ export class FileSystemProjectAnalysisResultStore implements ProjectAnalysisResu
         const repos = isProjectAnalysisResult(what) ? [what] : what;
         let persisted = 0;
         const written: PersistenceResult[] = [];
-        const errors: ProjectUrl[] = [];
+        const errors: SpiderFailure[] = [];
         for await (const repo of repos) {
             const filePath = this.toFilePath(repo.analysis.id);
             try {
@@ -77,7 +77,7 @@ export class FileSystemProjectAnalysisResultStore implements ProjectAnalysisResu
                 ++persisted;
                 written.push(filePath);
             } catch (err) {
-                errors.push(repo.analysis.id.url);
+                errors.push({ repoUrl: repo.analysis.id.url, message: err.message });
                 logger.error("Cannot persist file to %s: %s", filePath, err.message);
             }
         }
