@@ -42,6 +42,7 @@ import {
     isProjectAnalysisResult,
     ProjectAnalysisResult,
 } from "../../../lib/analysis/ProjectAnalysisResult";
+import { SubprojectStatus } from "../../../lib/analysis/subprojectFinder";
 import {
     GitHubSearchResult,
     GitHubSpider,
@@ -166,5 +167,34 @@ describe("GithubSpider", () => {
         const persisted = (myOpts.persister as FakePersister).persisted;
 
         assert.strictEqual(persisted.length, 1);
+    });
+
+    it("persists multiple analyses with subprojects", async () => {
+        // this function is pretty darn elaborate
+
+        const subject = new GitHubSpider(async function*(t, q) { yield oneSearchResult; },
+            async sd => InMemoryProject.of({ path: "README.md", content: "hi there" }));
+
+        const myOpts = opts();
+        const myCriteria: ScmSearchCriteria = {
+            ...criteria,
+            subprojectFinder: async p => {
+                return { status: SubprojectStatus.IdentifiedPaths, paths: ["here", "there"] };
+            },
+        };
+        const result = await subject.spider(myCriteria, analyzer, myOpts);
+
+        const expected: SpiderResult = {
+            detectedCount: 1,
+            failed: [],
+            persistedAnalyses: [hardCodedPlace, hardCodedPlace],
+            keptExisting: [],
+        };
+
+        assert.deepStrictEqual(result, expected);
+
+        const persisted = (myOpts.persister as FakePersister).persisted;
+
+        assert.strictEqual(persisted.length, 2);
     });
 });

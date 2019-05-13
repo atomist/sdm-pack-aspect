@@ -22,6 +22,7 @@ import {
     RemoteRepoRef,
 } from "@atomist/automation-client";
 import { GitHubRepoRef } from "@atomist/automation-client/lib/operations/common/GitHubRepoRef";
+import { isInMemoryProject } from "@atomist/automation-client/lib/project/mem/InMemoryProject";
 import {
     Interpretation,
     ProjectAnalysis,
@@ -271,10 +272,11 @@ async function analyze(project: Project,
         await criteria.subprojectFinder(project) :
         { status: SubprojectStatus.Unknown };
     if (!!subprojects.paths && subprojects.paths.length > 0) {
-        return Promise.all(subprojects.paths.map(path => {
-            return analyzeProject(
-                projectUnder(project, path),
-                analyzer, project.id as RemoteRepoRef);
+        return Promise.all(subprojects.paths.map(subprojectpath => {
+            return projectUnder(project, subprojectpath).then(p =>
+                analyzeProject(
+                    p,
+                    analyzer, project.id as RemoteRepoRef));
         })).then(results => results.filter(x => !!x));
     }
     return [await analyzeProject(project, analyzer, undefined)];
@@ -341,9 +343,12 @@ async function* queryByCriteria(token: string, criteria: ScmSearchCriteria): Asy
     }
 }
 
-function projectUnder(p: Project, pathWithin: string): Project {
+async function projectUnder(p: Project, pathWithin: string): Promise<Project> {
+    if (isInMemoryProject(p)) {
+        return p.toSubproject(pathWithin);
+    }
     if (!isLocalProject(p)) {
-        throw new Error(`Cannot descend into path ${path} of non local project`);
+        throw new Error(`Cannot descend into path '${pathWithin}' of non local project`);
     }
     const rid = p.id as RemoteRepoRef;
     const newId: RemoteRepoRef = {

@@ -24,7 +24,7 @@
   "main": "./index.js",
   "types": "./index.d.ts",
   "dependencies": {
-    "@atomist/automation-client": "^1.4.1-master.20190418153855",
+    "@atomist/automation-client": "^1.4.1-nortissej.in-mem-subproject.20190513221636",
     "@atomist/sdm": "^1.5.0-master.20190419141554",
     "@atomist/sdm-core": "^1.5.0-master.20190422144825",
     "@atomist/sdm-pack-analysis": "^1.1.0-master.20190429060345",
