@@ -17,6 +17,12 @@
 import { RemoteRepoRef } from "@atomist/automation-client";
 import { ProjectAnalysis } from "@atomist/sdm-pack-analysis";
 
+export interface SubprojectDescription {
+    path: string;
+    reason: string;
+    parentRepoRef: RemoteRepoRef;
+}
+
 /**
  * The result of running one analysis. Allows us to attach further information,
  * such as provenance if we spidered it.
@@ -31,17 +37,9 @@ export interface ProjectAnalysisResult {
     readonly timestamp: Date;
 
     /**
-     * Id of the enclosing project if this is a virtual project
-     */
-    readonly parentId: RemoteRepoRef; // TODO: move into subproject
-
-    /**
      * If this is a project within a larger repo, describe that
      */
-    readonly subproject?: {
-        path: string,
-        reason: string,
-    };
+    readonly subproject?: SubprojectDescription;
 
 }
 

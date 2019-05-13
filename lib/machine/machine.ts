@@ -120,7 +120,7 @@ function updatedStoredAnalysisIfNecessary(opts: {
                 await opts.analyzedRepoStore.persist({
                     analysis,
                     timestamp: now,
-                    parentId: found.parentId,
+                    subproject: found.subproject,
                 });
             } else {
                 logger.info("Stored analysis of project at %s is up to date", pu.id.url);

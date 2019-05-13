@@ -32,6 +32,7 @@ import * as HttpError from "@octokit/request/lib/http-error";
 import * as Octokit from "@octokit/rest";
 import * as _ from "lodash";
 import * as path from "path";
+import { SubprojectDescription } from "../../../ProjectAnalysisResult";
 import { SubprojectStatus } from "../../../subprojectFinder";
 import {
     PersistResult,
@@ -215,7 +216,7 @@ async function analyzeAndPersist(cloneFunction: CloneFunction,
                 timestamp: sourceData.timestamp,
                 query: sourceData.query,
                 readme: repoInfo.readme,
-                parentId: repoInfo.parentId,
+                subproject: repoInfo.subproject,
             };
             const persistResult = await opts.persister.persist(toPersist);
             if (opts.onPersisted) {
@@ -255,7 +256,7 @@ interface RepoInfo {
     totalFileCount: number;
     interpretation: Interpretation;
     analysis: ProjectAnalysis;
-    parentId: RemoteRepoRef;
+    subproject: SubprojectDescription;
 }
 
 /**
@@ -276,7 +277,8 @@ async function analyze(project: Project,
             return projectUnder(project, subproject.path).then(p =>
                 analyzeProject(
                     p,
-                    analyzer, project.id as RemoteRepoRef));
+                    analyzer,
+                    { ...subproject, parentRepoRef: project.id as RemoteRepoRef }));
         })).then(results => results.filter(x => !!x));
     }
     return [await analyzeProject(project, analyzer, undefined)];
@@ -287,8 +289,8 @@ async function analyze(project: Project,
  */
 async function analyzeProject(project: Project,
                               analyzer: ProjectAnalyzer,
-                              parentId: RemoteRepoRef): Promise<RepoInfo> {
-    if (!!parentId) {
+                              subproject?: SubprojectDescription): Promise<RepoInfo> {
+    if (!!subproject) {
         console.log("With parent");
     }
     const readmeFile = await project.getFile("README.md");
@@ -303,7 +305,7 @@ async function analyzeProject(project: Project,
         totalFileCount,
         interpretation,
         analysis,
-        parentId,
+        subproject,
     };
 }
 
