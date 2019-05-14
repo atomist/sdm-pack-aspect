@@ -31,6 +31,7 @@ import {
 } from "@atomist/automation-client";
 import { firstSubprojectFinderOf } from "../analysis/subprojectFinder";
 import { fileNamesSubprojectFinder } from "../analysis/fileNamesSubprojectFinder";
+import * as yargs from "yargs";
 
 // Ensure we see console logging, and send info to the console
 configureLogging(MinimalLogging);
@@ -91,7 +92,16 @@ if (process.argv.length < 3) {
     process.exit(1);
 }
 
-const org = process.argv[2];
+
+yargs.option("owner", {
+    required: true,
+    alias: 'o',
+    description: "GitHub user or organization",
+}).usage("spider --owner <GitHub user or org>")
+
+const commandLineParameters = yargs.argv as any;
+const org = commandLineParameters.owner;
+
 console.log(`Spidering GitHub organization ${org}...`);
 spider(org).then(r => {
     console.log(`Successfully analyzed GitHub organization ${org}. result is `
