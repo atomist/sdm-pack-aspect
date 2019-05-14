@@ -111,8 +111,7 @@ if (search) {
 }
 spider({ owner: org, search }).then(r => {
     console.log(`Successfully analyzed GitHub organization ${org}. result is `
-        + JSON.stringify(r, null, 2),
-        { padding: 2 });
+        + JSON.stringify(r, null, 2));
 }, err => {
     console.log("Oh no! " + err.message);
 });
