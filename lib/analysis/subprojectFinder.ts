@@ -55,10 +55,10 @@ export interface SubprojectFinder {
  * @return {SubprojectFinder}
  */
 export function firstSubprojectFinderOf(...finders: SubprojectFinder[]): SubprojectFinder {
-    const subprojects: SubprojectDescriptor[] = [];
     return {
         name: "Composite subproject finder",
         findSubprojects: async p => {
+            const subprojects: SubprojectDescriptor[] = [];
             for (const finder of finders) {
                 const r = await finder.findSubprojects(p);
                 if (r.status === SubprojectStatus.RootOnly) {
@@ -74,6 +74,6 @@ export function firstSubprojectFinderOf(...finders: SubprojectFinder[]): Subproj
                 status: subprojects.length > 0 ? SubprojectStatus.IdentifiedPaths : SubprojectStatus.Unknown,
                 subprojects,
             };
-        }
+        },
     };
 }
