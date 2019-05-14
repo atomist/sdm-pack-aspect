@@ -87,14 +87,6 @@ async function spider(params: { owner: string, search?: string }) {
     return result;
 }
 
-if (process.argv.length < 3) {
-    console.log("Usage: spider <GitHub organization>");
-    console.log("Example:");
-    console.log("spider atomist");
-    process.exit(1);
-}
-
-
 yargs
     .option("owner", {
         required: true,
