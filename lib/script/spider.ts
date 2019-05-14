@@ -48,7 +48,7 @@ process.on('uncaughtException', function (err) {
 async function spider(params: { owner: string, search?: string }) {
     const analyzer = createAnalyzer(undefined);
     const org = params.owner
-    const searchInRepoName = search ? ` ${search} in: name` : "";
+    const searchInRepoName = search ? ` ${search} in:name` : "";
 
     const spider: Spider = new GitHubSpider();
     const persister = new FileSystemProjectAnalysisResultStore();
