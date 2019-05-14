@@ -45,8 +45,10 @@ process.on('uncaughtException', function (err) {
 /**
  * Spider a GitHub.com org
  */
-async function spider(org: string) {
+async function spider(params: { owner: string, search?: string }) {
     const analyzer = createAnalyzer(undefined);
+    const org = params.owner
+    const searchInRepoName = search ? ` ${search} in: name` : "";
 
     const spider: Spider = new GitHubSpider();
     const persister = new FileSystemProjectAnalysisResultStore();
@@ -55,7 +57,7 @@ async function spider(org: string) {
         // See the GitHub search API documentation at
         // https://developer.github.com/v3/search/
         // You can query for many other things here, beyond org
-        githubQueries: [`org:${org} cognitive in:name`],
+        githubQueries: [`org:${org}` + searchInRepoName],
 
         maxRetrieved: 1500,
         maxReturned: 1500,
@@ -93,17 +95,29 @@ if (process.argv.length < 3) {
 }
 
 
-yargs.option("owner", {
-    required: true,
-    alias: 'o',
-    description: "GitHub user or organization",
-}).usage("spider --owner <GitHub user or org>")
+yargs
+    .option("owner", {
+        required: true,
+        alias: 'o',
+        description: "GitHub user or organization",
+    })
+    .option("search", {
+        required: false,
+        alias: 's',
+        description: "Search within repository names"
+    }
+    )
+    .usage("spider --owner <GitHub user or org>")
 
 const commandLineParameters = yargs.argv as any;
 const org = commandLineParameters.owner;
+const search = commandLineParameters.search;
 
 console.log(`Spidering GitHub organization ${org}...`);
-spider(org).then(r => {
+if (search) {
+    console.log(`Limiting to repositories with '${search}' in the name`);
+}
+spider({ owner: org, search }).then(r => {
     console.log(`Successfully analyzed GitHub organization ${org}. result is `
         + JSON.stringify(r, null, 2),
         { padding: 2 });
