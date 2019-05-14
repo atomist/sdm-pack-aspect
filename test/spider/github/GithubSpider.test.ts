@@ -70,13 +70,13 @@ const oneProjectAnalysis: ProjectAnalysis = {
 // tslint:disable-next-line:no-object-literal-type-assertion
 const analyzer: ProjectAnalyzer = {
     async analyze(p: Project,
-                  sdmContext: SdmContext,
-                  options?: ProjectAnalysisOptions): Promise<ProjectAnalysis> {
+        sdmContext: SdmContext,
+        options?: ProjectAnalysisOptions): Promise<ProjectAnalysis> {
         return oneProjectAnalysis;
     },
     async interpret(p: Project | ProjectAnalysis,
-                    sdmContext: SdmContext,
-                    options?: ProjectAnalysisOptions): Promise<Interpretation> {
+        sdmContext: SdmContext,
+        options?: ProjectAnalysisOptions): Promise<Interpretation> {
         // tslint:disable-next-line:no-object-literal-type-assertion
         return { jessitronSays: "Fake interpretation object" } as any as Interpretation;
     },
@@ -120,7 +120,7 @@ function opts(): SpiderOptions {
 
 describe("GithubSpider", () => {
     it("gives empty results when query returns empty", async () => {
-        const subject = new GitHubSpider(async function*(t, q) { },
+        const subject = new GitHubSpider(async function* (t, q) { },
         );
 
         const result = await subject.spider(undefined, undefined, undefined);
@@ -131,13 +131,14 @@ describe("GithubSpider", () => {
     it("reveals failure when one fails to clone", async () => {
         // this function is pretty darn elaborate
 
-        const subject = new GitHubSpider(async function*(t, q) { yield oneSearchResult; },
+        const subject = new GitHubSpider(async function* (t, q) { yield oneSearchResult; },
             async sd => { throw new Error("cannot clone"); });
 
         const result = await subject.spider(criteria, analyzer, opts());
 
         const expected: SpiderResult = {
-            detectedCount: 1,
+            repositoriesDetected: 1,
+            projectsDetected: 0,
             failed: [{ repoUrl: "https://home", whileTryingTo: "clone", message: "cannot clone" }],
             persistedAnalyses: [],
             keptExisting: [],
@@ -149,14 +150,15 @@ describe("GithubSpider", () => {
     it("can make and persist an analysis", async () => {
         // this function is pretty darn elaborate
 
-        const subject = new GitHubSpider(async function*(t, q) { yield oneSearchResult; },
+        const subject = new GitHubSpider(async function* (t, q) { yield oneSearchResult; },
             async sd => InMemoryProject.of({ path: "README.md", content: "hi there" }));
 
         const myOpts = opts();
         const result = await subject.spider(criteria, analyzer, myOpts);
 
         const expected: SpiderResult = {
-            detectedCount: 1,
+            repositoriesDetected: 1,
+            projectsDetected: 1,
             failed: [],
             persistedAnalyses: [hardCodedPlace],
             keptExisting: [],
@@ -172,7 +174,7 @@ describe("GithubSpider", () => {
     it("persists multiple analyses with subprojects", async () => {
         // this function is pretty darn elaborate
 
-        const subject = new GitHubSpider(async function*(t, q) { yield oneSearchResult; },
+        const subject = new GitHubSpider(async function* (t, q) { yield oneSearchResult; },
             async sd => InMemoryProject.of({ path: "README.md", content: "hi there" }));
 
         const myOpts = opts();
@@ -193,7 +195,8 @@ describe("GithubSpider", () => {
         const result = await subject.spider(myCriteria, analyzer, myOpts);
 
         const expected: SpiderResult = {
-            detectedCount: 1,
+            repositoriesDetected: 1,
+            projectsDetected: 2,
             failed: [],
             persistedAnalyses: [hardCodedPlace, hardCodedPlace],
             keptExisting: [],

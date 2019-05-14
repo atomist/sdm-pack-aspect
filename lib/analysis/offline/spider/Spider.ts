@@ -53,14 +53,16 @@ export interface SpiderFailure {
 }
 
 export interface SpiderResult {
-    detectedCount: number;
+    repositoriesDetected: number;
+    projectsDetected: number;
     failed: SpiderFailure[];
     keptExisting: RepoUrl[];
     persistedAnalyses: PersistenceResult[];
 }
 
 export const EmptySpiderResult: SpiderResult = {
-    detectedCount: 0,
+    repositoriesDetected: 0,
+    projectsDetected: 0,
     failed: [],
     keptExisting: [],
     persistedAnalyses: [],
@@ -71,6 +73,6 @@ export const EmptySpiderResult: SpiderResult = {
 export interface Spider {
 
     spider(criteria: ScmSearchCriteria,
-        analyzer: ProjectAnalyzer,
-        opts: SpiderOptions): Promise<SpiderResult>;
+           analyzer: ProjectAnalyzer,
+           opts: SpiderOptions): Promise<SpiderResult>;
 }

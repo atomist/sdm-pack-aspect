@@ -63,8 +63,8 @@ export class GitHubSpider implements Spider {
         private readonly cloneFunction: CloneFunction = cloneWithCredentialsFromEnv) { }
 
     public async spider(criteria: ScmSearchCriteria,
-                        analyzer: ProjectAnalyzer,
-                        opts: SpiderOptions): Promise<SpiderResult> {
+        analyzer: ProjectAnalyzer,
+        opts: SpiderOptions): Promise<SpiderResult> {
         let repoCount = 0;
         const keepExisting: RepoUrl[] = [];
         const errors: SpiderFailure[] = [];
@@ -119,7 +119,8 @@ export class GitHubSpider implements Spider {
             combineAnalyzeAndPersistResult,
             emptyAnalyzeAndPersistResult);
         return {
-            detectedCount: repoCount,
+            repositoriesDetected: repoCount,
+            projectsDetected: analyzeResults.projectCount,
             failed:
                 [...errors,
                 ...analyzeResults.failedToPersist,
@@ -182,10 +183,10 @@ function combineAnalyzeAndPersistResult(one: AnalyzeAndPersistResult, two: Analy
  * @return {Promise<void>}
  */
 async function analyzeAndPersist(cloneFunction: CloneFunction,
-                                 sourceData: GitHubSearchResult,
-                                 criteria: ScmSearchCriteria,
-                                 analyzer: ProjectAnalyzer,
-                                 opts: SpiderOptions): Promise<AnalyzeAndPersistResult> {
+    sourceData: GitHubSearchResult,
+    criteria: ScmSearchCriteria,
+    analyzer: ProjectAnalyzer,
+    opts: SpiderOptions): Promise<AnalyzeAndPersistResult> {
     let project;
     try {
         project = await cloneFunction(sourceData);
@@ -198,9 +199,19 @@ async function analyzeAndPersist(cloneFunction: CloneFunction,
             persisted: [],
         };
     }
-    let repoInfos: RepoInfo[];
+    if (criteria.projectTest && !await criteria.projectTest(project)) {
+        logger.info("Skipping analysis of %s as it doesn't pass projectTest", project.id.url);
+        return {
+            failedToCloneOrAnalyze: [],
+            failedToPersist: [],
+            repoCount: 1,
+            projectCount: 0,
+            persisted: [],
+        };
+    }
+    let analyzeResults: AnalyzeResults;
     try {
-        repoInfos = await analyze(project, analyzer, criteria);
+        analyzeResults = await analyze(project, analyzer, criteria);
     } catch (err) {
         logger.error("Could not clone/analyze " + sourceData.url + ": " + err.message);
         return {
@@ -212,7 +223,7 @@ async function analyzeAndPersist(cloneFunction: CloneFunction,
         };
     }
     const persistResults: PersistResult[] = [];
-    for (const repoInfo of repoInfos) {
+    for (const repoInfo of analyzeResults.repoInfos) {
         if (!criteria.interpretationTest || criteria.interpretationTest(repoInfo.interpretation)) {
             const toPersist: SpideredRepo = {
                 analysis: {
@@ -246,7 +257,7 @@ async function analyzeAndPersist(cloneFunction: CloneFunction,
         failedToCloneOrAnalyze: [],
         failedToPersist: _.flatMap(persistResults, r => r.failed),
         repoCount: 1,
-        projectCount: 1,
+        projectCount: analyzeResults.projectsDetected,
         persisted: _.flatMap(persistResults, p => p.succeeded),
     };
 }
@@ -271,37 +282,43 @@ interface RepoInfo {
     subproject: SubprojectDescription;
 }
 
+interface AnalyzeResults {
+    repoInfos: RepoInfo[];
+    projectsDetected: number;
+}
+
 /**
  * Find project or subprojects
  */
 async function analyze(project: Project,
-                       analyzer: ProjectAnalyzer,
-                       criteria: ScmSearchCriteria): Promise<RepoInfo[]> {
-    if (criteria.projectTest && !await criteria.projectTest(project)) {
-        logger.info("Skipping analysis of %s as it doesn't pass projectTest", project.id.url);
-        return [];
-    }
+    analyzer: ProjectAnalyzer,
+    criteria: ScmSearchCriteria): Promise<AnalyzeResults> {
+
     const subprojectResults = criteria.subprojectFinder ?
         await criteria.subprojectFinder.findSubprojects(project) :
         { status: SubprojectStatus.Unknown };
     if (!!subprojectResults.subprojects && subprojectResults.subprojects.length > 0) {
-        return Promise.all(subprojectResults.subprojects.map(subproject => {
+        const repoInfos = await Promise.all(subprojectResults.subprojects.map(subproject => {
             return projectUnder(project, subproject.path).then(p =>
                 analyzeProject(
                     p,
                     analyzer,
                     { ...subproject, parentRepoRef: project.id as RemoteRepoRef }));
         })).then(results => results.filter(x => !!x));
+        return {
+            projectsDetected: subprojectResults.subprojects.length,
+            repoInfos,
+        };
     }
-    return [await analyzeProject(project, analyzer, undefined)];
+    return { projectsDetected: 1, repoInfos: [await analyzeProject(project, analyzer, undefined)] };
 }
 
 /**
  * Analyze a project. May be a virtual project, within a bigger project.
  */
 async function analyzeProject(project: Project,
-                              analyzer: ProjectAnalyzer,
-                              subproject?: SubprojectDescription): Promise<RepoInfo> {
+    analyzer: ProjectAnalyzer,
+    subproject?: SubprojectDescription): Promise<RepoInfo> {
     if (!!subproject) {
         console.log("With parent");
     }
