@@ -17,7 +17,11 @@
 import { ProjectAnalysis } from "@atomist/sdm-pack-analysis";
 import { ManagedFeature } from "@atomist/sdm-pack-analysis/lib/analysis/TechnologyScanner";
 import { FP } from "@atomist/sdm-pack-fingerprints";
-import { Eliminate, FeatureManager, IdealStatus } from "./FeatureManager";
+import {
+    Eliminate,
+    FeatureManager,
+    IdealStatus,
+} from "./FeatureManager";
 import { TypeScriptVersion } from "./TypeScriptVersionFeature";
 
 /**

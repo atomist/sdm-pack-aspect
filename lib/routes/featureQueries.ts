@@ -20,7 +20,10 @@ import {
 } from "./queries";
 import { DefaultProjectAnalysisResultRenderer } from "./projectAnalysisResultUtils";
 import { ProjectAnalysisResult } from "../analysis/ProjectAnalysisResult";
-import { FeatureManager, isDistinctIdeal } from "../feature/FeatureManager";
+import {
+    FeatureManager,
+    isDistinctIdeal,
+} from "../feature/FeatureManager";
 import { featureManager } from "./features";
 
 /**

@@ -17,7 +17,10 @@
 import { featureQueriesFrom } from "./featureQueries";
 import { DefaultFeatureManager } from "../feature/DefaultFeatureManager";
 import { TypeScriptVersionFeature } from "../feature/TypeScriptVersionFeature";
-import { NodeLibraryVersion, NodeLibraryVersionFeature } from "../feature/NodeLibraryVersionFeature";
+import {
+    NodeLibraryVersion,
+    NodeLibraryVersionFeature,
+} from "../feature/NodeLibraryVersionFeature";
 
 export const featureManager = new DefaultFeatureManager(
     new TypeScriptVersionFeature(),
