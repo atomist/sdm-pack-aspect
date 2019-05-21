@@ -5,7 +5,12 @@ This is a good project
 <h2>Features</h2>
 
 {{#each features}}
-<h3>{{ this.feature.displayName}}</h3>
+<h3>{{ this.feature.displayName}}
+    {{#if this.rollup }}
+    ({{this.rollup}})
+    {{/if}}
+
+</h3>
 
 {{#each this.fingerprints}}
 

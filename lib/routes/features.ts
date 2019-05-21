@@ -28,10 +28,12 @@ import {
     NpmDeps,
 } from "@atomist/sdm-pack-fingerprints";
 import {
+    constructNpmDepsFingerprintName,
     deconstructNpmDepsFingerprintName,
     getNpmDepFingerprint,
 } from "@atomist/sdm-pack-fingerprints/lib/fingerprints/npmDeps";
 import * as fs from "fs";
+import * as _ from "lodash";
 import { DefaultFeatureManager } from "../feature/DefaultFeatureManager";
 import {
     TypeScriptVersion,
@@ -44,9 +46,27 @@ import {
     isDistinctIdeal,
 } from "../feature/FeatureManager";
 
+const AtomistSummary = {
+    ...NpmDeps,
+    displayName: "Atomist base libraries",
+    selector: fp =>
+        ["@atomist/automation-client",
+            "@atomist/sdm-core",
+            "@atomist/sdm"].map(constructNpmDepsFingerprintName).includes(fp.name),
+    rollup: (fps: FP[]): string => {
+        const displayables = _.uniq(fps.map(NpmDeps.toDisplayableFingerprint));
+        if (displayables.length === 1) {
+            return displayables[0];
+        } else {
+            return "mess";
+        }
+    },
+};
+
 export const features: Array<ManagedFeature<any, any>> = [
     new TypeScriptVersionFeature(),
     DockerFrom,
+    AtomistSummary,
     {
         ...NpmDeps,
         suggestIdeal: idealFromNpm,
