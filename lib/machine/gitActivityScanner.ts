@@ -14,7 +14,10 @@
  * limitations under the License.
  */
 
-import { TechnologyElement, TechnologyScanner } from "@atomist/sdm-pack-analysis";
+import {
+    TechnologyElement,
+    TechnologyScanner,
+} from "@atomist/sdm-pack-analysis";
 import { spawnPromise } from "@atomist/sdm";
 import * as util from "util";
 
