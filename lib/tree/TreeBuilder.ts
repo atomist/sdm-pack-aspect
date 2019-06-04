@@ -150,43 +150,19 @@ class DefaultTreeBuilder<ROOT, T> implements TreeBuilder<ROOT, T> {
     public renderWith(renderer: Renderer<T>): ReportBuilder<ROOT> {
         return {
             toSunburstTree: async originalQuery => {
-                return mergeTrees(...await this.chunk(originalQuery, renderer));
+                return {
+                    name: this.rootName,
+                    children: await layer<ROOT, T>(originalQuery, originalQuery(), this.steps, renderer),
+                };
             },
-        };
-    }
-
-    // Chunk it into trees of size n
-    private async chunk(originalQuery: () => AsyncIterable<ROOT> | ROOT[],
-                        renderer: Renderer<T>): Promise<SunburstTree[]> {
-        const trees: SunburstTree[] = [];
-        let data: ROOT[] = [];
-        for await (const root of originalQuery()) {
-            data.push(root);
-            if (data.length === this.chunkSize) {
-                trees.push(await this.treeify(data, renderer));
-                console.log(`Emitted tree of size ${this.chunkSize}`);
-                data = [];
-            }
-        }
-        trees.push(await this.treeify(data, renderer));
-        return trees;
-    }
-
-    // Make a single tree from materialized data
-    private async treeify(data: ROOT[], renderer: Renderer<T>): Promise<SunburstTree> {
-        return {
-            name: this.rootName,
-            children: await layer<ROOT, T>(() => data, data, this.steps, renderer),
         };
     }
 
     /**
      *
      * @param {string} rootName
-     * @param {50} chunkSize number of records to handle at once
      */
-    public constructor(public readonly rootName: string,
-                       private readonly chunkSize: number = 50) {
+    public constructor(public readonly rootName: string) {
     }
 
 }

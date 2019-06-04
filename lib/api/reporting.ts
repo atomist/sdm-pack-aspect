@@ -1,6 +1,7 @@
 import { Analyzed, FeatureManager } from "../feature/FeatureManager";
 import { reportersAgainst, reportersFor } from "../feature/reportersAgainst";
-import { SunburstTree } from "../tree/sunburst";
+import { mergeTrees, SunburstTree } from "../tree/sunburst";
+import { Report } from "../feature/reporters";
 
 /**
  * Discover the reports available on this cohort of repos
@@ -18,14 +19,86 @@ export async function availableReports(featureManager: FeatureManager,
         }));
 }
 
-// export async function* runReports(featureManager: FeatureManager,
-//                                   repos: Analyzed[] | AsyncIterable<Analyzed>,
-//                                   names: string[]): AsyncIterable<Promise<SunburstTree>> {
-//     const fingerprintNames = names.filter(name => !name.includes("-"));
-//     for (const name of fingerprintNames) {
-//         const reports = reportersFor(name, featureManager);
-//         for (const report of reports) {
-//             yield report.reporter({ byOrg: true }).toSunburstTree(() => repos);
-//         }
-//     }
-// }
+type Trees = Record<string, SunburstTree>;
+
+/**
+ * Object that can persist the additional tree data
+ */
+export interface TreesMerge {
+    merge(extraTrees: Trees): Promise<void>;
+}
+
+/**
+ * Run reports, persisting them in the treesMerge structure
+ * @param {FeatureManager} featureManager
+ * @param {Analyzed[] | AsyncIterable<Analyzed>} repos
+ * @param {TreesMerge} treesMerge
+ * @param {string[]} names
+ * @return {Promise<void>}
+ */
+export async function runReports(featureManager: FeatureManager,
+                                 repos: Analyzed[] | AsyncIterable<Analyzed>,
+                                 treesMerge: TreesMerge,
+                                 names: string[],
+                                 pageSize: number): Promise<void> {
+    const fingerprintNames = names.filter(name => !(name.endsWith("-ideal") || name.endsWith("-present")));
+    const reports: Report[] = [];
+    for (const name of fingerprintNames) {
+        reports.push(...reportersFor(name, featureManager));
+    }
+    console.log(`Running ${reports.length} reports`);
+    await runReportsByPage(repos, reports, treesMerge, pageSize);
+}
+
+export class InMemoryTreesMerge implements TreesMerge {
+
+    public readonly trees: Trees = {};
+
+    public async merge(extraTrees: Trees): Promise<void> {
+        for (const treeName of Object.getOwnPropertyNames(extraTrees)) {
+            if (!this.trees[treeName]) {
+                this.trees[treeName] = extraTrees[treeName];
+            } else {
+                this.trees[treeName] = mergeTrees(this.trees[treeName], extraTrees[treeName]);
+            }
+        }
+    }
+
+}
+
+// Chunk it into trees of size n
+async function runReportsByPage(repos: AsyncIterable<Analyzed> | Analyzed[],
+                                reports: Report[],
+                                treesMerge: TreesMerge,
+                                pageSize: number): Promise<void> {
+
+    async function runReports() {
+        const extraTrees = await reportAgainstPage(data, reports);
+        return treesMerge.merge(extraTrees);
+    }
+
+    let data: Analyzed[] = [];
+    for await (const root of repos) {
+        data.push(root);
+        if (data.length === pageSize) {
+            await runReports();
+            console.log(`Emitted trees of size ${pageSize}`);
+            data = [];
+        }
+    }
+    await runReports();
+}
+
+async function reportAgainstPage(data: Analyzed[], reports: Report[]): Promise<Trees> {
+    const results = await Promise.all(
+        reports.map(report => {
+                return report.reporter({ byOrg: true }).toSunburstTree(() => data).then(tree => ({
+                    name: report.name,
+                    tree,
+                }))
+            }
+        ));
+    const trees: Trees = {};
+    results.forEach(result => trees[result.name] = result.tree);
+    return trees;
+}
