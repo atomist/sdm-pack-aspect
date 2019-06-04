@@ -15,7 +15,9 @@
  */
 
 import { ReportBuilder } from "../tree/TreeBuilder";
-import { Analyzed, } from "./FeatureManager";
+import {
+    Analyzed,
+} from "./FeatureManager";
 
 /**
  * Options for report generation

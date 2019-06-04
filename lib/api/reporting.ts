@@ -14,9 +14,18 @@
  * limitations under the License.
  */
 
-import { Analyzed, FeatureManager } from "../feature/FeatureManager";
-import { reportersAgainst, reportersFor } from "../feature/reportersAgainst";
-import { mergeTrees, SunburstTree } from "../tree/sunburst";
+import {
+    Analyzed,
+    FeatureManager,
+} from "../feature/FeatureManager";
+import {
+    reportersAgainst,
+    reportersFor,
+} from "../feature/reportersAgainst";
+import {
+    mergeTrees,
+    SunburstTree,
+} from "../tree/sunburst";
 import { Report } from "../feature/reporters";
 
 /**

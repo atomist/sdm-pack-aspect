@@ -28,9 +28,14 @@ import { DefaultAnalyzedRenderer } from "./support/groupingUtils";
 import * as _ from "lodash";
 import {
     allFingerprints,
-    defaultedToDisplayableFingerprint, fingerprintNamesFrom,
+    defaultedToDisplayableFingerprint,
+    fingerprintNamesFrom,
 } from "./DefaultFeatureManager";
-import { Report, Reporter, Reporters } from "./reporters";
+import {
+    Report,
+    Reporter,
+    Reporters,
+} from "./reporters";
 import { featureManager } from "../routes/features";
 
 /**

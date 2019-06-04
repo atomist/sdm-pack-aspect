@@ -14,7 +14,10 @@
  * limitations under the License.
  */
 
-import { InMemoryTreesMerge, runReports } from "../lib/api/reporting";
+import {
+    InMemoryTreesMerge,
+    runReports,
+} from "../lib/api/reporting";
 import { featureManager } from "../lib/routes/features";
 import { analysisResultStore } from "../lib/machine/machine";
 import { allFingerprints } from "../lib/feature/DefaultFeatureManager";
