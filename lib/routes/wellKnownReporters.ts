@@ -39,7 +39,7 @@ import {
     TreeBuilder,
 } from "../tree/TreeBuilder";
 import {
-    DefaultProjectAnalysisRenderer,
+    DefaultAnalyzedRenderer,
     OrgGrouper,
     ProjectAnalysisGrouper,
 } from "../feature/support/groupingUtils";
@@ -62,7 +62,7 @@ export const WellKnownReporters: Reporters<ProjectAnalysis> = {
                     return _.get(ar, "elements.node.packageJson.license", "No license");
                 },
             })
-            .renderWith(DefaultProjectAnalysisRenderer),
+            .renderWith(DefaultAnalyzedRenderer),
 
     typeScriptVersions: params =>
         treeBuilderFor("TypeScript versions", params)
@@ -70,7 +70,7 @@ export const WellKnownReporters: Reporters<ProjectAnalysis> = {
                 name: "version",
                 by: ar => _.get(ar, "elements.node.typeScript.version", params.otherLabel),
             })
-            .renderWith(DefaultProjectAnalysisRenderer),
+            .renderWith(DefaultAnalyzedRenderer),
 
     springVersions: params =>
         treeBuilderFor("Spring Boot version", params)
@@ -78,7 +78,7 @@ export const WellKnownReporters: Reporters<ProjectAnalysis> = {
                 name: "version",
                 by: ar => _.get(ar, "elements.node.springboot.version", params.otherLabel),
             })
-            .renderWith(DefaultProjectAnalysisRenderer),
+            .renderWith(DefaultAnalyzedRenderer),
 
     langs: params =>
         treeBuilderFor<ProjectAnalysis>("languages", params)
@@ -143,7 +143,7 @@ export const WellKnownReporters: Reporters<ProjectAnalysis> = {
                     return pl.packageLock.dependencies[params.artifact].version;
                 },
             })
-            .renderWith(DefaultProjectAnalysisRenderer),
+            .renderWith(DefaultAnalyzedRenderer),
 
     dependencyCount: params =>
         treeBuilderFor<ProjectAnalysis>("dependency count", params)
@@ -177,7 +177,7 @@ export const WellKnownReporters: Reporters<ProjectAnalysis> = {
     docker: params =>
         treeBuilderFor("Docker Y/N", params)
             .group({ name: "docker", by: byDocker })
-            .renderWith(DefaultProjectAnalysisRenderer),
+            .renderWith(DefaultAnalyzedRenderer),
 
     dockerPorts: params =>
         treeBuilderFor<ProjectAnalysis>("Docker ports", params)
@@ -195,7 +195,7 @@ export const WellKnownReporters: Reporters<ProjectAnalysis> = {
                     return ports || "none";
                 },
             })
-            .renderWith(DefaultProjectAnalysisRenderer),
+            .renderWith(DefaultAnalyzedRenderer),
 
     dockerImages: params =>
         treeBuilderFor<ProjectAnalysis>("Docker images", params)
@@ -225,7 +225,7 @@ export const WellKnownReporters: Reporters<ProjectAnalysis> = {
                     return images.map(i => i.split(":")[1]).join(",");
                 },
             })
-            .renderWith(DefaultProjectAnalysisRenderer),
+            .renderWith(DefaultAnalyzedRenderer),
 
     uhura: params =>
         treeBuilderFor<ProjectAnalysis>("Uhura readiness", params)
@@ -258,7 +258,7 @@ export const WellKnownReporters: Reporters<ProjectAnalysis> = {
                         .join(",");
                 },
             })
-            .renderWith(DefaultProjectAnalysisRenderer),
+            .renderWith(DefaultAnalyzedRenderer),
 
     // Generic path
     path: params =>
@@ -273,7 +273,7 @@ export const WellKnownReporters: Reporters<ProjectAnalysis> = {
                     return JSON.stringify(raw);
                 },
             })
-            .renderWith(DefaultProjectAnalysisRenderer),
+            .renderWith(DefaultAnalyzedRenderer),
 };
 
 const byDocker: ProjectAnalysisGrouper = ar => {

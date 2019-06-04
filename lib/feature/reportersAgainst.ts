@@ -14,24 +14,24 @@
  * limitations under the License.
  */
 
-import { featureManager } from "../routes/features";
 import {
     treeBuilderFor,
 } from "../routes/wellKnownReporters";
 import {
+    Analyzed,
     FeatureManager,
     Flag,
     HasFingerprints,
 } from "./FeatureManager";
-import { DefaultProjectAnalysisRenderer } from "./support/groupingUtils";
+import { DefaultAnalyzedRenderer } from "./support/groupingUtils";
 
 import * as _ from "lodash";
 import {
     allFingerprints,
-    defaultedToDisplayableFingerprint,
-    fingerprintsFrom,
+    defaultedToDisplayableFingerprint, fingerprintNamesFrom,
 } from "./DefaultFeatureManager";
-import { Reporters } from "./reporters";
+import { Report, Reporter, Reporters } from "./reporters";
+import { featureManager } from "../routes/features";
 
 /**
  * Create an object exposing well-known queries against our repo cohort
@@ -42,8 +42,8 @@ import { Reporters } from "./reporters";
  * 2. <fingerprintName>-present: Is this fingerprint name present in this repo? Returns for all repos
  * 3. <fingerprintName>-ideal: Show progress toward the ideal for this fingerprint name
  */
-export async function reportersAgainst(hm: FeatureManager,
-                                       repos: HasFingerprints[] | AsyncIterable<HasFingerprints>): Promise<Reporters> {
+export async function reportersAgainst(featureManager: FeatureManager,
+                                       repos: Analyzed[] | AsyncIterable<Analyzed>): Promise<Reporters> {
     const reporters: Reporters = {};
 
     // Report bad fingerprints according to the FeatureManager
@@ -53,7 +53,7 @@ export async function reportersAgainst(hm: FeatureManager,
                 name: "flags",
                 by: async a => {
                     const knownBad = (await Promise.all(
-                        allFingerprints(a).map(fp => hm.flags(fp))
+                        allFingerprints(a).map(fp => featureManager.flags(fp))
                     )).filter(f => !!f && f.length > 0);
                     return knownBad.length === 0 ?
                         params.otherLabel :
@@ -64,7 +64,7 @@ export async function reportersAgainst(hm: FeatureManager,
                 name: "violations",
                 by: async a => {
                     const flags = await Promise.all(
-                        allFingerprints(a).map(fp => hm.flags(fp))
+                        allFingerprints(a).map(fp => featureManager.flags(fp))
                     );
                     const knownBad: Flag[] = _.flatten(flags.filter(f => !!f && f.length > 0));
                     return knownBad.length === 0 ?
@@ -72,62 +72,79 @@ export async function reportersAgainst(hm: FeatureManager,
                         knownBad.map(bad => bad.message).join(",");
                 }
             })
-            .renderWith(DefaultProjectAnalysisRenderer);
+            .renderWith(DefaultAnalyzedRenderer);
 
-    for await (const fp of await fingerprintsFrom(repos)) {
-        const name = fp.name;
-        if (reporters[fp.name]) {
-            // Don't set it again
-            continue;
+    for await (const name of await fingerprintNamesFrom(repos)) {
+        for (const report of reportersFor(name, featureManager)) {
+            reporters[report.name] = report.reporter;
         }
-
-        reporters[name] = params =>
-            treeBuilderFor(name, params)
-                .group({
-                    name,
-                    by: ar => {
-                        const fp = ar.fingerprints[name];
-                        return !!fp ? defaultedToDisplayableFingerprint(hm.featureFor(fp))(fp) : undefined;
-                    },
-                })
-                .renderWith(DefaultProjectAnalysisRenderer);
-
-        reporters[name + "-present"] = params =>
-            treeBuilderFor(name, params)
-                .group({
-                    name,
-                    by: ar => {
-                        const fp = ar.fingerprints[name];
-                        return !!fp ? "Yes" : "No";
-                    },
-                })
-                .renderWith(DefaultProjectAnalysisRenderer);
-
-        // Add a query that tells us how many repositories are on vs off the ideal, if any, for this fingerprint
-        reporters[name + "-ideal"] = params =>
-            treeBuilderFor(name, params)
-                .group({
-                    name: name + " ideal?",
-                    by: async ar => {
-                        const fp = ar.fingerprints[name];
-                        const ideal = await featureManager.idealResolver(name);
-                        if (!ideal.ideal) {
-                            return !fp ? `Yes (gone)` : "No (present)";
-                        }
-                        if (!fp) {
-                            return undefined;
-                        }
-                        const feature = hm.featureFor(fp);
-                        if (ideal && ideal.ideal) {
-                            return fp.sha === ideal.ideal.sha ? `Yes (${defaultedToDisplayableFingerprint(feature)(ideal.ideal)})` : "No";
-                        }
-                        return !!fp ? defaultedToDisplayableFingerprint(feature)(fp) : undefined;
-                    },
-                })
-                .renderWith(DefaultProjectAnalysisRenderer);
     }
 
     return reporters;
+}
+
+/**
+ * Available reporters for this fingerprint name
+ * @param {string} fingerprintName
+ * @param {FeatureManager} featureManager
+ * @return {Report[]}
+ */
+export function reportersFor(fingerprintName: string, featureManager: FeatureManager): Report[] {
+    return [
+        { name: fingerprintName, reporter: skewReport(fingerprintName, featureManager) },
+        { name: fingerprintName + "-present", reporter: presenceReport(fingerprintName, featureManager) },
+        { name: fingerprintName + "-ideal", reporter: skewReport(fingerprintName, featureManager) },
+    ]
+}
+
+export function skewReport(fingerprintName: string, featureManager: FeatureManager): Reporter {
+    return params =>
+        treeBuilderFor(fingerprintName, params)
+            .group({
+                name: fingerprintName,
+                by: ar => {
+                    const fp = ar.fingerprints[fingerprintName];
+                    return !!fp ? defaultedToDisplayableFingerprint(featureManager.featureFor(fp))(fp) : undefined;
+                },
+            })
+            .renderWith(DefaultAnalyzedRenderer);
+}
+
+export function idealProgressReport(fingerprintName: string, featureManager: FeatureManager): Reporter {
+    return params =>
+        treeBuilderFor(fingerprintName, params)
+            .group({
+                name: fingerprintName + " ideal?",
+                by: async ar => {
+                    const fp = ar.fingerprints[fingerprintName];
+                    const ideal = await featureManager.idealResolver(fingerprintName);
+                    if (!ideal.ideal) {
+                        return !fp ? `Yes (gone)` : "No (present)";
+                    }
+                    if (!fp) {
+                        return undefined;
+                    }
+                    const feature = featureManager.featureFor(fp);
+                    if (ideal && ideal.ideal) {
+                        return fp.sha === ideal.ideal.sha ? `Yes (${defaultedToDisplayableFingerprint(feature)(ideal.ideal)})` : "No";
+                    }
+                    return !!fp ? defaultedToDisplayableFingerprint(feature)(fp) : undefined;
+                },
+            })
+            .renderWith(DefaultAnalyzedRenderer);
+}
+
+export function presenceReport(name: string, featureManager: FeatureManager): Reporter {
+    return params =>
+        treeBuilderFor(name, params)
+            .group({
+                name,
+                by: ar => {
+                    const fp = ar.fingerprints[name];
+                    return !!fp ? "Yes" : "No";
+                },
+            })
+            .renderWith(DefaultAnalyzedRenderer);
 }
 
 export interface DisplayableFingerprint {

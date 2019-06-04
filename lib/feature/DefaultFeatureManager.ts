@@ -51,11 +51,32 @@ function toArray<T>(value: T | T[]): T[] {
     }
 }
 
-export async function* fingerprintsFrom(ar: HasFingerprints[] | AsyncIterable<HasFingerprints>): AsyncIterable<FP> {
-    for await (const hf of ar) {
+/**
+ * Return every fingerprint from this set of projects
+ * @param {HasFingerprints[] | AsyncIterable<HasFingerprints>} hfs
+ * @return {AsyncIterable<FP>}
+ */
+export async function* fingerprintsFrom(hfs: HasFingerprints[] | AsyncIterable<HasFingerprints>): AsyncIterable<FP> {
+    for await (const hf of hfs) {
         const fingerprintNames = Object.getOwnPropertyNames(hf.fingerprints);
         for (const name of fingerprintNames) {
             yield hf.fingerprints[name];
+        }
+    }
+}
+
+/**
+ * Distinct fingerprint names from these repos
+ * @param {HasFingerprints[] | AsyncIterable<HasFingerprints>} hfs
+ * @return {AsyncIterable<string>}
+ */
+export async function* fingerprintNamesFrom(hfs: HasFingerprints[] | AsyncIterable<HasFingerprints>): AsyncIterable<string> {
+    const alreadySeen = [];
+    for await (const fp of fingerprintsFrom(hfs)) {
+        if (!alreadySeen.includes(fp.name)) {
+            yield fp.name;
+        } else {
+            alreadySeen.push(fp.name);
         }
     }
 }

@@ -17,7 +17,7 @@
 import { ProjectAnalysis } from "@atomist/sdm-pack-analysis";
 import * as assert from "power-assert";
 import { FileSystemProjectAnalysisResultStore } from "../../lib/analysis/offline/persist/FileSystemProjectAnalysisResultStore";
-import { DefaultProjectAnalysisRenderer } from "../../lib/feature/support/groupingUtils";
+import { DefaultAnalyzedRenderer } from "../../lib/feature/support/groupingUtils";
 import { treeBuilder } from "../../lib/tree/TreeBuilder";
 
 // Works only on spidered data
@@ -26,7 +26,7 @@ describe.skip("treeBuilder", () => {
     it("renders single level", async () => {
         const all = (await new FileSystemProjectAnalysisResultStore().loadAll()).map(r => r.analysis);
         const builder = treeBuilder<ProjectAnalysis>("root")
-            .renderWith(DefaultProjectAnalysisRenderer);
+            .renderWith(DefaultAnalyzedRenderer);
         const t = builder.toSunburstTree(() => all);
     });
 
@@ -35,7 +35,7 @@ describe.skip("treeBuilder", () => {
 
         const builder = treeBuilder<ProjectAnalysis>("root")
             .group({ name: "foo", by: ar => ar.id.owner })
-            .renderWith(DefaultProjectAnalysisRenderer);
+            .renderWith(DefaultAnalyzedRenderer);
         const t = builder.toSunburstTree(() => all);
     });
 
@@ -44,7 +44,7 @@ describe.skip("treeBuilder", () => {
 
         const builder = treeBuilder<ProjectAnalysis>("root")
             .group({ name: "foo", by: ar => ar.id.repo.length > 8 ? "foo" : "a" })
-            .renderWith(DefaultProjectAnalysisRenderer);
+            .renderWith(DefaultAnalyzedRenderer);
         const t = await builder.toSunburstTree(() => all);
         assert.strictEqual(t.children.length, 2);
         assert.strictEqual(t.children.filter(c => c.name === "foo").length, 1);
@@ -55,7 +55,7 @@ describe.skip("treeBuilder", () => {
 
         const builder = treeBuilder<ProjectAnalysis>("root")
             .group({ name: "foo", by: ar => ar.id.repo.length > 8 ? undefined : "a" })
-            .renderWith(DefaultProjectAnalysisRenderer);
+            .renderWith(DefaultAnalyzedRenderer);
         const t = await builder.toSunburstTree(() => all);
         assert.strictEqual(t.children.length, 1);
     });
@@ -127,7 +127,7 @@ describe.skip("treeBuilder", () => {
         const builder = treeBuilder<ProjectAnalysis>("root")
             .group({ name: "thing", by: () => "foo", flattenSingle: true })
             .group({ name: "foo", by: ar => ar.id.url.length + "" })
-            .renderWith(DefaultProjectAnalysisRenderer);
+            .renderWith(DefaultAnalyzedRenderer);
         const t = await builder.toSunburstTree(() => all);
         assert(t.children.length > 1);
     });
