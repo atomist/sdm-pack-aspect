@@ -32,6 +32,7 @@ import {
 import { firstSubprojectFinderOf } from "../analysis/subprojectFinder";
 import { fileNamesSubprojectFinder } from "../analysis/fileNamesSubprojectFinder";
 import * as yargs from "yargs";
+import { PostgresProjectAnalysisResultStore } from "../analysis/offline/persist/PostgresProjectAnalysisResultStore";
 
 // Ensure we see console logging, and send info to the console
 configureLogging(MinimalLogging);
@@ -64,7 +65,8 @@ async function spider(params: SpiderOptions) {
     const searchInRepoName = search ? ` ${search} in:name` : "";
 
     const spider: Spider = new GitHubSpider();
-    const persister = new FileSystemProjectAnalysisResultStore();
+    const persister = //new FileSystemProjectAnalysisResultStore();
+        new PostgresProjectAnalysisResultStore();
     const query = params.query || `org:${org}` + searchInRepoName;
 
     const result = await spider.spider({
