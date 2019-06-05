@@ -2,8 +2,9 @@ DROP DATABASE org_viz;
 CREATE DATABASE org_viz;
 \connect org_viz
 
-DROP TABLE IF EXISTS fingerprints;
 DROP TABLE IF EXISTS repo_fingerprints;
+
+DROP TABLE IF EXISTS fingerprints;
 
 DROP TABLE IF EXISTS repo_snapshots;
 
