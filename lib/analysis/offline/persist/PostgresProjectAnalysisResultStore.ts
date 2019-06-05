@@ -16,8 +16,14 @@
 
 import { Client } from "pg";
 import { RepoId } from "@atomist/automation-client";
-import { PersistResult, ProjectAnalysisResultStore } from "./ProjectAnalysisResultStore";
-import { isProjectAnalysisResult, ProjectAnalysisResult } from "../../ProjectAnalysisResult";
+import {
+    PersistResult,
+    ProjectAnalysisResultStore,
+} from "./ProjectAnalysisResultStore";
+import {
+    isProjectAnalysisResult,
+    ProjectAnalysisResult,
+} from "../../ProjectAnalysisResult";
 
 export class PostgresProjectAnalysisResultStore implements ProjectAnalysisResultStore {
 

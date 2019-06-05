@@ -15,7 +15,10 @@
  */
 
 import { Client } from "pg";
-import { SunburstLeaf, SunburstTree } from "../tree/sunburst";
+import {
+    SunburstLeaf,
+    SunburstTree,
+} from "../tree/sunburst";
 
 export interface QueryOpts {
 
