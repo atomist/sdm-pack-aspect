@@ -25,11 +25,12 @@ values (
 );
 
 -- Variant of f2
-INSERT INTO fingerprints (name, feature_name, sha)
+INSERT INTO fingerprints (name, feature_name, sha, data)
 values (
   'f2',
   'killer-app',
-  '3fd4e1c67a2d28fced849ee1bb76e7391c93eb12'
+  '3fd4e1c67a2d28fced849ee1bb76e7391c93eb12',
+  '{ "thing1": "one", "thing2": "two" }'
 );
 
 INSERT INTO repo_fingerprints (repo_snapshot_id, sha)
