@@ -37,7 +37,7 @@ export const fingerprintsChildrenQuery = `
 SELECT row_to_json(fingerprint_groups) FROM (SELECT json_agg(fp) children
 FROM (
        SELECT
-         fingerprints.name as n, fingerprints.sha as sha, fingerprints.data as name,
+         fingerprints.name as name, fingerprints.sha as sha, fingerprints.data as data,
          (
            SELECT json_agg(row_to_json(repo))
            FROM (
