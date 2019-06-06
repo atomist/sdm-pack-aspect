@@ -58,14 +58,23 @@ import {
     defaultedToDisplayableFingerprintName,
     MelbaFingerprintForDisplay,
 } from "../feature/DefaultFeatureManager";
-import { FeatureManager, ManagedFeature } from "../feature/FeatureManager";
+import {
+    FeatureManager,
+    ManagedFeature,
+} from "../feature/FeatureManager";
 import { reportersAgainst } from "../feature/reportersAgainst";
 import {
     allManagedFingerprints,
     relevantFingerprints,
 } from "../feature/support/featureUtils";
-import { fingerprintsChildrenQuery, repoTree } from "../feature/repoTree";
-import { SunburstTree, visit } from "../tree/sunburst";
+import {
+    fingerprintsChildrenQuery,
+    repoTree,
+} from "../feature/repoTree";
+import {
+    SunburstTree,
+    visit,
+} from "../tree/sunburst";
 
 function renderStaticReactNode(body: ReactElement,
     title?: string,
