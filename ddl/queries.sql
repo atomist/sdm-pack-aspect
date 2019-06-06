@@ -35,7 +35,7 @@ select fp.name as fingerprint_name, fp.sha as fingerprint_sha, r.name as name
 SELECT json_agg(fingerprints) FROM fingerprints
 
 
-SELECT row_to_json(fingerprint_groups) FROM (SELECT 'myReport' as name, json_agg(fp) children
+SELECT row_to_json(fingerprint_groups) FROM (SELECT json_agg(fp) children
 FROM (
        SELECT
          fingerprints.name, fingerprints.sha, fingerprints.data,
@@ -62,3 +62,20 @@ select name, count(*)
   from fingerprints
   group by name;
 
+
+
+SELECT row_to_json(fingerprint_groups) FROM (SELECT json_agg(fp) children
+FROM (
+       SELECT
+         fingerprints.name, fingerprints.sha, fingerprints.data,
+         (
+           SELECT json_agg(row_to_json(repo))
+           FROM (
+                  SELECT
+                    repo_snapshots.owner, repo_snapshots.name, repo_snapshots.url, 1 as size
+                  FROM repo_fingerprints, repo_snapshots
+                  WHERE repo_fingerprints.sha = fingerprints.sha AND repo_snapshots.id = repo_fingerprints.repo_snapshot_id
+                ) repo
+         ) children
+       FROM fingerprints WHERE fingerprints.name = 'tsVersion'
+) fp) as fingerprint_groups;

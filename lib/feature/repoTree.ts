@@ -24,13 +24,32 @@ export interface QueryOpts {
 
     rootName: string;
 
-    excludeNull: boolean;
+    //excludeNull: boolean;
 
     /**
      * SQL query. Must return form of value, repo info - Must be sorted by repo
      */
     query: string;
 }
+
+// Returns children
+export const fingerprintsChildrenQuery = `
+SELECT row_to_json(fingerprint_groups) FROM (SELECT json_agg(fp) children
+FROM (
+       SELECT
+         fingerprints.name as n, fingerprints.sha as sha, fingerprints.data as name,
+         (
+           SELECT json_agg(row_to_json(repo))
+           FROM (
+                  SELECT
+                    repo_snapshots.owner, repo_snapshots.name, repo_snapshots.url, 1 as size
+                  FROM repo_fingerprints, repo_snapshots
+                  WHERE repo_fingerprints.sha = fingerprints.sha AND repo_snapshots.id = repo_fingerprints.repo_snapshot_id
+                ) repo
+         ) children
+       FROM fingerprints WHERE fingerprints.name = $1
+) fp) as fingerprint_groups
+`;
 
 /**
  * Tree where children is one of a range of values, leaves individual repos with one of those values
@@ -44,9 +63,14 @@ export async function repoTree(opts: QueryOpts): Promise<SunburstTree> {
     client.connect();
     try {
         console.log(opts.query);
-        const results = await client.query(opts.query);
+        const results = await client.query(opts.query, [opts.rootName]);
         // TODO error checking
-        return results.rows[0];
+        const data = results.rows[0];
+        console.log("RAW: " + JSON.stringify(data));
+        return {
+            name: opts.rootName,
+            children: data.row_to_json.children,
+        }
     } finally {
         client.end();
     }

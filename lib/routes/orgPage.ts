@@ -64,6 +64,7 @@ import {
     allManagedFingerprints,
     relevantFingerprints,
 } from "../feature/support/featureUtils";
+import { fingerprintsChildrenQuery, repoTree } from "../feature/repoTree";
 
 function renderStaticReactNode(body: ReactElement,
     title?: string,
@@ -252,17 +253,24 @@ export function orgPage(store: ProjectAnalysisResultStore): ExpressCustomizer {
 
         /* the d3 sunburst on the /query page uses this */
         express.get("/query.json", ...handlers, async (req, res) => {
-            const repos = await store.loadAll();
-
-            const featureQueries = await reportersAgainst(featureManager, repos.map(r => r.analysis));
-            const allQueries = _.merge(featureQueries, WellKnownReporters);
-
-            const cannedQuery = allQueries[req.query.name]({
-                ...req.query,
+            // const repos = await store.loadAll();
+            //
+            // const featureQueries = await reportersAgainst(featureManager, repos.map(r => r.analysis));
+            // const allQueries = _.merge(featureQueries, WellKnownReporters);
+            //
+            // const cannedQuery = allQueries[req.query.name]({
+            //     ...req.query,
+            // });
+            // const relevantRepos = repos.filter(ar => req.query.owner ? ar.analysis.id.owner === req.params.owner : true);
+            // //  console.log("Build tree from " + relevantRepos.length);
+            // const data = await cannedQuery.toSunburstTree(() => relevantRepos.map(r => r.analysis));
+            const data = await repoTree({
+                query: fingerprintsChildrenQuery,
+                rootName: req.query.name,
             });
-            const relevantRepos = repos.filter(ar => req.query.owner ? ar.analysis.id.owner === req.params.owner : true);
-            //  console.log("Build tree from " + relevantRepos.length);
-            const data = await cannedQuery.toSunburstTree(() => relevantRepos.map(r => r.analysis));
+
+            console.log(JSON.stringify(data));
+
             res.json(data);
         });
     };
