@@ -8,14 +8,15 @@ VALUES (
         'http',
         now(),
         '{ "stuff": "things" }'
-        );
+        ) RETURNING id;
+
 
 INSERT INTO fingerprints (name, feature_name, sha)
 values (
   'f1',
   'killer-app',
   '2fd4e1c67a2d28fced849ee1bb76e7391b93eb12'
-);
+) ON CONFLICT DO NOTHING;
 
 INSERT INTO fingerprints (name, feature_name, sha)
 values (

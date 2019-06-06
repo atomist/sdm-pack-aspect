@@ -48,7 +48,7 @@ FROM (
                   WHERE repo_fingerprints.sha = fingerprints.sha AND repo_snapshots.id = repo_fingerprints.repo_snapshot_id
                 ) repo
          ) children
-       FROM fingerprints WHERE fingerprints.name = 'f2'
+       FROM fingerprints WHERE fingerprints.name = 'tsVersion'
 ) fp) as fingerprint_groups;
 
 

@@ -24,6 +24,7 @@ import {
     isProjectAnalysisResult,
     ProjectAnalysisResult,
 } from "../../ProjectAnalysisResult";
+import { ProjectAnalysis } from "@atomist/sdm-pack-analysis";
 
 export class PostgresProjectAnalysisResultStore implements ProjectAnalysisResultStore {
 
@@ -67,17 +68,36 @@ export class PostgresProjectAnalysisResultStore implements ProjectAnalysisResult
                     console.log("Ignoring repo w/o url: " + repoRef.repo);
                     continue;
                 }
-                await client.query(`
+                const ret = await client.query(`
             INSERT INTO repo_snapshots (workspace_id, provider_id, owner, name, url, commit_sha, analysis, timestamp)
-VALUES ('local', $3, $1, $2, $3, $4, $5, current_timestamp)`,
+VALUES ('local', $3, $1, $2, $3, $4, $5, current_timestamp) RETURNING id`,
                     [repoRef.owner, repoRef.repo, repoRef.url,
                         !!result.analysis.gitStatus ? result.analysis.gitStatus.sha : undefined,
                         result.analysis,
                     ]);
+                const id = ret.rows[0].id;
+                await this.persistFingerprints(result.analysis, id, client);
                 ++persisted;
             }
             return persisted;
         });
+    }
+
+    private async persistFingerprints(pa: ProjectAnalysis, id: number, client: Client): Promise<void> {
+        // Whack any joins
+        await client.query(`DELETE from repo_fingerprints WHERE repo_snapshot_id = $1`, [id]);
+
+        for (const fpname of Object.getOwnPropertyNames(pa.fingerprints)) {
+            const fp = pa.fingerprints[fpname];
+            console.log("Persist fingerprint " + JSON.stringify(fp) + " for id " + id);
+            // Create fp record if it doesn't exist
+            await client.query(`INSERT INTO fingerprints (name, feature_name, sha, data)
+values ($1, $2, $3, $4) ON CONFLICT DO NOTHING
+`, [fp.name, null, fp.sha, JSON.stringify(fp.data)]);
+            await client.query(`INSERT INTO repo_fingerprints (repo_snapshot_id, sha)
+values ($1, $2) ON CONFLICT DO NOTHING
+`, [id, fp.sha]);
+        }
     }
 
     private async doWithClient<R>(what: (c: Client) => Promise<R>): Promise<R> {
@@ -88,7 +108,10 @@ VALUES ('local', $3, $1, $2, $3, $4, $5, current_timestamp)`,
         await client.connect();
         try {
             result = await what(client);
-        } finally {
+        } catch (err) {
+            console.log(err);
+            //process.exit(1);
+        } {
             client.end();
         }
         return result;

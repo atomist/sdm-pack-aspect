@@ -17,7 +17,7 @@ CREATE TABLE repo_snapshots (
  url text NOT NULL,
  branch text,
  path text,
- commit_sha varchar(64) NOT NULL,
+ commit_sha varchar NOT NULL,
  analysis json,
  timestamp TIMESTAMP  NOT NULL
 );
@@ -26,13 +26,13 @@ CREATE TABLE repo_snapshots (
 CREATE TABLE fingerprints (
   name text NOT NULL,
   feature_name text,
-  sha varchar(64) NOT NULL PRIMARY KEY,
+  sha varchar NOT NULL PRIMARY KEY,
   data json
 );
 
 -- Join table
 CREATE TABLE repo_fingerprints (
   repo_snapshot_id int references repo_snapshots(id),
-  sha varchar(64) references fingerprints(sha),
+  sha varchar references fingerprints(sha),
   PRIMARY KEY (repo_snapshot_id, sha)
 );
