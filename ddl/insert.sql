@@ -34,9 +34,11 @@ values (
   '{ "thing1": "one", "thing2": "two" }'
 );
 
-INSERT INTO repo_fingerprints (repo_snapshot_id, sha)
+INSERT INTO repo_fingerprints (repo_snapshot_id, name, feature_name, sha)
 values (
   lastVal(),
+  'f2',
+  'killer-app',
   '2fd4e1c67a2d28fced849ee1bb76e7391b93eb12'
 );
 

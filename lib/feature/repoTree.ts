@@ -44,7 +44,10 @@ FROM (
                   SELECT
                     repo_snapshots.owner, repo_snapshots.name, repo_snapshots.url, 1 as size
                   FROM repo_fingerprints, repo_snapshots
-                  WHERE repo_fingerprints.sha = fingerprints.sha AND repo_snapshots.id = repo_fingerprints.repo_snapshot_id
+                  WHERE repo_fingerprints.sha = fingerprints.sha 
+                    AND repo_fingerprints.name = fingerprints.name 
+                    AND repo_fingerprints.feature_name = fingerprints.feature_name
+                    AND repo_snapshots.id = repo_fingerprints.repo_snapshot_id
                 ) repo
          ) children
        FROM fingerprints WHERE fingerprints.name = $1

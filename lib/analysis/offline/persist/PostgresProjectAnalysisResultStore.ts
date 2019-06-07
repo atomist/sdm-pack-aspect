@@ -83,20 +83,24 @@ VALUES ('local', $3, $1, $2, $3, $4, $5, current_timestamp) RETURNING id`,
         });
     }
 
+    // Persist the fingerprints for this analysis
     private async persistFingerprints(pa: ProjectAnalysis, id: number, client: Client): Promise<void> {
         // Whack any joins
         await client.query(`DELETE from repo_fingerprints WHERE repo_snapshot_id = $1`, [id]);
 
         for (const fpname of Object.getOwnPropertyNames(pa.fingerprints)) {
+            // TODO this will ultimately come from the fp
+            const featureName = "unknown";
+
             const fp = pa.fingerprints[fpname];
             console.log("Persist fingerprint " + JSON.stringify(fp) + " for id " + id);
             // Create fp record if it doesn't exist
             await client.query(`INSERT INTO fingerprints (name, feature_name, sha, data)
 values ($1, $2, $3, $4) ON CONFLICT DO NOTHING
-`, [fp.name, null, fp.sha, JSON.stringify(fp.data)]);
-            await client.query(`INSERT INTO repo_fingerprints (repo_snapshot_id, sha)
-values ($1, $2) ON CONFLICT DO NOTHING
-`, [id, fp.sha]);
+`, [fp.name, featureName, fp.sha, JSON.stringify(fp.data)]);
+            await client.query(`INSERT INTO repo_fingerprints (repo_snapshot_id, name, feature_name, sha)
+values ($1, $2, $3, $4) ON CONFLICT DO NOTHING
+`, [id, fp.name, featureName, fp.sha]);
         }
     }
 
@@ -110,7 +114,7 @@ values ($1, $2) ON CONFLICT DO NOTHING
             result = await what(client);
         } catch (err) {
             console.log(err);
-            //process.exit(1);
+            process.exit(1);
         } {
             client.end();
         }

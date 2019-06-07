@@ -74,8 +74,26 @@ FROM (
                   SELECT
                     repo_snapshots.owner, repo_snapshots.name, repo_snapshots.url, 1 as size
                   FROM repo_fingerprints, repo_snapshots
-                  WHERE repo_fingerprints.sha = fingerprints.sha AND repo_snapshots.id = repo_fingerprints.repo_snapshot_id
+                  WHERE repo_fingerprints.sha = fingerprints.sha
+                    AND repo_fingerprints.name = fingerprints.name
+                    AND repo_fingerprints.feature_name = fingerprints.feature_name
+                    AND repo_snapshots.id = repo_fingerprints.repo_snapshot_id
                 ) repo
          ) children
        FROM fingerprints WHERE fingerprints.name = 'tsVersion'
 ) fp) as fingerprint_groups;
+
+
+select  count(rs.id) as appears_in, rf.feature_name as feature_name, rf.name as fingerprint_name, rf.sha as sha
+  from repo_snapshots rs, repo_fingerprints rf
+  where rs.workspace_id = 'local' AND rs.id = rf.repo_snapshot_id
+  group by sha, feature_name, fingerprint_name
+  order by appears_in DESC;
+
+select  json_agg(row_to_json(fx)) FROM (
+  select count(rs.id) as appears_in, rf.feature_name as feature_name, rf.name as fingerprint_name, rf.sha as sha
+    from repo_snapshots rs, repo_fingerprints rf
+    where rs.id = rf.repo_snapshot_id
+    group by sha, feature_name, fingerprint_name
+    order by appears_in DESC)
+    as fx;

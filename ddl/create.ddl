@@ -25,14 +25,46 @@ CREATE TABLE repo_snapshots (
 -- One instance for each fingerprint
 CREATE TABLE fingerprints (
   name text NOT NULL,
-  feature_name text,
-  sha varchar NOT NULL PRIMARY KEY,
-  data json
+  feature_name text NOT NULL,
+  sha varchar NOT NULL,
+  data json,
+  PRIMARY KEY (name, feature_name, sha)
 );
 
 -- Join table
 CREATE TABLE repo_fingerprints (
   repo_snapshot_id int references repo_snapshots(id),
-  sha varchar references fingerprints(sha),
-  PRIMARY KEY (repo_snapshot_id, sha)
+  name text NOT NULL,
+  feature_name text NOT NULL,
+  sha varchar NOT NULL,
+  PRIMARY KEY (repo_snapshot_id, name, feature_name, sha),
+  FOREIGN KEY (name, feature_name, sha) REFERENCES fingerprints (name, feature_name, sha)
 );
+
+-- Ideal fingerprints
+CREATE TABLE ideal_fingerprints (
+  name text NOT NULL,
+  feature_name text NOT NULL,
+  sha varchar NOT NULL,
+  PRIMARY KEY (name, feature_name),
+  FOREIGN KEY (name, feature_name, sha) REFERENCES fingerprints (name, feature_name, sha)
+);
+
+CREATE TYPE severity AS ENUM ('error', 'warn');
+
+CREATE TABLE problem_fingerprints (
+  name text NOT NULL,
+  feature_name text NOT NULL,
+  sha varchar NOT NULL,
+  severity severity NOT NULL,
+  message text,
+  url text,
+  PRIMARY KEY (name, feature_name, sha),
+  FOREIGN KEY (name, feature_name, sha) REFERENCES fingerprints (name, feature_name, sha)
+);
+
+CREATE INDEX ON repo_snapshots (workspace_id);
+
+CREATE INDEX ON fingerprints (name);
+CREATE INDEX ON fingerprints (feature_name);
+
