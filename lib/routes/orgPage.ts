@@ -110,7 +110,7 @@ export function orgPage(store: ProjectAnalysisResultStore): ExpressCustomizer {
         /* the org page itself */
         express.get("/org", ...handlers, async (req, res) => {
             try {
-                const repos = await store.loadAll();
+                const repos = await store.loadWhere();
 
                 const features = await featureManager.fingerprintCensus(repos.map(r => r.analysis));
 
@@ -140,7 +140,7 @@ export function orgPage(store: ProjectAnalysisResultStore): ExpressCustomizer {
 
         /* Project list page */
         express.get("/projects", ...handlers, async (req, res) => {
-            const allAnalysisResults = await store.loadAll();
+            const allAnalysisResults = await store.loadWhere("workspace_id = 'local'");
 
             // optional query parameter: owner
             const relevantAnalysisResults = allAnalysisResults.filter(ar => req.query.owner ? ar.analysis.id.owner === req.query.owner : true);
@@ -158,7 +158,7 @@ export function orgPage(store: ProjectAnalysisResultStore): ExpressCustomizer {
         /* the project page */
         express.get("/project/:owner/:repo", ...handlers, async (req, res) => {
 
-            const analysis = await store.load({ owner: req.params.owner, repo: req.params.repo, url: "" });
+            const analysis = await store.loadOne({ owner: req.params.owner, repo: req.params.repo, url: "" });
 
             const featuresAndFingerprints = await featureManager.projectFingerprints(analysis);
 
@@ -188,7 +188,7 @@ export function orgPage(store: ProjectAnalysisResultStore): ExpressCustomizer {
 
         /* the query page */
         express.get("/query", ...handlers, async (req, res) => {
-            const repos = await store.loadAll();
+            const repos = await store.loadWhere(`workspace_id = 'local'`);
 
             const featureQueries = await reportersAgainst(featureManager, repos.map(r => r.analysis));
             const allQueries = _.merge(featureQueries, WellKnownReporters);

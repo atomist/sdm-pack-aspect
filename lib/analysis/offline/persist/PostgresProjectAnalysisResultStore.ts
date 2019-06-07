@@ -32,12 +32,17 @@ export class PostgresProjectAnalysisResultStore implements ProjectAnalysisResult
         throw "unimplemented";
     }
 
-    public loadAll(): Promise<ProjectAnalysisResult[]> {
-        throw "unimplemented";
+    public loadWhere(where: string): Promise<ProjectAnalysisResult[]> {
+        return this.doWithClient(async client => {
+            const rows = await client.query(`SELECT (
+                owner, name, url, commit_sha, analysis, timestamp) from repo_snapshots ` +
+                where ? `WHERE ${where}` : "");
+            return rows;
+        });
     }
 
     // TODO also check for sha
-    public async load(repo: RepoId): Promise<ProjectAnalysisResult> {
+    public async loadOne(repo: RepoId): Promise<ProjectAnalysisResult> {
         return this.doWithClient(async client => {
             const rows = await client.query(`SELECT (
                 owner, name, url, commit_sha, analysis, timestamp) from repo_snapshots

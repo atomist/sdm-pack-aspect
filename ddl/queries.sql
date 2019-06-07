@@ -90,17 +90,22 @@ select  count(rs.id) as appears_in, rf.feature_name as feature_name, rf.name as 
   group by sha, feature_name, fingerprint_name
   order by appears_in DESC;
 
-select  json_agg(row_to_json(fx)) FROM (
-  select count(rs.id) as appears_in, rf.feature_name as feature_name, rf.name as fingerprint_name, rf.sha as sha
+
+SELECT feature_name, grp from (
+select distinct feature_name from fingerprints
+) d, (
+SELECT row_to_json(feature_groups) grp FROM (
+select  row_to_json(fp) feature from (
+  SELECT count(rs.id) as appears_in, rf.feature_name as feature_name, rf.name as fingerprint_name, rf.sha as sha
     from repo_snapshots rs, repo_fingerprints rf
-    where rs.id = rf.repo_snapshot_id
+    where rf.feature_name = feature_name
+      AND rs.workspace_id = 'local' AND rs.id = rf.repo_snapshot_id
     group by sha, feature_name, fingerprint_name
-    order by appears_in DESC)
-    as fx;
+    order by appears_in DESC) as fp) as feature_groups) groups;
 
 
-select  row_to_json(fp) from (SELECT count(rs.id) as appears_in, rf.feature_name as feature_name, rf.name as fingerprint_name, rf.sha as sha
+select  rf.feature_name as feature_name, rf.name as fingerprint_name, rf.sha as sha, count(rs.id) as appears_in
   from repo_snapshots rs, repo_fingerprints rf
   where rs.workspace_id = 'local' AND rs.id = rf.repo_snapshot_id
-  group by sha, feature_name, fingerprint_name
-  order by appears_in DESC) as fp;
+  group by feature_name, sha, fingerprint_name
+  order by appears_in DESC;
