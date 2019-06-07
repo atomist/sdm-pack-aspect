@@ -97,3 +97,10 @@ select  json_agg(row_to_json(fx)) FROM (
     group by sha, feature_name, fingerprint_name
     order by appears_in DESC)
     as fx;
+
+
+select  row_to_json(fp) from (SELECT count(rs.id) as appears_in, rf.feature_name as feature_name, rf.name as fingerprint_name, rf.sha as sha
+  from repo_snapshots rs, repo_fingerprints rf
+  where rs.workspace_id = 'local' AND rs.id = rf.repo_snapshot_id
+  group by sha, feature_name, fingerprint_name
+  order by appears_in DESC) as fp;
