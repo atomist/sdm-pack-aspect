@@ -110,7 +110,7 @@ export function orgPage(store: ProjectAnalysisResultStore): ExpressCustomizer {
         /* the org page itself */
         express.get("/org", ...handlers, async (req, res) => {
             try {
-                const repos = await store.loadWhere();
+                const repos = await store.loadWhere("workspace_id = 'local'");
 
                 const features = await featureManager.fingerprintCensus(repos.map(r => r.analysis));
 
@@ -194,11 +194,6 @@ export function orgPage(store: ProjectAnalysisResultStore): ExpressCustomizer {
             const allQueries = _.merge(featureQueries, WellKnownReporters);
             const fingerprintName = req.query.name.replace(/-ideal$/, "");
 
-            const relevantRepos = repos.filter(ar => req.query.owner ? ar.analysis.id.owner === req.params.owner : true);
-            if (relevantRepos.length === 0) {
-                return res.send(`No matching repos for organization ${req.params.owner}`);
-            }
-
             const queryString = jsonToQueryString(req.query);
             const cannedQueryDefinition = allQueries[req.query.name];
             if (!cannedQueryDefinition) {
@@ -206,7 +201,7 @@ export function orgPage(store: ProjectAnalysisResultStore): ExpressCustomizer {
                     query: req.query.name,
                 });
             }
-            const dataUrl = `/query.json?${queryString}`;
+            const dataUrl = `/${req.query.filter ? "filter" : "query"}.json?${queryString}`;
 
             const feature = featureManager.featureFor({ name: fingerprintName } as FP);
             const fingerprintDisplayName = defaultedToDisplayableFingerprintName(feature)(fingerprintName);
@@ -250,15 +245,6 @@ export function orgPage(store: ProjectAnalysisResultStore): ExpressCustomizer {
                 }),
                 fingerprintDisplayName,
                 ["https://d3js.org/d3.v4.min.js", "/js/sunburst.js"]));
-            // res.render("orgViz", {
-            //     name: req.params.owner,
-            //     dataUrl,
-            //     query: req.params.query,
-            //     fingerprintName,
-            //     fingerprintDisplayName,
-            //     possibleIdeals,
-            //     currentIdeal: currentIdealForDisplay,
-            // });
         });
 
         /* the d3 sunburst on the /query page uses this */
@@ -272,6 +258,21 @@ export function orgPage(store: ProjectAnalysisResultStore): ExpressCustomizer {
             fillInFeatures(featureManager, tree);
 
             res.json(tree);
+        });
+
+        express.get("/filter.json", ...handlers, async (req, res) => {
+            const repos = await store.loadWhere("workspace_id = 'local'");
+
+            const featureQueries = await reportersAgainst(featureManager, repos.map(r => r.analysis));
+            const allQueries = _.merge(featureQueries, WellKnownReporters);
+
+            const cannedQuery = allQueries[req.query.name]({
+                ...req.query,
+            });
+            const relevantRepos = repos.filter(ar => req.query.owner ? ar.analysis.id.owner === req.params.owner : true);
+            //  console.log("Build tree from " + relevantRepos.length);
+            const data = await cannedQuery.toSunburstTree(() => relevantRepos.map(r => r.analysis));
+            res.json(data);
         });
     };
 }
