@@ -29,7 +29,10 @@ import { ProjectAnalysis } from "@atomist/sdm-pack-analysis";
 export class PostgresProjectAnalysisResultStore implements ProjectAnalysisResultStore {
 
     public count(): Promise<number> {
-        throw "unimplemented";
+        return this.doWithClient(async client => {
+            const rows = await client.query("SELECT COUNT(1) as c from repo_snapshots");
+            return rows[0].c;
+        });
     }
 
     public loadWhere(where: string): Promise<ProjectAnalysisResult[]> {

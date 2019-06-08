@@ -130,18 +130,19 @@ Conduct</a></li>
         <li><a href="./query?filter=true&name=uhura&byOrg=true">Uhura delivery status</a></li>
 
         <h2>Technology identified</h2>
-        <form method="GET" action="./query?filter=true&name=using">
-            Technology: <input id="what" name="list" value="node,springboot" />
-            <input type="submit" value="Search" />
-        </form>
+
+        tbd
 
         <h2>Custom path</h2>
 
-        <form method="GET" action="./query?filter=true&name=path">
-            Path: <input id="what" name="path" value="elements.node.typeScript.tslint.hasConfig" ></input>
+        <form method="GET" action="./query">
+            <input type="hidden" name="name" value="path"></input>
+
+            Path: <input id="value" name="value" value="elements.node.typeScript.tslint.hasConfig" ></input>
             <input type="checkbox" name="otherLabel" value="irrelevant"></input>
+            <input type="hidden" name="filter" value="true"></input>
             Show all
-            <input type="submit" value="Search" ></input>
+            <input type="submit" value="Search"></input>
         </form>
 
         <h2>Data</h2>

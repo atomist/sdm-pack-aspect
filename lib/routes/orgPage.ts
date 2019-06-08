@@ -260,6 +260,7 @@ export function orgPage(store: ProjectAnalysisResultStore): ExpressCustomizer {
             res.json(tree);
         });
 
+        // In memory queries against returns
         express.get("/filter.json", ...handlers, async (req, res) => {
             const repos = await store.loadWhere("workspace_id = 'local'");
 
@@ -270,7 +271,6 @@ export function orgPage(store: ProjectAnalysisResultStore): ExpressCustomizer {
                 ...req.query,
             });
             const relevantRepos = repos.filter(ar => req.query.owner ? ar.analysis.id.owner === req.params.owner : true);
-            //  console.log("Build tree from " + relevantRepos.length);
             const data = await cannedQuery.toSunburstTree(() => relevantRepos.map(r => r.analysis));
             res.json(data);
         });
