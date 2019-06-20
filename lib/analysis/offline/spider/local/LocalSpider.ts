@@ -6,14 +6,14 @@ import { NodeFsLocalProject, RepoId } from "@atomist/automation-client";
 import { execPromise } from "@atomist/sdm";
 import * as fs from "fs-extra";
 import * as path from "path";
-import { keepExistingPersisted } from "../common";
+import { analyze, AnalyzeResults, keepExistingPersisted } from "../common";
 
 export class LocalSpider implements Spider {
     constructor(public readonly localDirectory: string) { }
 
     public async spider(criteria: ScmSearchCriteria,
-        analyzer: ProjectAnalyzer,
-        opts: SpiderOptions): Promise<SpiderResult> {
+                        analyzer: ProjectAnalyzer,
+                        opts: SpiderOptions): Promise<SpiderResult> {
 
         const repoIterator = findRepositoriesUnder(this.localDirectory);
 
@@ -21,7 +21,7 @@ export class LocalSpider implements Spider {
 
         for await (const repoDir of repoIterator) {
             console.log(repoDir);
-            results.push(await spiderOneLocalRepo(opts, repoDir));
+            results.push(await spiderOneLocalRepo(opts, criteria, analyzer, repoDir));
         }
 
         return results.reduce(combineSpiderResults, emptySpiderResult);
@@ -54,7 +54,10 @@ const oneSpiderResult = {
     projectsDetected: 1,
 };
 
-async function spiderOneLocalRepo(opts: SpiderOptions, repoDir: string): Promise<SpiderResult> {
+async function spiderOneLocalRepo(opts: SpiderOptions,
+                                  criteria: ScmSearchCriteria,
+                                  analyzer: ProjectAnalyzer,
+                                  repoDir: string): Promise<SpiderResult> {
     const localRepoId = await repoIdFromLocalRepo(repoDir);
 
     if (await keepExistingPersisted(opts, localRepoId)) {
@@ -64,7 +67,28 @@ async function spiderOneLocalRepo(opts: SpiderOptions, repoDir: string): Promise
         };
     }
 
-    const project = NodeFsLocalProject.fromExistingDirectory(localRepoId, repoDir);
+    const project = await NodeFsLocalProject.fromExistingDirectory(localRepoId, repoDir);
+
+    if (criteria.projectTest && !await criteria.projectTest(project)) {
+        return {
+            ...oneSpiderResult,
+            projectsDetected: 0,        // does not count as a project
+        };
+    }
+
+    let analyzeResults: AnalyzeResults;
+    try {
+        analyzeResults = await analyze(project, analyzer, criteria);
+    } catch (err) {
+        return {
+            ...oneSpiderResult,
+            failed: [{
+                repoUrl: localRepoId.url,
+                whileTryingTo: "analyze",
+                message: err.message,
+            }],
+        };
+    }
 
     return {
         ...oneSpiderResult,
