@@ -44,7 +44,7 @@ process.on('uncaughtException', function (err) {
     process.exit(1);
 });
 
-interface SpiderOptions {
+interface SpiderAppOptions {
 
     source: "GitHub" | "local"
 
@@ -68,12 +68,12 @@ interface SpiderOptions {
 /**
  * Spider a GitHub.com org
  */
-async function spider(params: SpiderOptions) {
+async function spider(params: SpiderAppOptions) {
     const analyzer = createAnalyzer(undefined);
     const org = params.owner;
     const searchInRepoName = search ? ` ${search} in:name` : "";
 
-    const spider: Spider = params.source === "GitHub" ? new GitHubSpider() : new LocalSpider();
+    const spider: Spider = params.source === "GitHub" ? new GitHubSpider() : new LocalSpider(params.localDirectory);
     const persister = //new FileSystemProjectAnalysisResultStore();
         new PostgresProjectAnalysisResultStore(() => new Client({
             database: "org_viz",
@@ -166,10 +166,10 @@ if (!owner && !query && !localDirectory) {
     process.exit(1);
 }
 if (localDirectory) {
-    console.log(`Spidering repositories under ${localDirectory}`)
+    console.log(`Spidering repositories under ${localDirectory}...`)
 } else {
     if (search) {
-        console.log(`Spidering GitHub repositories in organization ${owner} with '${search}' in the name`);
+        console.log(`Spidering GitHub repositories in organization ${owner} with '${search}' in the name...`);
     }
     if (query) {
         console.log(`Running GitHub query '${query}' for workspace '${workspaceId}'...`);
@@ -178,7 +178,7 @@ if (localDirectory) {
     }
 }
 
-const params = { owner, search, query, workspaceId, source, localDirectory };
+const params: SpiderAppOptions = { owner, search, query, workspaceId, source, localDirectory };
 
 spider(params).then(r => {
     console.log(`Successfully analyzed ${JSON.stringify(params)}. result is `

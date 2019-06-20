@@ -38,6 +38,7 @@ import {
     ProjectUrl,
 } from "../../persist/ProjectAnalysisResultStore";
 import { SpideredRepo } from "../../SpideredRepo";
+import { keepExistingPersisted } from "../common";
 import { ScmSearchCriteria } from "../ScmSearchCriteria";
 import {
     PersistenceResult,
@@ -77,22 +78,25 @@ export class GitHubSpider implements Spider {
                 bucket = [];
             }
 
-            for await (const tooMuchSourceData of it) {
-                const sourceData = dropIrrelevantFields(tooMuchSourceData);
+            for await (const sourceData of it) {
                 ++repoCount;
                 const repo = {
                     owner: sourceData.owner.login,
                     repo: sourceData.name,
                     url: sourceData.url,
                 };
-                const found = await opts.persister.loadOne(repo);
-                if (found && await opts.keepExistingPersisted(found)) {
+                if (await keepExistingPersisted(opts, repo)) {
                     keepExisting.push(repo.url);
                     logger.info("Found valid record for " + JSON.stringify(repo));
                 } else {
                     logger.info("Performing fresh analysis of " + JSON.stringify(repo));
                     try {
-                        bucket.push(analyzeAndPersist(this.cloneFunction, sourceData, criteria, analyzer, opts));
+                        bucket.push(
+                            analyzeAndPersist(this.cloneFunction,
+                                dropIrrelevantFields(sourceData),
+                                criteria,
+                                analyzer,
+                                opts));
                         if (bucket.length >= opts.poolSize) {
                             // Run all promises together. Effectively promise pooling
                             await runAllPromisesInBucket();
