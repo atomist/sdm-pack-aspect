@@ -46,13 +46,14 @@ import {
 } from "../feature/FeatureManager";
 import { mavenDependenciesFeature } from "../feature/spring/mavenDependenciesFeature";
 import { springBootVersionFeature } from "../feature/spring/springBootVersionFeature";
+import { pythonDependenciesFeature } from "../feature/domain/pythonDependenciesFeature";
 
 const CiFeature = assembledFeature({
-        name: "CI",
-        displayName: "CI",
-        toDisplayableFingerprint: fp => fp.data,
-        toDisplayableFingerprintName: () => "CI",
-    },
+    name: "CI",
+    displayName: "CI",
+    toDisplayableFingerprint: fp => fp.data,
+    toDisplayableFingerprintName: () => "CI",
+},
     "elements.travis.name",
     "elements.circle.name",
     "elements.jenkins.name",
@@ -73,20 +74,21 @@ export const features: ManagedFeature[] = [
         canonicalize: c => c,
     }, ".gitignore",
     ), {
-        name: "node-git-ignore",
-        displayName: "Node git ignore",
-    }, async p => p.hasFile("package.json")),
+            name: "node-git-ignore",
+            displayName: "Node git ignore",
+        }, async p => p.hasFile("package.json")),
     conditionalize(filesFeature({
-            displayName: "git ignore",
-            type: "gitignore",
-            canonicalize: c => c,
-        }, ".gitignore",
+        displayName: "git ignore",
+        type: "gitignore",
+        canonicalize: c => c,
+    }, ".gitignore",
     ), {
-        name: "spring-git-ignore",
-        displayName: "Spring git ignore",
-    }, async p => p.hasFile("pom.xml")),
+            name: "spring-git-ignore",
+            displayName: "Spring git ignore",
+        }, async p => p.hasFile("pom.xml")),
     springBootVersionFeature,
     mavenDependenciesFeature,
+    pythonDependenciesFeature,
 ];
 
 async function idealFromNpm(fingerprintName: string): Promise<Array<PossibleIdeal<FP>>> {
@@ -144,45 +146,45 @@ export function setIdeal(fingerprintName: string, ideal: PossibleIdeal): void {
 }
 
 export const featureManager = new DefaultFeatureManager({
-        idealResolver: async name => {
-            return Ideals[name];
-        },
-        features,
-        flags: simpleFlagger(
-            async fp => {
-                return (fp.name === "tsVersion" && (fp as TypeScriptVersion).typeScriptVersion.startsWith("2")) ?
-                    {
-                        severity: "warn",
-                        authority: "Rod",
-                        message: "Old TypeScript version",
-                    } :
-                    undefined;
-            },
-            async fp => fp.name === "npm-project-dep::axios" ?
+    idealResolver: async name => {
+        return Ideals[name];
+    },
+    features,
+    flags: simpleFlagger(
+        async fp => {
+            return (fp.name === "tsVersion" && (fp as TypeScriptVersion).typeScriptVersion.startsWith("2")) ?
                 {
                     severity: "warn",
-                    authority: "Christian",
-                    message: "Don't use Axios",
+                    authority: "Rod",
+                    message: "Old TypeScript version",
                 } :
-                undefined,
-            async fp => {
-                if (fp.name === "tslintproperty::rules:max-file-line-count") {
-                    try {
-                        const obj = JSON.parse(fp.data);
-                        if (obj.options && obj.options.some(parseInt) > 500) {
-                            return {
-                                severity: "warn",
-                                authority: "Rod",
-                                message: "Allow long files",
-                            };
-                        }
-                    } catch {
-                        // Do nothing
+                undefined;
+        },
+        async fp => fp.name === "npm-project-dep::axios" ?
+            {
+                severity: "warn",
+                authority: "Christian",
+                message: "Don't use Axios",
+            } :
+            undefined,
+        async fp => {
+            if (fp.name === "tslintproperty::rules:max-file-line-count") {
+                try {
+                    const obj = JSON.parse(fp.data);
+                    if (obj.options && obj.options.some(parseInt) > 500) {
+                        return {
+                            severity: "warn",
+                            authority: "Rod",
+                            message: "Allow long files",
+                        };
                     }
+                } catch {
+                    // Do nothing
                 }
-                return undefined;
-            }),
-    },
+            }
+            return undefined;
+        }),
+},
 );
 
 export function idealConvergenceScorer(fm: FeatureManager): Scorer {
