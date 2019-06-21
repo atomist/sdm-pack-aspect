@@ -14,16 +14,33 @@
  * limitations under the License.
  */
 
-import { GitCommandGitProject, isLocalProject, logger, Project, RemoteRepoRef, RepoId } from "@atomist/automation-client";
+import {
+    GitCommandGitProject,
+    isLocalProject,
+    logger,
+    Project,
+    RemoteRepoRef,
+    RepoId,
+} from "@atomist/automation-client";
 import { isInMemoryProject } from "@atomist/automation-client/lib/project/mem/InMemoryProject";
-import { Interpretation, ProjectAnalysis, ProjectAnalyzer } from "@atomist/sdm-pack-analysis";
+import {
+    Interpretation,
+    ProjectAnalysis,
+    ProjectAnalyzer,
+} from "@atomist/sdm-pack-analysis";
 import * as path from "path";
 import { SubprojectDescription } from "../../ProjectAnalysisResult";
 import { SubprojectStatus } from "../../subprojectFinder";
-import { PersistResult, ProjectAnalysisResultStore } from "../persist/ProjectAnalysisResultStore";
+import {
+    PersistResult,
+    ProjectAnalysisResultStore,
+} from "../persist/ProjectAnalysisResultStore";
 import { SpideredRepo } from "../SpideredRepo";
 import { ScmSearchCriteria } from "./ScmSearchCriteria";
-import { ProjectAnalysisResultFilter, SpiderOptions } from "./Spider";
+import {
+    ProjectAnalysisResultFilter,
+    SpiderOptions,
+} from "./Spider";
 
 export async function keepExistingPersisted(
     opts: {

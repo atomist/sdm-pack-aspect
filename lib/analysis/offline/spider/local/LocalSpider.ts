@@ -16,14 +16,32 @@
 
 import { ProjectAnalyzer } from "@atomist/sdm-pack-analysis";
 import { ScmSearchCriteria } from "../ScmSearchCriteria";
-import { Spider, SpiderOptions, SpiderResult } from "../Spider";
+import {
+    Spider,
+    SpiderOptions,
+    SpiderResult,
+} from "../Spider";
 
-import { GitCommandGitProject, NodeFsLocalProject, RepoId, RepoRef } from "@atomist/automation-client";
+import {
+    GitCommandGitProject,
+    NodeFsLocalProject,
+    RepoId,
+    RepoRef,
+} from "@atomist/automation-client";
 import { execPromise } from "@atomist/sdm";
 import * as fs from "fs-extra";
 import * as path from "path";
-import { combinePersistResults, emptyPersistResult, PersistResult } from "../../persist/ProjectAnalysisResultStore";
-import { analyze, AnalyzeResults, keepExistingPersisted, persistRepoInfo } from "../common";
+import {
+    combinePersistResults,
+    emptyPersistResult,
+    PersistResult,
+} from "../../persist/ProjectAnalysisResultStore";
+import {
+    analyze,
+    AnalyzeResults,
+    keepExistingPersisted,
+    persistRepoInfo,
+} from "../common";
 
 export class LocalSpider implements Spider {
     constructor(public readonly localDirectory: string) { }

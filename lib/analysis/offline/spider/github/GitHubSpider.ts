@@ -29,7 +29,13 @@ import {
     PersistResult,
 } from "../../persist/ProjectAnalysisResultStore";
 import { SpideredRepo } from "../../SpideredRepo";
-import { analyze, AnalyzeResults, keepExistingPersisted, persistRepoInfo, RepoInfo } from "../common";
+import {
+    analyze,
+    AnalyzeResults,
+    keepExistingPersisted,
+    persistRepoInfo,
+    RepoInfo,
+} from "../common";
 import { ScmSearchCriteria } from "../ScmSearchCriteria";
 import {
     PersistenceResult,
