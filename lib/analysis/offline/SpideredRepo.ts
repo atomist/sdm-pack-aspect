@@ -5,7 +5,7 @@ import { ProjectAnalysisResult } from "../ProjectAnalysisResult";
  */
 export interface SpideredRepo extends ProjectAnalysisResult {
 
-    query: string;
+    query?: string;
 
     topics: string[];
 
