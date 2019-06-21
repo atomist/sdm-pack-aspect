@@ -2,7 +2,7 @@ import { ProjectAnalyzer } from "@atomist/sdm-pack-analysis";
 import { ScmSearchCriteria } from "../ScmSearchCriteria";
 import { Spider, SpiderOptions, SpiderResult } from "../Spider";
 
-import { NodeFsLocalProject, RepoId, RepoRef } from "@atomist/automation-client";
+import { NodeFsLocalProject, RepoId, RepoRef, GitCommandGitProject } from "@atomist/automation-client";
 import { execPromise } from "@atomist/sdm";
 import * as fs from "fs-extra";
 import * as path from "path";
@@ -13,8 +13,8 @@ export class LocalSpider implements Spider {
     constructor(public readonly localDirectory: string) { }
 
     public async spider(criteria: ScmSearchCriteria,
-                        analyzer: ProjectAnalyzer,
-                        opts: SpiderOptions): Promise<SpiderResult> {
+        analyzer: ProjectAnalyzer,
+        opts: SpiderOptions): Promise<SpiderResult> {
 
         const repoIterator = findRepositoriesUnder(this.localDirectory);
 
@@ -56,9 +56,9 @@ const oneSpiderResult = {
 };
 
 async function spiderOneLocalRepo(opts: SpiderOptions,
-                                  criteria: ScmSearchCriteria,
-                                  analyzer: ProjectAnalyzer,
-                                  repoDir: string): Promise<SpiderResult> {
+    criteria: ScmSearchCriteria,
+    analyzer: ProjectAnalyzer,
+    repoDir: string): Promise<SpiderResult> {
     const localRepoRef = await repoRefFromLocalRepo(repoDir);
 
     if (await keepExistingPersisted(opts, localRepoRef)) {
@@ -68,7 +68,7 @@ async function spiderOneLocalRepo(opts: SpiderOptions,
         };
     }
 
-    const project = await NodeFsLocalProject.fromExistingDirectory(localRepoRef, repoDir);
+    const project = await GitCommandGitProject.fromExistingDirectory(localRepoRef, repoDir);
 
     if (criteria.projectTest && !await criteria.projectTest(project)) {
         return {

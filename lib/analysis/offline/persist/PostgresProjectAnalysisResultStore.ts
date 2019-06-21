@@ -121,7 +121,7 @@ VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, current_timestamp)`,
                     repoRef.owner,
                     repoRef.repo,
                     repoRef.url,
-                    !!analysisResult.analysis.gitStatus ? analysisResult.analysis.gitStatus.sha : undefined,
+                    !!analysisResult.analysis.gitStatus ? analysisResult.analysis.gitStatus.sha : repoRef.sha,
                     analysisResult.analysis,
                     (analysisResult as SpideredRepo).query,
                 ]);
@@ -177,7 +177,7 @@ export interface ClientOptions {
 export type ClientFactory = () => Client;
 
 export async function doWithClient<R>(clientFactory: () => Client,
-                                      what: (c: Client) => Promise<R>): Promise<R> {
+    what: (c: Client) => Promise<R>): Promise<R> {
     const client = clientFactory();
     let result: R;
     try {
