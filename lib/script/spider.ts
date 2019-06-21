@@ -41,6 +41,7 @@ configureLogging(MinimalLogging);
 
 process.on('uncaughtException', function (err) {
     console.log(err);
+    console.log(err.stack);
     process.exit(1);
 });
 
@@ -158,7 +159,7 @@ const search = commandLineParameters.search;
 const query = commandLineParameters.query;
 const workspaceId = commandLineParameters.workspace || commandLineParameters.owner || "local";
 const source: "local" | "GitHub" = commandLineParameters.localDirectory ? "local" : "GitHub";
-const localDirectory = path.resolve(commandLineParameters.localDirectory);
+const localDirectory = commandLineParameters.localDirectory ? path.resolve(commandLineParameters.localDirectory) : "";
 
 
 if (!owner && !query && !localDirectory) {
