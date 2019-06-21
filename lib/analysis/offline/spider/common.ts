@@ -20,10 +20,10 @@ import { Interpretation, ProjectAnalysis, ProjectAnalyzer } from "@atomist/sdm-p
 import * as path from "path";
 import { SubprojectDescription } from "../../ProjectAnalysisResult";
 import { SubprojectStatus } from "../../subprojectFinder";
-import { ProjectAnalysisResultStore, PersistResult } from "../persist/ProjectAnalysisResultStore";
+import { PersistResult, ProjectAnalysisResultStore } from "../persist/ProjectAnalysisResultStore";
+import { SpideredRepo } from "../SpideredRepo";
 import { ScmSearchCriteria } from "./ScmSearchCriteria";
 import { ProjectAnalysisResultFilter, SpiderOptions } from "./Spider";
-import { SpideredRepo } from "../SpideredRepo";
 
 export async function keepExistingPersisted(
     opts: {
@@ -55,8 +55,8 @@ export interface RepoInfo {
  * Find project or subprojects
  */
 export async function analyze(project: Project,
-    analyzer: ProjectAnalyzer,
-    criteria: ScmSearchCriteria): Promise<AnalyzeResults> {
+                              analyzer: ProjectAnalyzer,
+                              criteria: ScmSearchCriteria): Promise<AnalyzeResults> {
 
     const subprojectResults = criteria.subprojectFinder ?
         await criteria.subprojectFinder.findSubprojects(project) :
@@ -81,8 +81,8 @@ export async function analyze(project: Project,
  * Analyze a project. May be a virtual project, within a bigger project.
  */
 async function analyzeProject(project: Project,
-    analyzer: ProjectAnalyzer,
-    subproject?: SubprojectDescription): Promise<RepoInfo> {
+                              analyzer: ProjectAnalyzer,
+                              subproject?: SubprojectDescription): Promise<RepoInfo> {
     const readmeFile = await project.getFile("README.md");
     const readme = !!readmeFile ? await readmeFile.getContent() : undefined;
     const totalFileCount = await project.totalFileCount();

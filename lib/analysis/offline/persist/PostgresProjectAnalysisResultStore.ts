@@ -177,7 +177,7 @@ export interface ClientOptions {
 export type ClientFactory = () => Client;
 
 export async function doWithClient<R>(clientFactory: () => Client,
-    what: (c: Client) => Promise<R>): Promise<R> {
+                                      what: (c: Client) => Promise<R>): Promise<R> {
     const client = clientFactory();
     let result: R;
     try {
