@@ -2,11 +2,12 @@ import { ProjectAnalyzer } from "@atomist/sdm-pack-analysis";
 import { ScmSearchCriteria } from "../ScmSearchCriteria";
 import { Spider, SpiderOptions, SpiderResult } from "../Spider";
 
-import { NodeFsLocalProject, RepoId } from "@atomist/automation-client";
+import { NodeFsLocalProject, RepoId, RepoRef } from "@atomist/automation-client";
 import { execPromise } from "@atomist/sdm";
 import * as fs from "fs-extra";
 import * as path from "path";
-import { analyze, AnalyzeResults, keepExistingPersisted } from "../common";
+import { combinePersistResults, emptyPersistResult, PersistResult } from "../../persist/ProjectAnalysisResultStore";
+import { analyze, AnalyzeResults, keepExistingPersisted, persistRepoInfo } from "../common";
 
 export class LocalSpider implements Spider {
     constructor(public readonly localDirectory: string) { }
@@ -58,16 +59,16 @@ async function spiderOneLocalRepo(opts: SpiderOptions,
                                   criteria: ScmSearchCriteria,
                                   analyzer: ProjectAnalyzer,
                                   repoDir: string): Promise<SpiderResult> {
-    const localRepoId = await repoIdFromLocalRepo(repoDir);
+    const localRepoRef = await repoRefFromLocalRepo(repoDir);
 
-    if (await keepExistingPersisted(opts, localRepoId)) {
+    if (await keepExistingPersisted(opts, localRepoRef)) {
         return {
             ...oneSpiderResult,
-            keptExisting: [localRepoId.url],
+            keptExisting: [localRepoRef.url],
         };
     }
 
-    const project = await NodeFsLocalProject.fromExistingDirectory(localRepoId, repoDir);
+    const project = await NodeFsLocalProject.fromExistingDirectory(localRepoRef, repoDir);
 
     if (criteria.projectTest && !await criteria.projectTest(project)) {
         return {
@@ -83,20 +84,32 @@ async function spiderOneLocalRepo(opts: SpiderOptions,
         return {
             ...oneSpiderResult,
             failed: [{
-                repoUrl: localRepoId.url,
+                repoUrl: localRepoRef.url,
                 whileTryingTo: "analyze",
                 message: err.message,
             }],
         };
     }
 
+    const persistResults: PersistResult[] = [];
+    for (const repoInfo of analyzeResults.repoInfos) {
+        if (!criteria.interpretationTest || criteria.interpretationTest(repoInfo.interpretation)) {
+            const persistResult = await persistRepoInfo(opts, repoInfo, {
+                sourceData: { localDirectory: repoDir },
+                url: localRepoRef.url,
+                timestamp: new Date(),
+            });
+            persistResults.push(persistResult);
+        }
+    }
+    const combinedPersistResult = persistResults.reduce(combinePersistResults, emptyPersistResult);
+
     return {
-        ...oneSpiderResult,
-        failed: [{
-            repoUrl: localRepoId.url,
-            whileTryingTo: "finish implementing",
-            message: "keep working Jess",
-        }],
+        repositoriesDetected: 1,
+        projectsDetected: analyzeResults.projectsDetected,
+        failed: combinedPersistResult.failed,
+        persistedAnalyses: combinedPersistResult.succeeded,
+        keptExisting: [],
     };
 }
 
@@ -129,10 +142,19 @@ async function* findRepositoriesUnder(dir: string): AsyncIterable<string> {
 /**
  * @param repoDir full path to repository
  */
-function repoIdFromLocalRepo(repoDir: string): Promise<RepoId> {
-    return execPromise("git", ["remote", "get-url", "origin"], { cwd: repoDir })
+async function repoRefFromLocalRepo(repoDir: string): Promise<RepoRef> {
+    const repoId: RepoId = await execPromise("git", ["remote", "get-url", "origin"], { cwd: repoDir })
         .then(execHappened => repoIdFromOriginUrl(execHappened.stdout))
         .catch(oops => inventRepoId(repoDir));
+
+    const sha = await execPromise("git", ["rev-parse", "HEAD", "origin"], { cwd: repoDir })
+        .then(execHappened => execHappened.stdout)
+        .catch(oops => "unknown");
+
+    return {
+        ...repoId,
+        sha,
+    };
 }
 
 function repoIdFromOriginUrl(originUrl: string): RepoId {

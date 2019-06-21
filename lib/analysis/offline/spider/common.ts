@@ -1,12 +1,13 @@
-import { GitCommandGitProject, isLocalProject, Project, RemoteRepoRef, RepoId } from "@atomist/automation-client";
+import { GitCommandGitProject, isLocalProject, logger, Project, RemoteRepoRef, RepoId } from "@atomist/automation-client";
 import { isInMemoryProject } from "@atomist/automation-client/lib/project/mem/InMemoryProject";
-import { ProjectAnalyzer, Interpretation, ProjectAnalysis } from "@atomist/sdm-pack-analysis";
+import { Interpretation, ProjectAnalysis, ProjectAnalyzer } from "@atomist/sdm-pack-analysis";
 import * as path from "path";
 import { SubprojectDescription } from "../../ProjectAnalysisResult";
 import { SubprojectStatus } from "../../subprojectFinder";
-import { ProjectAnalysisResultStore } from "../persist/ProjectAnalysisResultStore";
+import { ProjectAnalysisResultStore, PersistResult } from "../persist/ProjectAnalysisResultStore";
 import { ScmSearchCriteria } from "./ScmSearchCriteria";
-import { ProjectAnalysisResultFilter } from "./Spider";
+import { ProjectAnalysisResultFilter, SpiderOptions } from "./Spider";
+import { SpideredRepo } from "../SpideredRepo";
 
 export async function keepExistingPersisted(
     opts: {
@@ -101,4 +102,42 @@ async function projectUnder(p: Project, pathWithin: string): Promise<Project> {
         (p as any).credentials,
         p.release,
     );
+}
+
+export async function persistRepoInfo(
+    opts: SpiderOptions,
+    repoInfo: RepoInfo,
+    moreInfo: {
+        sourceData: any,
+        query?: string,
+        timestamp: Date,
+        url: string,
+    }): Promise<PersistResult> {
+    const toPersist: SpideredRepo = {
+        workspaceId: opts.workspaceId,
+        analysis: {
+            // Use a spread as url has a getter and otherwise disappears
+            ...repoInfo.analysis,
+            id: {
+                ...repoInfo.analysis.id,
+                url: moreInfo.url,
+            },
+        },
+        topics: [], // enriched.interpretation.keywords,
+        sourceData: moreInfo.sourceData,
+        timestamp: moreInfo.timestamp,
+        query: moreInfo.query,
+        readme: repoInfo.readme,
+        subproject: repoInfo.subproject,
+    };
+    const persistResult = await opts.persister.persist(toPersist);
+    if (opts.onPersisted) {
+        try {
+            await opts.onPersisted(toPersist);
+        } catch (err) {
+            logger.warn("Failed to action after persist repo %j: %s",
+                toPersist.analysis.id, err.message);
+        }
+    }
+    return persistResult;
 }

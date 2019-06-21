@@ -29,7 +29,7 @@ import {
     PersistResult,
 } from "../../persist/ProjectAnalysisResultStore";
 import { SpideredRepo } from "../../SpideredRepo";
-import { analyze, AnalyzeResults, keepExistingPersisted, RepoInfo } from "../common";
+import { analyze, AnalyzeResults, keepExistingPersisted, persistRepoInfo, RepoInfo } from "../common";
 import { ScmSearchCriteria } from "../ScmSearchCriteria";
 import {
     PersistenceResult,
@@ -238,44 +238,6 @@ async function analyzeAndPersist(cloneFunction: CloneFunction,
         projectCount: analyzeResults.projectsDetected,
         persisted: _.flatMap(persistResults, p => p.succeeded),
     };
-}
-
-export async function persistRepoInfo(
-    opts: SpiderOptions,
-    repoInfo: RepoInfo,
-    moreInfo: {
-        sourceData: any,
-        query?: string,
-        timestamp: Date,
-        url: string,
-    }): Promise<PersistResult> {
-    const toPersist: SpideredRepo = {
-        workspaceId: opts.workspaceId,
-        analysis: {
-            // Use a spread as url has a getter and otherwise disappears
-            ...repoInfo.analysis,
-            id: {
-                ...repoInfo.analysis.id,
-                url: moreInfo.url,
-            },
-        },
-        topics: [], // enriched.interpretation.keywords,
-        sourceData: moreInfo.sourceData,
-        timestamp: moreInfo.timestamp,
-        query: moreInfo.query,
-        readme: repoInfo.readme,
-        subproject: repoInfo.subproject,
-    };
-    const persistResult = await opts.persister.persist(toPersist);
-    if (opts.onPersisted) {
-        try {
-            await opts.onPersisted(toPersist);
-        } catch (err) {
-            logger.warn("Failed to action after persist repo %j: %s",
-                toPersist.analysis.id, err.message);
-        }
-    }
-    return persistResult;
 }
 
 /**
