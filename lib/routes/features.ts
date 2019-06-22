@@ -43,6 +43,7 @@ import { CodeOwnershipFeature } from "../element/codeOwnership";
 import { DefaultFeatureManager } from "../feature/DefaultFeatureManager";
 import { assembledFeature } from "../feature/domain/assembledFeature";
 import { conditionalize } from "../feature/domain/oneOf";
+import { pythonDependenciesFeature } from "../feature/domain/pythonDependenciesFeature";
 import {
     ciFeature,
     javaBuildFeature,
@@ -60,7 +61,6 @@ import {
 } from "../feature/FeatureManager";
 import { mavenDependenciesFeature } from "../feature/spring/mavenDependenciesFeature";
 import { springBootVersionFeature } from "../feature/spring/springBootVersionFeature";
-import { pythonDependenciesFeature } from "../feature/domain/pythonDependenciesFeature";
 
 const CiFeature = assembledFeature({
     name: "CI",
@@ -128,10 +128,10 @@ export const features: ManagedFeature[] = [
     ciFeature,
     javaBuildFeature,
     conditionalize(filesFeature({
-            displayName: "git ignore",
-            type: "gitignore",
-            canonicalize: c => c,
-        }, ".gitignore",
+        displayName: "git ignore",
+        type: "gitignore",
+        canonicalize: c => c,
+    }, ".gitignore",
     ), {
             name: "node-git-ignore",
             displayName: "Node git ignore",
