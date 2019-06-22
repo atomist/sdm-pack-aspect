@@ -57,7 +57,7 @@ export function findDependenciesFromRequirements(requirementsTxt: string): Pytho
     // tslint:disable-next-line:no-conditional-assignment
     while ((v = r.exec(requirementsTxt)) !== null) {
         console.log(v[0]);
-        const requirementLine = v[0].replace(/\s+#.*$/, "");
+        const requirementLine = v[0].replace(/\s+#.*$/, "").replace(/\s+/g, "");
         results.push({
             libraryName: v[1],
             requirementLine,

@@ -15,7 +15,7 @@ describe("parsing requirements.txt", () => {
         const result = findByLibraryName("coverage", all);
 
         assert(result, "Library not found: coverage");
-        assert.strictEqual(result.requirementLine, "coverage != 3.5");
+        assert.strictEqual(result.requirementLine, "coverage!=3.5");
     });
 
     it("ignores comments", () => {
@@ -34,11 +34,29 @@ describe("parsing requirements.txt", () => {
         assert(!result);
     });
 
-    it.skip("Strips comments from the end of the line");
+    it("Strips comments from the end of the line", () => {
+        const all = findDependenciesFromRequirements(sample);
+        const result = findByLibraryName("coverage", all);
 
-    it.skip("finds library names with numbers");
+        assert(result, "Library not found: coverage");
+        assert.strictEqual(result.requirementLine, "coverage!=3.5");
+    });
 
-    it.skip("removes spaces");
+    it("finds library names with numbers", () => {
+        const all = findDependenciesFromRequirements(sample);
+        const result = findByLibraryName("beautifulsoup4", all);
+
+        assert(result, "Library not found: beautifulsoup4");
+        assert.strictEqual(result.requirementLine, "beautifulsoup4");
+    });
+
+    it("removes spaces", () => {
+        const all = findDependenciesFromRequirements(sample);
+        const result = findByLibraryName("coverage", all);
+
+        assert(result, "Library not found: coverage");
+        assert.strictEqual(result.requirementLine, "coverage!=3.5");
+    });
 
     it.skip("Combines lines continued with slash");
 
