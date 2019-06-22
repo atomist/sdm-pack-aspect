@@ -48,7 +48,21 @@ export const pythonDependenciesFeature: Feature = {
 };
 
 export function findDependenciesFromRequirements(requirementsTxt: string): PythonDependency[] {
-    return [];
+
+    const r = /^([\w-]+)/mg;
+
+    const results: PythonDependency[] = [];
+
+    let v: string[];
+    // tslint:disable-next-line:no-conditional-assignment
+    while ((v = r.exec(requirementsTxt)) !== null) {
+        console.log(v[0]);
+        results.push({
+            libraryName: v[1],
+            requirementLine: v[0],
+        });
+    }
+    return results;
 }
 
 function depToFingerprint(pd: PythonDependency): FP {
