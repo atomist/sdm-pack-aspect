@@ -2,7 +2,7 @@ import * as assert from "assert";
 import { findDependenciesFromRequirements, PythonDependency } from "../../lib/feature/domain/pythonDependenciesFeature";
 
 describe("parsing requirements.txt", () => {
-    it("can see a lib with no specifier", async () => {
+    it("can see a lib with no specifier", () => {
         const all = findDependenciesFromRequirements(sample);
         const result = findByLibraryName("nose-cov", all);
 
@@ -10,7 +10,13 @@ describe("parsing requirements.txt", () => {
         assert.strictEqual(result.requirementLine, "nose-cov");
     });
 
-    it.skip("can see a lib with a version specifier");
+    it("can see a lib with a version specifier", () => {
+        const all = findDependenciesFromRequirements(sample);
+        const result = findByLibraryName("coverage", all);
+
+        assert(result, "Library not found: coverage");
+        assert.strictEqual(result.requirementLine, "coverage != 3.5");
+    });
 
     it.skip("ignores comments");
 

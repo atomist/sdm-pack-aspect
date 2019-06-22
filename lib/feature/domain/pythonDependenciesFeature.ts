@@ -49,7 +49,7 @@ export const pythonDependenciesFeature: Feature = {
 
 export function findDependenciesFromRequirements(requirementsTxt: string): PythonDependency[] {
 
-    const r = /^([\w-]+)/mg;
+    const r = /^([\w-]+).*$/mg;
 
     const results: PythonDependency[] = [];
 
@@ -57,9 +57,10 @@ export function findDependenciesFromRequirements(requirementsTxt: string): Pytho
     // tslint:disable-next-line:no-conditional-assignment
     while ((v = r.exec(requirementsTxt)) !== null) {
         console.log(v[0]);
+        const requirementLine = v[0].replace(/\s+#.*$/, "");
         results.push({
             libraryName: v[1],
-            requirementLine: v[0],
+            requirementLine,
         });
     }
     return results;
