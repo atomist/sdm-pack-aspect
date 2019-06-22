@@ -34,6 +34,7 @@ import { CodeOwnershipFeature } from "../element/codeOwnership";
 import { DefaultFeatureManager } from "../feature/DefaultFeatureManager";
 import { assembledFeature } from "../feature/domain/assembledFeature";
 import { conditionalize } from "../feature/domain/oneOf";
+import { pythonDependenciesFeature } from "../feature/domain/pythonDependenciesFeature";
 import { TsLintPropertyFeature } from "../feature/domain/TsLintFeature";
 import {
     TypeScriptVersion,
@@ -46,7 +47,6 @@ import {
 } from "../feature/FeatureManager";
 import { mavenDependenciesFeature } from "../feature/spring/mavenDependenciesFeature";
 import { springBootVersionFeature } from "../feature/spring/springBootVersionFeature";
-import { pythonDependenciesFeature } from "../feature/domain/pythonDependenciesFeature";
 
 const CiFeature = assembledFeature({
     name: "CI",
