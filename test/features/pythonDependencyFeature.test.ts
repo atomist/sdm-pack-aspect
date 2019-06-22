@@ -6,6 +6,7 @@ describe("parsing requirements.txt", () => {
         const all = findDependenciesFromRequirements(sample);
         const result = findByLibraryName("nose-cov", all);
 
+        assert(result, "Library not found: nose-cov");
         assert.strictEqual(result.requirementLine, "nose-cov");
     });
 
@@ -19,9 +20,13 @@ describe("parsing requirements.txt", () => {
 
     it.skip("Strips comments from the end of the line");
 
+    it.skip("finds library names with numbers");
+
     it.skip("removes spaces");
 
     it.skip("Combines lines continued with slash");
+
+    it.skip("Includes the environment specifier");
 });
 
 function findByLibraryName(libraryName: string, pds: PythonDependency[]): PythonDependency | undefined {
@@ -55,4 +60,6 @@ http://wxpython.org/Phoenix/snapshot-builds/wxPython_Phoenix-3.0.3.dev1820+49a88
 #   Same as 1st section, just here to show that you can put things in any order.
 rejected
 green
+# environbment specified should be included
+SomeProject; sys_platform == 'win32'
 `;
