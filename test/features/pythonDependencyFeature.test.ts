@@ -18,11 +18,21 @@ describe("parsing requirements.txt", () => {
         assert.strictEqual(result.requirementLine, "coverage != 3.5");
     });
 
-    it.skip("ignores comments");
+    it("ignores comments", () => {
+        const all = findDependenciesFromRequirements(sample);
+        const result = findByLibraryName("nose-that-is-commented-out", all);
+
+        assert(!result);
+    });
 
     it.skip("follows references (I don't expect to implement this)");
 
-    it.skip("Ignores options");
+    it("Ignores options", () => {
+        const all = findDependenciesFromRequirements(sample);
+        const result = findByLibraryName("-r", all);
+
+        assert(!result);
+    });
 
     it.skip("Strips comments from the end of the line");
 
