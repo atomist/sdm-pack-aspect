@@ -58,9 +58,21 @@ describe("parsing requirements.txt", () => {
         assert.strictEqual(result.requirementLine, "coverage!=3.5");
     });
 
-    it.skip("Combines lines continued with slash");
+    it("Combines lines continued with slash", () => {
+        const all = findDependenciesFromRequirements(sample);
+        const result = findByLibraryName("Mopidy-Dirble", all);
 
-    it.skip("Includes the environment specifier");
+        assert(result, "Library not found: Mopidy-Dirble");
+        assert.strictEqual(result.requirementLine, "Mopidy-Dirble~=1.1");
+    });
+
+    it("Includes the environment specifier", () => {
+        const all = findDependenciesFromRequirements(sample);
+        const result = findByLibraryName("SomeProject", all);
+
+        assert(result, "Library not found: SomeProject");
+        assert.strictEqual(result.requirementLine, "SomeProject;sys_platform=='win32'");
+    });
 });
 
 function findByLibraryName(libraryName: string, pds: PythonDependency[]): PythonDependency | undefined {
@@ -80,7 +92,8 @@ beautifulsoup4
 docopt == 0.6.1             # Version Matching. Must be version 0.6.1
 keyring >= 4.1.1            # Minimum version 4.1.1
 coverage != 3.5             # Version Exclusion. Anything except version 3.5
-Mopidy-Dirble ~= 1.1        # Compatible release. Same as >= 1.1, == 1.*
+Mopidy-Dirble ~= \
+   1.1        # Compatible release. Same as >= 1.1, == 1.*
 #
 ###### Refer to other requirements files ######
 -r other-requirements.txt
