@@ -16,7 +16,7 @@
 
 import { Feature, FP, sha256 } from "@atomist/sdm-pack-fingerprints";
 
-const PythonDirectDepType = "maven-direct-dep";
+const PythonDirectDepType = "python-direct-dep";
 
 export interface PythonDependency {
     libraryName: string;
@@ -42,7 +42,7 @@ export const pythonDependenciesFeature: Feature = {
     selector: fp => PythonDirectDepType === fp.type,
     toDisplayableFingerprintName: name => name,
     toDisplayableFingerprint: fp => {
-        const version = fp.data;
+        const version = fp.data.replace(fp.name, "");
         return version;
     },
 };
