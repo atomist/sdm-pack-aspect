@@ -49,7 +49,7 @@ export const pythonDependenciesFeature: Feature = {
 
 export function findDependenciesFromRequirements(requirementsTxt: string): PythonDependency[] {
 
-    const r = /^(\w[\w-]*).*$/mg;
+    const r = /^([a-zA-Z0-9][A-Za-z0-9._-]*).*$/mg;
 
     const results: PythonDependency[] = [];
 
