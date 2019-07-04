@@ -46,7 +46,7 @@ export interface Classifier {
  * @return {Feature}
  */
 export function classificationFeature(id: Pick<Feature, "name" | "displayName" | "toDisplayableFingerprintName"> & { allowMulti?: boolean },
-    ...classifiers: Classifier[]): Feature {
+                                      ...classifiers: Classifier[]): Feature {
     return {
         ...id,
         extract: async p => {

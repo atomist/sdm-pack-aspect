@@ -61,9 +61,9 @@ export function oneOf(
  * @return {Feature}
  */
 export function conditionalize(f: Feature,
-    details: Pick<Feature, "name" | "displayName" |
+                               details: Pick<Feature, "name" | "displayName" |
         "toDisplayableFingerprint" | "toDisplayableFingerprintName">,
-    test: (p: Project) => Promise<boolean>): Feature {
+                               test: (p: Project) => Promise<boolean>): Feature {
     return {
         ...f,
         ...details,
