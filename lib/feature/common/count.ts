@@ -35,7 +35,6 @@ export const fileCountFeature: Feature = {
     },
     toDisplayableFingerprint: fp => fp.data,
     toDisplayableFingerprintName: () => "size",
-    selector: fp => fp.name === "size",
 };
 
 export const branchCount: Feature = {
@@ -56,5 +55,4 @@ export const branchCount: Feature = {
     },
     toDisplayableFingerprint: fp => fp.data,
     toDisplayableFingerprintName: () => "size",
-    selector: fp => fp.name === "size",
 };
