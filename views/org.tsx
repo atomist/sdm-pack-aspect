@@ -13,6 +13,7 @@ export interface FingerprintForDisplay extends MaybeAnIdeal {
 export interface ManagedFeatureForDisplay {
     name: string;
     displayName?: string;
+    documentationUrl?: string;
 }
 
 export interface FeatureForDisplay {
@@ -96,8 +97,10 @@ function displayUnfoundFeatures(mfs: ManagedFeatureForDisplay[]): React.ReactEle
 }
 
 function displayUnfoundFeature(mf: ManagedFeatureForDisplay, i: number): React.ReactElement {
+    const link = !!mf.documentationUrl ?
+        <a href={mf.documentationUrl}>{mf.displayName}</a> : mf.displayName;
     return <li className="unfound">
-        {mf.displayName}
+        {link}
     </li>;
 }
 
