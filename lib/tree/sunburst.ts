@@ -170,10 +170,12 @@ export async function entropy(typeAndNameQuery: () => Promise<FP[]>): Promise<nu
     const fps: FP[] = await typeAndNameQuery();
     const groups: Record<string, FP[]> = _.groupBy(fps, fp => fp.sha);
     const total: number = fps.length;
-    return Object.values(groups).reduce(
+    return -1 * Object.values(groups).reduce(
         (agg, fp: FP[]) => {
-            return agg + fp.length * Math.log(fp.length / total);
+            const p: number = fp.length / total;
+            return agg + p * Math.log(p);
         },
         0,
     );
 }
+
