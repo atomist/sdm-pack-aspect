@@ -14,7 +14,10 @@
  * limitations under the License.
  */
 
-import { FingerprintData, logger } from "@atomist/automation-client";
+import {
+    FingerprintData,
+    logger,
+} from "@atomist/automation-client";
 import { ExpressCustomizer } from "@atomist/automation-client/lib/configuration";
 import {
     Feature,
@@ -42,7 +45,8 @@ import {
     repoTree,
 } from "../feature/repoTree";
 import {
-    analyzeCohort, CohortAnalysis,
+    analyzeCohort,
+    CohortAnalysis,
     killChildren,
     leavesUnder,
     splitBy,
