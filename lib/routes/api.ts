@@ -42,7 +42,7 @@ import {
     repoTree,
 } from "../feature/repoTree";
 import {
-    entropy,
+    analyzeCohort, CohortAnalysis,
     killChildren,
     leavesUnder,
     splitBy,
@@ -89,7 +89,7 @@ export function api(clientFactory: ClientFactory,
         express.get("/api/v1/:workspace_id/fingerprints", [corsHandler(), ...authHandlers()], async (req, res) => {
             try {
                 const workspaceId = req.params.workspace_id || "local";
-                const fps = await fingerprintsInWorkspace(clientFactory, workspaceId);
+                const fps = await fingerprintUsageForType(clientFactory, workspaceId);
                 logger.debug("Returning fingerprints for '%s': %j", workspaceId, fps);
                 res.json(fps);
             } catch (e) {
@@ -102,7 +102,7 @@ export function api(clientFactory: ClientFactory,
         express.get("/api/v1/:workspace_id/fingerprint/:type", [corsHandler(), ...authHandlers()], async (req, res) => {
             try {
                 const workspaceId = req.params.workspace_id || "local";
-                const fps = await fingerprintsOfType(clientFactory, req.params.type, workspaceId);
+                const fps = await fingerprintUsageForType(clientFactory, req.params.type, workspaceId);
                 logger.debug("Returning fingerprints of type for '%s': %j", workspaceId, fps);
                 res.json(fps);
             } catch (e) {
@@ -208,39 +208,55 @@ function resolveFeatureNames(fm: FeatureManager, t: SunburstTree): void {
 /**
  * Data about the use of a fingerprint in a workspace
  */
-export interface FingerprintData {
+export interface FingerprintUsage extends CohortAnalysis {
     name: string;
     type: string;
     categories: string[];
-    count: number;
 }
 
-async function fingerprintsInWorkspace(clientFactory: ClientFactory, workspaceId: string): Promise<FingerprintData[]> {
+/**
+ * Raw fingerprints in the workspace
+ * @return {Promise<FP[]>}
+ */
+async function fingerprintsInWorkspace(clientFactory: ClientFactory,
+                                       workspaceId: string,
+                                       type?: string,
+                                       name?: string): Promise<FP[]> {
     return doWithClient(clientFactory, async client => {
-        const sql = `SELECT distinct f.name as fingerprintName, feature_name as featureName, count(rs.id) as appearsIn
+        const sql = `SELECT distinct f.name as fingerprintName, feature_name as type
   from repo_fingerprints rf, repo_snapshots rs, fingerprints f
   WHERE rf.repo_snapshot_id = rs.id AND rf.fingerprint_id = f.id AND rs.workspace_id ${workspaceId === "*" ? "!=" : "="} $1
-  GROUP by feature_name, fingerprintName`;
-        const rows = await client.query(sql, [workspaceId]);
+  AND ${type ? "type = $2" : "true"} AND ${type ? "name = $3" : "true"}`;
+        const params = [workspaceId];
+        if (!!type) {
+            params.push(type);
+        }
+        if (!!name) {
+            params.push(name);
+        }
+
+        const rows = await client.query(sql, params);
         return rows.rows.map(row => {
             return {
                 name: row.fingerprintname,
                 type: row.featurename,
-                categories: getCategories({ name: row.featurename }),
-                count: parseInt(row.appearsin, 10),
             };
         });
     });
 }
 
-async function fingerprintsOfType(clientFactory: ClientFactory, type: string, workspaceId: string): Promise<FingerprintData[]> {
-    return doWithClient(clientFactory, async client => {
+async function fingerprintUsageForType(clientFactory: ClientFactory, workspaceId: string, type?: string): Promise<FingerprintUsage[]> {
+    return doWithClient<FingerprintUsage[]>(clientFactory, async client => {
         const sql = `SELECT distinct f.name as fingerprintName, count(rs.id) as appearsIn
   from repo_fingerprints rf, repo_snapshots rs, fingerprints f
-  WHERE rf.repo_snapshot_id = rs.id AND rf.fingerprint_id = f.id AND rs.workspace_id ${workspaceId === "*" ? "!=" : "="} $2
-  AND f.feature_name = $1
+  WHERE rf.repo_snapshot_id = rs.id AND rf.fingerprint_id = f.id AND rs.workspace_id ${workspaceId === "*" ? "!=" : "="} $1
+  AND  ${type ? "f.feature_name = $2" : "true" }
   GROUP by fingerprintName`;
-        const rows = await client.query(sql, [type, workspaceId]);
+        const params = [ workspaceId];
+        if (!!type) {
+            params.push(type);
+        }
+        const rows = await client.query(sql, params);
         return rows.rows.map(row => {
             return {
                 name: row.fingerprintname,
@@ -252,25 +268,15 @@ async function fingerprintsOfType(clientFactory: ClientFactory, type: string, wo
     });
 }
 
-async function fingerprintsOfTypeAndName(clientFactory: ClientFactory, type: string, name: string, workspaceId: string): Promise<FP[]> {
-    return doWithClient(clientFactory, async client => {
-        const sql = `SELECT f.name, f.feature_name as type, f.sha, f.data
-  from repo_fingerprints rf, repo_snapshots rs, fingerprints f
-  WHERE f.feature_name = $1 AND f.name = $2
-  AND rf.repo_snapshot_id = rs.id AND rf.fingerprint_id = f.id AND rs.workspace_id ${workspaceId === "*" ? "!=" : "="} $3`;
-        const rows = await client.query(sql, [type, name, workspaceId]);
-        return rows.rows;
-    });
-}
-
 async function calculateAndPersistEntropy(clientFactory: ClientFactory, type: string, name: string, workspaceId: string): Promise<void> {
-    const fingerprints = await fingerprintsOfTypeAndName(clientFactory,  type, name, workspaceId);
-    const ent = await entropy(async () => fingerprints);
+    const fingerprints = await fingerprintsInWorkspace(clientFactory, workspaceId, type, name);
+    const cohortAnalysis = await analyzeCohort(async () => fingerprints);
     await doWithClient(clientFactory, async client => {
-        const sql = `INSERT INTO fingerprint_analytics (feature_name, name, workspace_id, entropy)
-        values ($1, $2, $3, $4)
-        ON CONFLICT ON CONSTRAINT fingerprint_analytics_pkey DO UPDATE SET entropy = $4`;
-        const rows = await client.query(sql, [type, name, workspaceId, ent]);
+        const sql = `INSERT INTO fingerprint_analytics (feature_name, name, workspace_id, entropy, variants, count)
+        values ($1, $2, $3, $4, $5, $6)
+        ON CONFLICT ON CONSTRAINT fingerprint_analytics_pkey DO UPDATE SET entropy = $4, variants = $5, count = $6`;
+        const rows = await client.query(sql, [type, name, workspaceId, cohortAnalysis.entropy,
+            cohortAnalysis.variants, cohortAnalysis.count]);
         return rows.rows;
     });
 }
