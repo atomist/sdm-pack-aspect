@@ -52,7 +52,9 @@ CREATE TABLE fingerprint_analytics (
   name text NOT NULL,
   feature_name text NOT NULL,
   workspace_id varchar NOT NULL,
+  count numeric,
   entropy numeric,
+  variants numeric,
   PRIMARY KEY (name, feature_name, workspace_id)
 );
 
@@ -71,3 +73,6 @@ CREATE INDEX ON repo_snapshots (workspace_id);
 
 CREATE INDEX ON fingerprints (name);
 CREATE INDEX ON fingerprints (feature_name);
+
+CREATE INDEX ON fingerprint_analytics (workspace_id);
+
