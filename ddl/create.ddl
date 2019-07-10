@@ -16,6 +16,8 @@ DROP TABLE IF EXISTS fingerprints;
 
 DROP TABLE IF EXISTS repo_snapshots;
 
+DROP TABLE IF EXISTS fingerprint_analytics;
+
 CREATE TABLE repo_snapshots (
  id varchar NOT NULL PRIMARY KEY,
  workspace_id varchar NOT NULL,
@@ -44,6 +46,14 @@ CREATE TABLE IF NOT EXISTS repo_fingerprints (
   repo_snapshot_id varchar references repo_snapshots(id),
   fingerprint_id varchar references fingerprints(id),
   PRIMARY KEY (repo_snapshot_id, fingerprint_id)
+);
+
+CREATE TABLE fingerprint_analytics (
+  name text NOT NULL,
+  feature_name text NOT NULL,
+  workspace_id varchar NOT NULL,
+  entropy numeric,
+  PRIMARY KEY (name, feature_name, workspace_id)
 );
 
 -- For each name/feature_name combination, the ideal for the given workspace

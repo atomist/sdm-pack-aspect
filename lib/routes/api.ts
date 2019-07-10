@@ -42,6 +42,7 @@ import {
     repoTree,
 } from "../feature/repoTree";
 import {
+    entropy,
     killChildren,
     leavesUnder,
     splitBy,
@@ -180,6 +181,12 @@ export function api(clientFactory: ClientFactory,
             const data = await cannedQuery.toSunburstTree(() => relevantRepos.map(r => r.analysis));
             return res.json(data);
         });
+
+        // Calculate and persist entropy for this fingerprint
+        express.put("/api/v1/:workspace/entropy/:type/:name", ...handlers, async (req, res) => {
+            await calculateAndPersistEntropy(clientFactory, req.params.type, req.params.name, req.params.workspace);
+            res.sendStatus(201);
+        });
     };
 }
 
@@ -242,5 +249,28 @@ async function fingerprintsOfType(clientFactory: ClientFactory, type: string, wo
                 count: parseInt(row.appearsin, 10),
             };
         });
+    });
+}
+
+async function fingerprintsOfTypeAndName(clientFactory: ClientFactory, type: string, name: string, workspaceId: string): Promise<FP[]> {
+    return doWithClient(clientFactory, async client => {
+        const sql = `SELECT f.name, f.feature_name as type, f.sha, f.data
+  from repo_fingerprints rf, repo_snapshots rs, fingerprints f
+  WHERE f.feature_name = $1 AND f.name = $2
+  AND rf.repo_snapshot_id = rs.id AND rf.fingerprint_id = f.id AND rs.workspace_id ${workspaceId === "*" ? "!=" : "="} $3`;
+        const rows = await client.query(sql, [type, name, workspaceId]);
+        return rows.rows;
+    });
+}
+
+async function calculateAndPersistEntropy(clientFactory: ClientFactory, type: string, name: string, workspaceId: string): Promise<void> {
+    const fingerprints = await fingerprintsOfTypeAndName(clientFactory,  type, name, workspaceId);
+    const ent = await entropy(async () => fingerprints);
+    await doWithClient(clientFactory, async client => {
+        const sql = `INSERT INTO fingerprint_analytics (feature_name, name, workspace_id, entropy)
+        values ($1, $2, $3, $4)
+        ON CONFLICT ON CONSTRAINT fingerprint_analytics_pkey DO UPDATE SET entropy = $4`;
+        const rows = await client.query(sql, [type, name, workspaceId, ent]);
+        return rows.rows;
     });
 }

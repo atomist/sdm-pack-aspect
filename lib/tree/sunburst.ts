@@ -168,11 +168,8 @@ function merge2Trees(t1: SunburstTree, t2: SunburstTree): SunburstTree {
 
 export async function entropy(typeAndNameQuery: () => Promise<FP[]>): Promise<number> {
     const fps: FP[] = await typeAndNameQuery();
-
     const groups: Record<string, FP[]> = _.groupBy(fps, fp => fp.sha);
-
     const total: number = fps.length;
-
     return Object.values(groups).reduce(
         (agg, fp: FP[]) => {
             return agg + fp.length * Math.log(fp.length / total);
