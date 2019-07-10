@@ -178,4 +178,3 @@ export async function entropy(typeAndNameQuery: () => Promise<FP[]>): Promise<nu
         0,
     );
 }
-
