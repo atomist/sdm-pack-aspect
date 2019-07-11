@@ -67,9 +67,9 @@ export function api(clientFactory: ClientFactory,
         express.get("/api/v1/:workspace_id/fingerprints", [corsHandler(), ...authHandlers()], async (req, res) => {
             try {
                 const workspaceId = req.params.workspace_id || "local";
-                const fps = await fingerprintUsageForType(clientFactory, workspaceId);
-                logger.debug("Returning fingerprints for '%s': %j", workspaceId, fps);
-                res.json(fps);
+                const fingerprintUsage: FingerprintUsage[] = await fingerprintUsageForType(clientFactory, workspaceId);
+                logger.debug("Returning fingerprints for '%s': %j", workspaceId, fingerprintUsage);
+                res.json(fingerprintUsage);
             } catch (e) {
                 logger.warn("Error occurred getting fingerprints: %s", e.message);
                 res.sendStatus(500);
@@ -194,23 +194,15 @@ export interface FingerprintUsage extends CohortAnalysis {
 
 async function fingerprintUsageForType(clientFactory: ClientFactory, workspaceId: string, type?: string): Promise<FingerprintUsage[]> {
     return doWithClient<FingerprintUsage[]>(clientFactory, async client => {
-        const sql = `SELECT distinct f.name as fingerprintName, count(rs.id) as appearsIn
-  from repo_fingerprints rf, repo_snapshots rs, fingerprints f
-  WHERE rf.repo_snapshot_id = rs.id AND rf.fingerprint_id = f.id AND rs.workspace_id ${workspaceId === "*" ? "!=" : "="} $1
-  AND  ${type ? "f.feature_name = $2" : "true" }
-  GROUP by fingerprintName`;
+        const sql = `SELECT name, feature_name as type, variants, count, entropy 
+  from fingerprint_analytics f
+  WHERE f.workspace_id ${workspaceId === "*" ? "!=" : "="} $1
+  AND  ${type ? "f.feature_name = $2" : "true" }`;
         const params = [workspaceId];
         if (!!type) {
             params.push(type);
         }
         const rows = await client.query(sql, params);
-        return rows.rows.map(row => {
-            return {
-                name: row.fingerprintname,
-                type,
-                categories: getCategories({ name: row.featurename }),
-                count: parseInt(row.appearsin, 10),
-            };
-        });
+        return rows.rows;
     });
 }
