@@ -17,7 +17,10 @@
 import { RepoRef } from "@atomist/automation-client";
 import { FP } from "@atomist/sdm-pack-fingerprints";
 import { ProjectAnalysisResult } from "../../ProjectAnalysisResult";
-import { PersistenceResult, SpiderFailure } from "../spider/Spider";
+import {
+    PersistenceResult,
+    SpiderFailure,
+} from "../spider/Spider";
 import { ClientFactory } from "./pgUtils";
 
 export interface PersistResult {

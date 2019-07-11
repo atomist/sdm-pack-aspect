@@ -18,15 +18,24 @@ import { logger } from "@atomist/automation-client";
 import { ExpressCustomizer } from "@atomist/automation-client/lib/configuration";
 import { FP } from "@atomist/sdm-pack-fingerprints";
 import * as bodyParser from "body-parser";
-import { Express, RequestHandler } from "express";
+import {
+    Express,
+    RequestHandler,
+} from "express";
 import * as _ from "lodash";
-import { ClientFactory, doWithClient } from "../analysis/offline/persist/pgUtils";
+import {
+    ClientFactory,
+    doWithClient,
+} from "../analysis/offline/persist/pgUtils";
 import { ProjectAnalysisResultStore } from "../analysis/offline/persist/ProjectAnalysisResultStore";
 import { getCategories } from "../customize/categories";
 import { fingerprintsFrom } from "../feature/DefaultFeatureManager";
 import { FeatureManager } from "../feature/FeatureManager";
 import { reportersAgainst } from "../feature/reportersAgainst";
-import { fingerprintsChildrenQuery, repoTree } from "../feature/repoTree";
+import {
+    fingerprintsChildrenQuery,
+    repoTree,
+} from "../feature/repoTree";
 import {
     CohortAnalysis,
     killChildren,
@@ -36,9 +45,17 @@ import {
     trimOuterRim,
     visit,
 } from "../tree/sunburst";
-import { authHandlers, configureAuth, corsHandler } from "./auth";
+import {
+    authHandlers,
+    configureAuth,
+    corsHandler,
+} from "./auth";
 import { whereFor } from "./orgPage";
-import { featureReport, skewReport, WellKnownReporters } from "./wellKnownReporters";
+import {
+    featureReport,
+    skewReport,
+    WellKnownReporters,
+} from "./wellKnownReporters";
 
 /**
  * Public API routes, returning JSON

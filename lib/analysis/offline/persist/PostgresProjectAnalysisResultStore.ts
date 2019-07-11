@@ -40,7 +40,8 @@ import {
 } from "./pgUtils";
 import {
     combinePersistResults,
-    emptyPersistResult, FingerprintKind,
+    emptyPersistResult,
+    FingerprintKind,
     PersistResult,
     ProjectAnalysisResultStore,
 } from "./ProjectAnalysisResultStore";
