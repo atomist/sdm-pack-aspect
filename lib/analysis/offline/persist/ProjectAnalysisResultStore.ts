@@ -16,10 +16,9 @@
 
 import { RepoRef } from "@atomist/automation-client";
 import { ProjectAnalysisResult } from "../../ProjectAnalysisResult";
-import {
-    PersistenceResult,
-    SpiderFailure,
-} from "../spider/Spider";
+import { PersistenceResult, SpiderFailure, } from "../spider/Spider";
+import { FP } from "@atomist/sdm-pack-fingerprints";
+import { ClientFactory } from "./pgUtils";
 
 export interface PersistResult {
     attemptedCount: number;
@@ -40,6 +39,8 @@ export const emptyPersistResult: PersistResult = {
     failed: [],
     succeeded: [],
 };
+
+export type FingerprintKind = Pick<FP, "type" | "name">;
 
 /**
  * Interface for basic persistence operations.
@@ -72,4 +73,23 @@ export interface ProjectAnalysisResultStore {
 
     persist(repos: ProjectAnalysisResult | AsyncIterable<ProjectAnalysisResult> | ProjectAnalysisResult[]): Promise<PersistResult>;
 
+    /**
+     * Return distinct fingerprint type/name combinations in this workspace
+     */
+    distinctFingerprintKinds(workspaceId: string): Promise<FingerprintKind[]>;
+
+    computeAnalyticsForFingerprintKind(workspaceId: string, type: string, name: string): Promise<void>;
+
+    /**
+     * Compute all analytics for this workspace. Slow but only used locally for spidering.
+     * @param {string} workspaceId
+     * @return {Promise<void>}
+     */
+    computeAnalytics(workspaceId: string): Promise<void>;
+
+    fingerprintsInWorkspace(
+        workspaceId: string,
+        type?: string,
+        name?: string): Promise<FP[]>;
 }
+

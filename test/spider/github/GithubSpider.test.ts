@@ -28,6 +28,7 @@ import {
 import { ProjectAnalysisOptions } from "@atomist/sdm-pack-analysis/lib/analysis/ProjectAnalysis";
 import * as assert from "assert";
 import {
+    FingerprintKind,
     PersistResult,
     ProjectAnalysisResultStore,
 } from "../../../lib/analysis/offline/persist/ProjectAnalysisResultStore";
@@ -46,6 +47,7 @@ import {
     GitHubSearchResult,
     GitHubSpider,
 } from "./../../../lib/analysis/offline/spider/github/GitHubSpider";
+import { FP } from "@atomist/clj-editors";
 
 // tslint:disable
 const oneSearchResult: GitHubSearchResult = {
@@ -111,7 +113,24 @@ class FakeProjectAnalysisResultStore implements ProjectAnalysisResultStore {
         return { attemptedCount: persisted, failed: [], succeeded: where };
     }
 
+    public computeAnalyticsForFingerprintKind(workspaceId: string, type: string, name: string): Promise<void> {
+        return undefined;
+    }
+
+    public distinctFingerprintKinds(workspaceId: string): Promise<FingerprintKind[]> {
+        return undefined;
+    }
+
+    public fingerprintsInWorkspace(workspaceId: string, type?: string, name?: string): Promise<FP[]> {
+        return undefined;
+    }
+
+    public async computeAnalytics(workspaceId: string): Promise<void> {
+        throw new Error("not implemented");
+    }
+
 }
+
 function opts(): SpiderOptions {
     return {
         // tslint:disable-next-line:no-object-literal-type-assertion

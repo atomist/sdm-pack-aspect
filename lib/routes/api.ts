@@ -16,33 +16,18 @@
 
 import { logger } from "@atomist/automation-client";
 import { ExpressCustomizer } from "@atomist/automation-client/lib/configuration";
-import {
-    Feature,
-    FP,
-} from "@atomist/sdm-pack-fingerprints";
+import { FP, } from "@atomist/sdm-pack-fingerprints";
 import * as bodyParser from "body-parser";
-import {
-    Express,
-    RequestHandler,
-} from "express";
+import { Express, RequestHandler, } from "express";
 import * as _ from "lodash";
-import {
-    ClientFactory,
-    doWithClient,
-} from "../analysis/offline/persist/pgUtils";
+import { ClientFactory, doWithClient, } from "../analysis/offline/persist/pgUtils";
 import { ProjectAnalysisResultStore } from "../analysis/offline/persist/ProjectAnalysisResultStore";
 import { getCategories } from "../customize/categories";
 import { fingerprintsFrom } from "../feature/DefaultFeatureManager";
-import {
-    FeatureManager,
-} from "../feature/FeatureManager";
+import { FeatureManager, } from "../feature/FeatureManager";
 import { reportersAgainst } from "../feature/reportersAgainst";
+import { fingerprintsChildrenQuery, repoTree, } from "../feature/repoTree";
 import {
-    fingerprintsChildrenQuery,
-    repoTree,
-} from "../feature/repoTree";
-import {
-    analyzeCohort,
     CohortAnalysis,
     killChildren,
     leavesUnder,
@@ -51,17 +36,9 @@ import {
     trimOuterRim,
     visit,
 } from "../tree/sunburst";
-import {
-    authHandlers,
-    configureAuth,
-    corsHandler,
-} from "./auth";
+import { authHandlers, configureAuth, corsHandler, } from "./auth";
 import { whereFor } from "./orgPage";
-import {
-    featureReport,
-    skewReport,
-    WellKnownReporters,
-} from "./wellKnownReporters";
+import { featureReport, skewReport, WellKnownReporters, } from "./wellKnownReporters";
 
 /**
  * Public API routes, returning JSON
@@ -185,7 +162,7 @@ export function api(clientFactory: ClientFactory,
 
         // Calculate and persist entropy for this fingerprint
         express.put("/api/v1/:workspace/entropy/:type/:name", ...handlers, async (req, res) => {
-            await calculateAndPersistEntropy(clientFactory, req.params.type, req.params.name, req.params.workspace);
+            await store.computeAnalyticsForFingerprintKind(req.params.workspace, req.params.type, req.params.name);
             res.sendStatus(201);
         });
     };
@@ -215,37 +192,6 @@ export interface FingerprintUsage extends CohortAnalysis {
     categories: string[];
 }
 
-/**
- * Raw fingerprints in the workspace
- * @return {Promise<FP[]>}
- */
-async function fingerprintsInWorkspace(clientFactory: ClientFactory,
-                                       workspaceId: string,
-                                       type?: string,
-                                       name?: string): Promise<FP[]> {
-    return doWithClient(clientFactory, async client => {
-        const sql = `SELECT distinct f.name as fingerprintName, feature_name as type
-  from repo_fingerprints rf, repo_snapshots rs, fingerprints f
-  WHERE rf.repo_snapshot_id = rs.id AND rf.fingerprint_id = f.id AND rs.workspace_id ${workspaceId === "*" ? "!=" : "="} $1
-  AND ${type ? "type = $2" : "true"} AND ${type ? "name = $3" : "true"}`;
-        const params = [workspaceId];
-        if (!!type) {
-            params.push(type);
-        }
-        if (!!name) {
-            params.push(name);
-        }
-
-        const rows = await client.query(sql, params);
-        return rows.rows.map(row => {
-            return {
-                name: row.fingerprintname,
-                type: row.featurename,
-            };
-        });
-    });
-}
-
 async function fingerprintUsageForType(clientFactory: ClientFactory, workspaceId: string, type?: string): Promise<FingerprintUsage[]> {
     return doWithClient<FingerprintUsage[]>(clientFactory, async client => {
         const sql = `SELECT distinct f.name as fingerprintName, count(rs.id) as appearsIn
@@ -253,7 +199,7 @@ async function fingerprintUsageForType(clientFactory: ClientFactory, workspaceId
   WHERE rf.repo_snapshot_id = rs.id AND rf.fingerprint_id = f.id AND rs.workspace_id ${workspaceId === "*" ? "!=" : "="} $1
   AND  ${type ? "f.feature_name = $2" : "true" }
   GROUP by fingerprintName`;
-        const params = [ workspaceId];
+        const params = [workspaceId];
         if (!!type) {
             params.push(type);
         }
@@ -266,18 +212,5 @@ async function fingerprintUsageForType(clientFactory: ClientFactory, workspaceId
                 count: parseInt(row.appearsin, 10),
             };
         });
-    });
-}
-
-async function calculateAndPersistEntropy(clientFactory: ClientFactory, type: string, name: string, workspaceId: string): Promise<void> {
-    const fingerprints = await fingerprintsInWorkspace(clientFactory, workspaceId, type, name);
-    const cohortAnalysis = await analyzeCohort(async () => fingerprints);
-    await doWithClient(clientFactory, async client => {
-        const sql = `INSERT INTO fingerprint_analytics (feature_name, name, workspace_id, entropy, variants, count)
-        values ($1, $2, $3, $4, $5, $6)
-        ON CONFLICT ON CONSTRAINT fingerprint_analytics_pkey DO UPDATE SET entropy = $4, variants = $5, count = $6`;
-        const rows = await client.query(sql, [type, name, workspaceId, cohortAnalysis.entropy,
-            cohortAnalysis.variants, cohortAnalysis.count]);
-        return rows.rows;
     });
 }

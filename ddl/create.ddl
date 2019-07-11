@@ -48,6 +48,8 @@ CREATE TABLE IF NOT EXISTS repo_fingerprints (
   PRIMARY KEY (repo_snapshot_id, fingerprint_id)
 );
 
+-- This table must be kept up to date by application code
+-- whenever a fingerprint is inserted
 CREATE TABLE fingerprint_analytics (
   name text NOT NULL,
   feature_name text NOT NULL,
