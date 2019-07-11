@@ -28,6 +28,7 @@ import {
     HasFingerprints,
     IdealStore,
 } from "../../../feature/FeatureManager";
+import { analyzeCohort } from "../../../tree/sunburst";
 import {
     isProjectAnalysisResult,
     ProjectAnalysisResult,
@@ -43,7 +44,6 @@ import {
     PersistResult,
     ProjectAnalysisResultStore,
 } from "./ProjectAnalysisResultStore";
-import { analyzeCohort } from "../../../tree/sunburst";
 
 export class PostgresProjectAnalysisResultStore implements ProjectAnalysisResultStore, IdealStore {
 

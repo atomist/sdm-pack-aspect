@@ -15,9 +15,9 @@
  */
 
 import { RepoRef } from "@atomist/automation-client";
-import { ProjectAnalysisResult } from "../../ProjectAnalysisResult";
-import { PersistenceResult, SpiderFailure, } from "../spider/Spider";
 import { FP } from "@atomist/sdm-pack-fingerprints";
+import { ProjectAnalysisResult } from "../../ProjectAnalysisResult";
+import { PersistenceResult, SpiderFailure } from "../spider/Spider";
 import { ClientFactory } from "./pgUtils";
 
 export interface PersistResult {
@@ -92,4 +92,3 @@ export interface ProjectAnalysisResultStore {
         type?: string,
         name?: string): Promise<FP[]>;
 }
-

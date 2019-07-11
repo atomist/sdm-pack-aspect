@@ -19,6 +19,7 @@ import {
     Project,
     RepoRef,
 } from "@atomist/automation-client";
+import { FP } from "@atomist/clj-editors";
 import { SdmContext } from "@atomist/sdm";
 import {
     Interpretation,
@@ -47,7 +48,6 @@ import {
     GitHubSearchResult,
     GitHubSpider,
 } from "./../../../lib/analysis/offline/spider/github/GitHubSpider";
-import { FP } from "@atomist/clj-editors";
 
 // tslint:disable
 const oneSearchResult: GitHubSearchResult = {
