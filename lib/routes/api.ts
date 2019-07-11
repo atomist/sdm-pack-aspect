@@ -42,7 +42,8 @@ import {
     repoTree,
 } from "../feature/repoTree";
 import {
-    analyzeCohort, CohortAnalysis,
+    analyzeCohort,
+    CohortAnalysis,
     killChildren,
     leavesUnder,
     splitBy,
