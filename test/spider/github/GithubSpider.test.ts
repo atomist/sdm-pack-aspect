@@ -126,7 +126,6 @@ class FakeProjectAnalysisResultStore implements ProjectAnalysisResultStore {
     }
 
     public async computeAnalytics(workspaceId: string): Promise<void> {
-        throw new Error("not implemented");
     }
 
 }
@@ -146,7 +145,8 @@ describe("GithubSpider", () => {
         const subject = new GitHubSpider(async function*(t, q) { },
         );
 
-        const result = await subject.spider(undefined, undefined, undefined);
+        const result = await subject.spider(undefined, undefined,
+            { persister: new FakeProjectAnalysisResultStore()} as any);
 
         assert.deepStrictEqual(result, EmptySpiderResult);
     });
