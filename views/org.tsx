@@ -168,12 +168,10 @@ export function OrgExplorer(props: OrgExplorerProps): React.ReactElement {
         <ul>
             <li key="code-1"><a href="./query?skew=true&byOrg=true">Entropy explorer</a></li>
 
-            <li key="code-2"><a href="./query?filter=true&name=featureCount&byOrg=true">Feature count by project</a></li>
+            <li key="code-2"><a href="./query?filter=true&name=featureCount&byOrg=true">Aspect count by project</a></li>
 
             <li key="code-3"><a href="./query?filter=true&name=fileCount&byOrg=true">Repo filecount</a></li>
             <li key="code-4"><a href="./query?filter=true&name=branchCount&byOrg=true">Branch count</a></li>
-
-            <li key="code-4a"><a href="./query?filter=true&name=recency&byOrg=true">Commit recency</a></li>
 
             <li key="code-5"><a href="./query?filter=true&name=langs&byOrg=true">Language breakdown for all projects</a></li>
             <li key="code-6"><a href="./query?filter=true&name=loc&byOrg=true">Repo sizes</a></li>

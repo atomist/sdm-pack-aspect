@@ -61,16 +61,22 @@ export function killChildren(t: SunburstTree, toTerminate: (tl: SunburstTree, de
     });
 }
 
+/**
+ * Merge siblings
+ * @param {SunburstTree} t tree to merge siblings in
+ * @param {(l: SunburstTree) => boolean} parentSelector selector parents to merge
+ * @param {(l: SunburstLevel) => string} grouper grouping function for children of selected parents
+ */
 export function mergeSiblings(t: SunburstTree,
-                              selector: (l: SunburstTree) => boolean,
+                              parentSelector: (l: SunburstTree) => boolean,
                               grouper: (l: SunburstLevel) => string): void {
-    visit(t, (l, depth) => {
-        if (isSunburstTree(l) && selector(l)) {
+    visit(t, l => {
+        if (isSunburstTree(l) && parentSelector(l)) {
             const grouped: Record<string, SunburstLevel[]> = _.groupBy(l.children, grouper);
             l.children = [];
             for (const name of Object.keys(grouped)) {
                 let children: SunburstLevel[] = _.flatten(grouped[name]);
-                if (name === "No") {
+                if (!children.some(c => c.name !== name)) {
                     children = _.flatten(children.map(childrenOf));
                 }
                 l.children.push({

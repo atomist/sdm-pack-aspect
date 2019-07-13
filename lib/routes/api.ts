@@ -153,6 +153,9 @@ export function api(clientFactory: ClientFactory,
                         parent => parent.children.some(c => (c as any).sha),
                         kid => (kid as any).sha === ideal.ideal.sha ? "Ideal" : "No");
                 }
+                mergeSiblings(tree,
+                    parent => parent.children.some(c => (c as any).sha),
+                    l => l.name);
 
                 res.json(tree);
             } catch (e) {

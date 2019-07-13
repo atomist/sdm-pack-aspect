@@ -36,7 +36,7 @@ import {
     StackFeature,
 } from "../feature/common/stackFeature";
 import { conditionalize } from "../feature/compose/conditionalize";
-import { GitRecency } from "../feature/git/gitActivityScanner";
+import { GitRecency } from "../feature/git/gitActivity";
 import { idealsFromNpm } from "../feature/node/idealFromNpm";
 import { TsLintPropertyFeature } from "../feature/node/TsLintFeature";
 import { TypeScriptVersion } from "../feature/node/TypeScriptVersion";

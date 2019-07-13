@@ -22,12 +22,19 @@ import {
 } from "@atomist/sdm-pack-fingerprints";
 import * as child_process from "child_process";
 import * as util from "util";
+import { TypedFP } from "@atomist/sdm-pack-fingerprints/lib/machine/Feature";
+import { daysSince } from "./dateUtils";
 
 const exec = util.promisify(child_process.exec);
 
 const gitLastCommitCommand = "git log -1 --format=%cd --date=short";
 
-const gitRecencyExtractor: ExtractFingerprint =
+/**
+ * Takes the string representation of a date
+ */
+export type GitRecencyFingerprint = TypedFP<string>;
+
+const gitRecencyExtractor: ExtractFingerprint<GitRecencyFingerprint> =
     async p => {
         const r = await exec(gitLastCommitCommand, { cwd: (p as LocalProject).baseDir });
         if (!r.stdout) {
@@ -43,10 +50,18 @@ const gitRecencyExtractor: ExtractFingerprint =
         };
     };
 
-export const GitRecency: Feature = {
+/**
+ * Classify since last commit
+ */
+export const GitRecency: Feature<GitRecencyFingerprint> = {
     name: "git-recency",
-    displayName: undefined,
+    displayName: "Recency of git activity",
     extract: gitRecencyExtractor,
+    toDisplayableFingerprintName: () => "Recency of git activity",
+    toDisplayableFingerprint: fp => {
+        const date = new Date(fp.data);
+        return lastDateToActivityBand(date);
+    },
 };
 
 // export const gitActivityExtractor: ExtractFingerprint =
@@ -72,4 +87,18 @@ export const GitRecency: Feature = {
  */
 function sinceDays(days: number): string {
     return `git log --all --since=${days}.days --pretty=oneline | wc -l`;
+}
+
+function lastDateToActivityBand(date: Date): string {
+    const days = daysSince(date);
+    if (days > 500) {
+        return "prehistoric";
+    }
+    if (days > 365) {
+        return "ancient";
+    }
+    if (days > 30) {
+        return "slow";
+    }
+    return "active";
 }

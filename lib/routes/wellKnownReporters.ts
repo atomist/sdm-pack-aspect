@@ -16,25 +16,14 @@
 
 import { ProjectAnalysis } from "@atomist/sdm-pack-analysis";
 import { DeliveryPhases } from "@atomist/sdm-pack-analysis/lib/analysis/phases";
-import {
-    BaseFeature,
-    FP,
-    NpmDeps,
-} from "@atomist/sdm-pack-fingerprints";
-import {
-    CodeStats,
-    consolidate,
-    Language,
-} from "@atomist/sdm-pack-sloc/lib/slocReport";
+import { BaseFeature, FP, NpmDeps, } from "@atomist/sdm-pack-fingerprints";
+import { CodeStats, consolidate, Language, } from "@atomist/sdm-pack-sloc/lib/slocReport";
 import * as _ from "lodash";
 import * as path from "path";
 import { FingerprintUsage } from "../analysis/offline/persist/ProjectAnalysisResultStore";
 import { CodeMetricsElement } from "../element/codeMetricsElement";
 import { PackageLock } from "../element/packageLock";
-import {
-    Analyzed,
-    AspectRegistry,
-} from "../feature/AspectRegistry";
+import { Analyzed, AspectRegistry, } from "../feature/AspectRegistry";
 import { fingerprintsFrom } from "../feature/DefaultFeatureManager";
 import { Reporters } from "../feature/reporters";
 import { allMavenDependenciesFeature } from "../feature/spring/allMavenDependenciesFeature";
@@ -44,11 +33,7 @@ import {
     OrgGrouper,
     ProjectAnalysisGrouper,
 } from "../feature/support/groupingUtils";
-import {
-    ReportBuilder,
-    treeBuilder,
-    TreeBuilder,
-} from "../tree/TreeBuilder";
+import { ReportBuilder, treeBuilder, TreeBuilder, } from "../tree/TreeBuilder";
 
 /**
  * Well known reporters against our repo cohort.
@@ -96,39 +81,6 @@ export const WellKnownReporters: Reporters = {
                         repoUrl: ar.id.url,
                     };
                 }),
-
-        recency: params =>
-            treeBuilderFor<Analyzed>("recency", params)
-                .group({
-                    name: "size",
-                    by: ar => {
-                        const fp = ar.fingerprints.find(f => f.name === "git-recency");
-                        if (!fp) {
-                            return "unknown";
-                        }
-                        const date = new Date(fp.data);
-                        const days = daysSince(date);
-                        if (days > 500) {
-                            return "prehistoric";
-                        }
-                        if (days > 365) {
-                            return "ancient";
-                        }
-                        if (days > 30) {
-                            return "slow";
-                        }
-                        return "active";
-                    },
-                })
-                .renderWith(defaultAnalyzedRenderer(ar => {
-                    const fp = ar.fingerprints.find(f => f.name === "git-recency");
-                    if (!fp) {
-                        return 1;
-                    }
-                    const date = new Date(fp.data);
-                    return date ?
-                        daysSince(date) : 1;
-                })),
 
         licenses: params =>
             treeBuilderFor<ProjectAnalysis>("licenses", params)
@@ -459,9 +411,3 @@ export function featureReport(type: string, fm: AspectRegistry, allMatching: FP[
         });
 }
 
-const oneDay = 24 * 60 * 60 * 1000; // hours*minutes*seconds*milliseconds
-
-function daysSince(date: Date): number {
-    const now = new Date();
-    return Math.round(Math.abs((now.getTime() - date.getTime()) / oneDay));
-}
