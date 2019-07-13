@@ -23,7 +23,6 @@ import {
     filesFeature,
     NpmDeps,
 } from "@atomist/sdm-pack-fingerprints";
-import { CodeOfConduct } from "../feature/community/codeOfConduct";
 import { CodeOwnership } from "../element/codeOwnership";
 import { ManagedAspect } from "../feature/AspectRegistry";
 import {
@@ -35,6 +34,8 @@ import {
     JavaBuild,
     StackFeature,
 } from "../feature/common/stackFeature";
+import { CodeOfConduct } from "../feature/community/codeOfConduct";
+import { License } from "../feature/community/license";
 import { conditionalize } from "../feature/compose/conditionalize";
 import { GitRecency } from "../feature/git/gitActivity";
 import { idealsFromNpm } from "../feature/node/idealFromNpm";
@@ -45,7 +46,6 @@ import { DirectMavenDependencies } from "../feature/spring/directMavenDependenci
 import { SpringBootStarter } from "../feature/spring/springBootStarter";
 import { SpringBootVersion } from "../feature/spring/springBootVersion";
 import { TravisScriptsFeature } from "../feature/travis/travisFeatures";
-import { License } from "../feature/community/license";
 
 /**
  * The features managed by this SDM.

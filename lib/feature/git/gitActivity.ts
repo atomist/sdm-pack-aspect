@@ -20,9 +20,9 @@ import {
     Feature,
     sha256,
 } from "@atomist/sdm-pack-fingerprints";
+import { TypedFP } from "@atomist/sdm-pack-fingerprints/lib/machine/Feature";
 import * as child_process from "child_process";
 import * as util from "util";
-import { TypedFP } from "@atomist/sdm-pack-fingerprints/lib/machine/Feature";
 import { daysSince } from "./dateUtils";
 
 const exec = util.promisify(child_process.exec);

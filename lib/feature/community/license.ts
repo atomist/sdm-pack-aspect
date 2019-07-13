@@ -40,7 +40,7 @@ export const License: Feature<TypedFP<LicenseData>> = {
             name: "license",
             data,
             sha: sha256(data),
-        }
+        };
     },
     toDisplayableFingerprintName: () => "License",
     toDisplayableFingerprint: fp => (JSON.parse(fp.data) || {}).classification || "None",
