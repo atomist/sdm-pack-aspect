@@ -114,7 +114,7 @@ export function api(clientFactory: ClientFactory,
                 workspaceId = "local";
             }
             try {
-                const tree = await repoTree({
+                let tree = await repoTree({
                     workspaceId,
                     clientFactory,
                     query: fingerprintsChildrenQuery(byName, req.query.otherLabel === "true"),
@@ -123,7 +123,8 @@ export function api(clientFactory: ClientFactory,
                 });
                 logger.debug("Returning fingerprint '%s': %j", req.params.name, tree);
                 if (!byName) {
-                    splitBy<{ data: any, type: string }>(tree,
+                    // Show all aspects, splitting by name
+                    tree = splitBy<{ data: any, type: string }>(tree,
                         l => {
                             const aspect: BaseFeature = aspectRegistry.aspectOf(l.type);
                             if (!aspect || !aspect.toDisplayableFingerprintName) {
@@ -136,12 +137,10 @@ export function api(clientFactory: ClientFactory,
                 }
                 resolveAspectNames(aspectRegistry, tree);
                 if (req.query.byOrg === "true") {
-                    splitBy<{ owner: string }>(tree, l => l.owner, 0);
-                } else if (req.query.byThing) {
-                    splitBy<{ owner: string }>(tree, l => l.owner, 1);
+                    tree = splitBy<{ owner: string }>(tree, l => l.owner, 0);
                 }
                 if (req.query.presence === "true") {
-                    mergeSiblings(tree,
+                    tree = mergeSiblings(tree,
                         parent => parent.children.some(c => (c as any).sha),
                         kid => (kid as any).sha ? "Yes" : "No");
                 } else if (req.query.progress === "true") {
@@ -149,11 +148,11 @@ export function api(clientFactory: ClientFactory,
                     if (!ideal || !isConcreteIdeal(ideal)) {
                         throw new Error(`No ideal to aspire to for ${req.params.type}/${req.params.name}`);
                     }
-                    mergeSiblings(tree,
+                    tree = mergeSiblings(tree,
                         parent => parent.children.some(c => (c as any).sha),
                         kid => (kid as any).sha === ideal.ideal.sha ? "Ideal" : "No");
                 }
-                mergeSiblings(tree,
+                tree = mergeSiblings(tree,
                     parent => parent.children.some(c => (c as any).sha),
                     l => l.name);
 

@@ -46,7 +46,8 @@ export function visit(t: SunburstLevel, visitor: (sl: SunburstLevel, depth: numb
 /**
  * Suppress branches that meet a condition
  */
-export function killChildren(t: SunburstTree, toTerminate: (tl: SunburstTree, depth: number) => boolean): void {
+export function killChildren(tr: SunburstTree, toTerminate: (tl: SunburstTree, depth: number) => boolean): SunburstTree {
+    const t = _.cloneDeep(tr);
     visit(t, (l, depth) => {
         if (isSunburstTree(l)) {
             l.children = l.children.filter(isSunburstTree).filter(c => {
@@ -59,6 +60,7 @@ export function killChildren(t: SunburstTree, toTerminate: (tl: SunburstTree, de
         }
         return true;
     });
+    return t;
 }
 
 /**
@@ -67,9 +69,10 @@ export function killChildren(t: SunburstTree, toTerminate: (tl: SunburstTree, de
  * @param {(l: SunburstTree) => boolean} parentSelector selector parents to merge
  * @param {(l: SunburstLevel) => string} grouper grouping function for children of selected parents
  */
-export function mergeSiblings(t: SunburstTree,
+export function mergeSiblings(tr: SunburstTree,
                               parentSelector: (l: SunburstTree) => boolean,
-                              grouper: (l: SunburstLevel) => string): void {
+                              grouper: (l: SunburstLevel) => string): SunburstTree {
+    const t = _.cloneDeep(tr);
     visit(t, l => {
         if (isSunburstTree(l) && parentSelector(l)) {
             const grouped: Record<string, SunburstLevel[]> = _.groupBy(l.children, grouper);
@@ -88,13 +91,14 @@ export function mergeSiblings(t: SunburstTree,
         }
         return true;
     });
+    return t;
 }
 
 /**
  * Trim the outer rim, replacing the next one with sized leaves
- * @param {SunburstTree} t
  */
-export function trimOuterRim(t: SunburstTree): void {
+export function trimOuterRim(tr: SunburstTree): SunburstTree {
+    const t = _.cloneDeep(tr);
     visit(t, l => {
         if (isSunburstTree(l) && !l.children.some(c => leavesUnder(c).length > 1)) {
             (l as any as SunburstLeaf).size = l.children.length;
@@ -102,35 +106,59 @@ export function trimOuterRim(t: SunburstTree): void {
         }
         return true;
     });
+    return t;
 }
 
 /**
- * Introduce a new level split by by the given classifier for descendants
+ * Introduce a new level splitting by by the given classifier for descendants
  */
-export function splitBy<T = {}>(t: SunburstTree,
+export function splitBy<T = {}>(tr: SunburstTree,
                                 descendantClassifier: (t: SunburstLeaf & T) => string,
                                 targetDepth: number,
-                                descendantPicker: (l: SunburstTree) => SunburstLevel[] = leavesUnder): void {
+                                descendantPicker: (l: SunburstTree) => SunburstLevel[] = leavesUnder): SunburstTree {
+    const t = _.cloneDeep(tr);
     visit(t, (l, depth) => {
         if (depth === targetDepth && isSunburstTree(l)) {
             // Split children
-            const leaves = descendantPicker(l);
-            logger.info("Found %d leaves for %s", leaves.length, t.name);
+            const descendantsToClassifyBy = descendantPicker(l);
+            logger.info("Found %d leaves for %s", descendantsToClassifyBy.length, t.name);
             // Introduce a new level for each classification
-            const distinctNames = _.uniq(leaves.map(leaf => descendantClassifier(leaf as any)));
+            const distinctNames = _.uniq(descendantsToClassifyBy.map(leaf => descendantClassifier(leaf as any)));
             const oldKids = l.children;
             l.children = [];
             for (const name of distinctNames) {
                 const children = oldKids.filter(isSunburstTree)
                     .filter(k => descendantPicker(k).some(leaf => descendantClassifier(leaf as any) === name));
                 if (children.length > 0) {
-                    l.children.push({ name, children });
+                    l.children.push(pruneLeaves({ name, children },
+                        leaf => {
+                            console.log(`descendantClassifier=${descendantClassifier(leaf as any)}, name=${name}`);
+                            return descendantClassifier(leaf as any) !== name;
+                        }));
                 }
             }
             return false;
         }
         return true;
     });
+    return t;
+}
+
+export function pruneLeaves(tr: SunburstTree, toPrune: (l: SunburstLeaf) => boolean): SunburstTree {
+    const copy = _.cloneDeep(tr);
+    // TODO with this in, it kills the whole tree
+    // visit(copy, l => {
+    //     if (isSunburstTree(l) && !l.children.some(isSunburstTree)) {
+    //         l.children = l.children.filter(c => {
+    //             const f = isSunburstTree(c) || !toPrune(c);
+    //             console.log(`Result for ${c.name} is ${f} due to ${toPrune}`);
+    //             return f;
+    //         });
+    //         return false;
+    //     }
+    //     return true;
+    // });
+    return copy;
 }
 
 /**

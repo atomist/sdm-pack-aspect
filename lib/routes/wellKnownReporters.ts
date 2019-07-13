@@ -82,19 +82,6 @@ export const WellKnownReporters: Reporters = {
                     };
                 }),
 
-        licenses: params =>
-            treeBuilderFor<ProjectAnalysis>("licenses", params)
-                .group({
-                    name: "license",
-                    by: ar => {
-                        if (!ar.elements.node) {
-                            return "not npm";
-                        }
-                        return _.get(ar, "elements.node.packageJson.license", "No license");
-                    },
-                })
-                .renderWith(defaultAnalyzedRenderer()),
-
         skew: () => {
             return {
                 toSunburstTree: async originalQuery => {

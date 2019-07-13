@@ -121,7 +121,7 @@ function fingerprintListItem(f: FingerprintForDisplay): React.ReactElement {
 export function displayAspects(props: OrgExplorerProps): React.ReactElement {
     if (props.projectsAnalyzed === 0) {
         return <div><h2>No projects analyzed</h2>
-            Use the `spider` command to investigate some projects.
+            Use the <pre>spider</pre> command to investigate some projects.
             See <a href="https://github.com/atomist-blogs/org-visualizer/blob/master/README.md#analyze-your-repositories">the README</a> for details.
         </div>;
     }
@@ -178,7 +178,6 @@ export function OrgExplorer(props: OrgExplorerProps): React.ReactElement {
             <li key="code-7"><a href="./query?filter=true&name=mavenDependencyCount&byOrg=true">Number of Maven dependencies</a></li>
             <li key="code-8"><a href="./query?filter=true&name=npmDependencyCount&byOrg=true">Number of npm dependencies</a></li>
 
-            <li key="code-9"><a href="./query?filter=true&name=licenses&byOrg=true">package.json license</a></li>
         </ul>
 
         <h2>Custom fingerprint</h2>

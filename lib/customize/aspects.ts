@@ -23,7 +23,7 @@ import {
     filesFeature,
     NpmDeps,
 } from "@atomist/sdm-pack-fingerprints";
-import { CodeOfConduct } from "../element/codeOfConduct";
+import { CodeOfConduct } from "../feature/community/codeOfConduct";
 import { CodeOwnership } from "../element/codeOwnership";
 import { ManagedAspect } from "../feature/AspectRegistry";
 import {
@@ -45,6 +45,7 @@ import { DirectMavenDependencies } from "../feature/spring/directMavenDependenci
 import { SpringBootStarter } from "../feature/spring/springBootStarter";
 import { SpringBootVersion } from "../feature/spring/springBootVersion";
 import { TravisScriptsFeature } from "../feature/travis/travisFeatures";
+import { License } from "../feature/community/license";
 
 /**
  * The features managed by this SDM.
@@ -54,6 +55,7 @@ export const Aspects: ManagedAspect[] = [
     DockerFrom,
     DockerfilePath,
     DockerPorts,
+    License,
     SpringBootStarter,
     TypeScriptVersion,
     new CodeOwnership(),
