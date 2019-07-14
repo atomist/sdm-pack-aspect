@@ -125,19 +125,24 @@ export function api(clientFactory: ClientFactory,
                 if (!byName) {
                     // Show all aspects, splitting by name
                     tree = splitBy<{ data: any, type: string }>(tree,
-                        l => {
-                            const aspect: BaseFeature = aspectRegistry.aspectOf(l.type);
-                            if (!aspect || !aspect.toDisplayableFingerprintName) {
-                                return l.name;
-                            }
-                            return aspect.toDisplayableFingerprintName(l.name);
-                        },
-                        0,
-                        l => descendants(l).filter(n => !!_.get(n, "sha")));
+                        {
+                            descendantClassifier: l => {
+                                const aspect: BaseFeature = aspectRegistry.aspectOf(l.type);
+                                return !aspect || !aspect.toDisplayableFingerprintName ?
+                                    l.name :
+                                    aspect.toDisplayableFingerprintName(l.name);
+                            },
+                            targetDepth: 0,
+                            descendantPicker: l => descendants(l).filter(n => !!_.get(n, "sha")),
+                        });
                 }
                 resolveAspectNames(aspectRegistry, tree);
                 if (req.query.byOrg === "true") {
-                    tree = splitBy<{ owner: string }>(tree, l => l.owner, 0);
+                    tree = splitBy<{ owner: string }>(tree,
+                        {
+                            descendantClassifier: l => l.owner,
+                            targetDepth: 0,
+                        });
                 }
                 if (req.query.presence === "true") {
                     tree = mergeSiblings(tree,
@@ -155,7 +160,6 @@ export function api(clientFactory: ClientFactory,
                 tree = mergeSiblings(tree,
                     parent => parent.children.some(c => (c as any).sha),
                     l => l.name);
-
                 res.json(tree);
             } catch (e) {
                 logger.warn("Error occurred getting one fingerprint: %s %s", e.message, e.stack);

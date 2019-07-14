@@ -65,7 +65,7 @@ export function killChildren(tr: SunburstTree, toTerminate: (tl: SunburstTree, d
 
 /**
  * Merge siblings
- * @param {SunburstTree} t tree to merge siblings in
+ * @param tr tree to operate on
  * @param {(l: SunburstTree) => boolean} parentSelector selector parents to merge
  * @param {(l: SunburstLevel) => string} grouper grouping function for children of selected parents
  */
@@ -113,28 +113,40 @@ export function trimOuterRim(tr: SunburstTree): SunburstTree {
  * Introduce a new level splitting by by the given classifier for descendants
  */
 export function splitBy<T = {}>(tr: SunburstTree,
-                                descendantClassifier: (t: SunburstLeaf & T) => string,
-                                targetDepth: number,
-                                descendantPicker: (l: SunburstTree) => SunburstLevel[] = leavesUnder): SunburstTree {
+                                how: {
+                                    descendantClassifier: (t: SunburstLeaf & T) => string,
+                                    targetDepth: number,
+                                    descendantPicker?: (l: SunburstTree) => SunburstLevel[],
+                                }): SunburstTree {
+    const opts = {
+        descendantPicker: leavesUnder,
+        ...how,
+    };
     const t = _.cloneDeep(tr);
     visit(t, (l, depth) => {
-        if (depth === targetDepth && isSunburstTree(l)) {
+        if (depth === opts.targetDepth && isSunburstTree(l)) {
             // Split children
-            const descendantsToClassifyBy = descendantPicker(l);
+            const descendantsToClassifyBy = opts.descendantPicker(l);
             logger.info("Found %d leaves for %s", descendantsToClassifyBy.length, t.name);
             // Introduce a new level for each classification
-            const distinctNames = _.uniq(descendantsToClassifyBy.map(leaf => descendantClassifier(leaf as any)));
+            const distinctNames = _.uniq(descendantsToClassifyBy.map(d => opts.descendantClassifier(d as any)));
             const oldKids = l.children;
             l.children = [];
             for (const name of distinctNames) {
-                const children = oldKids.filter(isSunburstTree)
-                    .filter(k => descendantPicker(k).some(leaf => descendantClassifier(leaf as any) === name));
+                const children = oldKids
+                    .filter(k =>
+                        isSunburstTree(k) && opts.descendantPicker(k).some(leaf => opts.descendantClassifier(leaf as any) === name) ||
+                        !isSunburstTree(k) && opts.descendantClassifier(k as any) === name);
                 if (children.length > 0) {
-                    l.children.push(pruneLeaves({ name, children },
-                        leaf => {
-                            console.log(`descendantClassifier=${descendantClassifier(leaf as any)}, name=${name}`);
-                            return descendantClassifier(leaf as any) !== name;
-                        }));
+                    // Need to take out the children that are trees but don't have a descendant under them
+                    const subTree = { name, children };
+                    addAncestry(subTree);
+                    const prunedSubTree = pruneLeaves(
+                        subTree,
+                        // Path doesn't go through a descendant with name
+                        e => !ancestry(e).some(a => opts.descendantClassifier(a as any) === name));
+                    removeAncestry(prunedSubTree);
+                    l.children.push(prunedSubTree);
                 }
             }
             return false;
@@ -144,20 +156,50 @@ export function splitBy<T = {}>(tr: SunburstTree,
     return t;
 }
 
+function ancestry(t: SunburstLevel): SunburstLevel[] {
+    const path = [t];
+    let parent = (t as any).parent;
+    while (parent) {
+        path.push(parent);
+        parent = (parent).parent;
+    }
+    return path.reverse();
+}
+
+/**
+ * Temporarily add parent pointers.
+ * @param {SunburstLevel} t
+ */
+function addAncestry(t: SunburstLevel): void {
+    visit(t, l => {
+        if (isSunburstTree(l)) {
+            l.children.forEach(c => (c as any).parent = l);
+        }
+        return true;
+    });
+}
+
+function removeAncestry(t: SunburstLevel): void {
+    visit(t, l => {
+        if ((l as any).parent) {
+            delete((l as any).parent);
+        }
+        return true;
+    });
+}
+
 export function pruneLeaves(tr: SunburstTree, toPrune: (l: SunburstLeaf) => boolean): SunburstTree {
     const copy = _.cloneDeep(tr);
-    // TODO with this in, it kills the whole tree
-    // visit(copy, l => {
-    //     if (isSunburstTree(l) && !l.children.some(isSunburstTree)) {
-    //         l.children = l.children.filter(c => {
-    //             const f = isSunburstTree(c) || !toPrune(c);
-    //             console.log(`Result for ${c.name} is ${f} due to ${toPrune}`);
-    //             return f;
-    //         });
-    //         return false;
-    //     }
-    //     return true;
-    // });
+    visit(copy, l => {
+        if (isSunburstTree(l) && !l.children.some(isSunburstTree)) {
+            l.children = l.children.filter(c => {
+                const f = isSunburstTree(c) || !toPrune(c);
+                return f;
+            });
+            return false;
+        }
+        return true;
+    });
     return copy;
 }
 
