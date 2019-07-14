@@ -15,7 +15,10 @@
  */
 
 import * as assert from "assert";
-import { pruneLeaves, SunburstTree } from "../../lib/tree/sunburst";
+import {
+    pruneLeaves,
+    SunburstTree,
+} from "../../lib/tree/sunburst";
 
 describe("pruneLeaves", () => {
 

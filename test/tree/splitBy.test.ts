@@ -15,7 +15,10 @@
  */
 
 import * as assert from "assert";
-import { splitBy, SunburstTree } from "../../lib/tree/sunburst";
+import {
+    splitBy,
+    SunburstTree,
+} from "../../lib/tree/sunburst";
 
 describe("splitBy", () => {
 
