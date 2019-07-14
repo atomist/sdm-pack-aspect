@@ -21,7 +21,7 @@ export interface LicenseData {
     content?: string;
 }
 
-export const License: Feature<TypedFP<LicenseData>> = {
+export const License: Feature = {
     name: "license",
     displayName: "License",
     extract: async p => {
