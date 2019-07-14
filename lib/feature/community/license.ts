@@ -46,7 +46,7 @@ export const License: Feature<TypedFP<LicenseData>> = {
     toDisplayableFingerprint: fp => {
         try {
             const d = JSON.parse(fp.data);
-            return d.classification || "None"
+            return d.classification || "None";
         } catch (err) {
             return "Unknown";
         }
