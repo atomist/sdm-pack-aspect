@@ -20,7 +20,6 @@ import {
     Feature,
     sha256,
 } from "@atomist/sdm-pack-fingerprints";
-import { TypedFP } from "@atomist/sdm-pack-fingerprints/lib/machine/Feature";
 import * as child_process from "child_process";
 import * as util from "util";
 import { daysSince } from "./dateUtils";
@@ -29,12 +28,7 @@ const exec = util.promisify(child_process.exec);
 
 const gitLastCommitCommand = "git log -1 --format=%cd --date=short";
 
-/**
- * Takes the string representation of a date
- */
-export type GitRecencyFingerprint = TypedFP<string>;
-
-const gitRecencyExtractor: ExtractFingerprint<GitRecencyFingerprint> =
+const gitRecencyExtractor: ExtractFingerprint =
     async p => {
         const r = await exec(gitLastCommitCommand, { cwd: (p as LocalProject).baseDir });
         if (!r.stdout) {
@@ -53,7 +47,7 @@ const gitRecencyExtractor: ExtractFingerprint<GitRecencyFingerprint> =
 /**
  * Classify since last commit
  */
-export const GitRecency: Feature<GitRecencyFingerprint> = {
+export const GitRecency: Feature = {
     name: "git-recency",
     displayName: "Recency of git activity",
     extract: gitRecencyExtractor,

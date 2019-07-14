@@ -34,7 +34,7 @@ export const License: Feature<TypedFP<LicenseData>> = {
             content = await licenseFile.getContent();
             classification = content.split("\n")[0].trim();
         }
-        const data = { classification, content };
+        const data: LicenseData = { classification, content };
         return {
             type: "license",
             name: "license",
@@ -45,7 +45,7 @@ export const License: Feature<TypedFP<LicenseData>> = {
     toDisplayableFingerprintName: () => "License",
     toDisplayableFingerprint: fp => {
         try {
-            const d = JSON.parse(fp.data);
+            const d = JSON.parse(fp.data) as LicenseData;
             return d.classification || "None";
         } catch (err) {
             return "Unknown";
