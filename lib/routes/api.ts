@@ -132,8 +132,8 @@ export function api(clientFactory: ClientFactory,
                                     l.name :
                                     aspect.toDisplayableFingerprintName(l.name);
                             },
-                            targetDepth: 0,
-                            descendantPicker: l => descendants(l).filter(n => !!_.get(n, "sha")),
+                            newLayerDepth: 0,
+                            descendantTest: l => !!_.get(l, "sha"),
                         });
                 }
                 resolveAspectNames(aspectRegistry, tree);
@@ -141,7 +141,7 @@ export function api(clientFactory: ClientFactory,
                     tree = splitBy<{ owner: string }>(tree,
                         {
                             descendantClassifier: l => l.owner,
-                            targetDepth: 0,
+                            newLayerDepth: 0,
                         });
                 }
                 if (req.query.presence === "true") {
