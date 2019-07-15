@@ -48,7 +48,7 @@ export function visit(t: SunburstLevel,
  * Suppress branches that meet a condition
  */
 function killChildren(tr: SunburstTree,
-                      pleaseEliminate: (tl: SunburstLevel, depth: number) => boolean): SunburstTree {
+                      shouldEliminate: (tl: SunburstLevel, depth: number) => boolean): SunburstTree {
     const t = _.cloneDeep(tr);
     visit(t, (l, depth) => {
         if (isSunburstTree(l)) {
@@ -56,7 +56,7 @@ function killChildren(tr: SunburstTree,
                 if (isSunburstTree(c)) {
                     return true;
                 }
-                const kill = pleaseEliminate(c, depth + 1);
+                const kill = shouldEliminate(c, depth + 1);
                 logger.info("Kill = %s for %s of depth %d", kill, c.name, depth);
                 return !kill;
             });
@@ -168,11 +168,12 @@ export function splitBy<T = {}>(tr: SunburstTree,
                         name,
                         children,
                     };
+                    // Kill the children that have a different descendant classification
                     const prunedSubTree = killChildren(
                         subTree,
                         tt => {
                             const classification = opts.descendantClassifier(tt as any);
-                            return classification !== name;
+                            return !!classification && classification !== name;
                         });
                     l.children.push(prunedSubTree);
                 }
