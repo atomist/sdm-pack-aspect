@@ -57,7 +57,7 @@ function killChildren(tr: SunburstTree,
                     return true;
                 }
                 const kill = shouldEliminate(c, depth + 1);
-                logger.info("Kill = %s for %s of depth %d", kill, c.name, depth);
+                // logger.debug("Kill = %s for %s of depth %d", kill, c.name, depth);
                 return !kill;
             });
             return true;
@@ -146,7 +146,7 @@ export function splitBy<T = {}>(tr: SunburstTree,
         ...how,
     };
     // Find descendants we're introduced in
-    const descendantPicker = tree => opts.descendantFinder(tree).filter(t => !!opts.descendantClassifier(t as any));
+    const descendantPicker = tree => opts.descendantFinder(tree).filter(n => !!opts.descendantClassifier(n as any));
     const t = _.cloneDeep(tr);
     visit(t, (l, depth) => {
         if (depth === opts.newLayerDepth && isSunburstTree(l)) {
