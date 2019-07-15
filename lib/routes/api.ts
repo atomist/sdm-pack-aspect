@@ -127,7 +127,9 @@ export function api(clientFactory: ClientFactory,
                     tree = splitBy<{ data: any, type: string }>(tree,
                         {
                             descendantClassifier: l => {
-                                // TODO: Rod - return undefined if no SHA?
+                                if (!(l as any).sha) {
+                                    return undefined;
+                                }
                                 const aspect: BaseFeature = aspectRegistry.aspectOf(l.type);
                                 return !aspect || !aspect.toDisplayableFingerprintName ?
                                     l.name :
