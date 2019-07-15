@@ -162,7 +162,7 @@ export function splitBy<T = {}>(tr: SunburstTree,
                     // Need to take out the children that are trees but don't have a descendant under them
                     const subTree = {
                         name,
-                        children: children,
+                        children,
                     };
                     const prunedSubTree = killChildren(
                         subTree,

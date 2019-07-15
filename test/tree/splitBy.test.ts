@@ -113,7 +113,7 @@ describe("splitBy", () => {
                             name: "jeremy",
                             size: 1,
                         },
-                    ]
+                    ],
                 },
             ],
         };
@@ -143,9 +143,9 @@ describe("splitBy", () => {
                                     name: "jeremy",
                                     size: 1,
                                 }],
-                        },],
+                        }],
                     }],
-            }]
+            }],
         });
     });
 
