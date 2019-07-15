@@ -127,13 +127,13 @@ export function api(clientFactory: ClientFactory,
                     tree = splitBy<{ data: any, type: string }>(tree,
                         {
                             descendantClassifier: l => {
+                                // TODO: Rod - return undefined if no SHA?
                                 const aspect: BaseFeature = aspectRegistry.aspectOf(l.type);
                                 return !aspect || !aspect.toDisplayableFingerprintName ?
                                     l.name :
                                     aspect.toDisplayableFingerprintName(l.name);
                             },
                             newLayerDepth: 0,
-                            descendantTest: l => !!_.get(l, "sha"),
                         });
                 }
                 resolveAspectNames(aspectRegistry, tree);

@@ -36,7 +36,8 @@ export function isSunburstTree(level: SunburstLevel): level is SunburstTree {
     return !!maybe.children;
 }
 
-export function visit(t: SunburstLevel, visitor: (sl: SunburstLevel, depth: number) => boolean, depth: number = 0): void {
+export function visit(t: SunburstLevel,
+                      visitor: (sl: SunburstLevel, depth: number) => boolean, depth: number = 0): void {
     const r = visitor(t, depth);
     if (r && isSunburstTree(t)) {
         t.children.forEach(c => visit(c, visitor, depth + 1));
@@ -46,16 +47,19 @@ export function visit(t: SunburstLevel, visitor: (sl: SunburstLevel, depth: numb
 /**
  * Suppress branches that meet a condition
  */
-export function killChildren(tr: SunburstTree, toTerminate: (tl: SunburstTree, depth: number) => boolean): SunburstTree {
+function killChildren(tr: SunburstTree,
+                      pleaseEliminate: (tl: SunburstLevel, depth: number) => boolean): SunburstTree {
     const t = _.cloneDeep(tr);
     visit(t, (l, depth) => {
         if (isSunburstTree(l)) {
-            l.children = l.children.filter(isSunburstTree).filter(c => {
-                const kill = toTerminate(c, depth + 1);
+            l.children = l.children.filter(c => {
+                if (isSunburstTree(c)) {
+                    return true;
+                }
+                const kill = pleaseEliminate(c, depth + 1);
                 logger.info("Kill = %s for %s of depth %d", kill, c.name, depth);
                 return !kill;
             });
-            // TODO why can't we make this true
             return true;
         }
         return true;
@@ -166,9 +170,9 @@ export function splitBy<T = {}>(tr: SunburstTree,
                     };
                     const prunedSubTree = killChildren(
                         subTree,
-                        t => {
-                            const classification = opts.descendantClassifier(t as any);
-                            return !!classification && classification !== name;
+                        tt => {
+                            const classification = opts.descendantClassifier(tt as any);
+                            return classification !== name;
                         });
                     l.children.push(prunedSubTree);
                 }
