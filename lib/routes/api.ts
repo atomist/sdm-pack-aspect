@@ -115,14 +115,15 @@ export function api(clientFactory: ClientFactory,
             }
             try {
                 // Get the tree and then perform post processing on it
-                let tree = await repoTree({
+                const pt = (await repoTree({
                     workspaceId,
                     clientFactory,
                     query: fingerprintsChildrenQuery(byName, req.query.otherLabel === "true"),
                     rootName: req.params.name,
                     featureName: req.params.type,
-                });
-                logger.debug("Returning fingerprint tree '%s': %j", req.params.name, tree);
+                }));
+                let tree = pt.tree;
+                logger.debug("Returning fingerprint tree '%s': %j", req.params.name, pt);
                 if (!byName) {
                     // Show all aspects, splitting by name
                     tree = introduceClassificationLayer<{ data: any, type: string }>(tree,
