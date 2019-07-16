@@ -39,7 +39,7 @@ import {
     introduceClassificationLayer,
     SunburstTree,
     trimOuterRim,
-    visit,
+    visit, visitAsync,
 } from "../tree/sunburst";
 import {
     authHandlers,
@@ -57,8 +57,8 @@ import {
  * Public API routes, returning JSON
  */
 export function api(clientFactory: ClientFactory,
-    store: ProjectAnalysisResultStore,
-    aspectRegistry: AspectRegistry): ExpressCustomizer {
+                    store: ProjectAnalysisResultStore,
+                    aspectRegistry: AspectRegistry): ExpressCustomizer {
     return (express: Express, ...handlers: RequestHandler[]) => {
 
         express.use(bodyParser.json());       // to support JSON-encoded bodies
@@ -112,15 +112,24 @@ export function api(clientFactory: ClientFactory,
             }
             try {
                 // Get the tree and then perform post processing on it
-                let pt = (await repoTree({
+                let pt = await repoTree({
                     workspaceId,
                     clientFactory,
                     byName,
                     includeWithout: req.query.otherLabel === "true",
                     rootName: req.params.name,
                     featureName: req.params.type,
-                }));
+                });
                 logger.debug("Returning fingerprint tree '%s': %j", req.params.name, pt);
+
+                // Flag bad fingerprints with a special color
+                await visitAsync(pt.tree, async l => {
+                    if ((l as any).sha && await aspectRegistry.undesirableUsageChecker.check("local", l as any)) {
+                        (l as any).color = "#810325";
+                    }
+                    return true;
+                });
+
                 if (!byName) {
                     // Show all fingerprints in one aspect, splitting by fingerprint name
                     pt = introduceClassificationLayer<{ data: any, type: string }>(pt,
@@ -173,6 +182,13 @@ export function api(clientFactory: ClientFactory,
                     pt.tree = groupSiblings(pt.tree, {
                         parentSelector: parent => parent.children.some(c => (c as any).sha),
                         childClassifier: kid => (kid as any).sha === ideal.ideal.sha ? "Ideal" : "No",
+                        groupLayerDecorator: l => {
+                            if (l.name === "Ideal") {
+                                (l as any).color = "#168115";
+                            } else {
+                                (l as any).color = "#811824";
+                            }
+                        },
                     });
                 }
 
