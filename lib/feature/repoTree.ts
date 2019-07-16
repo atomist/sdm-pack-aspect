@@ -17,7 +17,12 @@
 import { logger } from "@atomist/automation-client";
 import { Client } from "pg";
 import { doWithClient } from "../analysis/offline/persist/pgUtils";
-import { checkPlantedTreeInvariants, PlantedTree, SunburstTree, visit } from "../tree/sunburst";
+import {
+    checkPlantedTreeInvariants,
+    PlantedTree,
+    SunburstTree,
+    visit,
+} from "../tree/sunburst";
 
 export interface TreeQuery {
 
