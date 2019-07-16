@@ -17,7 +17,7 @@
 import { logger } from "@atomist/automation-client";
 import { Client } from "pg";
 import { doWithClient } from "../analysis/offline/persist/pgUtils";
-import { PlantedTree, SunburstTree, visit, checkPlantedTreeInvariants } from "../tree/sunburst";
+import { checkPlantedTreeInvariants, PlantedTree, SunburstTree, visit } from "../tree/sunburst";
 
 export interface TreeQuery {
 
@@ -122,4 +122,3 @@ export async function repoTree(opts: TreeQuery): Promise<PlantedTree> {
     checkPlantedTreeInvariants(result);
     return result;
 }
-
