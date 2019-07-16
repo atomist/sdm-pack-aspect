@@ -17,7 +17,7 @@
 import { logger } from "@atomist/automation-client";
 import { Client } from "pg";
 import { doWithClient } from "../analysis/offline/persist/pgUtils";
-import { PlantedTree, SunburstTree, visit } from "../tree/sunburst";
+import { PlantedTree, SunburstTree, visit, checkPlantedTreeInvariants } from "../tree/sunburst";
 
 export interface TreeQuery {
 
@@ -62,7 +62,7 @@ export interface TreeLevelMetadata {
 }
 export interface QueryForTree {
     sql: string;
-    levels: TreeLevelMetadata[];
+    circles: TreeLevelMetadata[];
 }
 
 export function fingerprintsChildrenQuery(byName: boolean, includeWithout: boolean): QueryForTree {
@@ -88,7 +88,7 @@ SELECT row_to_json(fingerprint_groups) FROM (
     logger.debug("Running SQL\n%s", sql);
     return {
         sql,
-        levels: [
+        circles: [
             { meaning: "fingerprint name" },
             { meaning: "fingerprint value" },
             { meaning: "repo" },
@@ -117,23 +117,9 @@ export async function repoTree(opts: TreeQuery): Promise<PlantedTree> {
             name: opts.rootName,
             children,
         },
-        levels: opts.query.levels,
+        circles: opts.query.circles,
     };
-    checkInvariants(result);
+    checkPlantedTreeInvariants(result);
     return result;
 }
 
-function checkInvariants(pt: PlantedTree): void {
-    let depth = 0;
-    visit(pt.tree, (l, d) => {
-        if (d > depth) {
-            depth = d;
-        }
-        return true;
-    });
-    // the tree counts depth from zero
-    if ((depth + 1) !== pt.levels.length) {
-        logger.error("Tree: " + JSON.stringify(pt.tree, undefined, 2));
-        throw new Error(`Expected a depth of ${pt.levels.length} but saw a tree of depth ${depth + 1}`);
-    }
-}
