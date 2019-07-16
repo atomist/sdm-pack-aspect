@@ -35,9 +35,11 @@ export interface TreeQuery {
     rootName: string;
 
     /**
-     * SQL query. Must return a tree.
+     * Look for one particular fingerprint?
      */
-    query: QueryForTree;
+    byName: boolean;
+
+    includeWithout: boolean;
 }
 
 /**
@@ -62,16 +64,8 @@ function without(byName: boolean): string {
          children`;
 }
 
-export interface TreeLevelMetadata {
-    meaning: string;
-}
-export interface QueryForTree {
-    sql: string;
-    circles: TreeLevelMetadata[];
-}
-
-export function fingerprintsChildrenQuery(byName: boolean, includeWithout: boolean): QueryForTree {
-
+function fingerprintsChildrenQuery(byName: boolean, includeWithout: boolean): string {
+    // we always select by aspect (aka feature_name, aka type), and sometimes also by fingerprint name.
     const sql = `
 SELECT row_to_json(fingerprint_groups) FROM (
     SELECT json_agg(fp) as children FROM (
@@ -91,14 +85,7 @@ SELECT row_to_json(fingerprint_groups) FROM (
 ) fp) as fingerprint_groups
 `;
     logger.debug("Running SQL\n%s", sql);
-    return {
-        sql,
-        circles: [
-            { meaning: "fingerprint name" },
-            { meaning: "fingerprint value" },
-            { meaning: "repo" },
-        ],
-    };
+    return sql;
 }
 
 /**
@@ -108,12 +95,14 @@ SELECT row_to_json(fingerprint_groups) FROM (
  */
 export async function repoTree(opts: TreeQuery): Promise<PlantedTree> {
     const children = await doWithClient(opts.clientFactory, async client => {
+        const sql = fingerprintsChildrenQuery(opts.byName, opts.includeWithout);
         try {
-            const results = await client.query(opts.query.sql, [opts.workspaceId, opts.featureName, opts.rootName]);
+            const results = await client.query(sql,
+                [opts.workspaceId, opts.featureName, opts.rootName]);
             const data = results.rows[0];
             return data.row_to_json.children;
         } catch (err) {
-            logger.error("Error running SQL %s: %s", opts.query, err);
+            logger.error("Error running SQL %s: %s", sql, err);
             throw err;
         }
     }, []);
@@ -122,7 +111,11 @@ export async function repoTree(opts: TreeQuery): Promise<PlantedTree> {
             name: opts.rootName,
             children,
         },
-        circles: opts.query.circles,
+        circles: [
+            { meaning: opts.byName ? "fingerprint name" : "aspect" },
+            { meaning: "fingerprint value" },
+            { meaning: "repo" },
+        ],
     };
     checkPlantedTreeInvariants(result);
     return result;
