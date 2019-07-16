@@ -33,10 +33,7 @@ import {
 import { computeAnalyticsForFingerprintKind } from "../analysis/offline/spider/analytics";
 import { AspectRegistry } from "../feature/AspectRegistry";
 import { reportersAgainst } from "../feature/reportersAgainst";
-import {
-    fingerprintsChildrenQuery,
-    repoTree,
-} from "../feature/repoTree";
+import { repoTree } from "../feature/repoTree";
 import {
     groupSiblings,
     introduceClassificationLayer,
@@ -60,8 +57,8 @@ import {
  * Public API routes, returning JSON
  */
 export function api(clientFactory: ClientFactory,
-                    store: ProjectAnalysisResultStore,
-                    aspectRegistry: AspectRegistry): ExpressCustomizer {
+    store: ProjectAnalysisResultStore,
+    aspectRegistry: AspectRegistry): ExpressCustomizer {
     return (express: Express, ...handlers: RequestHandler[]) => {
 
         express.use(bodyParser.json());       // to support JSON-encoded bodies
@@ -118,13 +115,14 @@ export function api(clientFactory: ClientFactory,
                 let pt = (await repoTree({
                     workspaceId,
                     clientFactory,
-                    query: fingerprintsChildrenQuery(byName, req.query.otherLabel === "true"),
+                    byName,
+                    includeWithout: req.query.otherLabel === "true",
                     rootName: req.params.name,
                     featureName: req.params.type,
                 }));
                 logger.debug("Returning fingerprint tree '%s': %j", req.params.name, pt);
                 if (!byName) {
-                    // Show all aspects, splitting by name
+                    // Show all fingerprints in one aspect, splitting by fingerprint name
                     pt = introduceClassificationLayer<{ data: any, type: string }>(pt,
                         {
                             descendantClassifier: l => {
@@ -132,7 +130,7 @@ export function api(clientFactory: ClientFactory,
                                     return undefined;
                                 }
                                 const aspect2: BaseFeature = aspectRegistry.aspectOf(l.type);
-                                return !aspect2 || !aspect.toDisplayableFingerprintName ?
+                                return !aspect2 || !aspect2.toDisplayableFingerprintName ?
                                     l.name :
                                     aspect2.toDisplayableFingerprintName(l.name);
                             },
@@ -144,7 +142,7 @@ export function api(clientFactory: ClientFactory,
                         pt.tree.name = aspect.displayName;
                     }
                 } else {
-                    // We are showing a particular aspect
+                    // We are showing a particular fingerprint
                     const aspect = aspectRegistry.aspectOf(pt.tree.name);
                     if (!!aspect) {
                         pt.tree.name = aspect.displayName;
