@@ -16,8 +16,16 @@
 
 import { logger } from "@atomist/automation-client";
 
-import { FP } from "@atomist/sdm-pack-fingerprints";
 import * as _ from "lodash";
+
+export interface PlantedTree {
+    tree: SunburstTree;
+    levels: SunburstLevelMetadata[];
+}
+
+export interface SunburstLevelMetadata {
+    meaning: string;
+}
 
 export interface SunburstTree {
     name: string;

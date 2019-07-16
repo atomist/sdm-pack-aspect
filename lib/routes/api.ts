@@ -16,7 +16,6 @@
 
 import { logger } from "@atomist/automation-client";
 import { ExpressCustomizer } from "@atomist/automation-client/lib/configuration";
-import { toArray } from "@atomist/sdm-core/lib/util/misc/array";
 import { FP } from "@atomist/sdm-pack-fingerprints";
 import { BaseFeature } from "@atomist/sdm-pack-fingerprints/lib/machine/Feature";
 import { isConcreteIdeal } from "@atomist/sdm-pack-fingerprints/lib/machine/Ideal";
@@ -43,8 +42,7 @@ import {
     introduceClassificationLayer,
     SunburstTree,
     trimOuterRim,
-    visit,
-    visitAsync,
+    visit, visitAsync,
 } from "../tree/sunburst";
 import {
     authHandlers,
@@ -117,14 +115,15 @@ export function api(clientFactory: ClientFactory,
             }
             try {
                 // Get the tree and then perform post processing on it
-                let tree = await repoTree({
+                const pt = (await repoTree({
                     workspaceId,
                     clientFactory,
                     query: fingerprintsChildrenQuery(byName, req.query.otherLabel === "true"),
                     rootName: req.params.name,
                     featureName: req.params.type,
-                });
-                logger.debug("Returning fingerprint tree '%s': %j", req.params.name, tree);
+                }));
+                let tree = pt.tree;
+                logger.debug("Returning fingerprint tree '%s': %j", req.params.name, pt);
 
                 // Flag bad fingerprints with a special color
                 await visitAsync(tree, async l => {
@@ -136,23 +135,23 @@ export function api(clientFactory: ClientFactory,
 
                 if (!byName) {
                     // Show all aspects, splitting by name
-                    const aspect = aspectRegistry.aspectOf(req.params.type);
-                    if (!!aspect) {
-                        tree.name = aspect.displayName;
-                    }
                     tree = introduceClassificationLayer<{ data: any, type: string }>(tree,
                         {
                             descendantClassifier: l => {
                                 if (!(l as any).sha) {
                                     return undefined;
                                 }
+                                const aspect: BaseFeature = aspectRegistry.aspectOf(l.type);
                                 return !aspect || !aspect.toDisplayableFingerprintName ?
                                     l.name :
                                     aspect.toDisplayableFingerprintName(l.name);
                             },
                             newLayerDepth: 0,
                         });
-
+                    const aspect = aspectRegistry.aspectOf(req.params.type);
+                    if (!!aspect) {
+                        tree.name = aspect.displayName;
+                    }
                 } else {
                     // We are showing a particular aspect
                     const aspect = aspectRegistry.aspectOf(tree.name);
@@ -160,6 +159,7 @@ export function api(clientFactory: ClientFactory,
                         tree.name = aspect.displayName;
                     }
                 }
+
                 resolveAspectNames(aspectRegistry, tree);
                 if (req.query.byOrg === "true") {
                     // Group by organization via an additional layer at the center
