@@ -23,16 +23,20 @@ import { Aspect } from "@atomist/sdm-pack-fingerprints";
  * Make this aspect conditional
  */
 export function conditionalize(f: Aspect,
-                               details: Pick<Aspect, "name" | "displayName" |
-        "toDisplayableFingerprint" | "toDisplayableFingerprintName">,
-                               test: (p: Project) => Promise<boolean>): Aspect {
+                               test: (p: Project) => Promise<boolean>,
+                               details: Partial<Pick<Aspect, "name" | "displayName" |
+                                   "toDisplayableFingerprint" | "toDisplayableFingerprintName">> = {}): Aspect {
     return {
         ...f,
         ...details,
         extract: async p => {
             const testResult = await test(p);
             return testResult ?
-                f.extract(p) :
+                {
+                    // We need to put in the new name if it's there
+                    ...f.extract(p),
+                    ...details,
+                } :
                 undefined;
         },
     };
