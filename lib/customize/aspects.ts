@@ -25,7 +25,6 @@ import {
 } from "@atomist/sdm-pack-fingerprints";
 import { ManagedAspect } from "../aspect/AspectRegistry";
 import {
-    branchCount,
     fileCount,
 } from "../aspect/common/count";
 import {
@@ -50,6 +49,7 @@ import { SpringBootStarter } from "../aspect/spring/springBootStarter";
 import { SpringBootVersion } from "../aspect/spring/springBootVersion";
 import { TravisScriptsAspect } from "../aspect/travis/travisAspects";
 import { CodeOwnership } from "../element/codeOwnership";
+import { branchCount } from "../aspect/git/branchCount";
 
 /**
  * The aspects anaged by this SDM.
