@@ -14,7 +14,10 @@
  * limitations under the License.
  */
 
-import { LocalProject, logger } from "@atomist/automation-client";
+import {
+    LocalProject,
+    logger,
+} from "@atomist/automation-client";
 import { execPromise } from "@atomist/sdm";
 import {
     Aspect,
