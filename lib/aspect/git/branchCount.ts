@@ -28,7 +28,7 @@ export const branchCount: Aspect = {
     displayName: "Branch count",
     extract: async p => {
         const lp = p as LocalProject;
-        const commandResult = await execPromise("git", ["branch", "--list", "-r" ," origin/*"], {
+        const commandResult = await execPromise("git", ["branch", "--list", "-r" , " origin/*"], {
             cwd: lp.baseDir,
         });
         const count = commandResult.stdout
