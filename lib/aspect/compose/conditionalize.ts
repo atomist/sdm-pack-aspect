@@ -14,30 +14,36 @@
  * limitations under the License.
  */
 
-import { Project } from "@atomist/automation-client";
+import { logger, Project } from "@atomist/automation-client";
 import { Aspect } from "@atomist/sdm-pack-fingerprints";
+import { toArray } from "@atomist/sdm-core/lib/util/misc/array";
 
 // TODO move to fingerprints pack
 
 /**
  * Make this aspect conditional
  */
-export function conditionalize(f: Aspect,
+export function conditionalize(aspect: Aspect,
                                test: (p: Project) => Promise<boolean>,
                                details: Partial<Pick<Aspect, "name" | "displayName" |
                                    "toDisplayableFingerprint" | "toDisplayableFingerprintName">> = {}): Aspect {
     return {
-        ...f,
+        ...aspect,
         ...details,
         extract: async p => {
             const testResult = await test(p);
-            return testResult ?
-                {
-                    // We need to put in the new name if it's there
-                    ...f.extract(p),
-                    ...details,
-                } :
-                undefined;
+            if (testResult) {
+                const rawFingerprints = toArray(await aspect.extract(p));
+                return rawFingerprints.map(raw => {
+                    const merged = {
+                        ...raw,
+                        ...details,
+                    };
+                    logger.debug("Merged fingerprints=%j", merged);
+                    return merged;
+                });
+            }
+            return undefined;
         },
     };
 }
