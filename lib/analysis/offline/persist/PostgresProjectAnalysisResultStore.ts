@@ -344,10 +344,10 @@ function idealRowToIdeal(rawRow: any): Ideal {
  * @return {Promise<FP[]>}
  */
 async function fingerprintsInWorkspace(clientFactory: ClientFactory,
-    workspaceId: string,
-    type?: string,
-    name?: string,
-    dedup?: boolean): Promise<FP[]> {
+                                       workspaceId: string,
+                                       type?: string,
+                                       name?: string,
+                                       dedup?: boolean): Promise<FP[]> {
     return doWithClient(clientFactory, async client => {
         const sql = `SELECT ${dedup ? "DISTINCT" : ""} f.name as fingerprintName, f.feature_name, f.sha, f.data
   from repo_fingerprints rf, repo_snapshots rs, fingerprints f
@@ -375,7 +375,7 @@ async function fingerprintsInWorkspace(clientFactory: ClientFactory,
 }
 
 async function fingerprintsForProject(clientFactory: ClientFactory,
-    snapshotId: string): Promise<FP[]> {
+                                      snapshotId: string): Promise<FP[]> {
     return doWithClient(clientFactory, async client => {
         const sql = `SELECT f.name as fingerprintName, f.feature_name, f.sha, f.data
   from repo_fingerprints rf, repo_snapshots rs, fingerprints f
