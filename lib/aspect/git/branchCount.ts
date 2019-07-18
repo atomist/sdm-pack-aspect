@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { LocalProject } from "@atomist/automation-client";
+import { LocalProject, logger } from "@atomist/automation-client";
 import { execPromise } from "@atomist/sdm";
 import {
     Aspect,
@@ -35,6 +35,7 @@ export const branchCount: Aspect = {
             .split("\n")
             .filter(l => !l.includes("origin/HEAD")).length - 1;
         const data = { count };
+        logger.info("Branch count for %s is %d", p.id.url, count);
         return {
             type: BranchCountType,
             name: BranchCountType,
