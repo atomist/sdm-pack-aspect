@@ -29,7 +29,10 @@ export function conditionalize(aspect: Aspect,
                                    "toDisplayableFingerprint" | "toDisplayableFingerprintName">> = {}): Aspect {
     return {
         ...aspect,
-        ...details,
+        name: details.name || aspect.name,
+        displayName: details.displayName || aspect.displayName,
+        toDisplayableFingerprintName: details.toDisplayableFingerprintName || aspect.toDisplayableFingerprintName,
+        toDisplayableFingerprint: details.toDisplayableFingerprint || aspect.toDisplayableFingerprint,
         extract: async p => {
             const testResult = await test(p);
             if (testResult) {
