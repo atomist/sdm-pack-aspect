@@ -52,10 +52,10 @@ function without(byName: boolean): string {
            SELECT json_agg(row_to_json(repo))
            FROM (
                   SELECT
-                    repo_snapshots.owner, repo_snapshots.name, repo_snapshots.url, 1 as size
-                  FROM repo_snapshots
+                    current_repo_snapshots.owner, current_repo_snapshots.name, current_repo_snapshots.url, 1 as size
+                  FROM current_repo_snapshots
                    WHERE workspace_id = $1
-                   AND repo_snapshots.id not in (select repo_fingerprints.repo_snapshot_id
+                   AND current_repo_snapshots.id not in (select repo_fingerprints.repo_snapshot_id
                     FROM repo_fingerprints WHERE repo_fingerprints.fingerprint_id in
                         (SELECT id from fingerprints where fingerprints.feature_name = $2
                             AND fingerprints.name ${byName ? "=" : "<>"} $3))
@@ -74,10 +74,10 @@ SELECT row_to_json(fingerprint_groups) FROM (
          (
              SELECT json_agg(row_to_json(repo)) FROM (
                   SELECT
-                    repo_snapshots.owner, repo_snapshots.name, repo_snapshots.url, 1 as size
-                  FROM repo_fingerprints, repo_snapshots
+                    current_repo_snapshots.owner, current_repo_snapshots.name, current_repo_snapshots.url, 1 as size
+                  FROM repo_fingerprints, current_repo_snapshots
                    WHERE repo_fingerprints.fingerprint_id = fingerprints.id
-                    AND repo_snapshots.id = repo_fingerprints.repo_snapshot_id
+                    AND current_repo_snapshots.id = repo_fingerprints.repo_snapshot_id
                     AND workspace_id = $1
                 ) repo
          ) as children FROM fingerprints WHERE fingerprints.feature_name = $2 and fingerprints.name ${byName ? "=" : "<>"} $3

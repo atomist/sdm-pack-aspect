@@ -64,7 +64,7 @@ export class PostgresProjectAnalysisResultStore implements ProjectAnalysisResult
     public loadWhere(where: string): Promise<ProjectAnalysisResult[]> {
         return doWithClient(this.clientFactory, async client => {
             const sql = `SELECT id, owner, name, url, commit_sha, analysis, timestamp
-                from repo_snapshots ` +
+                from current_repo_snapshots ` +
                 (where ? `WHERE ${where}` : "");
             const rows = await client.query(sql);
             return rows.rows.map(row => ({
@@ -77,7 +77,7 @@ export class PostgresProjectAnalysisResultStore implements ProjectAnalysisResult
     public async loadById(id: string): Promise<ProjectAnalysisResult> {
         return doWithClient(this.clientFactory, async client => {
             const result = await client.query(`SELECT owner, name, url, commit_sha, analysis, timestamp
-                FROM repo_snapshots
+                FROM current_repo_snapshots
                 WHERE id = $1`, [id]);
             return result.rows.length === 1 ? {
                 id,
@@ -92,7 +92,7 @@ export class PostgresProjectAnalysisResultStore implements ProjectAnalysisResult
     public async loadByRepoRef(repo: RepoRef): Promise<ProjectAnalysisResult> {
         return doWithClient(this.clientFactory, async client => {
             const result = await client.query(`SELECT id, owner, name, url, commit_sha, analysis, timestamp
-                FROM repo_snapshots
+                FROM current_repo_snapshots
                 WHERE owner = $1 AND name = $2 AND commit_sha = $3`, [repo.owner, repo.repo, repo.sha]);
             return result.rows.length >= 1 ? {
                 id: result.rows[0].id,
@@ -110,7 +110,7 @@ export class PostgresProjectAnalysisResultStore implements ProjectAnalysisResult
 
     public async distinctFingerprintKinds(workspaceId: string): Promise<FingerprintKind[]> {
         const sql = `SELECT distinct f.name, feature_name as type
-  from repo_fingerprints rf, repo_snapshots rs, fingerprints f
+  from repo_fingerprints rf, current_repo_snapshots rs, fingerprints f
   WHERE rf.repo_snapshot_id = rs.id AND rf.fingerprint_id = f.id AND rs.workspace_id ${workspaceId === "*" ? "!=" : "="} $1`;
         return doWithClient(this.clientFactory, async client => {
             const result = await client.query(sql, [workspaceId]);
@@ -350,7 +350,7 @@ async function fingerprintsInWorkspace(clientFactory: ClientFactory,
                                        dedup?: boolean): Promise<FP[]> {
     return doWithClient(clientFactory, async client => {
         const sql = `SELECT ${dedup ? "DISTINCT" : ""} f.name as fingerprintName, f.feature_name, f.sha, f.data
-  from repo_fingerprints rf, repo_snapshots rs, fingerprints f
+  from repo_fingerprints rf, current_repo_snapshots rs, fingerprints f
   WHERE rf.repo_snapshot_id = rs.id AND rf.fingerprint_id = f.id AND rs.workspace_id ${workspaceId === "*" ? "!=" : "="} $1
   AND ${type ? "feature_name = $2" : "true"} AND ${name ? "f.name = $3" : "true"}
   ORDER BY feature_name, fingerprintName ASC`;
@@ -378,7 +378,7 @@ async function fingerprintsForProject(clientFactory: ClientFactory,
                                       snapshotId: string): Promise<FP[]> {
     return doWithClient(clientFactory, async client => {
         const sql = `SELECT f.name as fingerprintName, f.feature_name, f.sha, f.data
-  from repo_fingerprints rf, repo_snapshots rs, fingerprints f
+  from repo_fingerprints rf, current_repo_snapshots rs, fingerprints f
   WHERE rs.id = $1 AND rf.repo_snapshot_id = rs.id AND rf.fingerprint_id = f.id
   ORDER BY feature_name, fingerprintName ASC`;
         const rows = await client.query(sql, [snapshotId]);
