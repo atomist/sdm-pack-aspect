@@ -14,7 +14,10 @@
  * limitations under the License.
  */
 
-import { logger, Project } from "@atomist/automation-client";
+import {
+    logger,
+    Project,
+} from "@atomist/automation-client";
 import { toArray } from "@atomist/sdm-core/lib/util/misc/array";
 import { Aspect } from "@atomist/sdm-pack-fingerprints";
 
