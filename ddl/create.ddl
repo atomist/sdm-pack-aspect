@@ -16,6 +16,8 @@ DROP TABLE IF EXISTS fingerprints;
 
 DROP TABLE IF EXISTS repo_snapshots;
 
+DROP TABLE IF EXISTS branch_heads;
+
 DROP TABLE IF EXISTS fingerprint_analytics;
 
 DROP TABLE IF EXISTS ideal_fingerprints;
@@ -34,6 +36,41 @@ CREATE TABLE repo_snapshots (
  timestamp TIMESTAMP  NOT NULL,
  query text
 );
+
+-- Kept up to date on a trigger on repo_snapshots
+CREATE TABLE branch_heads (
+ repo_snapshot_id varchar references repo_snapshots(id),
+ workspace_id varchar NOT NULL,
+ url text NOT NULL,
+ branch text NOT NULL,
+ commit_sha varchar NOT NULL,
+ timestamp TIMESTAMP  NOT NULL,
+ PRIMARY KEY (workspace_id, url, branch)
+);
+
+-- This view will show only the current repo snapshot.
+-- Query it instead of repo_snapshots
+CREATE OR REPLACE VIEW current_repo_snapshots AS
+  SELECT rs.id, rs.workspace_id, rs.provider_id, rs.owner, rs.name, rs.url, rs.branch, rs.path, rs.commit_sha, rs.analysis, rs.timestamp, rs.query
+  FROM repo_snapshots rs, branch_heads bh
+  WHERE bh.repo_snapshot_id = rs.id;
+
+CREATE OR REPLACE FUNCTION update_branch_heads_for_snapshot() RETURNS trigger AS $$
+BEGIN
+   INSERT into branch_heads (workspace_id, repo_snapshot_id, url, branch, commit_sha, timestamp)
+   VALUES (NEW.workspace_id, NEW.id, NEW.url,
+   CASE WHEN NEW.branch IS NULL THEN 'master' ELSE NEW.branch END,
+   NEW.commit_sha, NEW.timestamp)
+   ON CONFLICT ON CONSTRAINT branch_heads_pkey DO UPDATE SET commit_sha = NEW.commit_sha, timestamp = NEW.timestamp;
+   RETURN NEW;
+END;
+$$ LANGUAGE PLPGSQL;
+
+DROP TRIGGER IF EXISTS update_repo_heads on repo_snapshots;
+CREATE TRIGGER update_repo_heads
+    AFTER INSERT OR UPDATE ON repo_snapshots
+    FOR EACH ROW
+    EXECUTE PROCEDURE update_branch_heads_for_snapshot();
 
 -- One instance for each fingerprint
 CREATE TABLE fingerprints (
@@ -80,3 +117,6 @@ CREATE INDEX ON fingerprints (feature_name);
 
 CREATE INDEX ON fingerprint_analytics (workspace_id);
 
+CREATE INDEX on branch_heads(url);
+
+CREATE INDEX on branch_heads(commit_sha);

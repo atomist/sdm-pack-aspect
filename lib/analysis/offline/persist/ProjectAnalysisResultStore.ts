@@ -74,6 +74,11 @@ export interface ProjectAnalysisResultStore {
      */
     loadWhere(where: string): Promise<ProjectAnalysisResult[]>;
 
+    /**
+     * Load by RepoRef, including sha
+     * @param {RepoRef} repo
+     * @return {Promise<ProjectAnalysisResult | undefined>}
+     */
     loadByRepoRef(repo: RepoRef): Promise<ProjectAnalysisResult | undefined>;
 
     /**
