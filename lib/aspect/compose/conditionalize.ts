@@ -15,8 +15,8 @@
  */
 
 import { logger, Project } from "@atomist/automation-client";
-import { Aspect } from "@atomist/sdm-pack-fingerprints";
 import { toArray } from "@atomist/sdm-core/lib/util/misc/array";
+import { Aspect } from "@atomist/sdm-pack-fingerprints";
 
 // TODO move to fingerprints pack
 
