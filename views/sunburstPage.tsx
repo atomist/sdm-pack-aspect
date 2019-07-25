@@ -1,4 +1,5 @@
 import * as React from "react";
+import { PlantedTree } from "../lib/tree/sunburst";
 
 // tslint:disable-next-line:no-empty-interface
 export interface CurrentIdealForDisplay {
@@ -18,6 +19,7 @@ export interface SunburstPageProps {
     possibleIdeals: PossibleIdealForDisplay[];
     query: string;
     dataUrl: string;
+    tree?: PlantedTree; // we might have the data already.
 }
 
 function displayCurrentIdeal(currentIdeal: CurrentIdealForDisplay): React.ReactElement {
@@ -47,16 +49,20 @@ export function SunburstPage(props: SunburstPageProps): React.ReactElement {
         window.innerHeight - 100);
     </script>`;
 
+    const thingies: string | React.ReactElement = !props.tree ? "Click a slice to see its details" :
+        <ul>{props.tree.circles.map((c, i) => <li key={"meaning-" + i}>{c.meaning}</li>)}</ul>;
+
     const idealDisplay = props.currentIdeal ? displayCurrentIdeal(props.currentIdeal) : "";
     return <div className="sunburst">
         <h1>{props.fingerprintDisplayName}</h1>
         {idealDisplay}
         <div className="wrapper">
             <div id="putSvgHere" className="sunburstSvg"></div>
-            <div id="dataAboutWhatYouClicked" className="sunburstData">Click a slice to see its details</div>
+            <div id="dataAboutWhatYouClicked" className="sunburstData">{thingies}</div>
         </div>
         <div dangerouslySetInnerHTML={{ __html: d3ScriptCall }} />
         <a href={"." + props.dataUrl}>Raw data</a>
     </div>;
 
 }
+

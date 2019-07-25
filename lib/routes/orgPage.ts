@@ -224,16 +224,15 @@ export function orgPage(
                         req.query.trim === "true"}`;
                 }
 
-                let treeMetadata: SunburstCircleMetadata[] = [];
+                let tree: PlantedTree;
                 const fullUrl = `http://${req.get("host")}${dataUrl}`;
                 try {
                     const result = await httpClientFactory.create().exchange<PlantedTree>(fullUrl,
                         {
                             retry: { retries: 0 },
                         });
-                    const tree: PlantedTree = result.body;
-                    treeMetadata = tree.circles || [];
-                    logger.info(`From ${fullUrl}, got: ` + JSON.stringify(treeMetadata, undefined, 2));
+                    tree = result.body;
+                    logger.info(`From ${fullUrl}, got: ` + JSON.stringify(tree.circles, undefined, 2));
                 } catch (e) {
                     logger.error(`Failure fetching sunburst data from ${fullUrl}: ` + e.message);
                 }
@@ -264,6 +263,7 @@ export function orgPage(
                         possibleIdeals: possibleIdealsForDisplay,
                         query: req.params.query,
                         dataUrl,
+                        tree,
                     }),
                     "Atomist Aspect",
                     [
