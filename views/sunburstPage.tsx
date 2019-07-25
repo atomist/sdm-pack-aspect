@@ -65,4 +65,3 @@ export function SunburstPage(props: SunburstPageProps): React.ReactElement {
     </div>;
 
 }
-
