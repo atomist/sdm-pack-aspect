@@ -55,7 +55,7 @@ import {
     SunburstPage,
 } from "../../views/sunburstPage";
 import { TopLevelPage } from "../../views/topLevelPage";
-import { ProjectAnalysisResultStore } from "../analysis/offline/persist/ProjectAnalysisResultStore";
+import { ProjectAnalysisResultStore, whereFor } from "../analysis/offline/persist/ProjectAnalysisResultStore";
 import {
     AspectRegistry,
     ManagedAspect,
@@ -64,6 +64,7 @@ import {
     defaultedToDisplayableFingerprint,
     defaultedToDisplayableFingerprintName,
 } from "../aspect/DefaultAspectRegistry";
+import { buildFingerprintTree } from "./api";
 
 function renderStaticReactNode(body: ReactElement,
                                title?: string,
@@ -80,10 +81,12 @@ function renderStaticReactNode(body: ReactElement,
  * Add the org page route to Atomist SDM Express server.
  * @return {ExpressCustomizer}
  */
-export function orgPage(aspectRegistry: AspectRegistry, store: ProjectAnalysisResultStore): {
-    customizer: ExpressCustomizer,
-    routesToSuggestOnStartup: Array<{ title: string, route: string }>,
-} {
+export function orgPage(
+    aspectRegistry: AspectRegistry,
+    store: ProjectAnalysisResultStore): {
+        customizer: ExpressCustomizer,
+        routesToSuggestOnStartup: Array<{ title: string, route: string }>,
+    } {
     const orgRoute = "/org";
     return {
         routesToSuggestOnStartup: [{ title: "Org Visualizations", route: orgRoute }],
@@ -105,7 +108,7 @@ export function orgPage(aspectRegistry: AspectRegistry, store: ProjectAnalysisRe
             /* the org page itself */
             express.get(orgRoute, ...handlers, async (req, res) => {
                 try {
-                    const repos = await store.loadWhere(whereFor(req));
+                    const repos = await store.loadWhere(whereFor(req.query.workspace, req.params.workspace_id));
 
                     const fingerprintUsage = await store.fingerprintUsageForType("*");
 
@@ -156,7 +159,7 @@ export function orgPage(aspectRegistry: AspectRegistry, store: ProjectAnalysisRe
 
             /* Project list page */
             express.get("/projects", ...handlers, async (req, res) => {
-                const allAnalysisResults = await store.loadWhere(whereFor(req));
+                const allAnalysisResults = await store.loadWhere(whereFor(req.query.workspace, req.params.workspace_id));
 
                 // optional query parameter: owner
                 const relevantAnalysisResults = allAnalysisResults.filter(ar => req.query.owner ? ar.analysis.id.owner === req.query.owner : true);
@@ -253,14 +256,6 @@ export function orgPage(aspectRegistry: AspectRegistry, store: ProjectAnalysisRe
             });
         },
     };
-}
-
-export function whereFor(req: Request): string {
-    const wsid = req.query.workspace || req.params.workspace_id;
-    if (wsid === "*") {
-        return "true";
-    }
-    return wsid ? `workspace_id = '${wsid}'` : "true";
 }
 
 export function jsonToQueryString(json: object): string {

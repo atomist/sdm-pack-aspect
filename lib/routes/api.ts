@@ -35,6 +35,7 @@ import { ClientFactory } from "../analysis/offline/persist/pgUtils";
 import {
     FingerprintUsage,
     ProjectAnalysisResultStore,
+    whereFor,
 } from "../analysis/offline/persist/ProjectAnalysisResultStore";
 import { computeAnalyticsForFingerprintKind } from "../analysis/offline/spider/analytics";
 import { AspectRegistry } from "../aspect/AspectRegistry";
@@ -54,7 +55,6 @@ import {
     configureAuth,
     corsHandler,
 } from "./auth";
-import { whereFor } from "./orgPage";
 import {
     aspectReport,
     skewReport,
@@ -143,7 +143,7 @@ export function api(clientFactory: ClientFactory,
                         ...req.query,
                     });
 
-                    const repos = await store.loadWhere(whereFor(req));
+                    const repos = await store.loadWhere(whereFor(req.query.workspace, req.params.workspace_id));
                     const relevantRepos = repos.filter(ar => req.query.owner ? ar.analysis.id.owner === req.params.owner : true);
                     const data = await cannedQuery.toSunburstTree(() => relevantRepos.map(r => r.analysis));
                     return res.json({ tree: data });
@@ -258,7 +258,7 @@ function exposeFingerprintByTypeAndName(express: Express,
     });
 }
 
-async function buildFingerprintTree(
+export async function buildFingerprintTree(
     world: {
         aspectRegistry: AspectRegistry,
         clientFactory: () => Client,

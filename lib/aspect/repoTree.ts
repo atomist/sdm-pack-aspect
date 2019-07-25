@@ -78,7 +78,7 @@ SELECT row_to_json(fingerprint_groups) FROM (
                   FROM repo_fingerprints, repo_snapshots
                    WHERE repo_fingerprints.fingerprint_id = fingerprints.id
                     AND repo_snapshots.id = repo_fingerprints.repo_snapshot_id
-                    AND workspace_id ${workspaceId === "*" ? "<>" : "=" } $1
+                    AND workspace_id ${workspaceId === "*" ? "<>" : "="} $1
                 ) repo
          ) as children FROM fingerprints WHERE fingerprints.feature_name = $2 and fingerprints.name ${byName ? "=" : "<>"} $3
          ${includeWithout ? without(byName) : ""}
@@ -88,6 +88,7 @@ SELECT row_to_json(fingerprint_groups) FROM (
     return sql;
 }
 
+// Question for Rod: why does this use a DB connection and not some abstraction like a Store?
 /**
  * Tree where children is one of a range of values, leaves individual repos with one of those values
  * @param {TreeQuery} opts
