@@ -225,18 +225,17 @@ export function orgPage(
                 }
 
                 let treeMetadata: SunburstCircleMetadata[] = [];
+                const fullUrl = `http://${req.get("host")}${dataUrl}`;
                 try {
-                    const whereami = req.get("host"); // this is localhost:port
-                    const fullUrl = `http://${whereami}${dataUrl}`;
                     const result = await httpClientFactory.create().exchange<PlantedTree>(fullUrl,
                         {
                             retry: { retries: 0 },
                         });
                     const tree: PlantedTree = result.body;
                     treeMetadata = tree.circles || [];
-                    logger.info("Got: " + JSON.stringify(treeMetadata, undefined, 2));
+                    logger.info(`From ${fullUrl}, got: ` + JSON.stringify(treeMetadata, undefined, 2));
                 } catch (e) {
-                    logger.error("Failure fetching sunburst data: " + e.message);
+                    logger.error(`Failure fetching sunburst data from ${fullUrl}: ` + e.message);
                 }
 
                 // tslint:disable-next-line
