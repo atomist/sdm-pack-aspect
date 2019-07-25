@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { logger } from "@atomist/automation-client";
+import { HttpClientFactory, logger } from "@atomist/automation-client";
 import { ExpressCustomizer } from "@atomist/automation-client/lib/configuration";
 import {
     BaseAspect,
@@ -64,11 +64,12 @@ import {
     defaultedToDisplayableFingerprint,
     defaultedToDisplayableFingerprintName,
 } from "../aspect/DefaultAspectRegistry";
+import { PlantedTree, SunburstCircleMetadata } from "../tree/sunburst";
 import { buildFingerprintTree } from "./api";
 
 function renderStaticReactNode(body: ReactElement,
-                               title?: string,
-                               extraScripts?: string[]): string {
+    title?: string,
+    extraScripts?: string[]): string {
     return ReactDOMServer.renderToStaticMarkup(
         TopLevelPage({
             bodyContent: body,
@@ -83,7 +84,8 @@ function renderStaticReactNode(body: ReactElement,
  */
 export function orgPage(
     aspectRegistry: AspectRegistry,
-    store: ProjectAnalysisResultStore): {
+    store: ProjectAnalysisResultStore,
+    httpClientFactory: HttpClientFactory): {
         customizer: ExpressCustomizer,
         routesToSuggestOnStartup: Array<{ title: string, route: string }>,
     } {
@@ -220,6 +222,21 @@ export function orgPage(
                         req.query.byOrg === "true"}&presence=${req.query.presence === "true"}&progress=${
                         req.query.progress === "true"}&otherLabel=${req.query.otherLabel === "true"}&trim=${
                         req.query.trim === "true"}`;
+                }
+
+                let treeMetadata: SunburstCircleMetadata[] = [];
+                try {
+                    const whereami = req.get("host"); // this is localhost:port
+                    const fullUrl = `http://${whereami}${dataUrl}`;
+                    const result = await httpClientFactory.create().exchange<PlantedTree>(fullUrl,
+                        {
+                            retry: { retries: 0 },
+                        });
+                    const tree: PlantedTree = result.body;
+                    treeMetadata = tree.circles || [];
+                    logger.info("Got: " + JSON.stringify(treeMetadata, undefined, 2));
+                } catch (e) {
+                    logger.error("Failure fetching sunburst data: " + e.message);
                 }
 
                 // tslint:disable-next-line

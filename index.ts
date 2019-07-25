@@ -17,6 +17,7 @@
 import {
     BannerSection,
     Configuration,
+    HttpClientFactory,
     logger,
 } from "@atomist/automation-client";
 import { configureHumio } from "@atomist/automation-client-ext-humio";
@@ -77,59 +78,59 @@ const mode = process.env.ATOMIST_ORG_VISUALIZER_MODE || "online";
 
 export const configuration: Configuration = configure(async sdm => {
 
-        const jobAspects = [
-            DockerFrom,
-            DockerfilePath,
-            DockerPorts,
-            SpringBootStarter,
-            TypeScriptVersion,
-            NpmDeps,
-            TravisScriptsAspect,
-            StackAspect,
-            CiAspect,
-            JavaBuild,
-            SpringBootVersion,
-            DirectMavenDependencies,
-        ];
-        const handlers = [];
+    const jobAspects = [
+        DockerFrom,
+        DockerfilePath,
+        DockerPorts,
+        SpringBootStarter,
+        TypeScriptVersion,
+        NpmDeps,
+        TravisScriptsAspect,
+        StackAspect,
+        CiAspect,
+        JavaBuild,
+        SpringBootVersion,
+        DirectMavenDependencies,
+    ];
+    const handlers = [];
 
-        // TODO cd merge into one call
-        registerCategories(TypeScriptVersion, "Node.js");
-        registerReportDetails(TypeScriptVersion, { url: "fingerprint/typescript-version/typescript-version?byOrg=true" });
-        registerCategories(NpmDeps, "Node.js");
-        registerReportDetails(NpmDeps, { url: "filter/skew?type=npm-project-deps" });
-        registerCategories(SpringBootStarter, "Java");
-        registerCategories(JavaBuild, "Java");
-        registerCategories(SpringBootVersion, "Java");
-        registerCategories(DirectMavenDependencies, "Java");
-        registerReportDetails(DirectMavenDependencies, { url: "filter/skew?type=maven-direct-dep" });
-        registerCategories(DockerFrom, "Docker");
-        registerReportDetails(DockerFrom, { url: "filter/aspectReport?type=docker-base-image" });
-        registerCategories(DockerPorts, "Docker");
-        registerReportDetails(DockerPorts, { url: "filter/aspectReport?type=docker-ports" });
+    // TODO cd merge into one call
+    registerCategories(TypeScriptVersion, "Node.js");
+    registerReportDetails(TypeScriptVersion, { url: "fingerprint/typescript-version/typescript-version?byOrg=true" });
+    registerCategories(NpmDeps, "Node.js");
+    registerReportDetails(NpmDeps, { url: "filter/skew?type=npm-project-deps" });
+    registerCategories(SpringBootStarter, "Java");
+    registerCategories(JavaBuild, "Java");
+    registerCategories(SpringBootVersion, "Java");
+    registerCategories(DirectMavenDependencies, "Java");
+    registerReportDetails(DirectMavenDependencies, { url: "filter/skew?type=maven-direct-dep" });
+    registerCategories(DockerFrom, "Docker");
+    registerReportDetails(DockerFrom, { url: "filter/aspectReport?type=docker-base-image" });
+    registerCategories(DockerPorts, "Docker");
+    registerReportDetails(DockerPorts, { url: "filter/aspectReport?type=docker-ports" });
 
-        if (mode === "online") {
-            const pushImpact = new PushImpact();
+    if (mode === "online") {
+        const pushImpact = new PushImpact();
 
-            sdm.addExtensionPacks(
-                fingerprintSupport({
-                    pushImpactGoal: pushImpact,
-                    aspects: jobAspects,
-                    handlers,
-                }));
+        sdm.addExtensionPacks(
+            fingerprintSupport({
+                pushImpactGoal: pushImpact,
+                aspects: jobAspects,
+                handlers,
+            }));
 
-            return {
-                analyze: {
-                    goals: pushImpact,
-                },
-            };
-        } else {
-            sdm.addEvent(CreateFingerprintJob);
-            sdm.addCommand(calculateFingerprintTask(jobAspects, handlers));
-            return {};
-        }
+        return {
+            analyze: {
+                goals: pushImpact,
+            },
+        };
+    } else {
+        sdm.addEvent(CreateFingerprintJob);
+        sdm.addCommand(calculateFingerprintTask(jobAspects, handlers));
+        return {};
+    }
 
-    },
+},
     {
         name: "Analysis Software Delivery Machine",
         preProcessors: async cfg => {
@@ -163,7 +164,10 @@ export const configuration: Configuration = configure(async sdm => {
             configureHumio,
             async cfg => {
                 const { customizers, routesToSuggestOnStartup } =
-                    orgVisualizationEndpoints(sdmConfigClientFactory(cfg));
+                    orgVisualizationEndpoints(
+                        sdmConfigClientFactory(cfg),
+                        cfg.http.client.factory,
+                    );
                 cfg.http.customizers = customizers;
                 routesToSuggestOnStartup.forEach(rtsos => {
                     cfg.logging.banner.contributors.push(suggestRoute(rtsos));
@@ -199,11 +203,11 @@ function suggestRoute({ title, route }: { title: string, route: string }):
     });
 }
 
-function orgVisualizationEndpoints(clientFactory: ClientFactory): {
+function orgVisualizationEndpoints(dbClientFactory: ClientFactory, httpClientFactory: HttpClientFactory): {
     routesToSuggestOnStartup: Array<{ title: string, route: string }>,
     customizers: ExpressCustomizer[],
 } {
-    const resultStore = analysisResultStore(clientFactory);
+    const resultStore = analysisResultStore(dbClientFactory);
     const aspectRegistry = new DefaultAspectRegistry({
         idealStore: resultStore,
         problemStore: resultStore,
@@ -211,7 +215,7 @@ function orgVisualizationEndpoints(clientFactory: ClientFactory): {
         undesirableUsageChecker: demoUndesirableUsageChecker,
     });
 
-    const aboutTheApi = api(clientFactory, resultStore, aspectRegistry);
+    const aboutTheApi = api(dbClientFactory, resultStore, aspectRegistry);
 
     if (!isInLocalMode()) {
         return {
@@ -220,12 +224,12 @@ function orgVisualizationEndpoints(clientFactory: ClientFactory): {
         };
     }
 
-    const aboutStaticPages = orgPage(aspectRegistry, resultStore);
+    const aboutStaticPages = orgPage(aspectRegistry, resultStore, httpClientFactory);
 
     return {
         routesToSuggestOnStartup:
             [...aboutStaticPages.routesToSuggestOnStartup,
-                ...aboutTheApi.routesToSuggestOnStartup],
+            ...aboutTheApi.routesToSuggestOnStartup],
         customizers: [aboutStaticPages.customizer, aboutTheApi.customizer],
     };
 }
