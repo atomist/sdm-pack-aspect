@@ -40,26 +40,33 @@ function suggestedIdealListItem(possibleIdeal: PossibleIdealForDisplay): React.R
     </li>;
 }
 
+interface PerLevelDataItem {
+    textAreaId: string;
+    labelText: string;
+}
 /* This element will contain the full data value for one level, about the item hovered over. */
-function levelDataListItem(item: SunburstCircleMetadata, index: number): React.ReactElement {
-    const textAreaId = "levelData-" + index;
-    return <li key={"meaning-" + index}>
-        <label htmlFor={textAreaId}>{item.meaning}: </label>
-        <input readOnly={true} className="levelDataContent" id={textAreaId}></input>
+function levelDataListItem(item: PerLevelDataItem): React.ReactElement {
+    return <li key={"li-" + item.textAreaId}>
+        <label htmlFor={item.textAreaId}>{item.labelText}: </label>
+        <input readOnly={true} value="initial" className="levelDataContent" id={item.textAreaId}></input>
     </li>;
 }
 
 export function SunburstPage(props: SunburstPageProps): React.ReactElement {
 
+    const perLevelDataItems = !props.tree || !props.tree.circles ? []
+        : props.tree.circles.map((c, i) => ({ textAreaId: "levelData-" + i, labelText: c.meaning }));
+
     const d3ScriptCall = `<script>
     SunburstYo.sunburst("${props.query || ""}",
         "${props.dataUrl}",
         window.innerWidth - 250,
-        window.innerHeight - 100);
+        window.innerHeight - 100,
+        [${perLevelDataItems.map(p => `"` + p.textAreaId + `"`).join(",")}]);
     </script>`;
 
     const thingies: string | React.ReactElement = !props.tree ? "Click a slice to see its details" :
-        <ul>{props.tree.circles.map(levelDataListItem)}</ul>;
+        <ul>{perLevelDataItems.map(levelDataListItem)}</ul>;
 
     const idealDisplay = props.currentIdeal ? displayCurrentIdeal(props.currentIdeal) : "";
     return <div className="sunburst">
