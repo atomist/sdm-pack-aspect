@@ -122,7 +122,6 @@ export function sunburst(someName, dataUrl: string, pWidth, pHeight, perLevelDat
             .append("g").attr("class", "slice")
             .on("click", d => {
                 d3.event.stopPropagation();
-                dataDiv.html(constructDescription(d));
                 focusOn(d);
             })
             .on("mouseover", (d: HierarchyNode<SunburstTree | SunburstLeaf>) => {
