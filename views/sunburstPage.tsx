@@ -77,7 +77,7 @@ export function SunburstPage(props: SunburstPageProps): React.ReactElement {
             <div id="dataAboutWhatYouClicked" className="sunburstData">{thingies}</div>
         </div>
         <div dangerouslySetInnerHTML={{ __html: d3ScriptCall }} />
-        <a href={"." + props.dataUrl}>Raw data</a>
+        <a href={"." + props.dataUrl} type="application/json">Raw data</a>
     </div>;
 
 }

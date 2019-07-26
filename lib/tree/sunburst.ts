@@ -217,7 +217,7 @@ export function introduceClassificationLayer<T = {}>(pt: PlantedTree,
     const descendantPicker = tree => opts.descendantFinder(tree).filter(n => !!opts.descendantClassifier(n as any));
     const t = _.cloneDeep(tr);
     visit(t, (node, depth) => {
-        if (depth === opts.newLayerDepth && isSunburstTree(node)) {
+        if (depth === (opts.newLayerDepth - 1) && isSunburstTree(node)) {
             // Split children
             const descendantsToClassifyBy = descendantPicker(node);
             logger.info("Found %d leaves for %s", descendantsToClassifyBy.length, t.name);

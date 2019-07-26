@@ -71,11 +71,11 @@ import {
  * Also expose Swagger API documentation.
  */
 export function api(clientFactory: ClientFactory,
-                    store: ProjectAnalysisResultStore,
-                    aspectRegistry: AspectRegistry): {
-    customizer: ExpressCustomizer,
-    routesToSuggestOnStartup: Array<{ title: string, route: string }>,
-} {
+    store: ProjectAnalysisResultStore,
+    aspectRegistry: AspectRegistry): {
+        customizer: ExpressCustomizer,
+        routesToSuggestOnStartup: Array<{ title: string, route: string }>,
+    } {
     const serveSwagger = isInLocalMode();
     const docRoute = "/api-docs";
     const routesToSuggestOnStartup = serveSwagger ? [{ title: "Swagger", route: docRoute }] : [];
@@ -219,8 +219,8 @@ function exposeFingerprintByType(express: Express, store: ProjectAnalysisResultS
 }
 
 function exposeFingerprintByTypeAndName(express: Express,
-                                        aspectRegistry: AspectRegistry,
-                                        clientFactory: ClientFactory): void {
+    aspectRegistry: AspectRegistry,
+    clientFactory: ClientFactory): void {
     express.options("/api/v1/:workspace_id/fingerprint/:type/:name", corsHandler());
     express.get("/api/v1/:workspace_id/fingerprint/:type/:name", [corsHandler(), ...authHandlers()], async (req: Request, res: Response) => {
         const workspaceId = req.params.workspace_id;
@@ -337,7 +337,7 @@ export async function buildFingerprintTree(
         pt = introduceClassificationLayer<{ owner: string }>(pt,
             {
                 descendantClassifier: l => l.owner,
-                newLayerDepth: 0,
+                newLayerDepth: 1,
                 newLayerMeaning: "owner",
             });
     }
