@@ -25,7 +25,9 @@ import { isConcreteIdeal } from "@atomist/sdm-pack-fingerprints/lib/machine/Idea
 import * as bodyParser from "body-parser";
 import {
     Express,
+    Request,
     RequestHandler,
+    Response,
 } from "express";
 import * as path from "path";
 import { Client } from "pg";
@@ -220,7 +222,7 @@ function exposeFingerprintByTypeAndName(express: Express,
                                         aspectRegistry: AspectRegistry,
                                         clientFactory: ClientFactory): void {
     express.options("/api/v1/:workspace_id/fingerprint/:type/:name", corsHandler());
-    express.get("/api/v1/:workspace_id/fingerprint/:type/:name", [corsHandler(), ...authHandlers()], async (req, res) => {
+    express.get("/api/v1/:workspace_id/fingerprint/:type/:name", [corsHandler(), ...authHandlers()], async (req: Request, res: Response) => {
         const workspaceId = req.params.workspace_id;
         const fingerprintType = req.params.type;
         const fingerprintName = req.params.name;
