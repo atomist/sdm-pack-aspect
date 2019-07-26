@@ -1,4 +1,4 @@
-import { BaseAspect } from "@atomist/sdm-pack-fingerprints";
+import { BaseAspect, supportsEntropy } from "@atomist/sdm-pack-fingerprints";
 import * as React from "react";
 import { CohortAnalysis } from "../lib/analysis/offline/spider/analytics";
 import { ProjectForDisplay, ProjectList } from "./projectList";
@@ -7,8 +7,7 @@ export interface FingerprintForDisplay extends MaybeAnIdeal, CohortAnalysis {
     type: string;
     displayName?: string;
     name: string;
-
-    aspectName: string;
+    aspect: BaseAspect;
 }
 
 export interface AspectForDisplay {
@@ -110,10 +109,11 @@ function fingerprintListItem(f: FingerprintForDisplay): React.ReactElement {
     const displayName = f.displayName || f.name;
     const variantsQueryLink: string = `./query?type=${f.type}&name=${f.name}&byOrg=true`;
     const existsLink: string = `./query?type=${f.type}&name=${f.name}&byOrg=true&presence=true&otherLabel=true`;
+    const ent = <span>{supportsEntropy(f.aspect) && `entropy=${f.entropy.toFixed(2)}`}</span>;
 
     return <li key={displayName}>
         <i>{displayName}</i>: {f.count} projects, {" "}
-        <a href={variantsQueryLink}>{f.variants} variants</a> ({f.entropy}){" "}
+        <a href={variantsQueryLink}>{f.variants} variants</a>{" "}{ent}{" "}
         <a href={existsLink}>Presence</a> {" "}
         {idealDisplay(f)}
     </li>;
@@ -175,9 +175,6 @@ export function OrgExplorer(props: OrgExplorerProps): React.ReactElement {
 
             <li key="code-5"><a href="./query?filter=true&name=langs&byOrg=true">Language breakdown for all projects</a></li>
             <li key="code-6"><a href="./query?filter=true&name=loc&byOrg=true">Repo sizes</a></li>
-            <li key="code-7"><a href="./query?filter=true&name=mavenDependencyCount&byOrg=true">Number of Maven dependencies</a></li>
-            <li key="code-8"><a href="./query?filter=true&name=npmDependencyCount&byOrg=true">Number of npm dependencies</a></li>
-
         </ul>
 
         <h2>Data</h2>
