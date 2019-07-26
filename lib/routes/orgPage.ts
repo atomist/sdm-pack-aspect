@@ -212,7 +212,7 @@ export function orgPage(
                 const queryString = jsonToQueryString(req.query);
 
                 if (req.query.skew) {
-                    dataUrl = `/api/v1/${workspaceId}/filter/skew`;
+                    dataUrl = `/api/v1/${workspaceId}/drift`;
                 } else {
                     dataUrl = !!req.query.filter ?
                         `/api/v1/${workspaceId}/filter/${req.query.name}?${queryString}` :

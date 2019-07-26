@@ -39,7 +39,10 @@ import {
 } from "../analysis/offline/persist/ProjectAnalysisResultStore";
 import { computeAnalyticsForFingerprintKind } from "../analysis/offline/spider/analytics";
 import { AspectRegistry } from "../aspect/AspectRegistry";
-import { repoTree } from "../aspect/repoTree";
+import {
+    driftTree,
+    fingerprintsToReposTree,
+} from "../aspect/repoTree";
 import { getAspectReports } from "../customize/categories";
 import {
     groupSiblings,
@@ -57,8 +60,6 @@ import {
 } from "./auth";
 import {
     aspectReport,
-    skewReport,
-    skewReportForSingleAspect,
     WellKnownReporters,
 } from "./wellKnownReporters";
 
@@ -69,9 +70,9 @@ import {
 export function api(clientFactory: ClientFactory,
                     store: ProjectAnalysisResultStore,
                     aspectRegistry: AspectRegistry): {
-        customizer: ExpressCustomizer,
-        routesToSuggestOnStartup: Array<{ title: string, route: string }>,
-    } {
+    customizer: ExpressCustomizer,
+    routesToSuggestOnStartup: Array<{ title: string, route: string }>,
+} {
     const serveSwagger = isInLocalMode();
     const docRoute = "/api-docs";
     const routesToSuggestOnStartup = serveSwagger ? [{ title: "Swagger", route: docRoute }] : [];
@@ -99,28 +100,12 @@ export function api(clientFactory: ClientFactory,
 
             exposeFingerprintByTypeAndName(express, aspectRegistry, clientFactory);
 
+            exposeDrift(express, aspectRegistry, clientFactory);
+
             // In memory queries against returns
             express.options("/api/v1/:workspace_id/filter/:name", corsHandler());
             express.get("/api/v1/:workspace_id/filter/:name", [corsHandler(), ...authHandlers()], async (req, res) => {
                 try {
-                    if (req.params.name === "skew") {
-                        const type = req.query.type;
-                        const fingerprintUsage = await store.fingerprintUsageForType(req.params.workspace_id, type);
-                        logger.info("Found %d fingerprint kinds used", fingerprintUsage.length);
-
-                        if (!type) {
-                            const skewTree = await skewReport(aspectRegistry).toSunburstTree(
-                                () => fingerprintUsage);
-                            return res.json({ tree: skewTree });
-                        } else {
-                            const skewTree = await skewReportForSingleAspect(aspectRegistry).toSunburstTree(
-                                () => fingerprintUsage);
-                            return res.json({
-                                type,
-                                tree: skewTree,
-                            });
-                        }
-                    }
 
                     if (req.params.name === "aspectReport") {
                         const type = req.query.type;
@@ -247,7 +232,15 @@ function exposeFingerprintByTypeAndName(express: Express,
 
         try {
             const pt = await buildFingerprintTree({ aspectRegistry, clientFactory }, {
-                showPresence, otherLabel, showProgress, byOrg, trim, fingerprintType, fingerprintName, workspaceId, byName,
+                showPresence,
+                otherLabel,
+                showProgress,
+                byOrg,
+                trim,
+                fingerprintType,
+                fingerprintName,
+                workspaceId,
+                byName,
             });
 
             res.json(pt);
@@ -279,7 +272,7 @@ export async function buildFingerprintTree(
     const { clientFactory, aspectRegistry } = world;
 
     // Get the tree and then perform post processing on it
-    let pt = await repoTree({
+    let pt = await fingerprintsToReposTree({
         workspaceId,
         clientFactory,
         byName,
@@ -382,6 +375,31 @@ export async function buildFingerprintTree(
     }
 
     return pt;
+}
+
+function exposeDrift(express: Express, aspectRegistry: AspectRegistry, clientFactory: ClientFactory): void {
+    express.options("/api/v1/:workspace_id/drift", corsHandler());
+    express.get("/api/v1/:workspace_id/drift", [corsHandler(), ...authHandlers()], async (req, res) => {
+        try {
+            const type = req.query.type;
+
+            if (!type) {
+                const skewTree = await driftTree(req.params.workspace_id, clientFactory);
+                return res.json(skewTree);
+            } else {
+                // const skewTree = await skewReportForSingleAspect(aspectRegistry).toSunburstTree(
+                //     () => fingerprintUsage);
+                // return res.json({
+                //     type,
+                //     tree: skewTree,
+                // });
+                throw new Error("not implemented");
+            }
+        } catch (err) {
+            logger.warn("Error occurred getting drift report: %s %s", err.message, err.stack);
+            res.sendStatus(500);
+        }
+    });
 }
 
 function exposeIdealAndProblemSetting(express: Express, aspectRegistry: AspectRegistry): void {
