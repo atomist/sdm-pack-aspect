@@ -193,7 +193,7 @@ export async function driftTreeForSingleAspect(workspaceId: string,
         };
         tree = introduceClassificationLayer(tree, {
             newLayerMeaning: "entropy band",
-            newLayerDepth: 0,
+            newLayerDepth: 1,
             descendantClassifier: toEntropyBandForSingleAspect,
         });
         return tree;

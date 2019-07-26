@@ -71,8 +71,8 @@ import {
  * Also expose Swagger API documentation.
  */
 export function api(clientFactory: ClientFactory,
-                    store: ProjectAnalysisResultStore,
-                    aspectRegistry: AspectRegistry): {
+    store: ProjectAnalysisResultStore,
+    aspectRegistry: AspectRegistry): {
         customizer: ExpressCustomizer,
         routesToSuggestOnStartup: Array<{ title: string, route: string }>,
     } {
@@ -219,8 +219,8 @@ function exposeFingerprintByType(express: Express, store: ProjectAnalysisResultS
 }
 
 function exposeFingerprintByTypeAndName(express: Express,
-                                        aspectRegistry: AspectRegistry,
-                                        clientFactory: ClientFactory): void {
+    aspectRegistry: AspectRegistry,
+    clientFactory: ClientFactory): void {
     express.options("/api/v1/:workspace_id/fingerprint/:type/:name", corsHandler());
     express.get("/api/v1/:workspace_id/fingerprint/:type/:name", [corsHandler(), ...authHandlers()], async (req: Request, res: Response) => {
         const workspaceId = req.params.workspace_id;
@@ -316,7 +316,7 @@ export async function buildFingerprintTree(
                         l.name :
                         aspect2.toDisplayableFingerprintName(l.name);
                 },
-                newLayerDepth: 0,
+                newLayerDepth: 1,
                 newLayerMeaning: "fingerprint name",
             });
         const aspect = aspectRegistry.aspectOf(fingerprintType);
