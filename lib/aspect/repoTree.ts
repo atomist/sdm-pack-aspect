@@ -136,15 +136,16 @@ export async function driftTree(workspaceId: string, clientFactory: ClientFactor
     WHERE aspects.type = f0.type
     GROUP by f0.type) as data`;
     logger.debug(sql);
+    const circles = [
+        { meaning: "type" },
+        { meaning: "fingerprint name" },
+        { meaning: "fingerprint entropy" },
+    ];
     return doWithClient(clientFactory, async client => {
         const result = await client.query(sql,
             [workspaceId]);
         let tree: PlantedTree = {
-            circles: [
-                { meaning: "type" },
-                { meaning: "fingerprint name" },
-                { meaning: "fingerprint entropy" },
-            ],
+            circles,
             tree: {
                 name: "drift",
                 children: result.rows.map(r => r.children),
@@ -156,6 +157,12 @@ export async function driftTree(workspaceId: string, clientFactory: ClientFactor
             descendantClassifier: toEntropyBand,
         });
         return tree;
+    }, err => {
+        return {
+            circles,
+            tree: { name: "failed drift report", children: [] },
+            errors: [{ message: err.message }],
+        };
     });
 }
 
@@ -166,7 +173,7 @@ export async function driftTreeForSingleAspect(workspaceId: string,
 (SELECT distinct feature_name as type from fingerprint_analytics) f0, (
     SELECT name, feature_name as type, variants, count, entropy, variants as size
     from fingerprint_analytics f1
-    WHERE workspace_id ${workspaceId === "*" ? "<>" : "=" } $1
+    WHERE workspace_id ${workspaceId === "*" ? "<>" : "="} $1
     ORDER BY entropy desc) as aspects
     WHERE aspects.type = f0.type AND aspects.type = $2
     GROUP by f0.type) as data`;
