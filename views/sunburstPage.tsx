@@ -48,7 +48,7 @@ interface PerLevelDataItem {
 function levelDataListItem(item: PerLevelDataItem): React.ReactElement {
     return <li key={"li-" + item.textAreaId}>
         <label htmlFor={item.textAreaId}>{item.labelText}: </label>
-        <input readOnly={true} value="initial" className="levelDataContent" id={item.textAreaId}></input>
+        <span className="levelDataContent" id={item.textAreaId}></span>
     </li>;
 }
 

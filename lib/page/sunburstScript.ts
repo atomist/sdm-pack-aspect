@@ -201,9 +201,10 @@ function populatePerLevelData(perLevelDataElements: d3.Selection<any, any, any, 
     }
 
     const namesDown = namesUpTree.reverse();
-    namesDown.forEach((n, i) => {
-        console.log("Trying to set something to " + n);
-        perLevelDataElements[i].attr("value", n);
+    perLevelDataElements.forEach((e, i) => {
+        const value = namesDown[i] || "";
+        console.log("Trying to set something to " + value);
+        e.html(value);
     });
 }
 
