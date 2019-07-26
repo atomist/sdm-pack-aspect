@@ -15,7 +15,10 @@
  */
 
 import * as d3 from "d3";
-import { BaseType, HierarchyNode } from "d3";
+import {
+    BaseType,
+    HierarchyNode,
+} from "d3";
 import {
     PlantedTree,
     SunburstLeaf,
