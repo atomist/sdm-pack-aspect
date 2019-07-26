@@ -14,7 +14,10 @@
  * limitations under the License.
  */
 
-import { HttpClientFactory, logger } from "@atomist/automation-client";
+import {
+    HttpClientFactory,
+    logger,
+} from "@atomist/automation-client";
 import { ExpressCustomizer } from "@atomist/automation-client/lib/configuration";
 import {
     BaseAspect,
@@ -55,7 +58,10 @@ import {
     SunburstPage,
 } from "../../views/sunburstPage";
 import { TopLevelPage } from "../../views/topLevelPage";
-import { ProjectAnalysisResultStore, whereFor } from "../analysis/offline/persist/ProjectAnalysisResultStore";
+import {
+    ProjectAnalysisResultStore,
+    whereFor,
+} from "../analysis/offline/persist/ProjectAnalysisResultStore";
 import {
     AspectRegistry,
     ManagedAspect,
@@ -64,7 +70,10 @@ import {
     defaultedToDisplayableFingerprint,
     defaultedToDisplayableFingerprintName,
 } from "../aspect/DefaultAspectRegistry";
-import { PlantedTree, SunburstCircleMetadata } from "../tree/sunburst";
+import {
+    PlantedTree,
+    SunburstCircleMetadata,
+} from "../tree/sunburst";
 import { buildFingerprintTree } from "./api";
 
 function renderStaticReactNode(body: ReactElement,
