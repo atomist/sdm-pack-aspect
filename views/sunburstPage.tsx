@@ -1,5 +1,5 @@
 import * as React from "react";
-import { PlantedTree } from "../lib/tree/sunburst";
+import { PlantedTree, SunburstCircleMetadata } from "../lib/tree/sunburst";
 
 // tslint:disable-next-line:no-empty-interface
 export interface CurrentIdealForDisplay {
@@ -40,6 +40,15 @@ function suggestedIdealListItem(possibleIdeal: PossibleIdealForDisplay): React.R
     </li>;
 }
 
+/* This element will contain the full data value for one level, about the item hovered over. */
+function levelDataListItem(item: SunburstCircleMetadata, index: number): React.ReactElement {
+    const textAreaId = "levelData-" + index;
+    return <li key={"meaning-" + index}>
+        <label htmlFor={textAreaId}>{item.meaning}: </label>
+        <input readOnly={true} className="levelDataContent" id={textAreaId}></input>
+    </li>;
+}
+
 export function SunburstPage(props: SunburstPageProps): React.ReactElement {
 
     const d3ScriptCall = `<script>
@@ -50,7 +59,7 @@ export function SunburstPage(props: SunburstPageProps): React.ReactElement {
     </script>`;
 
     const thingies: string | React.ReactElement = !props.tree ? "Click a slice to see its details" :
-        <ul>{props.tree.circles.map((c, i) => <li key={"meaning-" + i}>{c.meaning}</li>)}</ul>;
+        <ul>{props.tree.circles.map(levelDataListItem)}</ul>;
 
     const idealDisplay = props.currentIdeal ? displayCurrentIdeal(props.currentIdeal) : "";
     return <div className="sunburst">
@@ -65,4 +74,3 @@ export function SunburstPage(props: SunburstPageProps): React.ReactElement {
     </div>;
 
 }
-

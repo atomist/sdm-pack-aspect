@@ -109,6 +109,10 @@ label.success {
     color: green;
 }
 
+.levelDataContent {
+    padding-left: 1em;
+}
+
 /* Collapsible content stuff 
  * https://alligator.io/css/collapsible/
  */
