@@ -152,7 +152,7 @@ export class PostgresProjectAnalysisResultStore implements ProjectAnalysisResult
                 const fid = await this.ensureFingerprintStored(ideal.ideal, client);
                 await client.query(`INSERT INTO ideal_fingerprints (workspace_id, fingerprint_id, authority)
 values ($1, $2, 'local-user')`, [
-                    workspaceId, fid]);
+                        workspaceId, fid]);
             });
         } else {
             throw new Error("Elimination ideals not yet supported");
@@ -197,7 +197,7 @@ values ($1, $2, 'local-user')`, [
             const fid = await this.ensureFingerprintStored(fp.fingerprint, client);
             await client.query(`INSERT INTO problem_fingerprints (workspace_id, fingerprint_id, severity, authority, date_added)
 values ($1, $2, $3, $4, current_timestamp)`, [
-                workspaceId, fid, fp.severity, fp.authority]);
+                    workspaceId, fid, fp.severity, fp.authority]);
         });
     }
 
@@ -252,7 +252,7 @@ values ($1, $2, $3, $4, current_timestamp)`, [
         values ($1, $2, $3, $4, $5, $6)
         ON CONFLICT ON CONSTRAINT fingerprint_analytics_pkey DO UPDATE SET entropy = $4, variants = $5, count = $6`;
                 await client.query(sql, [kind.type, kind.name, workspaceId,
-                    cohortAnalysis.entropy, cohortAnalysis.variants, cohortAnalysis.count]);
+                cohortAnalysis.entropy, cohortAnalysis.variants, cohortAnalysis.count]);
             }
             return true;
         });
@@ -425,10 +425,10 @@ function problemRowToProblem(rawRow: any): ProblemUsage {
  * @return {Promise<FP[]>}
  */
 async function fingerprintsInWorkspace(clientFactory: ClientFactory,
-                                       workspaceId: string,
-                                       type?: string,
-                                       name?: string,
-                                       dedup?: boolean): Promise<FP[]> {
+    workspaceId: string,
+    type?: string,
+    name?: string,
+    dedup?: boolean): Promise<FP[]> {
     return doWithClient(clientFactory, async client => {
         const sql = `SELECT ${dedup ? "DISTINCT" : ""} f.name as fingerprintName, f.feature_name, f.sha, f.data
   from repo_fingerprints rf, repo_snapshots rs, fingerprints f
@@ -456,7 +456,7 @@ async function fingerprintsInWorkspace(clientFactory: ClientFactory,
 }
 
 async function fingerprintsForProject(clientFactory: ClientFactory,
-                                      snapshotId: string): Promise<FP[]> {
+    snapshotId: string): Promise<FP[]> {
     return doWithClient(clientFactory, async client => {
         const sql = `SELECT f.name as fingerprintName, f.feature_name, f.sha, f.data
   from repo_fingerprints rf, repo_snapshots rs, fingerprints f
@@ -476,7 +476,7 @@ async function fingerprintsForProject(clientFactory: ClientFactory,
 
 async function fingerprintUsageForType(clientFactory: ClientFactory, workspaceId: string, type?: string): Promise<FingerprintUsage[]> {
     return doWithClient<FingerprintUsage[]>(clientFactory, async client => {
-        const sql = `SELECT name, feature_name as type, variants, count, entropy
+        const sql = `SELECT name, feature_name as type, variants, count, entropy, compliance
   from fingerprint_analytics f
   WHERE f.workspace_id ${workspaceId === "*" ? "!=" : "="} $1
   AND  ${type ? "f.feature_name = $2" : "true"}
@@ -492,6 +492,7 @@ async function fingerprintUsageForType(clientFactory: ClientFactory, workspaceId
             variants: +r.variants,
             count: +r.count,
             entropy: +r.entropy,
+            compliance: +r.compliance,
             entropy_band: fp => bandFor(EntropySizeBands, r.entropy, true),
             // This is really confusing but the Aspect.name is feature_name alias type in the db
             categories: getCategories({ name: r.type }),
