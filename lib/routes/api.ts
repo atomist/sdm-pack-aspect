@@ -96,6 +96,8 @@ export function api(clientFactory: ClientFactory,
 
             exposeFingerprintByType(express, aspectRegistry, store);
 
+            exposeExplore(express, store);
+
             exposeFingerprintByTypeAndName(express, aspectRegistry, clientFactory, store);
 
             exposeDrift(express, aspectRegistry, clientFactory);
@@ -292,6 +294,30 @@ function exposeIdealAndProblemSetting(express: Express, aspectRegistry: AspectRe
         await aspectRegistry.problemStore.noteProblem(req.params.workspace_id, req.params.id);
         logger.info(`Set problem at ${req.params.id}`);
         res.sendStatus(201);
+    });
+}
+
+function exposeExplore(express: Express, store: ProjectAnalysisResultStore): void {
+    // Set an ideal
+    express.options("/api/v1/:workspace_id/explore", corsHandler());
+    express.get("/api/v1/:workspace_id/explore", [corsHandler(), ...authHandlers()], async (req, res) => {
+        const workspaceId = req.params.workspace_id || "local";
+        const repos = await store.loadInWorkspace("*");
+        const fingerprints = await store.fingerprintUsageForType(workspaceId);
+
+        res.send({
+            fingerprints,
+            repos: repos.map(r => ({
+                id: r.id,
+                owner: r.repoRef.owner,
+                repo: r.repoRef.repo,
+                url: r.repoRef.url,
+                fingerprints: r.analysis.fingerprints.map(fp => ({
+                    name: fp.name,
+                    type: fp.type,
+                })),
+            }))
+        });
     });
 }
 
