@@ -17,7 +17,10 @@
 import { logger } from "@atomist/automation-client";
 import { ExpressCustomizer } from "@atomist/automation-client/lib/configuration";
 import { isInLocalMode } from "@atomist/sdm-core";
-import { FP, isConcreteIdeal } from "@atomist/sdm-pack-fingerprints";
+import {
+    FP,
+    isConcreteIdeal,
+} from "@atomist/sdm-pack-fingerprints";
 import * as bodyParser from "body-parser";
 import {
     Express,
@@ -37,7 +40,8 @@ import {
 import { computeAnalyticsForFingerprintKind } from "../analysis/offline/spider/analytics";
 import {
     AspectRegistry,
-    IdealStore, indexesIn,
+    IdealStore,
+    indexesIn,
 } from "../aspect/AspectRegistry";
 import {
     driftTree,
