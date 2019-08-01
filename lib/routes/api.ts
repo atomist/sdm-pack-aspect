@@ -335,7 +335,7 @@ function exposeExplore(express: Express, aspectRegistry: AspectRegistry, store: 
                                 name: r.repoRef.repo,
                                 url: r.repoRef.url,
                                 size: fingerprints.length,
-                                //fingerprints,
+                                // fingerprints,
                                 indexes: indexesIn(aspectRegistry, fingerprints),
                             };
                         }),
@@ -355,7 +355,7 @@ function exposeExplore(express: Express, aspectRegistry: AspectRegistry, store: 
             });
 
         res.send({
-            //fingerprints: relevantFingerprints,
+            // fingerprints: relevantFingerprints,
             indexes: allIndexes,
             ...repoTree,
         });

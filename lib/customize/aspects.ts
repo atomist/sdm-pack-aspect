@@ -37,6 +37,7 @@ import {
 import { CodeOfConduct } from "../aspect/community/codeOfConduct";
 import { License } from "../aspect/community/license";
 import { conditionalize } from "../aspect/compose/conditionalize";
+import { Index } from "../aspect/DefaultAspectRegistry";
 import { branchCount } from "../aspect/git/branchCount";
 import {
     gitActiveCommitters,
@@ -51,7 +52,6 @@ import { DirectMavenDependencies } from "../aspect/spring/directMavenDependencie
 import { SpringBootStarter } from "../aspect/spring/springBootStarter";
 import { SpringBootVersion } from "../aspect/spring/springBootVersion";
 import { TravisScriptsAspect } from "../aspect/travis/travisAspects";
-import { Index } from "../aspect/DefaultAspectRegistry";
 
 /**
  * The aspects anaged by this SDM.
@@ -107,14 +107,14 @@ export const Aspects: ManagedAspect[] = [
 ];
 
 export const Indexes: Index[] = [
-    //fp => fp.type === NpmDeps.name ? `npm: ${fp.name}`: undefined,
-    //fp => fp.type === DockerFrom.name ? `docker: ${fp.name}`: undefined,
-    fp => fp.type === DockerFrom.name ? "docker": undefined,
-    fp => fp.type === NpmDeps.name ? "node": undefined,
-    fp => fp.type === DirectMavenDependencies.name ? "maven": undefined,
-    fp => fp.type === TypeScriptVersion.name ? "typescript": undefined,
-    fp => fp.type === LeinDeps.name ? "clojure": undefined,
-    fp => fp.type === SpringBootVersion.name ? "spring-boot": undefined,
-    fp => fp.type === TravisScriptsAspect.name ? "travis": undefined,
-    fp => fp.type === PythonDependencies.name ? "python": undefined,
+    // fp => fp.type === NpmDeps.name ? `npm: ${fp.name}`: undefined,
+    // fp => fp.type === DockerFrom.name ? `docker: ${fp.name}`: undefined,
+    fp => fp.type === DockerFrom.name ? "docker" : undefined,
+    fp => fp.type === NpmDeps.name ? "node" : undefined,
+    fp => fp.type === DirectMavenDependencies.name ? "maven" : undefined,
+    fp => fp.type === TypeScriptVersion.name ? "typescript" : undefined,
+    fp => fp.type === LeinDeps.name ? "clojure" : undefined,
+    fp => fp.type === SpringBootVersion.name ? "spring-boot" : undefined,
+    fp => fp.type === TravisScriptsAspect.name ? "travis" : undefined,
+    fp => fp.type === PythonDependencies.name ? "python" : undefined,
 ];
