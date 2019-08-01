@@ -14,50 +14,25 @@
  * limitations under the License.
  */
 
-import {
-    automationClientInstance,
-    logger,
-    QueryNoCacheOptions,
-} from "@atomist/automation-client";
+import { logger, } from "@atomist/automation-client";
 import { ExpressCustomizer } from "@atomist/automation-client/lib/configuration";
 import { isInLocalMode } from "@atomist/sdm-core";
 import { isConcreteIdeal } from "@atomist/sdm-pack-fingerprints";
-import { toName } from "@atomist/sdm-pack-fingerprints/lib/adhoc/preferences";
 import * as bodyParser from "body-parser";
-import {
-    Express,
-    Request,
-    RequestHandler,
-    Response,
-} from "express";
+import { Express, Request, RequestHandler, Response, } from "express";
 import * as _ from "lodash";
 import * as path from "path";
 import * as swaggerUi from "swagger-ui-express";
 import * as yaml from "yamljs";
-import {
-    ClientFactory,
-} from "../analysis/offline/persist/pgUtils";
-import {
-    FingerprintUsage,
-    ProjectAnalysisResultStore,
-} from "../analysis/offline/persist/ProjectAnalysisResultStore";
+import { ClientFactory, } from "../analysis/offline/persist/pgUtils";
+import { FingerprintUsage, ProjectAnalysisResultStore, } from "../analysis/offline/persist/ProjectAnalysisResultStore";
 import { computeAnalyticsForFingerprintKind } from "../analysis/offline/spider/analytics";
-import {
-    AspectRegistry,
-    IdealStore,
-} from "../aspect/AspectRegistry";
-import {
-    driftTree,
-    driftTreeForSingleAspect,
-} from "../aspect/repoTree";
+import { AspectRegistry, IdealStore, } from "../aspect/AspectRegistry";
+import { driftTree, driftTreeForSingleAspect, } from "../aspect/repoTree";
 import { getAspectReports } from "../customize/categories";
-import { SunburstTree } from "../tree/sunburst";
-import { visit } from "../tree/treeUtils";
-import {
-    authHandlers,
-    configureAuth,
-    corsHandler,
-} from "./auth";
+import { PlantedTree, SunburstTree } from "../tree/sunburst";
+import { descendants, introduceClassificationLayer, visit } from "../tree/treeUtils";
+import { authHandlers, configureAuth, corsHandler, } from "./auth";
 import { buildFingerprintTree } from "./buildFingerprintTree";
 import { WellKnownReporters } from "./wellKnownReporters";
 
@@ -303,20 +278,58 @@ function exposeExplore(express: Express, store: ProjectAnalysisResultStore): voi
     express.get("/api/v1/:workspace_id/explore", [corsHandler(), ...authHandlers()], async (req, res) => {
         const workspaceId = req.params.workspace_id || "local";
         const repos = await store.loadInWorkspace("*");
-        const fingerprints = await store.fingerprintUsageForType(workspaceId);
+        const allFingerprints = await store.fingerprintUsageForType(workspaceId);
+
+        const types: string[] = req.query.types ? req.query.types.split(",") : [];
+        console.log("types = " + JSON.stringify(types));
+
+        const relevantRepos = repos.filter(repo => types.every(type =>
+            repo.analysis.fingerprints.some(fp => fp.type === type)));
+        logger.info("Found %d relevant repos of %d", relevantRepos.length, repos.length);
+        const relevantFingerprints = allFingerprints.filter(fp =>
+            relevantRepos.some(repo => repo.analysis.fingerprints.some(f => f.name === fp.name && f.type === fp.type)));
+        logger.info("Found %d relevant fingerprints of %d", relevantFingerprints.length, allFingerprints.length);
+
+        let repoTree: PlantedTree = {
+            circles: [{meaning: "root" }, { meaning: "repo"}, {meaning: "tag" }],
+            tree: {
+                name: "repos",
+                children: [
+                    {
+                        name: types.join("+"),
+                        children: relevantRepos.map(r => {
+                            const fingerprints = r.analysis.fingerprints.map(fp => ({
+                                name: fp.name,
+                                type: fp.type,
+                            }));
+                            return {
+                                id: r.id,
+                                owner: r.repoRef.owner,
+                                repo: r.repoRef.repo,
+                                name: r.repoRef.repo,
+                                url: r.repoRef.url,
+                                size: fingerprints.length,
+                                fingerprints,
+                            };
+                        })
+                    }
+                ],
+            },
+        };
+
+        //if (req.query.byOrg) {
+        // Group by organization via an additional layer at the center
+        repoTree = introduceClassificationLayer<{ owner: string }>(repoTree,
+            {
+                descendantClassifier: l => l.owner,
+                newLayerDepth: 1,
+                newLayerMeaning: "owner",
+                // descendantFinder: l => descendants(l).filter(n => !!(n as any).owner),
+            });
 
         res.send({
-            fingerprints,
-            repos: repos.map(r => ({
-                id: r.id,
-                owner: r.repoRef.owner,
-                repo: r.repoRef.repo,
-                url: r.repoRef.url,
-                fingerprints: r.analysis.fingerprints.map(fp => ({
-                    name: fp.name,
-                    type: fp.type,
-                })),
-            }))
+            fingerprints: relevantFingerprints,
+            ...repoTree,
         });
     });
 }
