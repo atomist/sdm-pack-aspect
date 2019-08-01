@@ -60,7 +60,10 @@ import { DirectMavenDependencies } from "./lib/aspect/spring/directMavenDependen
 import { SpringBootStarter } from "./lib/aspect/spring/springBootStarter";
 import { SpringBootVersion } from "./lib/aspect/spring/springBootVersion";
 import { TravisScriptsAspect } from "./lib/aspect/travis/travisAspects";
-import { Aspects, Indexes } from "./lib/customize/aspects";
+import {
+    Aspects,
+    Indexes,
+} from "./lib/customize/aspects";
 import {
     registerCategories,
     registerReportDetails,
