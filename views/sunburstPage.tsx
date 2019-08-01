@@ -71,9 +71,9 @@ export function SunburstPage(props: SunburstPageProps): React.ReactElement {
 
     const selectedTypeButtons = props.selectedTypes
         .map(t => {
-            return <form method='GET' action="/query">
-                <input type='hidden' name='explore' value='true'/>
-                <input type='hidden' name='types' value={props.selectedTypes.filter(x => x !== t).join(",")}/>
+            return <form method="GET" action="/query">
+                <input type="hidden" name="explore" value="true"/>
+                <input type="hidden" name="types" value={props.selectedTypes.filter(x => x !== t).join(",")}/>
                 <input type="submit" name={t} value={"-" + t}/>
             </form>;
         });
@@ -81,9 +81,9 @@ export function SunburstPage(props: SunburstPageProps): React.ReactElement {
     const typeButtons = types
         .filter(t => !props.selectedTypes.includes(t))
         .map(t => {
-            return <form method='GET' action="/query">
-                <input type='hidden' name='explore' value='true'/>
-                <input type='hidden' name='types' value={props.selectedTypes.concat(t).join(",")}/>
+            return <form method="GET" action="/query">
+                <input type="hidden" name="explore" value="true"/>
+                <input type="hidden" name="types" value={props.selectedTypes.concat(t).join(",")}/>
                 <input type="submit" value={t}/>
             </form>;
         });

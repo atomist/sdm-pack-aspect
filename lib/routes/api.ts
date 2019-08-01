@@ -14,25 +14,25 @@
  * limitations under the License.
  */
 
-import { logger, } from "@atomist/automation-client";
+import { logger } from "@atomist/automation-client";
 import { ExpressCustomizer } from "@atomist/automation-client/lib/configuration";
 import { isInLocalMode } from "@atomist/sdm-core";
 import { isConcreteIdeal } from "@atomist/sdm-pack-fingerprints";
 import * as bodyParser from "body-parser";
-import { Express, Request, RequestHandler, Response, } from "express";
+import { Express, Request, RequestHandler, Response } from "express";
 import * as _ from "lodash";
 import * as path from "path";
 import * as swaggerUi from "swagger-ui-express";
 import * as yaml from "yamljs";
-import { ClientFactory, } from "../analysis/offline/persist/pgUtils";
-import { FingerprintUsage, ProjectAnalysisResultStore, } from "../analysis/offline/persist/ProjectAnalysisResultStore";
+import { ClientFactory } from "../analysis/offline/persist/pgUtils";
+import { FingerprintUsage, ProjectAnalysisResultStore } from "../analysis/offline/persist/ProjectAnalysisResultStore";
 import { computeAnalyticsForFingerprintKind } from "../analysis/offline/spider/analytics";
-import { AspectRegistry, IdealStore, } from "../aspect/AspectRegistry";
-import { driftTree, driftTreeForSingleAspect, } from "../aspect/repoTree";
+import { AspectRegistry, IdealStore } from "../aspect/AspectRegistry";
+import { driftTree, driftTreeForSingleAspect } from "../aspect/repoTree";
 import { getAspectReports } from "../customize/categories";
 import { PlantedTree, SunburstTree } from "../tree/sunburst";
 import { descendants, introduceClassificationLayer, visit } from "../tree/treeUtils";
-import { authHandlers, configureAuth, corsHandler, } from "./auth";
+import { authHandlers, configureAuth, corsHandler } from "./auth";
 import { buildFingerprintTree } from "./buildFingerprintTree";
 import { WellKnownReporters } from "./wellKnownReporters";
 
@@ -311,13 +311,13 @@ function exposeExplore(express: Express, store: ProjectAnalysisResultStore): voi
                                 size: fingerprints.length,
                                 fingerprints,
                             };
-                        })
-                    }
+                        }),
+                    },
                 ],
             },
         };
 
-        //if (req.query.byOrg) {
+        // if (req.query.byOrg) {
         // Group by organization via an additional layer at the center
         repoTree = introduceClassificationLayer<{ owner: string }>(repoTree,
             {
