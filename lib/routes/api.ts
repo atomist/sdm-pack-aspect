@@ -17,7 +17,7 @@
 import { logger } from "@atomist/automation-client";
 import { ExpressCustomizer } from "@atomist/automation-client/lib/configuration";
 import { isInLocalMode } from "@atomist/sdm-core";
-import { isConcreteIdeal } from "@atomist/sdm-pack-fingerprints";
+import { FP, isConcreteIdeal } from "@atomist/sdm-pack-fingerprints";
 import * as bodyParser from "body-parser";
 import {
     Express,
@@ -37,7 +37,7 @@ import {
 import { computeAnalyticsForFingerprintKind } from "../analysis/offline/spider/analytics";
 import {
     AspectRegistry,
-    IdealStore,
+    IdealStore, indexesIn,
 } from "../aspect/AspectRegistry";
 import {
     driftTree,
@@ -96,7 +96,7 @@ export function api(clientFactory: ClientFactory,
 
             exposeFingerprintByType(express, aspectRegistry, store);
 
-            exposeExplore(express, store);
+            exposeExplore(express, aspectRegistry, store);
 
             exposeFingerprintByTypeAndName(express, aspectRegistry, clientFactory, store);
 
@@ -297,19 +297,20 @@ function exposeIdealAndProblemSetting(express: Express, aspectRegistry: AspectRe
     });
 }
 
-function exposeExplore(express: Express, store: ProjectAnalysisResultStore): void {
+function exposeExplore(express: Express, aspectRegistry: AspectRegistry, store: ProjectAnalysisResultStore): void {
     // Set an ideal
     express.options("/api/v1/:workspace_id/explore", corsHandler());
     express.get("/api/v1/:workspace_id/explore", [corsHandler(), ...authHandlers()], async (req, res) => {
         const workspaceId = req.params.workspace_id || "local";
         const repos = await store.loadInWorkspace("*");
         const allFingerprints = await store.fingerprintUsageForType(workspaceId);
+        const allIndexes = indexesIn(aspectRegistry, allFingerprints);
 
-        const types: string[] = req.query.types ? req.query.types.split(",") : [];
-        console.log("types = " + JSON.stringify(types));
+        const selectedIndexes: string[] = req.query.indexes ? req.query.indexes.split(",") : [];
+        console.log("indices = " + JSON.stringify(selectedIndexes));
 
-        const relevantRepos = repos.filter(repo => types.every(type =>
-            repo.analysis.fingerprints.some(fp => fp.type === type)));
+        const relevantRepos = repos.filter(repo => selectedIndexes.every(index =>
+            repo.analysis.fingerprints.some(fp => aspectRegistry.indexOf(fp) === index)));
         logger.info("Found %d relevant repos of %d", relevantRepos.length, repos.length);
         const relevantFingerprints = allFingerprints.filter(fp =>
             relevantRepos.some(repo => repo.analysis.fingerprints.some(f => f.name === fp.name && f.type === fp.type)));
@@ -321,7 +322,7 @@ function exposeExplore(express: Express, store: ProjectAnalysisResultStore): voi
                 name: "repos",
                 children: [
                     {
-                        name: types.join("+"),
+                        name: selectedIndexes.join("+"),
                         children: relevantRepos.map(r => {
                             const fingerprints = r.analysis.fingerprints.map(fp => ({
                                 name: fp.name,
@@ -334,7 +335,8 @@ function exposeExplore(express: Express, store: ProjectAnalysisResultStore): voi
                                 name: r.repoRef.repo,
                                 url: r.repoRef.url,
                                 size: fingerprints.length,
-                                fingerprints,
+                                //fingerprints,
+                                indexes: indexesIn(aspectRegistry, fingerprints),
                             };
                         }),
                     },
@@ -353,7 +355,8 @@ function exposeExplore(express: Express, store: ProjectAnalysisResultStore): voi
             });
 
         res.send({
-            fingerprints: relevantFingerprints,
+            //fingerprints: relevantFingerprints,
+            indexes: allIndexes,
             ...repoTree,
         });
     });
