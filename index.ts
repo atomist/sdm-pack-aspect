@@ -60,7 +60,7 @@ import { DirectMavenDependencies } from "./lib/aspect/spring/directMavenDependen
 import { SpringBootStarter } from "./lib/aspect/spring/springBootStarter";
 import { SpringBootVersion } from "./lib/aspect/spring/springBootVersion";
 import { TravisScriptsAspect } from "./lib/aspect/travis/travisAspects";
-import { Aspects } from "./lib/customize/aspects";
+import { Aspects, Indexes } from "./lib/customize/aspects";
 import {
     registerCategories,
     registerReportDetails,
@@ -244,7 +244,8 @@ function orgVisualizationEndpoints(dbClientFactory: ClientFactory, httpClientFac
         problemStore: resultStore,
         aspects: Aspects,
         undesirableUsageChecker: demoUndesirableUsageChecker,
-    });
+    })
+        .withIndexes(...Indexes);
 
     const aboutTheApi = api(dbClientFactory, resultStore, aspectRegistry);
 

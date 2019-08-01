@@ -27,7 +27,7 @@ export interface SunburstPageProps {
     /**
      * Fingerprint types
      */
-    selectedTypes: string[];
+    selectedIndexes: string[];
 
 }
 
@@ -67,23 +67,23 @@ export function SunburstPage(props: SunburstPageProps): React.ReactElement {
     const thingies: string | React.ReactElement = !props.tree ? "Hover over a slice to see its details" :
         <ul>{perLevelDataItems.map(levelDataListItem)}</ul>;
 
-    const types: string[] = _.uniq(((props.tree as any).fingerprints || []).map(f => f.type));
+    const indexes: string[] = (props.tree as any).indexes || [];
 
-    const selectedTypeButtons = props.selectedTypes
+    const selectedIndexButtons = props.selectedIndexes
         .map(t => {
             return <form method="GET" action="/query">
                 <input type="hidden" name="explore" value="true"/>
-                <input type="hidden" name="types" value={props.selectedTypes.filter(x => x !== t).join(",")}/>
+                <input type="hidden" name="indexes" value={props.selectedIndexes.filter(x => x !== t).join(",")}/>
                 <input type="submit" name={t} value={"-" + t}/>
             </form>;
         });
 
-    const typeButtons = types
-        .filter(t => !props.selectedTypes.includes(t))
+    const addIndexButtons = indexes
+        .filter(t => !props.selectedIndexes.includes(t))
         .map(t => {
             return <form method="GET" action="/query">
                 <input type="hidden" name="explore" value="true"/>
-                <input type="hidden" name="types" value={props.selectedTypes.concat(t).join(",")}/>
+                <input type="hidden" name="indexes" value={props.selectedIndexes.concat(t).join(",")}/>
                 <input type="submit" value={t}/>
             </form>;
         });
@@ -92,9 +92,9 @@ export function SunburstPage(props: SunburstPageProps): React.ReactElement {
     return <div className="sunburst">
         <h1>{props.fingerprintDisplayName}</h1>
 
-        {selectedTypeButtons}
+        {selectedIndexButtons}
 
-        {typeButtons}
+        {addIndexButtons}
 
         {idealDisplay}
         <div className="wrapper">

@@ -25,10 +25,33 @@ import {
     UndesirableUsageChecker,
 } from "./AspectRegistry";
 
+export type Index = (fp: Pick<FP, "name" | "type">) => string;
+
 /**
  * Aspects must have unique names
  */
 export class DefaultAspectRegistry implements AspectRegistry {
+
+    private readonly indexes: Index[] = [];
+
+    /**
+     * Create an index on this aspect. Must return a unique string. It's associated with a usage
+     * not an aspect.
+     */
+    public withIndexes(...indexes: Index[]): this {
+        this.indexes.push(...indexes);
+        return this;
+    }
+
+    public indexOf(fp: Pick<FP, "name" | "type">): string | undefined {
+        for (const index of this.indexes) {
+            const result = index(fp);
+            if (result) {
+                return result;
+            }
+        }
+        return undefined;
+    }
 
     get aspects(): ManagedAspect[] {
         return this.opts.aspects;
