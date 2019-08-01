@@ -1,6 +1,8 @@
 import * as React from "react";
 import { PlantedTree, SunburstCircleMetadata } from "../lib/tree/sunburst";
 
+import * as _ from "lodash";
+
 // tslint:disable-next-line:no-empty-interface
 export interface CurrentIdealForDisplay {
     displayValue: string;
@@ -21,6 +23,12 @@ export interface SunburstPageProps {
     query: string;
     dataUrl: string;
     tree: PlantedTree; // we have the data already.
+
+    /**
+     * Fingerprint types
+     */
+    selectedTypes: string[];
+
 }
 
 function displayCurrentIdeal(currentIdeal: CurrentIdealForDisplay): React.ReactElement {
@@ -33,6 +41,7 @@ interface PerLevelDataItem {
     textAreaId: string;
     labelText: string;
 }
+
 /* This element will contain the full data value for one level, about the item hovered over. */
 function levelDataListItem(item: PerLevelDataItem): React.ReactElement {
     return <li key={"li-" + item.textAreaId}>
@@ -58,15 +67,41 @@ export function SunburstPage(props: SunburstPageProps): React.ReactElement {
     const thingies: string | React.ReactElement = !props.tree ? "Hover over a slice to see its details" :
         <ul>{perLevelDataItems.map(levelDataListItem)}</ul>;
 
+    const types: string[] = _.uniq(((props.tree as any).fingerprints || []).map(f => f.type));
+
+    const selectedTypeButtons = props.selectedTypes
+        .map(t => {
+            return <form method='GET' action="/query">
+                <input type='hidden' name='explore' value='true'/>
+                <input type='hidden' name='types' value={props.selectedTypes.filter(x => x !== t).join(",")}/>
+                <input type="submit" name={t} value={"-" + t}/>
+            </form>;
+        });
+
+    const typeButtons = types
+        .filter(t => !props.selectedTypes.includes(t))
+        .map(t => {
+            return <form method='GET' action="/query">
+                <input type='hidden' name='explore' value='true'/>
+                <input type='hidden' name='types' value={props.selectedTypes.concat(t).join(",")}/>
+                <input type="submit" value={t}/>
+            </form>;
+        });
+
     const idealDisplay = props.currentIdeal ? displayCurrentIdeal(props.currentIdeal) : "";
     return <div className="sunburst">
         <h1>{props.fingerprintDisplayName}</h1>
+
+        {selectedTypeButtons}
+
+        {typeButtons}
+
         {idealDisplay}
         <div className="wrapper">
             <div id="putSvgHere" className="sunburstSvg"></div>
             <div id="dataAboutWhatYouClicked" className="sunburstData">{thingies}</div>
         </div>
-        <div dangerouslySetInnerHTML={{ __html: d3ScriptCall }} />
+        <div dangerouslySetInnerHTML={{ __html: d3ScriptCall }}/>
         <a href={"." + props.dataUrl} type="application/json">Raw data</a>
     </div>;
 
