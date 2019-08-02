@@ -125,4 +125,3 @@ export const Taggers: Tagger[] = [
 export const CombinationTaggers: CombinationTagger[] = [
     fps => _.uniq(fps.map(f => f.type)).length  + "",
 ];
-
