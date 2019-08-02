@@ -46,8 +46,8 @@ import {
     BranchCountType,
 } from "../aspect/git/branchCount";
 import {
-    gitActiveCommitters,
-    GitRecency,
+    gitActiveCommitters, GitActivesType,
+    GitRecency, GitRecencyType,
 } from "../aspect/git/gitActivity";
 import { idealsFromNpm } from "../aspect/node/idealFromNpm";
 import { TsLintPropertyAspect } from "../aspect/node/TsLintAspect";
@@ -60,6 +60,7 @@ import { SpringBootVersion } from "../aspect/spring/springBootVersion";
 import { TravisScriptsAspect } from "../aspect/travis/travisAspects";
 
 import * as _ from "lodash";
+import { daysSince } from "../aspect/git/dateUtils";
 
 /**
  * The aspects anaged by this SDM.
@@ -125,9 +126,32 @@ export const Taggers: Tagger[] = [
     fp => fp.type === SpringBootVersion.name ? "spring-boot" : undefined,
     fp => fp.type === TravisScriptsAspect.name ? "travis" : undefined,
     fp => fp.type === PythonDependencies.name ? "python" : undefined,
-    fp => fp.type === BranchCountType && fp.data.count > 20 ? "branchy" : undefined,
+    fp => fp.type === BranchCountType && fp.data.count > 20 ? ">20 branches" : undefined,
+    fp => {
+        if (fp.type === GitRecencyType) {
+            const date = new Date(fp.data);
+            if (daysSince(date) > 500) {
+                return "dead?";
+            }
+            if (daysSince(date) < 3) {
+                return "active";
+            }
+        }
+        return undefined;
+    },
 ];
 
 export const CombinationTaggers: CombinationTagger[] = [
     fps => _.uniq(fps.map(f => f.type)).length  + "",
+    fps => {
+        const grt = fps.find(fp => fp.type === GitRecencyType);
+        const acc = fps.find(fp => fp.type === GitActivesType);
+        if (!!grt && !!acc) {
+            const days = daysSince(new Date(grt.data));
+            if (days < 10 && acc.data.count > 2) {
+                return "hot";
+            }
+        }
+        return undefined;
+    }
 ];

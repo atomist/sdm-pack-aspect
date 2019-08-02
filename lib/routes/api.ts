@@ -303,14 +303,12 @@ function exposeIdealAndProblemSetting(express: Express, aspectRegistry: AspectRe
 }
 
 function exposeExplore(express: Express, aspectRegistry: AspectRegistry, store: ProjectAnalysisResultStore): void {
-    // Set an ideal
     express.options("/api/v1/:workspace_id/explore", corsHandler());
     express.get("/api/v1/:workspace_id/explore", [corsHandler(), ...authHandlers()], async (req, res) => {
         const workspaceId = req.params.workspace_id || "local";
         const repos = await store.loadInWorkspace("*");
 
         const selectedTags: string[] = req.query.tags ? req.query.tags.split(",") : [];
-        console.log("tags = " + JSON.stringify(selectedTags));
 
         const taggedRepos: Array<ProjectAnalysisResult & { tags: string[] }> =
             repos.map(repo =>
@@ -320,10 +318,14 @@ function exposeExplore(express: Express, aspectRegistry: AspectRegistry, store: 
                         .concat(aspectRegistry.combinationTagsFor(repo.analysis.fingerprints)),
                 }));
 
-        const relevantRepos = taggedRepos.filter(repo => selectedTags.every(tags => repo.tags.includes(tags)));
+        const relevantRepos = taggedRepos.filter(repo => selectedTags.every(tag => relevant(tag, repo)));
         logger.info("Found %d relevant repos of %d", relevantRepos.length, repos.length);
 
-        const allTags = _.uniq(_.flatten(relevantRepos.map(r => r.tags)));
+        const grouped = _.groupBy(_.flatten(relevantRepos.map(r => r.tags)));
+        const allTags = Object.getOwnPropertyNames(grouped).map(name => ({
+            name,
+            count: grouped[name].length,
+        }));
 
         let repoTree: PlantedTree = {
             circles: [{ meaning: "root" }, { meaning: "repo" }, { meaning: "tag" }],
@@ -361,6 +363,9 @@ function exposeExplore(express: Express, aspectRegistry: AspectRegistry, store: 
         res.send({
             // fingerprints: relevantFingerprints,
             tags: allTags,
+            selectedTags,
+            repoCount: repos.length,
+            matchingRepoCount: relevantRepos.length,
             ...repoTree,
         });
     });
@@ -398,6 +403,6 @@ function fillInAspectNamesInList(aspectRegistry: AspectRegistry, fingerprints: F
     });
 }
 
-function allFingerprintsIn(repos: Analyzed[]): FP[] {
-    return _.uniqBy(_.flatMap(repos, r => r.fingerprints), fp => fp.sha);
+function relevant(selectedTag: string, repo: ProjectAnalysisResult & { tags: string[] }): boolean {
+    return selectedTag.startsWith("!") ? !repo.tags.includes(selectedTag.substr(1)) : repo.tags.includes(selectedTag);
 }

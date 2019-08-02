@@ -67,7 +67,9 @@ export function SunburstPage(props: SunburstPageProps): React.ReactElement {
     const thingies: string | React.ReactElement = !props.tree ? "Hover over a slice to see its details" :
         <ul>{perLevelDataItems.map(levelDataListItem)}</ul>;
 
-    const tags: string[] = (props.tree as any).tags || [];
+    const tags: Array<{ name: string, count: number }> = _.sortBy(
+        (props.tree as any).tags || [],
+        t => -t.count);
 
     const selectedTagButtons = props.selectedTags
         .map(t => {
@@ -79,18 +81,32 @@ export function SunburstPage(props: SunburstPageProps): React.ReactElement {
         });
 
     const addTagButtons = tags
-        .filter(t => !props.selectedTags.includes(t))
+        .filter(t => !props.selectedTags.includes(t.name))
         .map(t => {
-            return <form method="GET" action="/query">
-                <input type="hidden" name="explore" value="true"/>
-                <input type="hidden" name="tags" value={props.selectedTags.concat(t).join(",")}/>
-                <input type="submit" value={t}/>
-            </form>;
+            return <span>
+                <form method="GET" action="/query">
+                    <input type="hidden" name="explore" value="true"/>
+                    <input type="hidden" name="tags" value={props.selectedTags.concat(t.name).join(",")}/>
+                    <input type="submit" value={`${t.name} (${t.count})`}/>
+                </form>
+                <form method="GET" action="/query">
+                    <input type="hidden" name="explore" value="true"/>
+                    <input type="hidden" name="tags" value={props.selectedTags.concat("!" + t.name).join(",")}/>
+                    <input type="submit" value={`NOT ${t.name}`}/>
+                </form>
+            </span>;
         });
 
     const idealDisplay = props.currentIdeal ? displayCurrentIdeal(props.currentIdeal) : "";
     return <div className="sunburst">
         <h1>{props.fingerprintDisplayName}</h1>
+
+        <h2>{props.selectedTags.map(t => t.replace("!", "not ")).join(" and ") || "All"} - {(props.tree as any).matchingRepoCount} of {(props.tree as any).repoCount} repos</h2>
+
+        <form method="GET" action="/query">
+            <input type="hidden" name="explore" value="true"/>
+            <input type="submit" value="CLEAR"/>
+        </form>
 
         {selectedTagButtons}
 
