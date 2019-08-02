@@ -17,25 +17,25 @@
 import { logger } from "@atomist/automation-client";
 import { ExpressCustomizer } from "@atomist/automation-client/lib/configuration";
 import { isInLocalMode } from "@atomist/sdm-core";
-import { FP, isConcreteIdeal, } from "@atomist/sdm-pack-fingerprints";
+import { FP, isConcreteIdeal } from "@atomist/sdm-pack-fingerprints";
 import * as bodyParser from "body-parser";
-import { Express, Request, RequestHandler, Response, } from "express";
+import { Express, Request, RequestHandler, Response } from "express";
 import * as _ from "lodash";
 import * as path from "path";
 import * as swaggerUi from "swagger-ui-express";
 import * as yaml from "yamljs";
 import { ClientFactory } from "../analysis/offline/persist/pgUtils";
-import { FingerprintUsage, ProjectAnalysisResultStore, } from "../analysis/offline/persist/ProjectAnalysisResultStore";
+import { FingerprintUsage, ProjectAnalysisResultStore } from "../analysis/offline/persist/ProjectAnalysisResultStore";
 import { computeAnalyticsForFingerprintKind } from "../analysis/offline/spider/analytics";
-import { Analyzed, AspectRegistry, IdealStore, tagsIn, } from "../aspect/AspectRegistry";
-import { driftTree, driftTreeForSingleAspect, } from "../aspect/repoTree";
+import { ProjectAnalysisResult } from "../analysis/ProjectAnalysisResult";
+import { Analyzed, AspectRegistry, IdealStore, tagsIn } from "../aspect/AspectRegistry";
+import { driftTree, driftTreeForSingleAspect } from "../aspect/repoTree";
 import { getAspectReports } from "../customize/categories";
-import { PlantedTree, SunburstTree, } from "../tree/sunburst";
-import { introduceClassificationLayer, visit, } from "../tree/treeUtils";
-import { authHandlers, configureAuth, corsHandler, } from "./auth";
+import { PlantedTree, SunburstTree } from "../tree/sunburst";
+import { introduceClassificationLayer, visit } from "../tree/treeUtils";
+import { authHandlers, configureAuth, corsHandler } from "./auth";
 import { buildFingerprintTree } from "./buildFingerprintTree";
 import { WellKnownReporters } from "./wellKnownReporters";
-import { ProjectAnalysisResult } from "../analysis/ProjectAnalysisResult";
 
 /**
  * Expose the public API routes, returning JSON.
@@ -288,9 +288,8 @@ function exposeExplore(express: Express, aspectRegistry: AspectRegistry, store: 
                 ({
                     ...repo,
                     tags: tagsIn(aspectRegistry, repo.analysis.fingerprints)
-                        .concat(aspectRegistry.combinationTagsFor(repo.analysis.fingerprints))
+                        .concat(aspectRegistry.combinationTagsFor(repo.analysis.fingerprints)),
                 }));
-
 
         const relevantRepos = taggedRepos.filter(repo => selectedTags.every(tags => repo.tags.includes(tags)));
         logger.info("Found %d relevant repos of %d", relevantRepos.length, repos.length);

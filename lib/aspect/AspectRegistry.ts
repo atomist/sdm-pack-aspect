@@ -195,7 +195,7 @@ export async function problemStoreBackedUndesirableUsageCheckerFor(problemStore:
     };
 }
 
-export function tagsIn(aspectRegistry: AspectRegistry, fps: Array<FP>): string[] {
+export function tagsIn(aspectRegistry: AspectRegistry, fps: FP[]): string[] {
     return _.uniq(_.flatten(fps.map(fp => aspectRegistry.tagsFor(fp))))
         .sort();
 }
