@@ -61,7 +61,8 @@ import { SpringBootStarter } from "./lib/aspect/spring/springBootStarter";
 import { SpringBootVersion } from "./lib/aspect/spring/springBootVersion";
 import { TravisScriptsAspect } from "./lib/aspect/travis/travisAspects";
 import {
-    Aspects, CombinationTaggers,
+    Aspects,
+    CombinationTaggers,
     Taggers,
 } from "./lib/customize/aspects";
 import {
