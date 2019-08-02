@@ -132,7 +132,9 @@ export interface AspectRegistry {
      * @param {FP} fp
      * @return {string | undefined}
      */
-    indexOf(fp: Pick<FP, "name" | "type">): string | undefined;
+    tagsFor(fp: FP): string[];
+
+    combinationTagsFor(fps: FP[]): string[];
 
     /**
      * All the aspects we are managing
@@ -193,7 +195,7 @@ export async function problemStoreBackedUndesirableUsageCheckerFor(problemStore:
     };
 }
 
-export function indexesIn(aspectRegistry: AspectRegistry, fps: Array<Pick<FP, "name" | "type">>): string[] {
-    return _.uniq(fps.map(fp => aspectRegistry.indexOf(fp)).filter(i => !!i))
+export function tagsIn(aspectRegistry: AspectRegistry, fps: Array<FP>): string[] {
+    return _.uniq(_.flatten(fps.map(fp => aspectRegistry.tagsFor(fp))))
         .sort();
 }

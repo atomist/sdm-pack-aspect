@@ -25,9 +25,9 @@ export interface SunburstPageProps {
     tree: PlantedTree; // we have the data already.
 
     /**
-     * Fingerprint types
+     * Tags selected
      */
-    selectedIndexes: string[];
+    selectedTags: string[];
 
 }
 
@@ -67,23 +67,23 @@ export function SunburstPage(props: SunburstPageProps): React.ReactElement {
     const thingies: string | React.ReactElement = !props.tree ? "Hover over a slice to see its details" :
         <ul>{perLevelDataItems.map(levelDataListItem)}</ul>;
 
-    const indexes: string[] = (props.tree as any).indexes || [];
+    const tags: string[] = (props.tree as any).tags || [];
 
-    const selectedIndexButtons = props.selectedIndexes
+    const selectedTagButtons = props.selectedTags
         .map(t => {
             return <form method="GET" action="/query">
                 <input type="hidden" name="explore" value="true"/>
-                <input type="hidden" name="indexes" value={props.selectedIndexes.filter(x => x !== t).join(",")}/>
+                <input type="hidden" name="tags" value={props.selectedTags.filter(x => x !== t).join(",")}/>
                 <input type="submit" name={t} value={"-" + t}/>
             </form>;
         });
 
-    const addIndexButtons = indexes
-        .filter(t => !props.selectedIndexes.includes(t))
+    const addTagButtons = tags
+        .filter(t => !props.selectedTags.includes(t))
         .map(t => {
             return <form method="GET" action="/query">
                 <input type="hidden" name="explore" value="true"/>
-                <input type="hidden" name="indexes" value={props.selectedIndexes.concat(t).join(",")}/>
+                <input type="hidden" name="tags" value={props.selectedTags.concat(t).join(",")}/>
                 <input type="submit" value={t}/>
             </form>;
         });
@@ -92,9 +92,9 @@ export function SunburstPage(props: SunburstPageProps): React.ReactElement {
     return <div className="sunburst">
         <h1>{props.fingerprintDisplayName}</h1>
 
-        {selectedIndexButtons}
+        {selectedTagButtons}
 
-        {addIndexButtons}
+        {addTagButtons}
 
         {idealDisplay}
         <div className="wrapper">

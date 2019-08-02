@@ -17,53 +17,25 @@
 import { logger } from "@atomist/automation-client";
 import { ExpressCustomizer } from "@atomist/automation-client/lib/configuration";
 import { isInLocalMode } from "@atomist/sdm-core";
-import {
-    FP,
-    isConcreteIdeal,
-} from "@atomist/sdm-pack-fingerprints";
+import { FP, isConcreteIdeal, } from "@atomist/sdm-pack-fingerprints";
 import * as bodyParser from "body-parser";
-import {
-    Express,
-    Request,
-    RequestHandler,
-    Response,
-} from "express";
+import { Express, Request, RequestHandler, Response, } from "express";
 import * as _ from "lodash";
 import * as path from "path";
 import * as swaggerUi from "swagger-ui-express";
 import * as yaml from "yamljs";
 import { ClientFactory } from "../analysis/offline/persist/pgUtils";
-import {
-    FingerprintUsage,
-    ProjectAnalysisResultStore,
-} from "../analysis/offline/persist/ProjectAnalysisResultStore";
+import { FingerprintUsage, ProjectAnalysisResultStore, } from "../analysis/offline/persist/ProjectAnalysisResultStore";
 import { computeAnalyticsForFingerprintKind } from "../analysis/offline/spider/analytics";
-import {
-    AspectRegistry,
-    IdealStore,
-    indexesIn,
-} from "../aspect/AspectRegistry";
-import {
-    driftTree,
-    driftTreeForSingleAspect,
-} from "../aspect/repoTree";
+import { Analyzed, AspectRegistry, IdealStore, tagsIn, } from "../aspect/AspectRegistry";
+import { driftTree, driftTreeForSingleAspect, } from "../aspect/repoTree";
 import { getAspectReports } from "../customize/categories";
-import {
-    PlantedTree,
-    SunburstTree,
-} from "../tree/sunburst";
-import {
-    descendants,
-    introduceClassificationLayer,
-    visit,
-} from "../tree/treeUtils";
-import {
-    authHandlers,
-    configureAuth,
-    corsHandler,
-} from "./auth";
+import { PlantedTree, SunburstTree, } from "../tree/sunburst";
+import { introduceClassificationLayer, visit, } from "../tree/treeUtils";
+import { authHandlers, configureAuth, corsHandler, } from "./auth";
 import { buildFingerprintTree } from "./buildFingerprintTree";
 import { WellKnownReporters } from "./wellKnownReporters";
+import { ProjectAnalysisResult } from "../analysis/ProjectAnalysisResult";
 
 /**
  * Expose the public API routes, returning JSON.
@@ -307,40 +279,40 @@ function exposeExplore(express: Express, aspectRegistry: AspectRegistry, store: 
     express.get("/api/v1/:workspace_id/explore", [corsHandler(), ...authHandlers()], async (req, res) => {
         const workspaceId = req.params.workspace_id || "local";
         const repos = await store.loadInWorkspace("*");
-        const allFingerprints = await store.fingerprintUsageForType(workspaceId);
-        const allIndexes = indexesIn(aspectRegistry, allFingerprints);
 
-        const selectedIndexes: string[] = req.query.indexes ? req.query.indexes.split(",") : [];
-        console.log("indices = " + JSON.stringify(selectedIndexes));
+        const selectedTags: string[] = req.query.tags ? req.query.tags.split(",") : [];
+        console.log("tags = " + JSON.stringify(selectedTags));
 
-        const relevantRepos = repos.filter(repo => selectedIndexes.every(index =>
-            repo.analysis.fingerprints.some(fp => aspectRegistry.indexOf(fp) === index)));
+        const taggedRepos: Array<ProjectAnalysisResult & { tags: string[] }> =
+            repos.map(repo =>
+                ({
+                    ...repo,
+                    tags: tagsIn(aspectRegistry, repo.analysis.fingerprints)
+                        .concat(aspectRegistry.combinationTagsFor(repo.analysis.fingerprints))
+                }));
+
+
+        const relevantRepos = taggedRepos.filter(repo => selectedTags.every(tags => repo.tags.includes(tags)));
         logger.info("Found %d relevant repos of %d", relevantRepos.length, repos.length);
-        const relevantFingerprints = allFingerprints.filter(fp =>
-            relevantRepos.some(repo => repo.analysis.fingerprints.some(f => f.name === fp.name && f.type === fp.type)));
-        logger.info("Found %d relevant fingerprints of %d", relevantFingerprints.length, allFingerprints.length);
+
+        const allTags = _.uniq(_.flatten(relevantRepos.map(r => r.tags)));
 
         let repoTree: PlantedTree = {
-            circles: [{meaning: "root" }, { meaning: "repo"}, {meaning: "tag" }],
+            circles: [{ meaning: "root" }, { meaning: "repo" }, { meaning: "tag" }],
             tree: {
                 name: "repos",
                 children: [
                     {
-                        name: selectedIndexes.join("+"),
+                        name: selectedTags.join("+"),
                         children: relevantRepos.map(r => {
-                            const fingerprints = r.analysis.fingerprints.map(fp => ({
-                                name: fp.name,
-                                type: fp.type,
-                            }));
                             return {
                                 id: r.id,
                                 owner: r.repoRef.owner,
                                 repo: r.repoRef.repo,
                                 name: r.repoRef.repo,
                                 url: r.repoRef.url,
-                                size: fingerprints.length,
-                                // fingerprints,
-                                indexes: indexesIn(aspectRegistry, fingerprints),
+                                size: r.analysis.fingerprints.length,
+                                tags: r.tags,
                             };
                         }),
                     },
@@ -360,7 +332,7 @@ function exposeExplore(express: Express, aspectRegistry: AspectRegistry, store: 
 
         res.send({
             // fingerprints: relevantFingerprints,
-            indexes: allIndexes,
+            tags: allTags,
             ...repoTree,
         });
     });
@@ -396,4 +368,8 @@ function fillInAspectNamesInList(aspectRegistry: AspectRegistry, fingerprints: F
         // This is going to be needed for the invocation of the command handlers to set targets
         (fp as any).fingerprint = `${fp.type}::${fp.name}`;
     });
+}
+
+function allFingerprintsIn(repos: Analyzed[]): FP[] {
+    return _.uniqBy(_.flatMap(repos, r => r.fingerprints), fp => fp.sha);
 }

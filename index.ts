@@ -61,8 +61,8 @@ import { SpringBootStarter } from "./lib/aspect/spring/springBootStarter";
 import { SpringBootVersion } from "./lib/aspect/spring/springBootVersion";
 import { TravisScriptsAspect } from "./lib/aspect/travis/travisAspects";
 import {
-    Aspects,
-    Indexes,
+    Aspects, CombinationTaggers,
+    Taggers,
 } from "./lib/customize/aspects";
 import {
     registerCategories,
@@ -264,7 +264,8 @@ function orgVisualizationEndpoints(dbClientFactory: ClientFactory, httpClientFac
         aspects: Aspects,
         undesirableUsageChecker: demoUndesirableUsageChecker,
     })
-        .withIndexes(...Indexes);
+        .withTaggers(...Taggers)
+        .withCombinationTaggers(...CombinationTaggers);
 
     const aboutTheApi = api(dbClientFactory, resultStore, aspectRegistry);
 
