@@ -37,8 +37,8 @@ import {
 import { CodeOfConduct } from "../aspect/community/codeOfConduct";
 import { License } from "../aspect/community/license";
 import { conditionalize } from "../aspect/compose/conditionalize";
-import { Index } from "../aspect/DefaultAspectRegistry";
-import { branchCount } from "../aspect/git/branchCount";
+import { CombinationTagger, Tagger } from "../aspect/DefaultAspectRegistry";
+import { branchCount, BranchCountType } from "../aspect/git/branchCount";
 import {
     gitActiveCommitters,
     GitRecency,
@@ -52,6 +52,8 @@ import { DirectMavenDependencies } from "../aspect/spring/directMavenDependencie
 import { SpringBootStarter } from "../aspect/spring/springBootStarter";
 import { SpringBootVersion } from "../aspect/spring/springBootVersion";
 import { TravisScriptsAspect } from "../aspect/travis/travisAspects";
+
+import * as _ from "lodash";
 
 /**
  * The aspects anaged by this SDM.
@@ -106,7 +108,7 @@ export const Aspects: ManagedAspect[] = [
     LeinDeps,
 ];
 
-export const Indexes: Index[] = [
+export const Taggers: Tagger[] = [
     // fp => fp.type === NpmDeps.name ? `npm: ${fp.name}`: undefined,
     // fp => fp.type === DockerFrom.name ? `docker: ${fp.name}`: undefined,
     fp => fp.type === DockerFrom.name ? "docker" : undefined,
@@ -117,4 +119,10 @@ export const Indexes: Index[] = [
     fp => fp.type === SpringBootVersion.name ? "spring-boot" : undefined,
     fp => fp.type === TravisScriptsAspect.name ? "travis" : undefined,
     fp => fp.type === PythonDependencies.name ? "python" : undefined,
+    fp => fp.type === BranchCountType && fp.data.count > 20 ? "branchy" : undefined,
 ];
+
+export const CombinationTaggers: CombinationTagger[] = [
+    fps => _.uniq(fps.map(f => f.type)).length  + "",
+];
+
