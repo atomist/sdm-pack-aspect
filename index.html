@@ -1,0 +1,469 @@
+<!doctype html>
+<html class="default no-js">
+<head>
+	<meta charset="utf-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<title>@atomist/org-visualizer</title>
+	<meta name="description" content="">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<link rel="stylesheet" href="assets/css/main.css">
+</head>
+<body>
+<header>
+	<div class="tsd-page-toolbar">
+		<div class="container">
+			<div class="table-wrap">
+				<div class="table-cell" id="tsd-search" data-index="assets/js/search.js" data-base=".">
+					<div class="field">
+						<label for="tsd-search-field" class="tsd-widget search no-caption">Search</label>
+						<input id="tsd-search-field" type="text" />
+					</div>
+					<ul class="results">
+						<li class="state loading">Preparing search index...</li>
+						<li class="state failure">The search index is not available</li>
+					</ul>
+					<a href="index.html" class="title">@atomist/org-visualizer</a>
+				</div>
+				<div class="table-cell" id="tsd-widgets">
+					<div id="tsd-filter">
+						<a href="#" class="tsd-widget options no-caption" data-toggle="options">Options</a>
+						<div class="tsd-filter-group">
+							<div class="tsd-select" id="tsd-filter-visibility">
+								<span class="tsd-select-label">All</span>
+								<ul class="tsd-select-list">
+									<li data-value="public">Public</li>
+									<li data-value="protected">Public/Protected</li>
+									<li data-value="private" class="selected">All</li>
+								</ul>
+							</div>
+							<input type="checkbox" id="tsd-filter-inherited" checked />
+							<label class="tsd-widget" for="tsd-filter-inherited">Inherited</label>
+							<input type="checkbox" id="tsd-filter-only-exported" />
+							<label class="tsd-widget" for="tsd-filter-only-exported">Only exported</label>
+						</div>
+					</div>
+					<a href="#" class="tsd-widget menu no-caption" data-toggle="menu">Menu</a>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="tsd-page-title">
+		<div class="container">
+			<ul class="tsd-breadcrumb">
+				<li>
+					<a href="globals.html">Globals</a>
+				</li>
+			</ul>
+			<h1> @atomist/org-visualizer</h1>
+		</div>
+	</div>
+</header>
+<div class="container container-main">
+	<div class="row">
+		<div class="col-8 col-content">
+			<div class="tsd-panel tsd-typography">
+				<p>  <img src="./images/dockerImageSunburst.png"
+				width="130" hight="130" align="right" /></p>
+				<h1 id="-atomist-org-visualizer">@atomist/org-visualizer</h1>
+				<p>A tool for visualizing technology usage and drift across an organization. </p>
+				<p>The cloud native era has led to an explosion of repositories, which we lack tools to understand and manage at scale. See Rod Johnson&#39;s blog <a href="https://blog.atomist.com/this-will-surprise-you/">This Will Surprise You</a> for further discussion.</p>
+				<p>An Atomist <strong>aspect</strong> captures a concern in your project, in anything available from git: repository content (code and configuration) and git data such as branch counts and committer activity. Aspects support the following use cases:</p>
+				<ol>
+					<li><em>Visualization</em> (all aspects): See usage and drift across your organization.</li>
+					<li><em>Convergence</em> (some aspects): Help drive code changes to achieve consistency on an &quot;ideal&quot; state of an aspect, such as a particularly version of a library.</li>
+					<li><em>Reaction to change</em> (some aspects): React to changes in aspect usage within a project: for example, to a library upgrade, removing the Spring Boot Security starter or exposing an additional port in a Docker container.</li>
+				</ol>
+				<p>This project focuses on the visualization use case. Visualizations are exposed via d3 sunburst charts and via a REST API returning JSON documents.</p>
+				<p>There is out of the box
+				support for investigating the following aspects of your project:</p>
+				<ul>
+					<li>TypeScript version</li>
+					<li>Spring Boot version and starters (with Maven)</li>
+					<li>Docker base images, Dockerfile path and exposed ports</li>
+					<li>Java build tool (Maven, Gradle)</li>
+					<li>Library versions (npm, Maven, Python)</li>
+					<li>Inclusion of a code of conduct</li>
+					<li>Common CI tools</li>
+					<li>git activity and branch count</li>
+				</ul>
+				<p>Analysis is extensible using the Atomist <code>Project</code> API. Implementing and registering additional aspects will result in additional visualization links after re-analysis and restarting the application.</p>
+				<p>An example visualization, showing Docker images used across two GitHub organizations:</p>
+				<p><img src="images/dockerImageSunburst.png" alt="Docker image visualization" title="Docker image drift"></p>
+				<h2 id="running">Running</h2>
+				<p>To visualize your org:</p>
+				<ol>
+					<li>Clone and build this project</li>
+					<li>Set up the required PostreSQL database</li>
+					<li>Run analysis on your repositories</li>
+					<li>Run the <code>org-visualizer</code> and hit its web interface at <a href="http://localhost:2866">http://localhost:2866</a></li>
+					<li>If you have more ideas, add code to study more aspects of your projects</li>
+				</ol>
+				<h3 id="building">Building</h3>
+				<p>Please use Node 10+.</p>
+				<p>First, install with <code>npm ci</code>.</p>
+				<p>Next, build with <code>npm run build</code></p>
+				<p>Next, <code>npm link</code> to out the <code>spider</code> command in your path. </p>
+				<h3 id="database-setup">Database setup</h3>
+				<h4 id="creating-the-database">Creating the Database</h4>
+				<p>Data about each repository is stored locally in a PostgreSQL database.</p>
+				<p>Start Postgres, connect to it, and run the <a href="ddl/create.ddl">create.ddl</a> script to set up the database.</p>
+				<p>If you want to wipe out your data and start over, this will also accomplish that.</p>
+				<pre><code><span class="hljs-meta">&gt;</span><span class="bash"> psql</span>
+<span class="hljs-meta">psql&gt;</span><span class="bash"> \i ddl/create.ddl</span></code></pre><h4 id="connecting-to-the-database">Connecting to the Database</h4>
+				<p>For anything other than the default Postgres <a href="https://node-postgres.com/features/connecting">connection parameters</a> and db <code>org_viz</code>:</p>
+				<p>Configure the Postgres database details in <code>client.config.json</code> in your <code>~/.atomist</code>:</p>
+				<pre><code class="language-json">{
+  <span class="hljs-attr">"sdm"</span>: {
+    <span class="hljs-attr">"postgres"</span>: {
+      <span class="hljs-attr">"user"</span>: <span class="hljs-string">"&lt;postgres user&gt;"</span>,
+      <span class="hljs-attr">"password"</span>: <span class="hljs-string">"&lt;postgres password"</span>,
+      <span class="hljs-attr">"host"</span>: <span class="hljs-string">"&lt;postgres host&gt;"</span>,
+      <span class="hljs-attr">"port"</span>: <span class="hljs-string">"&lt;postgres port&gt;"</span>,
+      <span class="hljs-attr">"database"</span>: <span class="hljs-string">"org_viz"</span>
+    }
+  }
+}</code></pre>
+				<p>If <code>~/.atomist/client.config.json</code> does not exist, create it with the above content.</p>
+				<h3 id="other-dependencies">Other Dependencies</h3>
+				<p>You will need the following installed on your machine for the out of the box aspects to work:</p>
+				<ul>
+					<li>The <code>git</code> binary</li>
+					<li>Java<ul>
+							<li>A JDK (<em>not</em> a JRE)</li>
+							<li>Maven - <code>mvn</code> must be on the path. </li>
+						</ul>
+					</li>
+					<li>Node</li>
+					<li><p>npm</p>
+						<p>All artifacts referenced in Maven or Node projects must be accessible when the spider runs. Check by manually running <code>mvn</code> or <code>npm i</code> on the relevant projects.</p>
+					</li>
+				</ul>
+				<h3 id="analyze-your-repositories">Analyze your repositories</h3>
+				<blockquote>
+					<p>You can start quickly by loading data from four open source organizations by running the script <code>load-demo-data.sh</code>.</p>
+				</blockquote>
+				<p>The <code>spider</code> command is part of this org-visualizer project.
+				Add it to your path by running <code>npm link</code> in your clone of this repository.</p>
+				<h4 id="github">GitHub</h4>
+				<p>To analyze a GitHub organization, run the following command:</p>
+				<p><code>spider --owner &lt;github organization&gt;</code> e.g. <code>spider --owner atomist</code> (not the full org URL).</p>
+				<p><em>To access private repositories, ensure that your GitHub token is available to
+				Node processes via a `GITHUB</em>TOKEN` environment variable._</p>
+				<h4 id="local-directories">Local directories</h4>
+				<p>To analyze local directories, wherever they were cloned from, use the <code>--l</code> flag and specify the full path of the parent directory of the repositories, as follows: </p>
+				<pre><code>spider --l <span class="hljs-regexp">/Users/</span>rodjohnson<span class="hljs-regexp">/atomist/</span>projects<span class="hljs-regexp">/spring-team/</span></code></pre><h4 id="general">General</h4>
+				<blockquote>
+					<p>Run <code>spider</code> with the <code>--u</code> flag to force updates to existing analyses. Do this if you have updated your analyzer code. (See Extending below.) </p>
+				</blockquote>
+				<h3 id="run-the-web-app">Run the web app</h3>
+				<p>Now start the server with <code>atomist start --local</code> to expose the visualizations.</p>
+				<p>Go to <a href="http://localhost:2866">http://localhost:2866</a>.</p>
+				<h2 id="architecture">Architecture</h2>
+				<p>There are four architectural layers:</p>
+				<ol>
+					<li><strong>Analysis</strong>. This is enabled by implementing <a href="lib/customize/aspects.ts">Aspects</a>. Aspects know how to take <strong>fingerprints</strong> (extractions of small relevant bits) of the code, compare them, and even update them. Analysis is triggered by spidering or, in regular use, by an <a href="https://github.com/atomist/sdm">Atomist SDM</a>.</li>
+					<li><strong>Query</strong> functionality.</li>
+					<li><strong>API</strong> layer. Once your server is running, see the Swagger API documentation at <a href="http://localhost:2866/api-docs">http://localhost:2866/api-docs</a></li>
+					<li>Simple <strong>UI</strong> using static React and d3 exposing sunburst charts based on the API.</li>
+				</ol>
+				<h2 id="extending">Extending</h2>
+				<p>This project includes some well known aspects but it is intended for you to add your own.</p>
+				<p>Do this by updating the <code>aspects</code> constant defined in the <a href="lib/customize/aspects.ts"><code>aspects.ts</code></a> file. Simply add aspects to this array:</p>
+				<pre><code class="language-typescript"><span class="hljs-keyword">export</span> <span class="hljs-keyword">const</span> Aspects: ManagedAspect[] = [
+    DockerFrom,
+    TypeScriptVersion,
+    <span class="hljs-comment">//... add your aspects here</span></code></pre>
+				<blockquote>
+					<p>After updating your code you will need to rerun existing analyses. Run the spider again with the <code>--u</code> flag to force updates on existing data.</p>
+				</blockquote>
+				<h2 id="next-steps">Next Steps</h2>
+				<p>The <a href="https://www.atomist.com">Atomist</a> service keeps analyses up to date automatically across all your repositories. It can also help to achieve consistency and convergence in eligible aspects by updating projects, and enabling workflows on change.</p>
+				<p>See <a href="https://atomist.com/developer.html">https://atomist.com/developer.html</a> for further information.</p>
+				<hr>
+				<p>Created by <a href="https://atomist.com/" title="Atomist - How Teams Deliver Software">Atomist</a>.
+				Need Help?  <a href="https://join.atomist.com/" title="Atomist Community Slack">Join our Slack workspace</a>.</p>
+			</div>
+		</div>
+		<div class="col-4 col-menu menu-sticky-wrap menu-highlight">
+			<nav class="tsd-navigation primary">
+				<ul>
+					<li class="globals  ">
+						<a href="globals.html"><em>Globals</em></a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="modules/_index_.html">"index"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="modules/_lib_analysis_projectanalysisresult_.html">"lib/analysis/<wbr>Project<wbr>Analysis<wbr>Result"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="modules/_lib_analysis_filenamessubprojectfinder_.html">"lib/analysis/file<wbr>Names<wbr>Subproject<wbr>Finder"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="modules/_lib_analysis_offline_spideredrepo_.html">"lib/analysis/offline/<wbr>Spidered<wbr>Repo"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="modules/_lib_analysis_offline_persist_postgresprojectanalysisresultstore_.html">"lib/analysis/offline/persist/<wbr>Postgres<wbr>Project<wbr>Analysis<wbr>Result<wbr>Store"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="modules/_lib_analysis_offline_persist_projectanalysisresultstore_.html">"lib/analysis/offline/persist/<wbr>Project<wbr>Analysis<wbr>Result<wbr>Store"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="modules/_lib_analysis_offline_persist_pgutils_.html">"lib/analysis/offline/persist/pg<wbr>Utils"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="modules/_lib_analysis_offline_spider_scmsearchcriteria_.html">"lib/analysis/offline/spider/<wbr>Scm<wbr>Search<wbr>Criteria"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="modules/_lib_analysis_offline_spider_spider_.html">"lib/analysis/offline/spider/<wbr>Spider"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="modules/_lib_analysis_offline_spider_analytics_.html">"lib/analysis/offline/spider/analytics"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="modules/_lib_analysis_offline_spider_common_.html">"lib/analysis/offline/spider/common"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="modules/_lib_analysis_offline_spider_github_githubspider_.html">"lib/analysis/offline/spider/github/<wbr>Git<wbr>Hub<wbr>Spider"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="modules/_lib_analysis_offline_spider_local_localspider_.html">"lib/analysis/offline/spider/local/<wbr>Local<wbr>Spider"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="modules/_lib_analysis_subprojectfinder_.html">"lib/analysis/subproject<wbr>Finder"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="modules/_lib_aspect_aspectregistry_.html">"lib/aspect/<wbr>Aspect<wbr>Registry"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="modules/_lib_aspect_defaultaspectregistry_.html">"lib/aspect/<wbr>Default<wbr>Aspect<wbr>Registry"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="modules/_lib_aspect_common_codemetrics_.html">"lib/aspect/common/code<wbr>Metrics"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="modules/_lib_aspect_common_codeownership_.html">"lib/aspect/common/code<wbr>Ownership"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="modules/_lib_aspect_common_filecount_.html">"lib/aspect/common/file<wbr>Count"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="modules/_lib_aspect_common_stackaspect_.html">"lib/aspect/common/stack<wbr>Aspect"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="modules/_lib_aspect_community_codeofconduct_.html">"lib/aspect/community/code<wbr>OfConduct"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="modules/_lib_aspect_community_license_.html">"lib/aspect/community/license"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="modules/_lib_aspect_compose_assembledaspect_.html">"lib/aspect/compose/assembled<wbr>Aspect"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="modules/_lib_aspect_compose_classificationaspect_.html">"lib/aspect/compose/classification<wbr>Aspect"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="modules/_lib_aspect_compose_conditionalize_.html">"lib/aspect/compose/conditionalize"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="modules/_lib_aspect_git_branchcount_.html">"lib/aspect/git/branch<wbr>Count"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="modules/_lib_aspect_git_dateutils_.html">"lib/aspect/git/date<wbr>Utils"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="modules/_lib_aspect_git_gitactivity_.html">"lib/aspect/git/git<wbr>Activity"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="modules/_lib_aspect_node_tslintaspect_.html">"lib/aspect/node/<wbr>TsLint<wbr>Aspect"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="modules/_lib_aspect_node_typescriptversion_.html">"lib/aspect/node/<wbr>Type<wbr>Script<wbr>Version"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="modules/_lib_aspect_node_idealfromnpm_.html">"lib/aspect/node/ideal<wbr>From<wbr>Npm"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="modules/_lib_aspect_python_pythondependencies_.html">"lib/aspect/python/python<wbr>Dependencies"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="modules/_lib_aspect_repotree_.html">"lib/aspect/repo<wbr>Tree"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="modules/_lib_aspect_reporters_.html">"lib/aspect/reporters"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="modules/_lib_aspect_sdm_sdmnpmdeps_.html">"lib/aspect/sdm/sdm<wbr>Npm<wbr>Deps"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="modules/_lib_aspect_secret_exposedsecrets_.html">"lib/aspect/secret/exposed<wbr>Secrets"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="modules/_lib_aspect_secret_secretsniffing_.html">"lib/aspect/secret/secret<wbr>Sniffing"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="modules/_lib_aspect_secret_snifferoptionsloader_.html">"lib/aspect/secret/sniffer<wbr>Options<wbr>Loader"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="modules/_lib_aspect_spring_allmavendependenciesaspect_.html">"lib/aspect/spring/all<wbr>Maven<wbr>Dependencies<wbr>Aspect"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="modules/_lib_aspect_spring_directmavendependencies_.html">"lib/aspect/spring/direct<wbr>Maven<wbr>Dependencies"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="modules/_lib_aspect_spring_springbootstarter_.html">"lib/aspect/spring/spring<wbr>Boot<wbr>Starter"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="modules/_lib_aspect_spring_springbootversion_.html">"lib/aspect/spring/spring<wbr>Boot<wbr>Version"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="modules/_lib_aspect_support_groupingutils_.html">"lib/aspect/support/grouping<wbr>Utils"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="modules/_lib_aspect_travis_travisaspects_.html">"lib/aspect/travis/travis<wbr>Aspects"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="modules/_lib_customize_aspects_.html">"lib/customize/aspects"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="modules/_lib_customize_categories_.html">"lib/customize/categories"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="modules/_lib_customize_demoundesirableusagechecker_.html">"lib/customize/demo<wbr>Undesirable<wbr>Usage<wbr>Checker"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="modules/_lib_element_packagelock_.html">"lib/element/package<wbr>Lock"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="modules/_lib_job_createfingerprintjob_.html">"lib/job/create<wbr>Fingerprint<wbr>Job"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="modules/_lib_job_fingerprinttask_.html">"lib/job/fingerprint<wbr>Task"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="modules/_lib_machine_machine_.html">"lib/machine/machine"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="modules/_lib_page_sunburstscript_.html">"lib/page/sunburst<wbr>Script"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="modules/_lib_routes_allowframing_.html">"lib/routes/allow<wbr>Framing"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="modules/_lib_routes_api_.html">"lib/routes/api"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="modules/_lib_routes_auth_.html">"lib/routes/auth"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="modules/_lib_routes_buildfingerprinttree_.html">"lib/routes/build<wbr>Fingerprint<wbr>Tree"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="modules/_lib_routes_orgpage_.html">"lib/routes/org<wbr>Page"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="modules/_lib_routes_projectqueries_.html">"lib/routes/project<wbr>Queries"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="modules/_lib_routes_wellknownreporters_.html">"lib/routes/well<wbr>Known<wbr>Reporters"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="modules/_lib_script_spider_.html">"lib/script/spider"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="modules/_lib_tree_treebuilder_.html">"lib/tree/<wbr>Tree<wbr>Builder"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="modules/_lib_tree_partitioner_.html">"lib/tree/partitioner"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="modules/_lib_tree_sunburst_.html">"lib/tree/sunburst"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="modules/_lib_tree_treeutils_.html">"lib/tree/tree<wbr>Utils"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="modules/_lib_typings_types_.html">"lib/typings/types"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="modules/_lib_util_bands_.html">"lib/util/bands"</a>
+					</li>
+					<li class=" tsd-kind-external-module">
+						<a href="modules/_lib_util_commonbands_.html">"lib/util/common<wbr>Bands"</a>
+					</li>
+				</ul>
+			</nav>
+			<nav class="tsd-navigation secondary menu-sticky">
+				<ul class="before-current">
+				</ul>
+			</nav>
+		</div>
+	</div>
+</div>
+<footer class="with-border-bottom">
+	<div class="container">
+		<h2>Legend</h2>
+		<div class="tsd-legend-group">
+			<ul class="tsd-legend">
+				<li class="tsd-kind-module"><span class="tsd-kind-icon">Module</span></li>
+				<li class="tsd-kind-object-literal"><span class="tsd-kind-icon">Object literal</span></li>
+				<li class="tsd-kind-variable"><span class="tsd-kind-icon">Variable</span></li>
+				<li class="tsd-kind-function"><span class="tsd-kind-icon">Function</span></li>
+				<li class="tsd-kind-function tsd-has-type-parameter"><span class="tsd-kind-icon">Function with type parameter</span></li>
+				<li class="tsd-kind-index-signature"><span class="tsd-kind-icon">Index signature</span></li>
+				<li class="tsd-kind-type-alias"><span class="tsd-kind-icon">Type alias</span></li>
+			</ul>
+			<ul class="tsd-legend">
+				<li class="tsd-kind-enum"><span class="tsd-kind-icon">Enumeration</span></li>
+				<li class="tsd-kind-enum-member"><span class="tsd-kind-icon">Enumeration member</span></li>
+				<li class="tsd-kind-property tsd-parent-kind-enum"><span class="tsd-kind-icon">Property</span></li>
+				<li class="tsd-kind-method tsd-parent-kind-enum"><span class="tsd-kind-icon">Method</span></li>
+			</ul>
+			<ul class="tsd-legend">
+				<li class="tsd-kind-interface"><span class="tsd-kind-icon">Interface</span></li>
+				<li class="tsd-kind-interface tsd-has-type-parameter"><span class="tsd-kind-icon">Interface with type parameter</span></li>
+				<li class="tsd-kind-constructor tsd-parent-kind-interface"><span class="tsd-kind-icon">Constructor</span></li>
+				<li class="tsd-kind-property tsd-parent-kind-interface"><span class="tsd-kind-icon">Property</span></li>
+				<li class="tsd-kind-method tsd-parent-kind-interface"><span class="tsd-kind-icon">Method</span></li>
+				<li class="tsd-kind-index-signature tsd-parent-kind-interface"><span class="tsd-kind-icon">Index signature</span></li>
+			</ul>
+			<ul class="tsd-legend">
+				<li class="tsd-kind-class"><span class="tsd-kind-icon">Class</span></li>
+				<li class="tsd-kind-class tsd-has-type-parameter"><span class="tsd-kind-icon">Class with type parameter</span></li>
+				<li class="tsd-kind-constructor tsd-parent-kind-class"><span class="tsd-kind-icon">Constructor</span></li>
+				<li class="tsd-kind-property tsd-parent-kind-class"><span class="tsd-kind-icon">Property</span></li>
+				<li class="tsd-kind-method tsd-parent-kind-class"><span class="tsd-kind-icon">Method</span></li>
+				<li class="tsd-kind-accessor tsd-parent-kind-class"><span class="tsd-kind-icon">Accessor</span></li>
+				<li class="tsd-kind-index-signature tsd-parent-kind-class"><span class="tsd-kind-icon">Index signature</span></li>
+			</ul>
+			<ul class="tsd-legend">
+				<li class="tsd-kind-constructor tsd-parent-kind-class tsd-is-inherited"><span class="tsd-kind-icon">Inherited constructor</span></li>
+				<li class="tsd-kind-property tsd-parent-kind-class tsd-is-inherited"><span class="tsd-kind-icon">Inherited property</span></li>
+				<li class="tsd-kind-method tsd-parent-kind-class tsd-is-inherited"><span class="tsd-kind-icon">Inherited method</span></li>
+				<li class="tsd-kind-accessor tsd-parent-kind-class tsd-is-inherited"><span class="tsd-kind-icon">Inherited accessor</span></li>
+			</ul>
+			<ul class="tsd-legend">
+				<li class="tsd-kind-property tsd-parent-kind-class tsd-is-protected"><span class="tsd-kind-icon">Protected property</span></li>
+				<li class="tsd-kind-method tsd-parent-kind-class tsd-is-protected"><span class="tsd-kind-icon">Protected method</span></li>
+				<li class="tsd-kind-accessor tsd-parent-kind-class tsd-is-protected"><span class="tsd-kind-icon">Protected accessor</span></li>
+			</ul>
+			<ul class="tsd-legend">
+				<li class="tsd-kind-property tsd-parent-kind-class tsd-is-private"><span class="tsd-kind-icon">Private property</span></li>
+				<li class="tsd-kind-method tsd-parent-kind-class tsd-is-private"><span class="tsd-kind-icon">Private method</span></li>
+				<li class="tsd-kind-accessor tsd-parent-kind-class tsd-is-private"><span class="tsd-kind-icon">Private accessor</span></li>
+			</ul>
+			<ul class="tsd-legend">
+				<li class="tsd-kind-property tsd-parent-kind-class tsd-is-static"><span class="tsd-kind-icon">Static property</span></li>
+				<li class="tsd-kind-call-signature tsd-parent-kind-class tsd-is-static"><span class="tsd-kind-icon">Static method</span></li>
+			</ul>
+		</div>
+	</div>
+</footer>
+<div class="container tsd-generator">
+	<p>Generated using <a href="http://typedoc.org/" target="_blank">TypeDoc</a></p>
+</div>
+<div class="overlay"></div>
+<script src="assets/js/main.js"></script>
+<script>if (location.protocol == 'file:') document.write('<script src="assets/js/search.js"><' + '/script>');</script>
+</body>
+</html>
