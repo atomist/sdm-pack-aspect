@@ -37,8 +37,14 @@ import {
 import { CodeOfConduct } from "../aspect/community/codeOfConduct";
 import { License } from "../aspect/community/license";
 import { conditionalize } from "../aspect/compose/conditionalize";
-import { CombinationTagger, Tagger } from "../aspect/DefaultAspectRegistry";
-import { branchCount, BranchCountType } from "../aspect/git/branchCount";
+import {
+    CombinationTagger,
+    Tagger,
+} from "../aspect/DefaultAspectRegistry";
+import {
+    branchCount,
+    BranchCountType,
+} from "../aspect/git/branchCount";
 import {
     gitActiveCommitters,
     GitRecency,
