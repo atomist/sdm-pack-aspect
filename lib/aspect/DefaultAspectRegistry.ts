@@ -59,7 +59,7 @@ export class DefaultAspectRegistry implements AspectRegistry {
     }
 
     public combinationTagsFor(fps: FP[]): string[] {
-        return _.uniq(this.combinationTaggers.map(tagger => tagger(fps)));
+        return _.uniq(this.combinationTaggers.map(tagger => tagger(fps))).filter(t => !!t);
     }
 
     get aspects(): ManagedAspect[] {

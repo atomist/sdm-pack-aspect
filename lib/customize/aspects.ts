@@ -144,11 +144,13 @@ export const Taggers: Tagger[] = [
 ];
 
 export const CombinationTaggers: CombinationTagger[] = [
-    fps => _.uniq(fps.map(f => f.type)).length  + "",
+    // fps => _.uniq(fps.map(f => f.type)).length  + "",
     fps => {
+        // Find recent repos
         const grt = fps.find(fp => fp.type === GitRecencyType);
         const acc = fps.find(fp => fp.type === GitActivesType);
         if (!!grt && !!acc) {
+            // TODO can reduce days with non stale data
             const days = daysSince(new Date(grt.data));
             if (days < 10 && acc.data.count > 2) {
                 return "hot";
