@@ -50,6 +50,43 @@ function levelDataListItem(item: PerLevelDataItem): React.ReactElement {
     </li>;
 }
 
+function pleaseExclude(tagName: string) {
+    return "!" + tagName;
+}
+
+function isExclusion(tagName: string) {
+    return tagName.startsWith("!");
+}
+
+function excludedTagName(tagName: string) {
+    return tagName.replace("!", "");
+}
+
+function constructTagGroup(selectedTags: string[], t: { name: string, count: number }) {
+    const required = selectedTags.includes(t.name);
+    const excluded = selectedTags.includes(pleaseExclude(t.name));
+
+    const newTagsWhenTheyClickRequire =
+        required ? selectedTags.filter(tt => tt !== t.name).join(",") :
+            selectedTags.concat(t.name).join(",");
+    const newTagsWhenTheyClickExclude =
+        excluded ? selectedTags.filter(tt => tt !== pleaseExclude(t.name)).join(",") :
+            selectedTags.concat(pleaseExclude(t.name)).join(",");
+    return <div className={"tagGroup " + (required ? "requiredTag " : "") + (excluded ? "excludedTag" : "")}>
+        <span className="tagDescription">{t.name} ({t.count})</span>
+        <form method="GET" action="/query">
+            <input type="hidden" name="explore" value="true" />
+            <input type="hidden" name="tags" value={newTagsWhenTheyClickRequire} />
+            <input className="requireButton" type="submit" value="Yes please"></input>
+        </form>
+        <form method="GET" action="/query">
+            <input type="hidden" name="explore" value="true" />
+            <input type="hidden" name="tags" value={newTagsWhenTheyClickExclude} />
+            <input className="excludeButton" type="submit" value="Please no" />
+        </form>
+    </div>;
+}
+
 export function SunburstPage(props: SunburstPageProps): React.ReactElement {
 
     const perLevelDataItems = !props.tree || !props.tree.circles ? []
@@ -67,57 +104,36 @@ export function SunburstPage(props: SunburstPageProps): React.ReactElement {
     const thingies: string | React.ReactElement = !props.tree ? "Hover over a slice to see its details" :
         <ul>{perLevelDataItems.map(levelDataListItem)}</ul>;
 
-    const tags: Array<{ name: string, count: number }> = _.sortBy(
-        (props.tree as any).tags || [],
-        t => -t.count);
+    const tags: Array<{ name: string, count: number }> = [];
+    (_.get(props, "tree.tags", []) as any[]).sort(t => -t.count).forEach(t => tags.push(t));
+    props.selectedTags.
+        filter(isExclusion).
+        map(tn => { tags.push({ name: excludedTagName(tn), count: 0 }); });
 
-    const selectedTagButtons = props.selectedTags
-        .map(t => {
-            return <form method="GET" action="/query">
-                <input type="hidden" name="explore" value="true"/>
-                <input type="hidden" name="tags" value={props.selectedTags.filter(x => x !== t).join(",")}/>
-                <input type="submit" name={t} value={"-" + t}/>
-            </form>;
-        });
-
-    const addTagButtons = tags
-        .filter(t => !props.selectedTags.includes(t.name))
-        .map(t => {
-            return <span>
-                <form method="GET" action="/query">
-                    <input type="hidden" name="explore" value="true"/>
-                    <input type="hidden" name="tags" value={props.selectedTags.concat(t.name).join(",")}/>
-                    <input type="submit" value={`${t.name} (${t.count})`}/>
-                </form>
-                <form method="GET" action="/query">
-                    <input type="hidden" name="explore" value="true"/>
-                    <input type="hidden" name="tags" value={props.selectedTags.concat("!" + t.name).join(",")}/>
-                    <input type="submit" value={`NOT ${t.name}`}/>
-                </form>
-            </span>;
-        });
+    const tagButtons = tags
+        .map(t => constructTagGroup(props.selectedTags, t));
 
     const idealDisplay = props.currentIdeal ? displayCurrentIdeal(props.currentIdeal) : "";
     return <div className="sunburst">
         <h1>{props.fingerprintDisplayName}</h1>
 
-        <h2>{props.selectedTags.map(t => t.replace("!", "not ")).join(" and ") || "All"} - {(props.tree as any).matchingRepoCount} of {(props.tree as any).repoCount} repos</h2>
+        <h2>{props.selectedTags.
+            map(t => t.replace("!", "not ")).
+            join(" and ") || "All"} - {(props.tree as any).matchingRepoCount} of {(props.tree as any).repoCount} repos</h2>
 
         <form method="GET" action="/query">
-            <input type="hidden" name="explore" value="true"/>
-            <input type="submit" value="CLEAR"/>
+            <input type="hidden" name="explore" value="true" />
+            <input type="submit" value="CLEAR" />
         </form>
 
-        {selectedTagButtons}
-
-        {addTagButtons}
+        {tagButtons}
 
         {idealDisplay}
         <div className="wrapper">
             <div id="putSvgHere" className="sunburstSvg"></div>
             <div id="dataAboutWhatYouClicked" className="sunburstData">{thingies}</div>
         </div>
-        <div dangerouslySetInnerHTML={{ __html: d3ScriptCall }}/>
+        <div dangerouslySetInnerHTML={{ __html: d3ScriptCall }} />
         <a href={"." + props.dataUrl} type="application/json">Raw data</a>
     </div>;
 
