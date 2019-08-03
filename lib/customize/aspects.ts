@@ -46,8 +46,10 @@ import {
     BranchCountType,
 } from "../aspect/git/branchCount";
 import {
-    gitActiveCommitters, GitActivesType,
-    GitRecency, GitRecencyType,
+    gitActiveCommitters,
+    GitActivesType,
+    GitRecency,
+    GitRecencyType,
 } from "../aspect/git/gitActivity";
 import { idealsFromNpm } from "../aspect/node/idealFromNpm";
 import { TsLintPropertyAspect } from "../aspect/node/TsLintAspect";
