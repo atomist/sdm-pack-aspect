@@ -153,5 +153,5 @@ export const CombinationTaggers: CombinationTagger[] = [
             }
         }
         return undefined;
-    }
+    },
 ];
