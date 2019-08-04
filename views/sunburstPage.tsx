@@ -50,41 +50,98 @@ function levelDataListItem(item: PerLevelDataItem): React.ReactElement {
     </li>;
 }
 
-function pleaseExclude(tagName: string) {
-    return "!" + tagName;
+function displayTagGroup(tagGroup: TagGroup): React.ReactElement {
+    return <div>
+        {tagGroup.allTagNames().map(n => displayTagButtons(tagGroup, n))}
+    </div>;
 }
 
-function isExclusion(tagName: string) {
-    return tagName.startsWith("!");
-}
-
-function excludedTagName(tagName: string) {
-    return tagName.replace("!", "");
-}
-
-function constructTagGroup(selectedTags: string[], t: { name: string, count: number }) {
-    const required = selectedTags.includes(t.name);
-    const excluded = selectedTags.includes(pleaseExclude(t.name));
-
-    const newTagsWhenTheyClickRequire =
-        required ? selectedTags.filter(tt => tt !== t.name).join(",") :
-            selectedTags.concat(t.name).join(",");
-    const newTagsWhenTheyClickExclude =
-        excluded ? selectedTags.filter(tt => tt !== pleaseExclude(t.name)).join(",") :
-            selectedTags.concat(pleaseExclude(t.name)).join(",");
-    return <div className={"tagGroup " + (required ? "requiredTag " : "") + (excluded ? "excludedTag" : "")}>
-        <span className="tagDescription">{t.name} ({t.count})</span>
+function displayTagButtons(tagGroup: TagGroup, tagName: string): React.ReactElement {
+    return <div className={"tagGroup " +
+        (tagGroup.isRequired(tagName) ? "requiredTag " : "") +
+        (tagGroup.isExcluded(tagName) ? "excludedTag" : "")}>
+        <span className="tagDescription">{tagName}</span>
         <form method="GET" action="/query">
             <input type="hidden" name="explore" value="true" />
-            <input type="hidden" name="tags" value={newTagsWhenTheyClickRequire} />
-            <input className="requireButton" type="submit" value="Yes please"></input>
+            <input type="hidden" name="tags" value={tagGroup.tagSelectionForRequire(tagName).join(",")} />
+            <input className="requireButton" type="submit" value="Yes please" title={tagGroup.describeRequire(tagName)}></input>
         </form>
         <form method="GET" action="/query">
             <input type="hidden" name="explore" value="true" />
-            <input type="hidden" name="tags" value={newTagsWhenTheyClickExclude} />
-            <input className="excludeButton" type="submit" value="Please no" />
+            <input type="hidden" name="tags" value={tagGroup.tagSelectionForExclude(tagName).join(",")} />
+            <input className="excludeButton" type="submit" value="Please no" alt="alt text" title={tagGroup.describeExclude(tagName)} />
         </form>
     </div>;
+}
+
+export class TagGroup {
+
+    private readonly tagsInData: Array<{ name: string, count: number }>;
+    constructor(private readonly tagSelection: string[],
+                private readonly treeWithTags?: { tags?: Array<{ name: string, count: number }> }) {
+        this.tagsInData = treeWithTags && treeWithTags.tags ? treeWithTags.tags : [];
+    }
+
+    public allTagNames(): string[] {
+        const tagsFromData = this.tagsInData.map(t => t.name);
+        const tagsFromSelection = this.tagSelection.map(this.dontFeelExcluded);
+        return _.uniq([...tagsFromSelection, ...tagsFromData]);
+    }
+
+    public isRequired(tagName: string): boolean {
+        return this.tagSelection.includes(tagName);
+    }
+
+    public isExcluded(tagName: string): boolean {
+        return this.tagSelection.includes(this.pleaseExclude(tagName));
+    }
+
+    public describeExclude(tagName: string): string {
+        if (this.isRequired(tagName)) {
+            return `Switch to excluding ${tagName} projects`;
+        }
+        if (this.isExcluded(tagName)) {
+            return `Currently excluding ${tagName} projects`;
+        }
+        return `Exclude ${tagName} projects`;
+    }
+
+    public describeRequire(tagName: string): string {
+        if (this.isRequired(tagName)) {
+            return `Currently showing only ${tagName} projects`;
+        }
+        const dataTag = this.tagsInData.find(t => t.name === tagName);
+        if (dataTag) {
+            return `Show only ${tagName} projects (${dataTag.count})`;
+        }
+        return `Show only ${tagName} projects`;
+    }
+    public tagSelectionForRequire(tagName: string): string[] {
+        if (this.isRequired(tagName)) {
+            // toggle
+            return this.tagSelection.filter(tn => tn !== tagName);
+        }
+        const existingTagsMinusAnyExclusionOfThisTag = this.tagSelection.filter(tn => tn !== this.pleaseExclude(tagName));
+        return [...existingTagsMinusAnyExclusionOfThisTag, tagName];
+    }
+
+    public tagSelectionForExclude(tagName: string): string[] {
+        if (this.isExcluded(tagName)) {
+            // toggle
+            return this.tagSelection.filter(tn => tn !== this.pleaseExclude(tagName));
+        }
+        const existingTagsMinusAnyRequireOfThisTag = this.tagSelection.filter(tn => tn !== tagName);
+        return [...existingTagsMinusAnyRequireOfThisTag, this.pleaseExclude(tagName)];
+
+    }
+
+    private pleaseExclude(tagName: string): string {
+        return "!" + tagName;
+    }
+
+    private dontFeelExcluded(tagName: string): string {
+        return tagName.replace("!", "");
+    }
 }
 
 export function SunburstPage(props: SunburstPageProps): React.ReactElement {
@@ -104,14 +161,9 @@ export function SunburstPage(props: SunburstPageProps): React.ReactElement {
     const thingies: string | React.ReactElement = !props.tree ? "Hover over a slice to see its details" :
         <ul>{perLevelDataItems.map(levelDataListItem)}</ul>;
 
-    const tags: Array<{ name: string, count: number }> = [];
-    (_.get(props, "tree.tags", []) as any[]).sort(t => -t.count).forEach(t => tags.push(t));
-    props.selectedTags.
-        filter(isExclusion).
-        map(tn => { tags.push({ name: excludedTagName(tn), count: 0 }); });
+    const tagGroup = new TagGroup(props.selectedTags, props.tree);
 
-    const tagButtons = tags
-        .map(t => constructTagGroup(props.selectedTags, t));
+    const tagButtons = displayTagGroup(tagGroup);
 
     const idealDisplay = props.currentIdeal ? displayCurrentIdeal(props.currentIdeal) : "";
     return <div className="sunburst">
