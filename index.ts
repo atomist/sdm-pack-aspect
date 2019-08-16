@@ -28,6 +28,7 @@ import {
 } from "@atomist/automation-client/lib/configuration";
 import {
     CachingProjectLoader,
+    CommandListenerInvocation,
     execPromise,
     GitHubLazyProjectLoader,
     GoalSigningScope,
@@ -115,6 +116,13 @@ export const configuration: Configuration = configure(async sdm => {
         ...optionalAspects,
     ];
     const handlers = [];
+
+    sdm.addCommand({
+        name: "analyzeRepositories", intent: ["analyze"], description: "dig around in repositories and store what we find",
+        listener: async (d: CommandListenerInvocation) => {
+            d.addressChannels("I AM INVOKED");
+        },
+    });
 
     // TODO cd merge into one call
     registerCategories(TypeScriptVersion, "Node.js");
