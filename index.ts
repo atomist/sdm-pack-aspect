@@ -50,6 +50,7 @@ import {
 } from "@atomist/sdm-pack-fingerprints";
 import * as _ from "lodash";
 import { ClientFactory } from "./lib/analysis/offline/persist/pgUtils";
+import { AnalyzeCommandRegistration } from "./lib/analysis/offline/spider/analyzeCommand";
 import {
     CiAspect,
     JavaBuild,
@@ -117,12 +118,7 @@ export const configuration: Configuration = configure(async sdm => {
     ];
     const handlers = [];
 
-    sdm.addCommand({
-        name: "analyzeRepositories", intent: ["analyze"], description: "dig around in repositories and store what we find",
-        listener: async (d: CommandListenerInvocation) => {
-            d.addressChannels("I AM INVOKED");
-        },
-    });
+    sdm.addCommand(AnalyzeCommandRegistration);
 
     // TODO cd merge into one call
     registerCategories(TypeScriptVersion, "Node.js");
