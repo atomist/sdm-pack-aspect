@@ -49,7 +49,7 @@ import {
 } from "@atomist/sdm-pack-fingerprints";
 import * as _ from "lodash";
 import { ClientFactory } from "./lib/analysis/offline/persist/pgUtils";
-import { AnalyzeGitHubCommandRegistration } from "./lib/analysis/offline/spider/analyzeCommand";
+import { AnalyzeGitHubCommandRegistration, AnalyzeLocalCommandRegistration } from "./lib/analysis/offline/spider/analyzeCommand";
 import {
     CiAspect,
     JavaBuild,
@@ -118,6 +118,7 @@ export const configuration: Configuration = configure(async sdm => {
     const handlers = [];
 
     sdm.addCommand(AnalyzeGitHubCommandRegistration);
+    sdm.addCommand(AnalyzeLocalCommandRegistration);
 
     // TODO cd merge into one call
     registerCategories(TypeScriptVersion, "Node.js");

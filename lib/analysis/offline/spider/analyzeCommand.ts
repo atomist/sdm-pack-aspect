@@ -41,7 +41,7 @@ const AnalyzeCommandParameterDefinitions: ParametersObject<AnalyzeCommandParamet
 
 export interface AnalyzeGitHubCommandParameters extends AnalyzeCommandParameters {
     update: boolean;
-    source: "GitHub" | "local";
+    source: "GitHub";
     owner?: string;
     query?: string;
     search?: string;
@@ -75,6 +75,27 @@ const AnalyzeGitHubCommandParametersDefinition: ParametersObject<AnalyzeGitHubCo
         required: false,
     },
 };
+export interface AnalyzeLocalCommandParameters extends AnalyzeCommandParameters {
+    update: boolean;
+    source: "local";
+    localDirectory: string;
+}
+
+const AnalyzeLocalCommandParametersDefinition: ParametersObject<AnalyzeLocalCommandParameters> = {
+    ...AnalyzeCommandParameterDefinitions,
+    source: {
+        description: "find repositories on the local filesystem",
+        defaultValue: "local",
+        displayable: false,
+        required: false,
+        pattern: /local/,
+        validInput: "'local'",
+    },
+    localDirectory: {
+        description: "absolute path to find repositories in",
+        required: true,
+    },
+};
 
 const analyzeFromGitHub =
     async (d: CommandListenerInvocation<AnalyzeGitHubCommandParameters>) => {
@@ -98,4 +119,23 @@ export const AnalyzeGitHubCommandRegistration: CommandHandlerRegistration<Analyz
     description: "choose repositories to analyze, by owner or query",
     parameters: AnalyzeGitHubCommandParametersDefinition,
     listener: analyzeFromGitHub,
+};
+
+const analyzeFromLocal =
+    async (d: CommandListenerInvocation<AnalyzeLocalCommandParameters>) => {
+        const spiderAppOptions: SpiderAppOptions = d.parameters;
+        d.addressChannels("I AM INVOKED with " + JSON.stringify(spiderAppOptions));
+
+        const result = await spider(spiderAppOptions);
+        d.addressChannels(`Analysis result: `
+            + JSON.stringify(result, undefined, 2));
+        return { code: 0 };
+    };
+
+export const AnalyzeLocalCommandRegistration: CommandHandlerRegistration<AnalyzeLocalCommandParameters> = {
+    name: "analyzeRepositoriesFromLocalFilesystem",
+    intent: ["analyze local repositories"],
+    description: "choose repositories to analyze, by parent directory",
+    parameters: AnalyzeLocalCommandParametersDefinition,
+    listener: analyzeFromLocal,
 };
