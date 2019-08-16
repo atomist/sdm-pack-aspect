@@ -67,8 +67,8 @@ const AnalyzeGitHubCommandParametersDefinition: ParametersObject<AnalyzeGitHubCo
         required: true,
     },
     search: {
-        description: "To narrow which repositories, provide a substring to look for in the repo name",
-        required: true,
+        description: "To narrow which repositories within an owner, provide a substring to look for in the repo name",
+        required: false,
     },
     cloneUnder: {
         description: "A local directory to clone repositories in",
