@@ -21,7 +21,7 @@ import {
 } from "@atomist/sdm";
 import { spider, SpiderAppOptions } from "./spiderCall";
 
-export interface AnalyzeCommandParameters {
+export interface AnalyzeGitHubCommandParameters {
     workspaceId: string;
     update: boolean;
     source: "GitHub" | "local";
@@ -31,7 +31,7 @@ export interface AnalyzeCommandParameters {
     cloneUnder?: string;
 }
 
-const AnalyzeCommandParametersDefinition: ParametersObject<AnalyzeCommandParameters> = {
+const AnalyzeGitHubCommandParametersDefinition: ParametersObject<AnalyzeGitHubCommandParameters> = {
     workspaceId: {
         description: "Atomist workspace ID to save analysis in. Defaults to 'local'",
         defaultValue: "local",
@@ -69,7 +69,7 @@ const AnalyzeCommandParametersDefinition: ParametersObject<AnalyzeCommandParamet
 };
 
 const analyzeFromGitHub =
-    async (d: CommandListenerInvocation<AnalyzeCommandParameters>) => {
+    async (d: CommandListenerInvocation<AnalyzeGitHubCommandParameters>) => {
         const { owner, query } = d.parameters;
         if (!owner && !query) {
             d.addressChannels("Please provide either 'owner' or 'query'");
@@ -84,10 +84,10 @@ const analyzeFromGitHub =
         return { code: 0 };
     };
 
-export const AnalyzeGitHubCommandRegistration: CommandHandlerRegistration<AnalyzeCommandParameters> = {
+export const AnalyzeGitHubCommandRegistration: CommandHandlerRegistration<AnalyzeGitHubCommandParameters> = {
     name: "analyzeRepositoriesFromGitHub",
     intent: ["analyze github repositories"],
     description: "choose repositories to analyze, by owner or query",
-    parameters: AnalyzeCommandParametersDefinition,
+    parameters: AnalyzeGitHubCommandParametersDefinition,
     listener: analyzeFromGitHub,
 };
