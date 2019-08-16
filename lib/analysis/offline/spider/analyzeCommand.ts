@@ -19,7 +19,7 @@ import {
     CommandListenerInvocation,
     ParametersObject,
 } from "@atomist/sdm";
-import { SpiderAppOptions } from "../../../script/spider";
+import { spider, SpiderAppOptions } from "../../../script/spider";
 
 export interface AnalyzeCommandParameters {
     workspaceId: string;
@@ -77,6 +77,10 @@ const analyzeFromGitHub =
         }
         const spiderAppOptions: SpiderAppOptions = d.parameters;
         d.addressChannels("I AM INVOKED with " + JSON.stringify(spiderAppOptions));
+
+        const result = await spider(spiderAppOptions);
+        d.addressChannels(`Analysis result: `
+            + JSON.stringify(result, undefined, 2));
         return { code: 0 };
     };
 
