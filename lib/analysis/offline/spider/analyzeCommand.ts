@@ -21,17 +21,12 @@ import {
 } from "@atomist/sdm";
 import { spider, SpiderAppOptions } from "./spiderCall";
 
-export interface AnalyzeGitHubCommandParameters {
+interface AnalyzeCommandParameters {
     workspaceId: string;
     update: boolean;
-    source: "GitHub" | "local";
-    owner?: string;
-    query?: string;
-    search?: string;
-    cloneUnder?: string;
 }
 
-const AnalyzeGitHubCommandParametersDefinition: ParametersObject<AnalyzeGitHubCommandParameters> = {
+const AnalyzeCommandParameterDefinitions: ParametersObject<AnalyzeCommandParameters> = {
     workspaceId: {
         description: "Atomist workspace ID to save analysis in. Defaults to 'local'",
         defaultValue: "local",
@@ -42,6 +37,19 @@ const AnalyzeGitHubCommandParametersDefinition: ParametersObject<AnalyzeGitHubCo
         description: "Overwrite existing analyses? (default is no)",
         required: false,
     },
+};
+
+export interface AnalyzeGitHubCommandParameters extends AnalyzeCommandParameters {
+    update: boolean;
+    source: "GitHub" | "local";
+    owner?: string;
+    query?: string;
+    search?: string;
+    cloneUnder?: string;
+}
+
+const AnalyzeGitHubCommandParametersDefinition: ParametersObject<AnalyzeGitHubCommandParameters> = {
+    ...AnalyzeCommandParameterDefinitions,
     source: {
         description: "find repositories on GitHub. Please specify at least 'owner' or 'query'",
         defaultValue: "GitHub",
