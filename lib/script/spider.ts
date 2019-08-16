@@ -31,7 +31,10 @@ import { loadUserConfiguration } from "@atomist/automation-client/lib/configurat
 import * as _ from "lodash";
 import * as path from "path";
 import * as yargs from "yargs";
-import { SpiderAppOptions, spider } from "../analysis/offline/spider/spiderCall";
+import {
+    spider,
+    SpiderAppOptions,
+} from "../analysis/offline/spider/spiderCall";
 // Ensure we see console logging, and send info to the console
 configureLogging(PlainLogging);
 

@@ -19,14 +19,23 @@ import { loadUserConfiguration } from "@atomist/automation-client/lib/configurat
 import { StableDirectoryManager } from "@atomist/automation-client/lib/spi/clone/StableDirectoryManager";
 import { TmpDirectoryManager } from "@atomist/automation-client/lib/spi/clone/tmpDirectoryManager";
 import _ = require("lodash");
-import { Aspects, virtualProjectFinder } from "../../../customize/aspects";
-import { createAnalyzer, sdmConfigClientFactory } from "../../../machine/machine";
+import {
+    Aspects,
+    virtualProjectFinder,
+} from "../../../customize/aspects";
+import {
+    createAnalyzer,
+    sdmConfigClientFactory,
+} from "../../../machine/machine";
 import { PostgresProjectAnalysisResultStore } from "../persist/PostgresProjectAnalysisResultStore";
 import { GitCommandGitProjectCloner } from "./github/GitCommandGitProjectCloner";
 import { GitHubSpider } from "./github/GitHubSpider";
 import { LocalSpider } from "./local/LocalSpider";
 import { ScmSearchCriteria } from "./ScmSearchCriteria";
-import { Spider, SpiderResult } from "./Spider";
+import {
+    Spider,
+    SpiderResult,
+} from "./Spider";
 
 export interface SpiderAppOptions {
 

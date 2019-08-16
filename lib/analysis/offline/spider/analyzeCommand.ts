@@ -19,7 +19,10 @@ import {
     CommandListenerInvocation,
     ParametersObject,
 } from "@atomist/sdm";
-import { spider, SpiderAppOptions } from "./spiderCall";
+import {
+    spider,
+    SpiderAppOptions,
+} from "./spiderCall";
 
 export interface AnalyzeCommandParameters {
     workspaceId: string;
