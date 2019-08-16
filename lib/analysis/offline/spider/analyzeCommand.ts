@@ -19,32 +19,71 @@ import {
     CommandListenerInvocation,
     ParametersObject,
 } from "@atomist/sdm";
+import { SpiderAppOptions } from "../../../script/spider";
 
 export interface AnalyzeCommandParameters {
+    workspaceId: string;
+    update: boolean;
     source: "GitHub" | "local";
+    owner?: string;
+    query?: string;
+    search?: string;
+    cloneUnder?: string;
 }
 
 const AnalyzeCommandParametersDefinition: ParametersObject<AnalyzeCommandParameters> = {
+    workspaceId: {
+        description: "Atomist workspace ID to save analysis in. Defaults to 'local'",
+        defaultValue: "local",
+        required: false,
+    },
+    update: {
+        type: "boolean",
+        description: "Overwrite existing analyses? (default is no)",
+        required: false,
+    },
     source: {
-        description: "find repositories on GitHub or local filesystem",
+        description: "find repositories on GitHub. Please specify at least 'owner' or 'query'",
         defaultValue: "GitHub",
-        type: {
-            kind: "single",
-            options: [
-                { description: "find repositories on GitHub by owner or query", value: "GitHub" },
-                { description: "find repositories on the local filesystem", value: "local" }],
-        },
-        pattern: /GitHub|local/,
-        validInput: "'GitHub' or 'local'",
+        displayable: false,
+        required: false,
+        pattern: /GitHub/,
+        validInput: "'GitHub'",
+    },
+    owner: {
+        description: "GitHub owner of repositories to analyze",
+        required: true,
+    },
+    query: {
+        description: "A GitHub search query to choose repositories",
+        required: true,
+    },
+    search: {
+        description: "To narrow which repositories, provide a substring to look for in the repo name",
+        required: true,
+    },
+    cloneUnder: {
+        description: "A local directory to clone repositories in",
+        required: false,
     },
 };
 
-export const AnalyzeCommandRegistration: CommandHandlerRegistration<AnalyzeCommandParameters> = {
-    name: "analyzeRepositories",
-    intent: ["analyze"],
-    description: "dig around in repositories and store what we find",
+const analyzeFromGitHub =
+    async (d: CommandListenerInvocation<AnalyzeCommandParameters>) => {
+        const { owner, query } = d.parameters;
+        if (!owner && !query) {
+            d.addressChannels("Please provide either 'owner' or 'query'");
+            return { code: 1 };
+        }
+        const spiderAppOptions: SpiderAppOptions = d.parameters;
+        d.addressChannels("I AM INVOKED with " + JSON.stringify(spiderAppOptions));
+        return { code: 0 };
+    };
+
+export const AnalyzeGitHubCommandRegistration: CommandHandlerRegistration<AnalyzeCommandParameters> = {
+    name: "analyzeRepositoriesFromGitHub",
+    intent: ["analyze github repositories"],
+    description: "choose repositories to analyze, by owner or query",
     parameters: AnalyzeCommandParametersDefinition,
-    listener: async (d: CommandListenerInvocation<AnalyzeCommandParameters>) => {
-        d.addressChannels("I AM INVOKED with " + d.parameters.source);
-    },
+    listener: analyzeFromGitHub,
 };

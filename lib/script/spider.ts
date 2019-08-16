@@ -57,7 +57,7 @@ process.on('uncaughtException', function (err) {
     process.exit(1);
 });
 
-interface SpiderAppOptions {
+export interface SpiderAppOptions {
 
     source: "GitHub" | "local"
 
@@ -157,32 +157,32 @@ yargs
         description: "GitHub user or organization",
     })
     .option("search", {
-            required: false,
-            alias: 's',
-            requiresArg: true,
-            description: "Search within repository names"
-        }
+        required: false,
+        alias: 's',
+        requiresArg: true,
+        description: "Search within repository names"
+    }
     )
     .option("query", {
-            required: false,
-            alias: 'q',
-            requiresArg: true,
-            description: "GitHub query"
-        }
+        required: false,
+        alias: 'q',
+        requiresArg: true,
+        description: "GitHub query"
+    }
     )
     .option("cloneUnder", {
-            required: false,
-            requiresArg: true,
-            alias: 'c',
-            description: "Full local directory path to clone under. Will keep clones around"
-        }
+        required: false,
+        requiresArg: true,
+        alias: 'c',
+        description: "Full local directory path to clone under. Will keep clones around"
+    }
     )
     .option("workspace", {
-            required: false,
-            requiresArg: true,
-            alias: 'w',
-            description: "Name of Atomist workspace to store results under"
-        }
+        required: false,
+        requiresArg: true,
+        alias: 'w',
+        description: "Name of Atomist workspace to store results under"
+    }
     )
     .option("localDirectory", {
         required: false,
