@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
+import { logger } from "@atomist/automation-client";
 import {
     CommandHandlerRegistration,
     CommandListenerInvocation,
     ParametersObject,
 } from "@atomist/sdm";
 import { spider, SpiderAppOptions } from "./spiderCall";
-import { logger } from "@atomist/automation-client";
 
 interface AnalyzeCommandParameters {
     workspaceId: string;
