@@ -99,7 +99,7 @@ export async function spider(params: SpiderAppOptions): Promise<SpiderResult> {
                     `Recomputing analysis for ${existing.analysis.id.url}:${existing.analysis.id.sha}`);
                 return keep;
             },
-            // Controls promise usage inNode
+            // Controls promise usage in Node
             poolSize: 40,
             workspaceId,
         });

@@ -20,6 +20,7 @@ import {
     ParametersObject,
 } from "@atomist/sdm";
 import { spider, SpiderAppOptions } from "./spiderCall";
+import { logger } from "@atomist/automation-client";
 
 interface AnalyzeCommandParameters {
     workspaceId: string;
@@ -101,14 +102,14 @@ const analyzeFromGitHub =
     async (d: CommandListenerInvocation<AnalyzeGitHubCommandParameters>) => {
         const { owner, query } = d.parameters;
         if (!owner && !query) {
-            d.addressChannels("Please provide either 'owner' or 'query'");
+            await d.addressChannels("Please provide either 'owner' or 'query'");
             return { code: 1 };
         }
         const spiderAppOptions: SpiderAppOptions = d.parameters;
-        d.addressChannels("I AM INVOKED with " + JSON.stringify(spiderAppOptions));
+        logger.info("analyze github invoked with " + JSON.stringify(spiderAppOptions));
 
         const result = await spider(spiderAppOptions);
-        d.addressChannels(`Analysis result: `
+        await d.addressChannels(`Analysis result: `
             + JSON.stringify(result, undefined, 2));
         return { code: 0 };
     };
@@ -124,10 +125,10 @@ export const AnalyzeGitHubCommandRegistration: CommandHandlerRegistration<Analyz
 const analyzeFromLocal =
     async (d: CommandListenerInvocation<AnalyzeLocalCommandParameters>) => {
         const spiderAppOptions: SpiderAppOptions = d.parameters;
-        d.addressChannels("I AM INVOKED with " + JSON.stringify(spiderAppOptions));
+        logger.info("analyze local invoked with " + JSON.stringify(spiderAppOptions));
 
         const result = await spider(spiderAppOptions);
-        d.addressChannels(`Analysis result: `
+        await d.addressChannels(`Analysis result: `
             + JSON.stringify(result, undefined, 2));
         return { code: 0 };
     };
