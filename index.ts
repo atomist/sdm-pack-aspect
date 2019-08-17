@@ -49,7 +49,10 @@ import {
 } from "@atomist/sdm-pack-fingerprints";
 import * as _ from "lodash";
 import { ClientFactory } from "./lib/analysis/offline/persist/pgUtils";
-import { AnalyzeGitHubCommandRegistration, AnalyzeLocalCommandRegistration } from "./lib/analysis/offline/spider/analyzeCommand";
+import {
+    AnalyzeGitHubCommandRegistration,
+    AnalyzeLocalCommandRegistration,
+} from "./lib/analysis/offline/spider/analyzeCommand";
 import {
     CiAspect,
     JavaBuild,
