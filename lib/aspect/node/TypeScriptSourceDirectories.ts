@@ -4,9 +4,7 @@ import { FP, sha256 } from "@atomist/sdm-pack-fingerprints";
 import * as _ from "lodash";
 import * as path from "path";
 
-type TypeScriptSourceDirectoriesFingerprintData = Array<{
-    dir: string, tsFileCount: number,
-}>;
+interface TypeScriptSourceDirectoriesFingerprintData { directories: string[]; }
 
 const TypeScriptSourceDirectoriesAspectName = "TypeScriptSourceDirectories";
 
@@ -30,8 +28,17 @@ export const extractTypeScriptSourceDirectories:
         }
         const filesByPath = _.groupBy(allDirs);
         const counts = Object.keys(filesByPath).map(dir => {
-            return { dir, tsFileCount: filesByPath[dir].length };
-        }).sort(c => 0 - c.tsFileCount);
+            return { name: dir, count: filesByPath[dir].length };
+        }).sort(byCountAndThenName);
         console.log("JESS " + JSON.stringify(counts));
-        return [toTypeScriptSourceDirectoriesFingerprint(counts)];
+        return [toTypeScriptSourceDirectoriesFingerprint({ directories: counts.map(c => c.name) })];
     };
+
+function byCountAndThenName<T extends { name: string, count: number }>(a: T, b: T): number {
+    if (a.count > b.count) { return -1; }
+    if (b.count > a.count) { return 1; }
+
+    if (a.name > b.name) { return 1; }
+    if (b.name > a.name) { return -1; }
+    return 0;
+}

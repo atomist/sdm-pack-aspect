@@ -16,7 +16,7 @@ describe("Figure out where people keep their TS source", () => {
         const extractedFingerprints = await extractTypeScriptSourceDirectories(p);
         assert.strictEqual(extractedFingerprints.length, 1);
         const fp = extractedFingerprints[0];
-        assert.deepEqual(fp.data, [{ dir: ".", tsFileCount: 1 }]);
+        assert.deepEqual(fp.data, { directories: ["."] });
     });
     it("puts directories with more TS source first", async () => {
         const p = InMemoryProject.of({ path: "index.ts", content: "// some TS" },
@@ -27,7 +27,20 @@ describe("Figure out where people keep their TS source", () => {
         const extractedFingerprints = await extractTypeScriptSourceDirectories(p);
         assert.strictEqual(extractedFingerprints.length, 1);
         const fp = extractedFingerprints[0];
-        assert.strictEqual(fp.data.length, 2);
-        assert.deepEqual(fp.data[0], { dir: "src", tsFileCount: 2 });
+        assert.deepEqual(fp.data, { directories: ["src", "."] });
+    });
+
+    it("ties are alphabetical", async () => {
+        const p = InMemoryProject.of({ path: "index.ts", content: "// some TS" },
+            { path: "src/whatever.ts", content: "// some TS" },
+            { path: "src/whatever2.ts", content: "// some TS" },
+            { path: "lib/more.ts", content: "// some TS" },
+            { path: "lib/more2.ts", content: "// some TS" },
+        );
+
+        const extractedFingerprints = await extractTypeScriptSourceDirectories(p);
+        assert.strictEqual(extractedFingerprints.length, 1);
+        const fp = extractedFingerprints[0];
+        assert.deepEqual(fp.data, { directories: ["lib", "src", "."] });
     });
 });
