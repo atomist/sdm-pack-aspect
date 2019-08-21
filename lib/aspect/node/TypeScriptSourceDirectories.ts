@@ -1,6 +1,6 @@
 import { Project } from "@atomist/automation-client";
 import { gatherFromFiles } from "@atomist/automation-client/lib/project/util/projectUtils";
-import { FP, sha256, Aspect } from "@atomist/sdm-pack-fingerprints";
+import { Aspect, FP, sha256 } from "@atomist/sdm-pack-fingerprints";
 import * as _ from "lodash";
 import * as path from "path";
 
@@ -42,6 +42,10 @@ function byCountAndThenName<T extends { name: string, count: number }>(a: T, b: 
     return 0;
 }
 
-export const TypeScriptSourceDirectoriesAspect: Aspect<TypeScriptSourceDirectoriesFingerprintData> {
-
-}
+export const TypeScriptSourceDirectoriesAspect: Aspect<TypeScriptSourceDirectoriesFingerprintData> = {
+    displayName: "TS Source Directories",
+    name: TypeScriptSourceDirectoriesAspectName,
+    extract: extractTypeScriptSourceDirectories,
+    toDisplayableFingerprintName: () => "TypeScript Source Directories",
+    toDisplayableFingerprint: fp => fp.data.directories.join(", "),
+};

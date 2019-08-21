@@ -51,6 +51,7 @@ import { DirectMavenDependencies } from "../aspect/spring/directMavenDependencie
 import { SpringBootStarter } from "../aspect/spring/springBootStarter";
 import { SpringBootVersion } from "../aspect/spring/springBootVersion";
 import { TravisScriptsAspect } from "../aspect/travis/travisAspects";
+import { TypeScriptSourceDirectoriesAspect } from "../aspect/node/TypeScriptSourceDirectories";
 
 /**
  * This will identify directories containing any of the following files as virtual projects
@@ -75,6 +76,7 @@ export function aspects(): Aspect[] {
         LicensePresence,
         SpringBootStarter,
         TypeScriptVersion,
+        TypeScriptSourceDirectoriesAspect,
         new CodeOwnership(),
         NpmDependencies,
         CodeOfConduct,
