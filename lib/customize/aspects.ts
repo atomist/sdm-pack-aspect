@@ -43,6 +43,7 @@ import { K8sSpecs } from "../aspect/k8s/spec";
 import { CsProjectTargetFrameworks } from "../aspect/microsoft/CsProjectTargetFrameworks";
 import { idealsFromNpm } from "../aspect/node/idealFromNpm";
 import { NpmDependencies } from "../aspect/node/npmDependencies";
+import { TypeScriptSourceDirectoriesAspect } from "../aspect/node/TypeScriptSourceDirectories";
 import { TypeScriptVersion } from "../aspect/node/TypeScriptVersion";
 import { PythonDependencies } from "../aspect/python/pythonDependencies";
 import { ExposedSecrets } from "../aspect/secret/exposedSecrets";
@@ -50,7 +51,6 @@ import { DirectMavenDependencies } from "../aspect/spring/directMavenDependencie
 import { SpringBootStarter } from "../aspect/spring/springBootStarter";
 import { SpringBootVersion } from "../aspect/spring/springBootVersion";
 import { TravisScriptsAspect } from "../aspect/travis/travisAspects";
-import { TypeScriptSourceDirectoriesAspect } from "../aspect/node/TypeScriptSourceDirectories";
 
 /**
  * This will identify directories containing any of the following files as virtual projects
