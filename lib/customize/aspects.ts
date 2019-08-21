@@ -31,7 +31,6 @@ import { CodeOwnership } from "../aspect/common/codeOwnership";
 import { CodeOfConduct } from "../aspect/community/codeOfConduct";
 import {
     License,
-    LicensePresence,
 } from "../aspect/community/license";
 import {
     ChangelogAspect,
@@ -73,7 +72,6 @@ export function aspects(): Aspect[] {
         DockerPorts,
         License,
         // Based on license, decide the presence of a license: Not spread
-        LicensePresence,
         SpringBootStarter,
         TypeScriptVersion,
         TypeScriptSourceDirectoriesAspect,
