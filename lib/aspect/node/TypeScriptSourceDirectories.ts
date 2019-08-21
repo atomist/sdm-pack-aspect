@@ -1,6 +1,6 @@
 import { Project } from "@atomist/automation-client";
 import { gatherFromFiles } from "@atomist/automation-client/lib/project/util/projectUtils";
-import { FP, sha256 } from "@atomist/sdm-pack-fingerprints";
+import { FP, sha256, Aspect } from "@atomist/sdm-pack-fingerprints";
 import * as _ from "lodash";
 import * as path from "path";
 
@@ -30,7 +30,6 @@ export const extractTypeScriptSourceDirectories:
         const counts = Object.keys(filesByPath).map(dir => {
             return { name: dir, count: filesByPath[dir].length };
         }).sort(byCountAndThenName);
-        console.log("JESS " + JSON.stringify(counts));
         return [toTypeScriptSourceDirectoriesFingerprint({ directories: counts.map(c => c.name) })];
     };
 
@@ -41,4 +40,8 @@ function byCountAndThenName<T extends { name: string, count: number }>(a: T, b: 
     if (a.name > b.name) { return 1; }
     if (b.name > a.name) { return -1; }
     return 0;
+}
+
+export const TypeScriptSourceDirectoriesAspect: Aspect<TypeScriptSourceDirectoriesFingerprintData> {
+
 }

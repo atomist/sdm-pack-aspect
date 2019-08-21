@@ -43,4 +43,6 @@ describe("Figure out where people keep their TS source", () => {
         const fp = extractedFingerprints[0];
         assert.deepEqual(fp.data, { directories: ["lib", "src", "."] });
     });
+
+    it("ignores a test directory with TS source");
 });
