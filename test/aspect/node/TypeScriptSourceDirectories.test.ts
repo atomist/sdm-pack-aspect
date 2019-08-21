@@ -32,7 +32,7 @@ describe("Figure out where people keep their TS source", () => {
         const extractedFingerprints = await extractTypeScriptSourceDirectories(p);
         assert.strictEqual(extractedFingerprints.length, 1);
         const fp = extractedFingerprints[0];
-        assert.deepEqual(fp.data, { directories: ["."] });
+        assert.deepStrictEqual(fp.data, { directories: ["."] });
     });
     it("puts directories with more TS source first", async () => {
         const p = InMemoryProject.of({ path: "index.ts", content: "// some TS" },
@@ -43,7 +43,7 @@ describe("Figure out where people keep their TS source", () => {
         const extractedFingerprints = await extractTypeScriptSourceDirectories(p);
         assert.strictEqual(extractedFingerprints.length, 1);
         const fp = extractedFingerprints[0];
-        assert.deepEqual(fp.data, { directories: ["src", "."] });
+        assert.deepStrictEqual(fp.data, { directories: ["src", "."] });
     });
 
     it("only cares about the top level directory", async () => {
@@ -55,7 +55,7 @@ describe("Figure out where people keep their TS source", () => {
         const extractedFingerprints = await extractTypeScriptSourceDirectories(p);
         assert.strictEqual(extractedFingerprints.length, 1);
         const fp = extractedFingerprints[0];
-        assert.deepEqual(fp.data, { directories: ["src", "."] });
+        assert.deepStrictEqual(fp.data, { directories: ["src", "."] });
     });
 
     it("ties are alphabetical", async () => {
@@ -69,7 +69,7 @@ describe("Figure out where people keep their TS source", () => {
         const extractedFingerprints = await extractTypeScriptSourceDirectories(p);
         assert.strictEqual(extractedFingerprints.length, 1);
         const fp = extractedFingerprints[0];
-        assert.deepEqual(fp.data, { directories: ["lib", "src", "."] });
+        assert.deepStrictEqual(fp.data, { directories: ["lib", "src", "."] });
     });
 
     it("ignores a test directory with TS source");
