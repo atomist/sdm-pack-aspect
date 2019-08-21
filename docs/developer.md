@@ -37,7 +37,7 @@ Fingerprints are persisted and are the basis for querying and visualization. Tag
 ## Aspects
 
 ### Aspect interface
-The following are the methods share by all aspects. Many are optional:
+The following are the methods shared by all aspects. Many are optional:
 
 ```typescript
 export interface Aspect<FPI extends FP = FP> {
