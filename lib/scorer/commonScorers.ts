@@ -27,6 +27,8 @@ import { daysSince } from "../aspect/git/dateUtils";
 import { GitRecencyType } from "../aspect/git/gitActivity";
 import { FiveStar } from "./Score";
 import { adjustBy } from "./scoring";
+import { sha256 } from "@atomist/sdm-pack-fingerprints";
+import { isGlobMatchFingerprint } from "../aspect/compose/globAspect";
 
 /**
  * Use to anchor scores to penalize repositories about which we know little.
@@ -172,3 +174,43 @@ export const PenalizeNoLicense: RepositoryScorer =
             reason: bad ? "Repositories should have a license" : "Repository has a license",
         };
     };
+
+/**
+ * Mark down repositories that don't have this type of aspect.
+ * If data is provided, check that the sha matches the default sha-ing of this
+ * data payload
+ * @return {RepositoryScorer}
+ */
+export function requireAspectOfType(opts: {
+    type: string,
+    reason: string,
+    data?: any,
+}): RepositoryScorer {
+    return async repo => {
+        const found = repo.analysis.fingerprints.find(fp => fp.type === opts.type &&
+            (opts.data ? fp.sha = sha256(JSON.stringify(opts.data)) : true));
+        return {
+            name: `${opts.type}-required`,
+            score: !!found ? 5 : 1,
+            reason: !found ? opts.reason : "Satisfactory",
+        };
+    };
+}
+
+/**
+ * Must exactly match the glob pattern
+ * @return {RepositoryScorer}
+ */
+export function requireGlobAspect(opts: { glob: string }): RepositoryScorer {
+    return async repo => {
+        const globs = repo.analysis.fingerprints.filter(isGlobMatchFingerprint);
+        const found = globs
+            .filter(gf => gf.data.glob === opts.glob)
+            .filter(f => f.data.matches.length > 0);
+        return {
+            name: `${opts.glob}-required`,
+            score: !!found ? 5 : 1,
+            reason: !found ? `Should have file for ${opts.glob}` : "Satisfactory",
+        };
+    };
+}

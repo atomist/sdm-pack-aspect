@@ -58,10 +58,7 @@ import {
     aspectSupport,
     DefaultVirtualProjectFinder,
 } from "../lib/machine/aspectSupport";
-import {
-    requireAspectOfType,
-    requireGlobAspect,
-} from "../lib/scorer/scorerUtils";
+import * as commonScorers from "../lib/scorer/commonScorers";
 import {
     combinationTaggers,
     TaggersParams,
@@ -141,9 +138,9 @@ export function scorers(): RepositoryScorer[] {
         // limitLinesOfCodeIn({ language: PowerShellLanguage, limit: 200, freeAmount: 100 }),
         // limitLinesOfCodeIn({ language: ShellLanguage, limit: 200, freeAmount: 100 }),
         // requireRecentCommit({ days: 30 }),
-        requireAspectOfType({ type: CodeOfConductType, reason: "Repos should have a code of conduct" }),
-        requireGlobAspect({ glob: "CHANGELOG.md" }),
-        requireGlobAspect({ glob: "CONTRIBUTING.md" }),
+        commonScorers.requireAspectOfType({ type: CodeOfConductType, reason: "Repos should have a code of conduct" }),
+        commonScorers.requireGlobAspect({ glob: "CHANGELOG.md" }),
+        commonScorers.requireGlobAspect({ glob: "CONTRIBUTING.md" }),
     ];
 }
 
