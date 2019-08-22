@@ -89,7 +89,7 @@ export function aspectSupport(options: AspectSupportOptions): ExtensionPack {
                 const analyzer = createAnalyzer(
                     toArray(options.aspects),
                     options.virtualProjectFinder || exports.DefaultVirtualProjectFinder);
-                
+
                 sdm.addCommand(analyzeGitHubCommandRegistration(analyzer));
                 sdm.addCommand(analyzeLocalCommandRegistration(analyzer));
 
