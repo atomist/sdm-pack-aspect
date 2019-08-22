@@ -94,7 +94,6 @@ export function aspectSupport(options: AspectSupportOptions): ExtensionPack {
         configure: sdm => {
             const cfg = sdm.configuration;
             if (isInLocalMode()) {
-
                 const analyzer = createAnalyzer(
                     toArray(options.aspects),
                     options.virtualProjectFinder || exports.DefaultVirtualProjectFinder);
@@ -109,9 +108,7 @@ export function aspectSupport(options: AspectSupportOptions): ExtensionPack {
                 routesToSuggestOnStartup.forEach(rtsos => {
                     cfg.logging.banner.contributors.push(suggestRoute(rtsos));
                 });
-
             } else {
-
                 if (!!options.pushImpactGoal) {
                     sdm.addExtensionPacks(fingerprintSupport({
                         pushImpactGoal: options.pushImpactGoal,
