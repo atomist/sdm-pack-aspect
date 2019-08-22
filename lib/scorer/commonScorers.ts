@@ -16,14 +16,14 @@
 
 import { Language } from "@atomist/sdm-pack-sloc/lib/slocReport";
 import * as _ from "lodash";
-import { adjustBy } from "./scoring";
-import { CodeMetricsType } from "../aspect/common/codeMetrics";
 import { RepositoryScorer } from "../aspect/AspectRegistry";
-import { BranchCountType } from "../aspect/git/branchCount";
-import { FiveStar } from "./Score";
+import { CodeMetricsType } from "../aspect/common/codeMetrics";
 import { hasNoLicense, LicenseType } from "../aspect/community/license";
-import { GitRecencyType } from "../aspect/git/gitActivity";
+import { BranchCountType } from "../aspect/git/branchCount";
 import { daysSince } from "../aspect/git/dateUtils";
+import { GitRecencyType } from "../aspect/git/gitActivity";
+import { FiveStar } from "./Score";
+import { adjustBy } from "./scoring";
 
 /**
  * Use to anchor scores to penalize repositories about which we know little.
