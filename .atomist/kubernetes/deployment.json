@@ -22,14 +22,6 @@
                 "value": "kubernetes"
               },
               {
-                "name": "ATOMIST_MODE",
-                "value": ""
-              },
-              {
-                "name": "ATOMIST_POSTGRES",
-                "value": ""
-              },
-              {
                 "name": "ATOMIST_POD_NAMESPACE",
                 "valueFrom": {
                   "fieldRef": {

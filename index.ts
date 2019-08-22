@@ -14,85 +14,43 @@
  * limitations under the License.
  */
 
-import {
-    BannerSection,
-    Configuration,
-    HttpClientFactory,
-    logger,
-} from "@atomist/automation-client";
+import { Configuration } from "@atomist/automation-client";
 import { configureDashboardNotifications } from "@atomist/automation-client-ext-dashboard";
 import { configureHumio } from "@atomist/automation-client-ext-humio";
 import {
-    ExpressCustomizer,
-    writeUserConfig,
-} from "@atomist/automation-client/lib/configuration";
-import {
     CachingProjectLoader,
-    execPromise,
     GitHubLazyProjectLoader,
     GoalSigningScope,
     PushImpact,
 } from "@atomist/sdm";
-import {
-    configure,
-    isInLocalMode,
-} from "@atomist/sdm-core";
+import { configure } from "@atomist/sdm-core";
 import { LeinDeps } from "@atomist/sdm-pack-clojure/lib/fingerprints/clojure";
 import {
     DockerfilePath,
     DockerFrom,
     DockerPorts,
 } from "@atomist/sdm-pack-docker";
-import { fingerprintSupport } from "@atomist/sdm-pack-fingerprints";
-import * as _ from "lodash";
-import { ClientFactory } from "./lib/analysis/offline/persist/pgUtils";
-import {
-    analyzeGitHubCommandRegistration,
-    analyzeLocalCommandRegistration,
-} from "./lib/analysis/offline/spider/analyzeCommand";
 import {
     CiAspect,
+    driftSupport,
     JavaBuild,
     StackAspect,
-} from "./lib/aspect/common/stackAspect";
-import { DefaultAspectRegistry } from "./lib/aspect/DefaultAspectRegistry";
-import { K8sSpecs } from "./lib/aspect/k8s/spec";
+} from "@atomist/sdm-pack-drift";
+import {
+    registerCategories,
+    registerReportDetails,
+} from "@atomist/sdm-pack-drift/lib/customize/categories";
 import { NpmDependencies } from "./lib/aspect/node/npmDependencies";
 import { TypeScriptVersion } from "./lib/aspect/node/TypeScriptVersion";
 import { DirectMavenDependencies } from "./lib/aspect/spring/directMavenDependencies";
 import { SpringBootStarter } from "./lib/aspect/spring/springBootStarter";
 import { SpringBootVersion } from "./lib/aspect/spring/springBootVersion";
-import { TravisScriptsAspect } from "./lib/aspect/travis/travisAspects";
-import {
-    aspects,
-    virtualProjectFinder,
-} from "./lib/customize/aspects";
-import {
-    registerCategories,
-    registerReportDetails,
-} from "./lib/customize/categories";
-import { demoUndesirableUsageChecker } from "./lib/customize/demoUndesirableUsageChecker";
-import {
-    Scorers,
-    scoreWeightings,
-} from "./lib/customize/scorers";
-import {
-    combinationTaggers,
-    taggers,
-} from "./lib/customize/taggers";
 import { CreatePolicyLogOnPullRequest } from "./lib/event/policyLog";
 import {
     CreateFingerprintJob,
     CreateFingerprintJobCommand,
 } from "./lib/job/createFingerprintJob";
 import { calculateFingerprintTask } from "./lib/job/fingerprintTask";
-import {
-    analysisResultStore,
-    createAnalyzer,
-    sdmConfigClientFactory,
-} from "./lib/machine/machine";
-import { api } from "./lib/routes/api";
-import { addWebAppRoutes } from "./lib/routes/web-app/webAppRoutes";
 
 // Mode can be online or mode
 const mode = process.env.ATOMIST_ORG_VISUALIZER_MODE || "online";
@@ -103,20 +61,18 @@ export const configuration: Configuration = configure(async sdm => {
 
         const optionalAspects = isStaging ? [LeinDeps] : [];
 
-        const jobAspects = [
+        const aspects = [
             DockerFrom,
             DockerfilePath,
             DockerPorts,
             SpringBootStarter,
             TypeScriptVersion,
             NpmDependencies,
-            TravisScriptsAspect,
             StackAspect,
             CiAspect,
             JavaBuild,
             SpringBootVersion,
             DirectMavenDependencies,
-            K8sSpecs,
             ...optionalAspects,
         ];
         const handlers = [];
@@ -179,21 +135,16 @@ export const configuration: Configuration = configure(async sdm => {
             manage: false,
         });
 
-        if (isInLocalMode()) {
-            const analyzer = createAnalyzer(aspects(), virtualProjectFinder);
-            sdm.addCommand(analyzeGitHubCommandRegistration(analyzer));
-            sdm.addCommand(analyzeLocalCommandRegistration(analyzer));
-        }
-
         if (mode === "online") {
             const pushImpact = new PushImpact();
 
             sdm.addExtensionPacks(
-                fingerprintSupport({
+                driftSupport({
                     pushImpactGoal: pushImpact,
-                    aspects: jobAspects,
-                    handlers,
-                }));
+                    aspects,
+                    impactHandlers: handlers,
+                }),
+            );
 
             return {
                 analyze: {
@@ -204,13 +155,12 @@ export const configuration: Configuration = configure(async sdm => {
             sdm.addEvent(CreateFingerprintJob);
             sdm.addEvent(CreatePolicyLogOnPullRequest);
             sdm.addCommand(CreateFingerprintJobCommand);
-            sdm.addCommand(calculateFingerprintTask(jobAspects, handlers));
+            sdm.addCommand(calculateFingerprintTask(aspects, handlers));
             return {};
         }
-
     },
     {
-        name: "Analysis Software Delivery Machine",
+        name: "Drift Software Delivery Machine",
         preProcessors: async cfg => {
 
             // Do not surface the single pushImpact goal set in every UI
@@ -241,78 +191,5 @@ export const configuration: Configuration = configure(async sdm => {
         postProcessors: [
             configureHumio,
             configureDashboardNotifications,
-            async cfg => {
-                const { customizers, routesToSuggestOnStartup } =
-                    orgVisualizationEndpoints(
-                        sdmConfigClientFactory(cfg),
-                        cfg.http.client.factory,
-                    );
-                cfg.http.customizers.push(...customizers);
-                routesToSuggestOnStartup.forEach(rtsos => {
-                    cfg.logging.banner.contributors.push(suggestRoute(rtsos));
-                });
-
-                // start up embedded postgres if needed
-                if (process.env.ATOMIST_POSTGRES === "start" && !_.get(cfg, "sdm.postgres")) {
-                    logger.debug("Starting embedded Postgres");
-                    await execPromise("/etc/init.d/postgresql", ["start"]);
-
-                    const postgresCfg = {
-                        user: "org_viz",
-                        password: "atomist",
-                    };
-                    _.set(cfg, "sdm.postgres", postgresCfg);
-                    await writeUserConfig({
-                        sdm: {
-                            postgres: postgresCfg,
-                        },
-                    });
-                }
-
-                return cfg;
-            },
         ],
     });
-
-function suggestRoute({ title, route }: { title: string, route: string }):
-    (c: Configuration) => BannerSection {
-    return cfg => ({
-        title,
-        body: `http://localhost:${cfg.http.port}${route}`,
-    });
-}
-
-function orgVisualizationEndpoints(dbClientFactory: ClientFactory, httpClientFactory: HttpClientFactory): {
-    routesToSuggestOnStartup: Array<{ title: string, route: string }>,
-    customizers: ExpressCustomizer[],
-} {
-    const resultStore = analysisResultStore(dbClientFactory);
-    const aspectRegistry = new DefaultAspectRegistry({
-        idealStore: resultStore,
-        problemStore: resultStore,
-        aspects: aspects(),
-        undesirableUsageChecker: demoUndesirableUsageChecker,
-        scorers: Scorers,
-        scoreWeightings,
-    })
-        .withTaggers(...taggers({}))
-        .withCombinationTaggers(...combinationTaggers({}));
-
-    const aboutTheApi = api(resultStore, aspectRegistry);
-
-    if (!isInLocalMode()) {
-        return {
-            routesToSuggestOnStartup: aboutTheApi.routesToSuggestOnStartup,
-            customizers: [aboutTheApi.customizer],
-        };
-    }
-
-    const aboutStaticPages = addWebAppRoutes(aspectRegistry, resultStore, httpClientFactory);
-
-    return {
-        routesToSuggestOnStartup:
-            [...aboutStaticPages.routesToSuggestOnStartup,
-                ...aboutTheApi.routesToSuggestOnStartup],
-        customizers: [aboutStaticPages.customizer, aboutTheApi.customizer],
-    };
-}
