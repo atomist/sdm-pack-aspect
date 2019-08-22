@@ -40,11 +40,13 @@ import {
     registerCategories,
     registerReportDetails,
 } from "@atomist/sdm-pack-drift/lib/customize/categories";
+import { K8sSpecs } from "./lib/aspect/k8s/specAspect";
 import { NpmDependencies } from "./lib/aspect/node/npmDependencies";
 import { TypeScriptVersion } from "./lib/aspect/node/TypeScriptVersion";
 import { DirectMavenDependencies } from "./lib/aspect/spring/directMavenDependencies";
 import { SpringBootStarter } from "./lib/aspect/spring/springBootStarter";
 import { SpringBootVersion } from "./lib/aspect/spring/springBootVersion";
+import { TravisScriptsAspect } from "./lib/aspect/travis/travisAspect";
 import { CreatePolicyLogOnPullRequest } from "./lib/event/policyLog";
 import {
     CreateFingerprintJob,
@@ -52,7 +54,7 @@ import {
 } from "./lib/job/createFingerprintJob";
 import { calculateFingerprintTask } from "./lib/job/fingerprintTask";
 
-// Mode can be online or mode
+// Mode can be online or job
 const mode = process.env.ATOMIST_ORG_VISUALIZER_MODE || "online";
 
 export const configuration: Configuration = configure(async sdm => {
@@ -68,11 +70,13 @@ export const configuration: Configuration = configure(async sdm => {
             SpringBootStarter,
             TypeScriptVersion,
             NpmDependencies,
+            TravisScriptsAspect,
             StackAspect,
             CiAspect,
             JavaBuild,
             SpringBootVersion,
             DirectMavenDependencies,
+            K8sSpecs,
             ...optionalAspects,
         ];
         const handlers = [];
