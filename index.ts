@@ -38,3 +38,6 @@ export * from "./lib/aspect/git/gitActivity";
 export * from "./lib/aspect/git/gitIgnore";
 export * from "./lib/aspect/git/dateUtils";
 export * from "./lib/aspect/secret/exposedSecrets";
+
+export * from "./lib/tagger/commonTaggers";
+export * from "./lib/scorer/commonScorers";
