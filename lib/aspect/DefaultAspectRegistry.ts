@@ -104,11 +104,14 @@ export class DefaultAspectRegistry implements AspectRegistry {
         return type ? this.aspects.find(f => f.name === type) : undefined;
     }
 
-    public async undesirableUsageCheckerFor(workspaceId: string): Promise<UndesirableUsageChecker> {
+    public async undesirableUsageCheckerFor(workspaceId: string): Promise<UndesirableUsageChecker | undefined> {
         // TODO going for check functions is inelegant
-        return chainUndesirableUsageCheckers(
-            (await problemStoreBackedUndesirableUsageCheckerFor(this.problemStore, workspaceId)).check,
-            this.opts.undesirableUsageChecker.check);
+        if (this.opts.undesirableUsageChecker) {
+            return chainUndesirableUsageCheckers(
+                (await problemStoreBackedUndesirableUsageCheckerFor(this.problemStore, workspaceId)).check,
+                this.opts.undesirableUsageChecker.check);
+        }
+        return undefined;
     }
 
     get idealStore(): IdealStore {

@@ -186,7 +186,7 @@ async function decorateProblemFingerprints(aspectRegistry: AspectRegistry, pt: P
     // Flag bad fingerprints with a special color
     await visitAsync(pt.tree, async l => {
         if ((l as any).sha) {
-            const problem = usageChecker.check(l as any, "local");
+            const problem = usageChecker ? usageChecker.check(l as any, "local") : undefined;
             if (problem) {
                 (l as any).color = "#810325";
                 (l as any).problem = {
