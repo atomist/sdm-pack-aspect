@@ -32,6 +32,7 @@ import {
     RequestHandler,
 } from "express";
 import * as _ from "lodash";
+import * as path from "path";
 import { CSSProperties } from "react";
 import serveStatic = require("serve-static");
 import {
@@ -82,8 +83,8 @@ export function addWebAppRoutes(
                 extended: true,
             }));
 
-            express.use(serveStatic("public", { index: false }));
-            express.use(serveStatic("dist", { index: false }));
+            express.use(serveStatic(path.join(__dirname, "..", "..", "..", "public"), { index: false }));
+            express.use(serveStatic(path.join(__dirname, "..", "..", "..", "dist"), { index: false }));
 
             /* redirect / to the org page. This way we can go right here
              * for now, and later make a higher-level page if we want.
