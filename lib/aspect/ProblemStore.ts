@@ -70,6 +70,13 @@ export interface UndesirableUsageChecker {
 }
 
 /**
+ * Don't report any problems
+ */
+export const AcceptEverythingUndesirableUsageChecker: UndesirableUsageChecker = {
+    check: () => undefined,
+};
+
+/**
  * UndesirableUsageChecker from a list
  * @param {(fp: FP) => Promise<Flag[]>} checkers
  * @return {UndesirableUsageChecker}

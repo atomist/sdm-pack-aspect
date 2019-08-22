@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import { AcceptEverythingUndesirableUsageChecker } from "../lib/aspect/ProblemStore";
+
 process.env.ATOMIST_MODE = "local";
 
 import { Configuration } from "@atomist/automation-client";
@@ -75,6 +77,9 @@ export const configuration: Configuration = configure(async sdm => {
 
             taggers: taggers({}),
             combinationTaggers: combinationTaggers({}),
+
+            // Customize this to respond to undesirable usages
+            undesirableUsageChecker: AcceptEverythingUndesirableUsageChecker,
 
         }),
     );
