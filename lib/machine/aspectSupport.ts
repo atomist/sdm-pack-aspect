@@ -55,9 +55,18 @@ import {
     sdmConfigClientFactory,
 } from "./machine";
 
+/**
+ * Consider directories containing any of these files to be virtual projects
+ * @type {VirtualProjectFinder}
+ */
 export const DefaultVirtualProjectFinder: VirtualProjectFinder =
     cachingVirtualProjectFinder(
-        fileNamesVirtualProjectFinder("package.json", "pom.xml", "build.gradle", "requirements.txt"));
+        fileNamesVirtualProjectFinder(
+            "package.json",
+            "pom.xml",
+            "build.gradle",
+            "requirements.txt",
+        ));
 
 export const DefaultScoreWeightings: ScoreWeightings = {
     // Weight this to penalize projects with few other scorers
