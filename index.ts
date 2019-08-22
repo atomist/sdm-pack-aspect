@@ -24,22 +24,22 @@ import {
     PushImpact,
 } from "@atomist/sdm";
 import { configure } from "@atomist/sdm-core";
+import {
+    aspectSupport,
+    CiAspect,
+    JavaBuild,
+    StackAspect,
+} from "@atomist/sdm-pack-aspect";
+import {
+    registerCategories,
+    registerReportDetails,
+} from "@atomist/sdm-pack-aspect/lib/customize/categories";
 import { LeinDeps } from "@atomist/sdm-pack-clojure/lib/fingerprints/clojure";
 import {
     DockerfilePath,
     DockerFrom,
     DockerPorts,
 } from "@atomist/sdm-pack-docker";
-import {
-    CiAspect,
-    driftSupport,
-    JavaBuild,
-    StackAspect,
-} from "@atomist/sdm-pack-drift";
-import {
-    registerCategories,
-    registerReportDetails,
-} from "@atomist/sdm-pack-drift/lib/customize/categories";
 import { K8sSpecs } from "./lib/aspect/k8s/specAspect";
 import { NpmDependencies } from "./lib/aspect/node/npmDependencies";
 import { TypeScriptVersion } from "./lib/aspect/node/TypeScriptVersion";
@@ -143,10 +143,9 @@ export const configuration: Configuration = configure(async sdm => {
             const pushImpact = new PushImpact();
 
             sdm.addExtensionPacks(
-                driftSupport({
+                aspectSupport({
                     pushImpactGoal: pushImpact,
                     aspects,
-                    impactHandlers: handlers,
                 }),
             );
 

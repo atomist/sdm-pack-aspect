@@ -1,22 +1,22 @@
 {
-  "name": "@atomist/drift-sdm",
+  "name": "@atomist/aspect-sdm",
   "version": "1.0.0",
   "description": "SDM for calculating fingerprints and serving up drift reports",
   "author": "Atomist Inc.",
   "license": "Apache-2.0",
-  "homepage": "https://github.com/atomists/drift-sdm#readme",
+  "homepage": "https://github.com/atomists/aspect-sdm#readme",
   "repository": {
     "type": "git",
-    "url": "https://github.com/atomist/drift-sdm.git"
+    "url": "https://github.com/atomist/aspect-sdm.git"
   },
   "bugs": {
-    "url": "https://github.com/atomist/drift-sdm/issues"
+    "url": "https://github.com/atomist/aspect-sdm/issues"
   },
   "keywords": [
     "atomist",
     "automation",
     "sdm",
-    "seed"
+    "aspect"
   ],
   "main": "./index.js",
   "types": "./index.d.ts",
@@ -27,10 +27,10 @@
     "@atomist/microgrammar": "^1.2.1",
     "@atomist/sdm": "1.6.2-master.20190821222758",
     "@atomist/sdm-core": "1.6.2-master.20190822002319",
+    "@atomist/sdm-pack-aspect": "1.0.0-sdm-pack-aspect.20190822170455",
     "@atomist/sdm-pack-build": "^1.0.5",
     "@atomist/sdm-pack-clojure": "^2.0.0",
     "@atomist/sdm-pack-docker": "2.0.3-master.20190821110014",
-    "@atomist/sdm-pack-drift": "0.1.0-master.20190821065818-sdm-pack-drift.20190822113235",
     "@atomist/sdm-pack-fingerprints": "5.0.0-master.20190822065724",
     "@atomist/sdm-pack-node": "^1.1.1",
     "@atomist/sdm-pack-sloc": "1.0.3-master.20190502175705",
