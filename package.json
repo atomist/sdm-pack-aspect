@@ -1,40 +1,39 @@
 {
-  "name": "@atomist/org-visualizer",
-  "version": "0.1.29",
-  "description": "Organization Visualizer using Atomist project scanning",
+  "name": "@atomist/sdm-pack-drift",
+  "version": "0.1.0",
+  "description": "an Atomist SDM Extension Pack for visualizing drift across an organization",
   "author": "Atomist Inc.",
   "license": "Apache-2.0",
-  "homepage": "https://github.com/atomist-blogs/org-visualizer#readme",
+  "homepage": "https://github.com/atomist/sdm-pack-drift#readme",
   "repository": {
     "type": "git",
-    "url": "https://github.com/atomist-blogs/org-visualizer.git"
+    "url": "https://github.com/atomist/sdm-pack-drift.git"
   },
   "bugs": {
-    "url": "https://github.com/atomist-blogs/org-visualizer/issues"
+    "url": "https://github.com/atomist/sdm-pack-drift/issues"
   },
   "keywords": [
     "atomist",
     "automation",
-    "sdm",
-    "seed"
+    "sdm"
   ],
   "main": "./index.js",
   "types": "./index.d.ts",
-  "dependencies": {
-    "@atomist/automation-client": "1.6.3-master.20190821065818",
-    "@atomist/automation-client-ext-dashboard": "1.1.1-master.20190810154215",
-    "@atomist/automation-client-ext-humio": "^0.2.0",
+  "peerDependencies": {
+    "@atomist/automation-client": "*",
     "@atomist/microgrammar": "^1.2.1",
-    "@atomist/sdm": "1.6.2-master.20190821222758",
-    "@atomist/sdm-core": "1.6.2-master.20190822002319",
+    "@atomist/sdm": "*",
+    "@atomist/sdm-core": "+",
     "@atomist/sdm-pack-build": "^1.0.5",
     "@atomist/sdm-pack-clojure": "^2.0.0",
-    "@atomist/sdm-pack-docker": "2.0.3-master.20190821110014",
-    "@atomist/sdm-pack-fingerprints": "5.0.0-master.20190822065724",
+    "@atomist/sdm-pack-docker": "*",
+    "@atomist/sdm-pack-fingerprints": "*",
     "@atomist/sdm-pack-node": "^1.1.1",
-    "@atomist/sdm-pack-sloc": "1.0.3-master.20190502175705",
+    "@atomist/sdm-pack-sloc": "*",
     "@atomist/sdm-pack-spring": "^2.0.0",
-    "@atomist/slack-messages": "^1.1.1",
+    "@atomist/slack-messages": "^1.1.1"
+  },
+  "dependencies": {
     "@octokit/rest": "^16.28.3",
     "@types/js-yaml": "^3.12.1",
     "@types/json-stable-stringify": "^1.0.32",
@@ -69,7 +68,19 @@
     "zip-a-folder": "0.0.8"
   },
   "devDependencies": {
+    "@atomist/automation-client": "1.6.3-master.20190821065818",
+    "@atomist/microgrammar": "^1.2.1",
+    "@atomist/sdm": "1.6.2-master.20190821222758",
+    "@atomist/sdm-core": "1.6.2-master.20190822002319",
     "@atomist/sdm-local": "^1.1.0",
+    "@atomist/sdm-pack-build": "^1.0.5",
+    "@atomist/sdm-pack-clojure": "^2.0.0",
+    "@atomist/sdm-pack-docker": "2.0.3-master.20190821110014",
+    "@atomist/sdm-pack-fingerprints": "5.0.0-master.20190822065724",
+    "@atomist/sdm-pack-node": "^1.1.1",
+    "@atomist/sdm-pack-sloc": "1.0.3-master.20190502175705",
+    "@atomist/sdm-pack-spring": "^2.0.0",
+    "@atomist/slack-messages": "^1.1.1",
     "@types/d3": "^5.7.2",
     "@types/mocha": "^5.2.7",
     "@types/pg": "^7.4.14",

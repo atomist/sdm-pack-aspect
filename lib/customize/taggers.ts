@@ -14,22 +14,9 @@
  * limitations under the License.
  */
 
-import { LeinDeps } from "@atomist/sdm-pack-clojure/lib/fingerprints/clojure";
-import { DockerFrom } from "@atomist/sdm-pack-docker";
 import * as _ from "lodash";
-import {
-    CombinationTagger,
-    Tagger,
-    TaggerDefinition,
-} from "../aspect/AspectRegistry";
-import { CiAspect } from "../aspect/common/stackAspect";
-import { isFileMatchFingerprint } from "../aspect/compose/fileMatchAspect";
-import { PythonDependencies } from "../aspect/python/pythonDependencies";
-import { DirectMavenDependencies } from "../aspect/spring/directMavenDependencies";
-import { SpringBootVersion } from "../aspect/spring/springBootVersion";
-import { TravisScriptsAspect } from "../aspect/travis/travisAspects";
+import { CombinationTagger } from "../aspect/AspectRegistry";
 import * as commonTaggers from "../tagger/commonTaggers";
-import * as nodeTaggers from "../tagger/nodeTaggers";
 
 export interface TaggersParams {
 
@@ -48,84 +35,6 @@ const DefaultTaggersParams: TaggersParams = {
     maxBranches: 20,
     deadDays: 365,
 };
-
-/**
- * Add your own taggers
- * @param {Partial<TaggersParams>} opts
- * @return {Tagger[]}
- */
-export function taggers(opts: Partial<TaggersParams>): TaggerDefinition[] {
-    const optsToUse = {
-        ...DefaultTaggersParams,
-        ...opts,
-    };
-    return [
-        commonTaggers.Vulnerable,
-        // commonTaggers.isProblematic(),
-        { name: "docker", description: "Docker status", test: fp => fp.type === DockerFrom.name },
-        nodeTaggers.Node,
-        {
-            name: "maven",
-            description: "Direct Maven dependencies",
-            test: fp => fp.type === DirectMavenDependencies.name,
-        },
-        nodeTaggers.TypeScript,
-        nodeTaggers.TsLint,
-        { name: "clojure", description: "Lein dependencies", test: fp => fp.type === LeinDeps.name },
-        { name: "spring-boot", description: "Spring Boot version", test: fp => fp.type === SpringBootVersion.name },
-        { name: "travis", description: "Travis CI script", test: fp => fp.type === TravisScriptsAspect.name },
-        { name: "python", description: "Python dependencies", test: fp => fp.type === PythonDependencies.name },
-        commonTaggers.Monorepo,
-        nodeTaggers.usesNodeLibraryWhen({
-            name: "angular",
-            description: "Angular",
-            test: library => library.includes("angular"),
-        }),
-        nodeTaggers.usesNodeLibrary({ library: "react" }),
-        nodeTaggers.usesNodeLibrary({ library: "chai" }),
-        nodeTaggers.usesNodeLibrary({ library: "mocha" }),
-        {
-            name: "jenkins",
-            description: "Jenkins",
-            test: fp => fp.type === CiAspect.name && fp.data.includes("jenkins"),
-        },
-        {
-            name: "circleci",
-            description: "circleci",
-            test: fp => fp.type === CiAspect.name && fp.data.includes("circle"),
-        },
-        {
-            name: "azure-pipelines",
-            description: "Azure pipelines files",
-            test: fp => isFileMatchFingerprint(fp) &&
-                fp.name.includes("azure-pipeline") && fp.data.matches.length > 0,
-        },
-        commonTaggers.globRequired({
-            name: "snyk",
-            description: "Snyk policy",
-            glob: ".snyk",
-        }),
-        {
-            // TODO allow to use #
-            name: "CSharp",
-            description: "C# build",
-            test: fp => isFileMatchFingerprint(fp) &&
-                fp.name.includes("csproj") && fp.data.matches.length > 0,
-        },
-        commonTaggers.inadequateReadme({ minLength: 200}),
-        commonTaggers.SoleCommitter,
-        commonTaggers.excessiveBranchCount(optsToUse),
-        commonTaggers.lineCountTest({ name: "huge (>10k)", lineCountTest: count => count > 10000 }),
-        commonTaggers.lineCountTest({ name: "big (3-10k)", lineCountTest: count => count >= 3000 && count <= 10000 }),
-        commonTaggers.lineCountTest({ name: "tiny (<200)", lineCountTest: count => count < 200 }),
-        commonTaggers.HasCodeOfConduct,
-        commonTaggers.HasChangeLog,
-        commonTaggers.HasContributingFile,
-        commonTaggers.HasLicense,
-        commonTaggers.dead(optsToUse),
-        commonTaggers.isProblematic,
-    ];
-}
 
 export interface CombinationTaggersParams {
 
