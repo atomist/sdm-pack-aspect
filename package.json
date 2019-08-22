@@ -1,6 +1,6 @@
 {
   "name": "@atomist/sdm-pack-drift",
-  "version": "0.1.0",
+  "version": "0.1.0-master.20190821065818",
   "description": "an Atomist SDM Extension Pack for visualizing drift across an organization",
   "author": "Atomist Inc.",
   "license": "Apache-2.0",
