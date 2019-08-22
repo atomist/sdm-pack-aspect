@@ -39,5 +39,7 @@ export * from "./lib/aspect/git/gitIgnore";
 export * from "./lib/aspect/git/dateUtils";
 export * from "./lib/aspect/secret/exposedSecrets";
 
-export * from "./lib/tagger/commonTaggers";
-export * from "./lib/scorer/commonScorers";
+import * as commonTaggers from "./lib/tagger/commonTaggers";
+import * as commonScorers from "./lib/scorer/commonScorers";
+
+export { commonTaggers, commonScorers };
