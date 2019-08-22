@@ -1,7 +1,7 @@
   <img src="./images/dockerImageSunburst.png"
   width="130" hight="130" align="right" />
 
-# @atomist/org-visualizer
+# @atomist/sdm-pack-aspect
 
 A tool for visualizing technology usage and drift across an organization. 
 
