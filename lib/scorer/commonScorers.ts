@@ -18,7 +18,10 @@ import { Language } from "@atomist/sdm-pack-sloc/lib/slocReport";
 import * as _ from "lodash";
 import { RepositoryScorer } from "../aspect/AspectRegistry";
 import { CodeMetricsType } from "../aspect/common/codeMetrics";
-import { hasNoLicense, LicenseType } from "../aspect/community/license";
+import {
+    hasNoLicense,
+    LicenseType,
+} from "../aspect/community/license";
 import { BranchCountType } from "../aspect/git/branchCount";
 import { daysSince } from "../aspect/git/dateUtils";
 import { GitRecencyType } from "../aspect/git/gitActivity";
