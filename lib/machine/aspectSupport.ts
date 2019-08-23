@@ -86,6 +86,8 @@ export interface AspectSupportOptions {
     combinationTaggers?: CombinationTagger | CombinationTagger[];
 
     undesirableUsageChecker?: UndesirableUsageChecker;
+
+    exposeWeb?: boolean;
 }
 
 export function aspectSupport(options: AspectSupportOptions): ExtensionPack {
@@ -93,6 +95,7 @@ export function aspectSupport(options: AspectSupportOptions): ExtensionPack {
         ...metadata(),
         configure: sdm => {
             const cfg = sdm.configuration;
+
             if (isInLocalMode()) {
                 const analyzer = createAnalyzer(
                     toArray(options.aspects),
@@ -100,14 +103,6 @@ export function aspectSupport(options: AspectSupportOptions): ExtensionPack {
 
                 sdm.addCommand(analyzeGitHubCommandRegistration(analyzer));
                 sdm.addCommand(analyzeLocalCommandRegistration(analyzer));
-
-                const { customizers, routesToSuggestOnStartup } =
-                    orgVisualizationEndpoints(sdmConfigClientFactory(cfg), cfg.http.client.factory, options);
-
-                cfg.http.customizers.push(...customizers);
-                routesToSuggestOnStartup.forEach(rtsos => {
-                    cfg.logging.banner.contributors.push(suggestRoute(rtsos));
-                });
             } else {
                 if (!!options.pushImpactGoal) {
                     sdm.addExtensionPacks(fingerprintSupport({
@@ -116,6 +111,17 @@ export function aspectSupport(options: AspectSupportOptions): ExtensionPack {
                     }));
                 }
 
+            }
+
+            const exposeWeb = options.exposeWeb !== undefined ? options.exposeWeb : isInLocalMode();
+            if (!!exposeWeb) {
+                const { customizers, routesToSuggestOnStartup } =
+                    orgVisualizationEndpoints(sdmConfigClientFactory(cfg), cfg.http.client.factory, options);
+
+                cfg.http.customizers.push(...customizers);
+                routesToSuggestOnStartup.forEach(rtsos => {
+                    cfg.logging.banner.contributors.push(suggestRoute(rtsos));
+                });
             }
         },
     };
