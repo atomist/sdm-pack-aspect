@@ -32,9 +32,9 @@ export type SortOrder = "name" | "score";
  * Takes sortOrder optional parameter to dictate sorting
  */
 export function exposeRepositoryListPage(express: Express,
-    handlers: RequestHandler[],
-    aspectRegistry: AspectRegistry,
-    store: ProjectAnalysisResultStore): void {
+                                         handlers: RequestHandler[],
+                                         aspectRegistry: AspectRegistry,
+                                         store: ProjectAnalysisResultStore): void {
     express.get("/repositories", ...handlers, async (req, res) => {
         const workspaceId = req.query.workspace || req.params.workspace_id || "*";
         const sortOrder: SortOrder = req.query.sortOrder || "score";
