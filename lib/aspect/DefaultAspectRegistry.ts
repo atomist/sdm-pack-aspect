@@ -14,10 +14,17 @@
  * limitations under the License.
  */
 
+import { RemoteRepoRef } from "@atomist/automation-client";
 import {
     Aspect,
     FP,
 } from "@atomist/sdm-pack-fingerprints";
+import * as _ from "lodash";
+import { ProjectAnalysisResult } from "../analysis/ProjectAnalysisResult";
+import { TagContext } from "../routes/api";
+import { ScoreWeightings } from "../scorer/Score";
+import { scoreRepos } from "../scorer/scoring";
+import { showTiming } from "../util/showTiming";
 import {
     AspectRegistry,
     CombinationTagger,
@@ -31,17 +38,6 @@ import {
     TaggerDefinition,
     WorkspaceSpecificTagger,
 } from "./AspectRegistry";
-
-import { RemoteRepoRef } from "@atomist/automation-client";
-import * as _ from "lodash";
-import { Error } from "tslint/lib/error";
-import { ProjectAnalysisResult } from "../analysis/ProjectAnalysisResult";
-import { TagContext } from "../routes/api";
-import { ScoreWeightings } from "../scorer/Score";
-import {
-    scoreRepos,
-} from "../scorer/scoring";
-import { showTiming } from "../util/showTiming";
 import { IdealStore } from "./IdealStore";
 import {
     chainUndesirableUsageCheckers,
