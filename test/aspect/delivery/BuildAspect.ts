@@ -31,6 +31,7 @@ import {
 } from "@atomist/sdm-pack-fingerprints";
 import { Omit } from "../../../lib/util/omit";
 import { DeliveryAspect } from "./DeliveryAspect";
+import { bandFor, Default } from "../../../lib/util/bands";
 
 export type BuildAspect<DATA = any> = DeliveryAspect<{ build: Build }, DATA>;
 
@@ -73,7 +74,7 @@ export const BuildTimeType = "build-time";
  * @return {BuildAspect<BuildTimeData>}
  */
 export function buildTimeAspect(opts: Omit<Aspect, "name" | "displayName" | "extract" | "consolidate"> = {}): BuildAspect<BuildTimeData> {
-    return buildOutcomeAspect({
+    return buildOutcomeAspect<BuildTimeData>({
         ...opts,
         name: "build-time",
         displayName: "Build time",
@@ -88,7 +89,17 @@ export function buildTimeAspect(opts: Omit<Aspect, "name" | "displayName" | "ext
             };
         },
         toDisplayableFingerprintName: () => "Build time",
-        toDisplayableFingerprint: fp => `${fp.data.elapsedMillis}ms`,
+        toDisplayableFingerprint: fp => {
+            const seconds = fp.data.elapsedMillis / 1000;
+            return bandFor<"interminable" | "slow" | "ok" | "fast" | "blistering">({
+                    blistering: { upTo: 10 },
+                    fast: { upTo: 60 },
+                    ok: { upTo: 180 },
+                    slow: { upTo: 600 },
+                    interminable: Default,
+                }, seconds,
+                { includeNumber: true });
+        },
     });
 }
 
