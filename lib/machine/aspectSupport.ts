@@ -55,6 +55,8 @@ import {
     createAnalyzer,
     sdmConfigClientFactory,
 } from "./machine";
+import { Build } from "@atomist/sdm-pack-build";
+import { DeliveryGoals, isDeliveryAspect } from "../../test/aspect/delivery/DeliveryAspect";
 
 /**
  * Consider directories containing any of these files to be virtual projects
@@ -74,7 +76,7 @@ export const DefaultScoreWeightings: ScoreWeightings = {
     anchor: 3,
 };
 
-export interface AspectSupportOptions {
+export interface AspectSupportOptions extends Partial<DeliveryGoals> {
     aspects: Aspect | Aspect[];
     pushImpactGoal?: PushImpact;
 
@@ -105,14 +107,18 @@ export function aspectSupport(options: AspectSupportOptions): ExtensionPack {
                 sdm.addCommand(analyzeGitHubByQueryCommandRegistration(analyzer));
                 sdm.addCommand(analyzeGitHubOrganizationCommandRegistration(analyzer));
                 sdm.addCommand(analyzeLocalCommandRegistration(analyzer));
-            } else {
-                if (!!options.pushImpactGoal) {
-                    sdm.addExtensionPacks(fingerprintSupport({
-                        pushImpactGoal: options.pushImpactGoal,
-                        aspects: options.aspects,
-                    }));
-                }
+            }
 
+            if (!!options.pushImpactGoal) {
+                sdm.addExtensionPacks(fingerprintSupport({
+                    pushImpactGoal: options.pushImpactGoal,
+                    aspects: options.aspects,
+                }));
+                if (!!options.build) {
+                    toArray(options.aspects)
+                        .filter(isDeliveryAspect)
+                        .forEach(da => da.register(sdm, options));
+                }
             }
 
             const exposeWeb = options.exposeWeb !== undefined ? options.exposeWeb : isInLocalMode();

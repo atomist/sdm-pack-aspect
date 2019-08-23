@@ -64,13 +64,24 @@ import { branchCount } from "../lib/aspect/git/branchCount";
 import { GitRecency } from "../lib/aspect/git/gitActivity";
 import { ExposedSecrets } from "../lib/aspect/secret/exposedSecrets";
 import {
-    aspectSupport,
+    aspectSupport, AspectSupportOptions,
     DefaultVirtualProjectFinder,
 } from "../lib/machine/aspectSupport";
 import * as commonScorers from "../lib/scorer/commonScorers";
 import * as commonTaggers from "../lib/tagger/commonTaggers";
+import { mavenBuilder, MavenDefaultOptions, MavenPerBranchDeployment } from "@atomist/sdm-pack-spring";
+import { Build } from "@atomist/sdm-pack-build";
+import { buildTimeAspect } from "./aspect/delivery/BuildAspect";
+import { DeliveryGoals } from "./aspect/delivery/DeliveryAspect";
+import { PushImpact } from "@atomist/sdm";
 
 const virtualProjectFinder: VirtualProjectFinder = DefaultVirtualProjectFinder;
+
+const build: Build = new Build()
+    .with({
+        ...MavenDefaultOptions,
+        builder: mavenBuilder(),
+    });
 
 /**
  * Sample configuration to enable testing
@@ -79,7 +90,10 @@ const virtualProjectFinder: VirtualProjectFinder = DefaultVirtualProjectFinder;
 export const configuration: Configuration = configure(async sdm => {
     sdm.addExtensionPacks(
         aspectSupport({
-            aspects: aspects(),
+            aspects: aspects({ build }),
+
+            pushImpactGoal: new PushImpact(),
+            build,
 
             scorers: scorers(),
 
@@ -92,9 +106,10 @@ export const configuration: Configuration = configure(async sdm => {
             virtualProjectFinder,
         }),
     );
+
 });
 
-function aspects(): Aspect[] {
+function aspects(opts: DeliveryGoals): Aspect[] {
     return [
         DockerFrom,
         DockerfilePath,
@@ -124,6 +139,11 @@ function aspects(): Aspect[] {
         globAspect({ name: "readme", displayName: "Readme file", glob: "README.md" }),
         // allMavenDependenciesAspect,    // This is expensive
         LeinDeps,
+
+        buildTimeAspect({
+            ...opts,
+            publisher: async fps => null,
+        }),
     ].map(aspect => makeVirtualProjectAware(aspect, virtualProjectFinder));
 }
 
