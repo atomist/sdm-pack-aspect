@@ -45,31 +45,26 @@ const AnalyzeCommandParameterDefinitions: ParametersObject<AnalyzeCommandParamet
 };
 
 export interface AnalyzeGitHubCommandParameters extends AnalyzeCommandParameters {
-    update: boolean;
     source: "GitHub";
-    owner?: string;
-    query?: string;
     search?: string;
     cloneUnder?: string;
+}
+export interface AnalyzeGitHubOrganizationCommandParameters extends AnalyzeGitHubCommandParameters {
+    owner?: string;
+}
+export interface AnalyzeGitHubByQueryCommandParameters extends AnalyzeGitHubCommandParameters {
+    query?: string;
 }
 
 const AnalyzeGitHubCommandParametersDefinition: ParametersObject<AnalyzeGitHubCommandParameters> = {
     ...AnalyzeCommandParameterDefinitions,
     source: {
-        description: "find repositories on GitHub. Please specify at least 'owner' or 'query'",
+        description: "find repositories on GitHub, by organization or query",
         defaultValue: "GitHub",
         displayable: false,
         required: false,
         pattern: /GitHub/,
         validInput: "'GitHub'",
-    },
-    owner: {
-        description: "GitHub owner of repositories to analyze",
-        required: true,
-    },
-    query: {
-        description: "A GitHub search query to choose repositories",
-        required: true,
     },
     search: {
         description: "To narrow which repositories within an owner, provide a substring to look for in the repo name",
@@ -81,6 +76,21 @@ const AnalyzeGitHubCommandParametersDefinition: ParametersObject<AnalyzeGitHubCo
     },
 };
 
+const AnalyzeGitHubOrganizationCommandParametersDefinition: ParametersObject<AnalyzeGitHubOrganizationCommandParameters> = {
+    ...AnalyzeGitHubCommandParametersDefinition,
+    owner: {
+        description: "GitHub owner of repositories to analyze",
+        required: true,
+    },
+};
+
+const AnalyzeGitHubByQueryCommandParametersDefinition: ParametersObject<AnalyzeGitHubByQueryCommandParameters> = {
+    ...AnalyzeGitHubCommandParametersDefinition,
+    query: {
+        description: "A GitHub search query to choose repositories",
+        required: true,
+    },
+};
 export interface AnalyzeLocalCommandParameters extends AnalyzeCommandParameters {
     update: boolean;
     source: "local";
@@ -103,15 +113,10 @@ const AnalyzeLocalCommandParametersDefinition: ParametersObject<AnalyzeLocalComm
     },
 };
 
-function analyzeFromGitHub(analyzer: Analyzer): CommandListener<AnalyzeGitHubCommandParameters> {
+function analyzeFromGitHubOrganization(analyzer: Analyzer): CommandListener<AnalyzeGitHubOrganizationCommandParameters> {
     return async d => {
-        const { owner, query } = d.parameters;
-        if (!owner && !query) {
-            await d.addressChannels("Please provide either 'owner' or 'query'");
-            return { code: 1 };
-        }
         const spiderAppOptions: SpiderAppOptions = d.parameters;
-        logger.info("analyze github invoked with " + JSON.stringify(spiderAppOptions));
+        logger.info("analyze github org invoked with " + JSON.stringify(spiderAppOptions));
 
         const result = await spider(spiderAppOptions, analyzer);
         await d.addressChannels(`Analysis result: `
@@ -120,18 +125,46 @@ function analyzeFromGitHub(analyzer: Analyzer): CommandListener<AnalyzeGitHubCom
     };
 }
 
-export function analyzeGitHubCommandRegistration(analyzer: Analyzer): CommandHandlerRegistration<AnalyzeGitHubCommandParameters> {
-    return {
-        name: "analyzeRepositoriesFromGitHub",
-        intent: ["analyze github repositories"],
-        description: "choose repositories to analyze, by owner or query",
-        parameters: AnalyzeGitHubCommandParametersDefinition,
-        listener: analyzeFromGitHub(analyzer),
+function analyzeFromGitHubByQuery(analyzer: Analyzer): CommandListener<AnalyzeGitHubByQueryCommandParameters> {
+    return async d => {
+        const spiderAppOptions: SpiderAppOptions = d.parameters;
+        logger.info("analyze github by query invoked with " + JSON.stringify(spiderAppOptions));
+
+        const result = await spider(spiderAppOptions, analyzer);
+        await d.addressChannels(`Analysis result: `
+            + JSON.stringify(result, undefined, 2));
+        return { code: 0 };
     };
 }
 
+export function analyzeGitHubOrganizationCommandRegistration(analyzer: Analyzer): CommandHandlerRegistration<AnalyzeGitHubCommandParameters> {
+    return {
+        name: "analyzeRepositoriesFromGitHubOrganization",
+        intent: ["analyze github organization"],
+        description: "analyze repositories from one GitHub organization (or user)",
+        parameters: AnalyzeGitHubOrganizationCommandParametersDefinition,
+        listener: analyzeFromGitHubOrganization(analyzer),
+    };
+}
+
+export function analyzeGitHubByQueryCommandRegistration(analyzer: Analyzer): CommandHandlerRegistration<AnalyzeGitHubCommandParameters> {
+    return {
+        name: "analyzeRepositoriesFromGitHubByQuery",
+        intent: ["analyze github by query"],
+        description: "choose repositories to analyze by GitHub query",
+        parameters: AnalyzeGitHubByQueryCommandParametersDefinition,
+        listener: analyzeFromGitHubByQuery(analyzer),
+    };
+}
+
+import * as path from "path";
 function analyzeFromLocal(analyzer: Analyzer): CommandListener<AnalyzeLocalCommandParameters> {
     return async d => {
+        if (!path.isAbsolute(d.parameters.localDirectory)) {
+            d.addressChannels("Please provide an absolute path. You provided: " + d.parameters.localDirectory);
+            return { code: 1, error: new Error("Please provide an absolute path") };
+        }
+
         const spiderAppOptions: SpiderAppOptions = d.parameters;
         logger.info("analyze local invoked with " + JSON.stringify(spiderAppOptions));
 
