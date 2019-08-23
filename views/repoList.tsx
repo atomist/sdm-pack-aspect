@@ -25,8 +25,11 @@ export interface RepoListProps {
     category: "*" | string;
 }
 
-function toRepoListItem(rfd: RepoForDisplay): React.ReactElement {
-    const linkToIndividualProjectPage = `/repository?id=${encodeURI(rfd.id)}`;
+function toRepoListItem(category: string, rfd: RepoForDisplay): React.ReactElement {
+    let linkToIndividualProjectPage = `/repository?id=${encodeURI(rfd.id)}`;
+    if (category && category !== "*") {
+        linkToIndividualProjectPage += `&category=${category}`;
+    }
     return <li key={rfd.url}>{rfd.showFullPath && `${rfd.owner} / `}{rfd.repo} {rfd.score && `(${rfd.score.toFixed(2)})`}:{" "}
         <a href={rfd.url}>
             Source
@@ -38,15 +41,15 @@ function toRepoListItem(rfd: RepoForDisplay): React.ReactElement {
 }
 
 function displayProjects(owner: string,
-    repos: RepoForDisplay[],
-    props: RepoListProps): React.ReactElement {
+                         repos: RepoForDisplay[],
+                         props: RepoListProps): React.ReactElement {
     const sorted = _.sortBy(repos,
         p => props.sortOrder === "score" ?
             p.score :
             p.repo.toLowerCase());
     return collapsible(owner, `${owner} (${repos.length} repositories)`,
         <ul>
-            {sorted.map(toRepoListItem)}
+            {sorted.map(r => toRepoListItem(props.category, r))}
         </ul>,
         repos.length === 1 || props.expand,
     );
