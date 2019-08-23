@@ -16,7 +16,9 @@
 
 import {
     GitCommandGitProject,
+    GitProject,
     logger,
+    Project,
     RepoId,
     RepoRef,
 } from "@atomist/automation-client";
@@ -28,6 +30,7 @@ import {
     combinePersistResults,
     emptyPersistResult,
     PersistResult,
+    ProjectAnalysisResultStore,
 } from "../../persist/ProjectAnalysisResultStore";
 import { computeAnalytics } from "../analytics";
 import {
@@ -39,37 +42,85 @@ import {
 import { ScmSearchCriteria } from "../ScmSearchCriteria";
 import {
     Analyzer,
+    ProjectAnalysisResultFilter,
     Spider,
     SpiderOptions,
     SpiderResult,
 } from "../Spider";
 
-export class LocalSpider implements Spider {
+class AnalysisRun<FoundRepo> {
+    constructor(
+        private readonly world: {
+            howToFindRepos: () => AsyncIterable<FoundRepo>,
+            determineRepoRef: (f: FoundRepo) => Promise<RepoRef>,
+            describeFoundRepo: (f: FoundRepo) => string,
+            howToClone: (rr: RepoRef, fr: FoundRepo) => Promise<GitProject>,
+            analyzer: Analyzer;
+            persister: ProjectAnalysisResultStore,
 
-    public async spider(criteria: ScmSearchCriteria,
-        analyzer: Analyzer,
-        opts: SpiderOptions): Promise<SpiderResult> {
-        const repoIterator = findRepositoriesUnder(this.localDirectory);
-        const results: SpiderResult[] = [];
+            keepExistingPersisted: ProjectAnalysisResultFilter,
+            projectFilter?: (p: Project) => Promise<boolean>;
+        },
+        private readonly params: {
+            workspaceId: string;
+            description: string;
+            maxRepos?: number;
+        }) {
+        if (!this.params.maxRepos) {
+            this.params.maxRepos = 1000;
+        }
+    }
+
+    public async run(): Promise<SpiderResult> {
 
         const analysisBeingTracked = globalAnalysisTracking.startAnalysis({
-            description: "local analysis under " + this.localDirectory,
+            description: this.params.description,
         });
 
-        const maxRepos = 1000;
-        const plannedRepoDirs = await takeFromIterator(maxRepos, repoIterator);
-        analysisBeingTracked.plan(plannedRepoDirs);
+        const plannedRepos = await takeFromIterator(this.params.maxRepos, this.world.howToFindRepos());
+        analysisBeingTracked.plan(plannedRepos.map(pr => (this.world.describeFoundRepo(pr))));
 
-        for (const repoDir of plannedRepoDirs) {
-            logger.info("Analyzing local repo at %s", repoDir);
-            results.push(await spiderOneLocalRepo(opts, criteria, analyzer, repoDir));
+        const results: SpiderResult[] = [];
+
+        // simplest: do them all
+        for (const foundRepo of plannedRepos) {
+            const rr = await this.world.determineRepoRef(foundRepo);
+            logger.info("Analyzing local repo at %s", foundRepo);
+            results.push(await spiderOneRepo(this.world, { workspaceId: this.params.workspaceId },
+                rr, foundRepo));
         }
 
         logger.debug("Computing analytics over all fingerprints...");
-        await computeAnalytics(opts.persister, opts.workspaceId);
+        await computeAnalytics(this.world.persister, this.params.workspaceId);
         const finalResult = results.reduce(combineSpiderResults, emptySpiderResult);
         analysisBeingTracked.stop(finalResult);
         return finalResult;
+    }
+}
+
+export class LocalSpider implements Spider {
+
+    public async spider(criteria: ScmSearchCriteria,
+                        analyzer: Analyzer,
+                        opts: SpiderOptions): Promise<SpiderResult> {
+
+        const go = new AnalysisRun<string>({
+            howToFindRepos: () => findRepositoriesUnder(this.localDirectory),
+            determineRepoRef: repoRefFromLocalRepo,
+            describeFoundRepo: f => f,
+            howToClone: (rr, fr) => GitCommandGitProject.fromExistingDirectory(rr, fr) as Promise<GitProject>,
+            analyzer,
+            persister: opts.persister,
+
+            keepExistingPersisted: opts.keepExistingPersisted,
+            projectFilter: criteria.projectTest,
+        }, {
+                workspaceId: opts.workspaceId,
+                description: "local analysis under " + this.localDirectory,
+                maxRepos: 1000,
+            });
+
+        return go.run();
     }
 
     constructor(public readonly localDirectory: string) {
@@ -114,21 +165,30 @@ const oneSpiderResult = {
     projectsDetected: 1,
 };
 
-async function spiderOneLocalRepo(opts: SpiderOptions,
-    criteria: ScmSearchCriteria,
-    analyzer: Analyzer,
-    repoDir: string): Promise<SpiderResult> {
-    const localRepoRef = await repoRefFromLocalRepo(repoDir);
+async function spiderOneRepo<FoundRepo>(
+    world: {
+        howToClone: (rr: RepoRef, fr: FoundRepo) => Promise<GitProject>,
+        analyzer: Analyzer,
+        persister: ProjectAnalysisResultStore,
+        describeFoundRepo: (f: FoundRepo) => string,
+        keepExistingPersisted: ProjectAnalysisResultFilter,
+        projectFilter?: (p: Project) => Promise<boolean>,
+    },
+    opts: {
+        workspaceId: string,
+    },
+    localRepoRef: RepoRef,
+    repoDir: FoundRepo): Promise<SpiderResult> {
 
-    if (await existingRecordShouldBeKept(opts, localRepoRef)) {
+    if (await existingRecordShouldBeKept({ keepExistingPersisted: world.keepExistingPersisted, persister: world.persister }, localRepoRef)) {
         return {
             ...oneSpiderResult,
             keptExisting: [localRepoRef.url],
         };
     }
 
-    const project = await GitCommandGitProject.fromExistingDirectory(localRepoRef, repoDir);
-    if (criteria.projectTest && !await criteria.projectTest(project)) {
+    const project = await world.howToClone(localRepoRef, repoDir);
+    if (world.projectFilter && !await world.projectFilter(project)) {
         return {
             ...oneSpiderResult,
             projectsDetected: 0,        // does not count as a project
@@ -137,7 +197,7 @@ async function spiderOneLocalRepo(opts: SpiderOptions,
 
     let analyzeResults: AnalyzeResults;
     try {
-        analyzeResults = await analyze(project, analyzer, criteria);
+        analyzeResults = await analyze(project, world.analyzer, undefined);
     } catch (err) {
         return {
             ...oneSpiderResult,
@@ -151,8 +211,8 @@ async function spiderOneLocalRepo(opts: SpiderOptions,
 
     const persistResults: PersistResult[] = [];
     for (const repoInfo of analyzeResults.repoInfos) {
-        const persistResult = await persistRepoInfo(opts, repoInfo, {
-            sourceData: { localDirectory: repoDir },
+        const persistResult = await persistRepoInfo({ workspaceId: opts.workspaceId, persister: world.persister } as SpiderOptions, repoInfo, {
+            sourceData: world.describeFoundRepo(repoDir),
             url: localRepoRef.url,
             timestamp: new Date(),
         });

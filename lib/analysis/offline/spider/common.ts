@@ -58,6 +58,7 @@ export interface RepoInfo {
  */
 export async function analyze(project: Project,
                               analyzer: Analyzer,
+    // todo: remove unused parameter
                               criteria: ScmSearchCriteria): Promise<AnalyzeResults> {
     return { projectsDetected: 1, repoInfos: [await analyzeProject(project, analyzer)] };
 }
