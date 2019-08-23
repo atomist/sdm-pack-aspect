@@ -46,5 +46,5 @@ export interface ProjectAnalysisResult {
 
 export function isProjectAnalysisResult(r: any): r is ProjectAnalysisResult {
     const maybe = r as ProjectAnalysisResult;
-    return !!maybe.repoRef && !!maybe.timestamp;
+    return !!maybe.repoRef && !!maybe.analysis;
 }

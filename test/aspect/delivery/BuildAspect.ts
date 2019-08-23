@@ -37,7 +37,7 @@ export type BuildAspect<DATA = any> = DeliveryAspect<{ build: Build }, DATA>;
 export type FindFingerprintsInBuild = (gei: GoalExecutionListenerInvocation) => Promise<FP[] | FP>;
 
 export interface BuildTimeData {
-    millis: number;
+    elapsedMillis: number;
 }
 
 /**
@@ -79,7 +79,7 @@ export function buildTimeAspect(opts: Omit<Aspect, "name" | "displayName" | "ext
         displayName: "Build time",
         fingerprintFinder: async gei => {
             const elapsedMillis = Date.now() - gei.goalEvent.ts;
-            const data = { millis: elapsedMillis };
+            const data = { elapsedMillis };
             return {
                 name: BuildTimeType,
                 type: BuildTimeType,
@@ -87,6 +87,8 @@ export function buildTimeAspect(opts: Omit<Aspect, "name" | "displayName" | "ext
                 sha: sha256(JSON.stringify(data)),
             };
         },
+        toDisplayableFingerprintName: () => "Build time",
+        toDisplayableFingerprint: fp => `${fp.data.elapsedMillis}ms`,
     });
 }
 
