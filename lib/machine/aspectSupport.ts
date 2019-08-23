@@ -27,6 +27,7 @@ import {
 } from "@atomist/sdm";
 import { isInLocalMode } from "@atomist/sdm-core";
 import { toArray } from "@atomist/sdm-core/lib/util/misc/array";
+import { Build } from "@atomist/sdm-pack-build";
 import {
     Aspect,
     cachingVirtualProjectFinder,
@@ -34,6 +35,7 @@ import {
     fingerprintSupport,
     VirtualProjectFinder,
 } from "@atomist/sdm-pack-fingerprints";
+import { DeliveryGoals, isDeliveryAspect } from "../../test/aspect/delivery/DeliveryAspect";
 import { ClientFactory } from "../analysis/offline/persist/pgUtils";
 import {
     analyzeGitHubCommandRegistration,
@@ -54,8 +56,6 @@ import {
     createAnalyzer,
     sdmConfigClientFactory,
 } from "./machine";
-import { Build } from "@atomist/sdm-pack-build";
-import { DeliveryGoals, isDeliveryAspect } from "../../test/aspect/delivery/DeliveryAspect";
 
 /**
  * Consider directories containing any of these files to be virtual projects

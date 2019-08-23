@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-import { BuildListener, BuildListenerInvocation, BuildStatus, } from "@atomist/sdm";
-import { DeliveryAspect, FingerprintPublisher } from "./DeliveryAspect";
-import { Build } from "@atomist/sdm-pack-build";
-import { Omit } from "../../../lib/util/omit";
-import { Aspect, FP, sha256 } from "@atomist/sdm-pack-fingerprints";
 import { logger } from "@atomist/automation-client";
-import { Error } from "tslint/lib/error";
+import { BuildListener, BuildListenerInvocation, BuildStatus } from "@atomist/sdm";
 import { toArray } from "@atomist/sdm-core/lib/util/misc/array";
+import { Build } from "@atomist/sdm-pack-build";
+import { Aspect, FP, sha256 } from "@atomist/sdm-pack-fingerprints";
+import { Error } from "tslint/lib/error";
+import { Omit } from "../../../lib/util/omit";
+import { DeliveryAspect, FingerprintPublisher } from "./DeliveryAspect";
 
 export type BuildAspect<DATA = any> = DeliveryAspect<{ build: Build }, DATA>;
 
@@ -56,8 +56,8 @@ export function buildOutcomeAspect<DATA>(opts: Omit<Aspect, "extract" | "consoli
             basicStatsPath: "millis",
             defaultStatStatus: {
                 entropy: false,
-            }
-        }
+            },
+        },
     };
 }
 
@@ -73,7 +73,7 @@ export function buildTimeAspect(opts: Omit<Aspect, "name" | "displayName" | "ext
         displayName: "Build time",
         fingerprintFinder: async bi => {
             // TODO fix me
-            const millis = -1;// bi.build.timestamp - bi.build.startedAt;
+            const millis = -1; // bi.build.timestamp - bi.build.startedAt;
             const data = {millis };
             return {
                 name: BuildTimeType,
