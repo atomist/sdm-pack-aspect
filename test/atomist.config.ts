@@ -16,6 +16,7 @@
 
 import { AcceptEverythingUndesirableUsageChecker } from "../lib/aspect/ProblemStore";
 
+// Ensure we start up in local mode
 process.env.ATOMIST_MODE = "local";
 
 import { Configuration } from "@atomist/automation-client";
@@ -28,13 +29,14 @@ import {
 } from "@atomist/sdm-pack-docker";
 import {
     Aspect,
-    makeVirtualProjectAware, VirtualProjectFinder,
+    makeVirtualProjectAware, NpmDeps, VirtualProjectFinder,
 } from "@atomist/sdm-pack-fingerprints";
 import {
     PowerShellLanguage,
     ShellLanguage,
     YamlLanguage,
 } from "@atomist/sdm-pack-sloc/lib/languages";
+import * as _ from "lodash";
 import {
     CombinationTagger,
     RepositoryScorer,
@@ -64,9 +66,7 @@ import {
     DefaultVirtualProjectFinder,
 } from "../lib/machine/aspectSupport";
 import * as commonScorers from "../lib/scorer/commonScorers";
-import * as _ from "lodash";
 import * as commonTaggers from "../lib/tagger/commonTaggers";
-import { NpmDependencies } from "../lib/aspect/node/npmDependencies";
 
 const virtualProjectFinder: VirtualProjectFinder = DefaultVirtualProjectFinder;
 
@@ -75,7 +75,6 @@ const virtualProjectFinder: VirtualProjectFinder = DefaultVirtualProjectFinder;
  * @type {Configuration}
  */
 export const configuration: Configuration = configure(async sdm => {
-
     sdm.addExtensionPacks(
         aspectSupport({
             aspects: aspects(),
@@ -88,6 +87,7 @@ export const configuration: Configuration = configure(async sdm => {
             // Customize this to respond to undesirable usages
             undesirableUsageChecker: AcceptEverythingUndesirableUsageChecker,
 
+            virtualProjectFinder,
         }),
     );
 });
@@ -101,7 +101,7 @@ function aspects(): Aspect[] {
         // Based on license, decide the presence of a license: Not spread
         LicensePresence,
         new CodeOwnership(),
-        NpmDependencies,
+        NpmDeps,
         CodeOfConduct,
         ExposedSecrets,
         branchCount,
@@ -232,4 +232,3 @@ export function combinationTaggers(opts: Partial<CombinationTaggersParams>): Com
         commonTaggers.gitHot(optsToUse),
     ];
 }
-

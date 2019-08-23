@@ -75,7 +75,7 @@ export function exposeOverviewPage(express: Express,
             res.send(renderStaticReactNode(
                 Overview({
                     projectsAnalyzed: repos.length,
-                    importantAspects,
+                    foundAspects: importantAspects,
                     unfoundAspects,
                     repos: repos.map(r => ({
                         id: r.id,
