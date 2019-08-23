@@ -18,7 +18,7 @@ import { logger } from "@atomist/automation-client";
 import {
     BuildListener,
     BuildListenerInvocation,
-    BuildStatus,
+    BuildStatus, PushImpactListenerInvocation, PushListenerInvocation,
 } from "@atomist/sdm";
 import { toArray } from "@atomist/sdm-core/lib/util/misc/array";
 import { Build } from "@atomist/sdm-pack-build";
@@ -98,7 +98,17 @@ function buildListener(fingerprintFinder: FindFingerprintsInBuild, publisher: Pu
     return async bi => {
         if (buildCompletions.includes(bi.build.status)) {
             const fps = await fingerprintFinder(bi);
-            return publisher(bi, toArray(fps));
+            const pili: PushImpactListenerInvocation = {
+                ...bi,
+                // TODO replace by throwing error
+                project: undefined,
+                ...bi.build,
+                impactedSubProject: undefined,
+                filesChanged: undefined,
+                commit: bi.build.commit,
+                push: bi.build.push,
+            };
+            return publisher(pili, toArray(fps), {});
         }
         return false;
     };

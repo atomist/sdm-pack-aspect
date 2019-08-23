@@ -24,7 +24,7 @@ import { ProjectAnalysisResultStore } from "../../../lib/analysis/offline/persis
  */
 export function storeFingerprints(store: ProjectAnalysisResultStore): PublishFingerprints {
     return async (i, fingerprints) => {
-        return store.persist({
+        await store.persist({
             repoRef: i.id,
             // TODO do we need to set this?
             timestamp: undefined,
@@ -34,5 +34,6 @@ export function storeFingerprints(store: ProjectAnalysisResultStore): PublishFin
                 fingerprints,
             },
         });
+        return true;
     };
 }
