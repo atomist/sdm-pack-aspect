@@ -28,7 +28,7 @@ import {
 } from "@atomist/sdm-pack-docker";
 import {
     Aspect,
-    makeVirtualProjectAware,
+    makeVirtualProjectAware, VirtualProjectFinder,
 } from "@atomist/sdm-pack-fingerprints";
 import {
     PowerShellLanguage,
@@ -36,6 +36,7 @@ import {
     YamlLanguage,
 } from "@atomist/sdm-pack-sloc/lib/languages";
 import {
+    CombinationTagger,
     RepositoryScorer,
     TaggerDefinition,
 } from "../lib/aspect/AspectRegistry";
@@ -44,7 +45,6 @@ import { CodeOwnership } from "../lib/aspect/common/codeOwnership";
 import { CiAspect } from "../lib/aspect/common/stackAspect";
 import {
     CodeOfConduct,
-    CodeOfConductType,
 } from "../lib/aspect/community/codeOfConduct";
 import {
     License,
@@ -64,11 +64,16 @@ import {
     DefaultVirtualProjectFinder,
 } from "../lib/machine/aspectSupport";
 import * as commonScorers from "../lib/scorer/commonScorers";
-import {
-    combinationTaggers,
-    TaggersParams,
-} from "../lib/tagger/taggers";
+import * as _ from "lodash";
+import * as commonTaggers from "../lib/tagger/commonTaggers";
+import { NpmDependencies } from "../lib/aspect/node/npmDependencies";
 
+const virtualProjectFinder: VirtualProjectFinder = DefaultVirtualProjectFinder;
+
+/**
+ * Sample configuration to enable testing
+ * @type {Configuration}
+ */
 export const configuration: Configuration = configure(async sdm => {
 
     sdm.addExtensionPacks(
@@ -95,13 +100,10 @@ function aspects(): Aspect[] {
         License,
         // Based on license, decide the presence of a license: Not spread
         LicensePresence,
-        // SpringBootStarter,
-        // TypeScriptVersion,
         new CodeOwnership(),
-        // NpmDependencies,
+        NpmDependencies,
         CodeOfConduct,
         ExposedSecrets,
-        // TravisScriptsAspect,
         branchCount,
         GitRecency,
         // This is expensive as it requires deeper cloning
@@ -118,14 +120,9 @@ function aspects(): Aspect[] {
         ContributingAspect,
         globAspect({ name: "azure-pipelines", displayName: "Azure pipeline", glob: "azure-pipelines.yml" }),
         globAspect({ name: "readme", displayName: "Readme file", glob: "README.md" }),
-        // CsProjectTargetFrameworks,
-        // SpringBootVersion,
         // allMavenDependenciesAspect,    // This is expensive
-        // DirectMavenDependencies,
-        // PythonDependencies,
-        // K8sSpecs,
         LeinDeps,
-    ].map(aspect => makeVirtualProjectAware(aspect, DefaultVirtualProjectFinder));
+    ].map(aspect => makeVirtualProjectAware(aspect, virtualProjectFinder));
 }
 
 export function scorers(): RepositoryScorer[] {
@@ -146,6 +143,19 @@ export function scorers(): RepositoryScorer[] {
         commonScorers.requireGlobAspect({ glob: "CHANGELOG.md" }),
         commonScorers.requireGlobAspect({ glob: "CONTRIBUTING.md" }),
     ];
+}
+
+export interface TaggersParams {
+
+    /**
+     * Max number of branches not to call out
+     */
+    maxBranches: number;
+
+    /**
+     * Number of days at which to consider a repo dead
+     */
+    deadDays: number;
 }
 
 export function taggers(opts: Partial<TaggersParams>): TaggerDefinition[] {
@@ -177,3 +187,49 @@ export function taggers(opts: Partial<TaggersParams>): TaggerDefinition[] {
         },
     ];
 }
+
+export interface CombinationTaggersParams {
+
+    /**
+     * Mininum percentage of average aspect count (fraction) to expect to indicate adequate project understanding
+     */
+    minAverageAspectCountFractionToExpect: number;
+
+    /**
+     * Days since the last commit to indicate a hot repo
+     */
+    hotDays: number;
+
+    /**
+     * Number of committers needed to indicate a hot repo
+     */
+    hotContributors: number;
+}
+
+const DefaultCombinationTaggersParams: CombinationTaggersParams = {
+    minAverageAspectCountFractionToExpect: .75,
+    hotDays: 2,
+    hotContributors: 3,
+};
+
+export function combinationTaggers(opts: Partial<CombinationTaggersParams>): CombinationTagger[] {
+    const optsToUse = {
+        ...DefaultCombinationTaggersParams,
+        ...opts,
+    };
+    return [
+        {
+            name: "not understood",
+            description: "You may want to write aspects for these outlier projects",
+            severity: "warn",
+            test: (fps, id, tagContext) => {
+                const aspectCount = _.uniq(fps.map(f => f.type)).length;
+                // There are quite a few aspects that are found on everything, e.g. git
+                // We need to set the threshold count probably
+                return aspectCount < tagContext.averageFingerprintCount * optsToUse.minAverageAspectCountFractionToExpect;
+            },
+        },
+        commonTaggers.gitHot(optsToUse),
+    ];
+}
+
