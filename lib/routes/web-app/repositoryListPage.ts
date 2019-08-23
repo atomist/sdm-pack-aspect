@@ -32,14 +32,14 @@ export type SortOrder = "name" | "score";
  * Takes sortOrder optional parameter to dictate sorting
  */
 export function exposeRepositoryListPage(express: Express,
-                                         handlers: RequestHandler[],
-                                         aspectRegistry: AspectRegistry,
-                                         store: ProjectAnalysisResultStore): void {
+    handlers: RequestHandler[],
+    aspectRegistry: AspectRegistry,
+    store: ProjectAnalysisResultStore): void {
     express.get("/repositories", ...handlers, async (req, res) => {
         const workspaceId = req.query.workspace || req.params.workspace_id || "*";
         const sortOrder: SortOrder = req.query.sortOrder || "score";
         const byOrg = req.query.byOrg !== "false";
-        const category = req.query.category;
+        const category = req.query.category || "*";
 
         const allAnalysisResults = await store.loadInWorkspace(workspaceId, true);
 
@@ -67,6 +67,7 @@ export function exposeRepositoryListPage(express: Express,
                 sortOrder,
                 byOrg,
                 expand: !byOrg,
+                category,
             }),
             byOrg ? "Repositories by Organization" : "Repositories Ranked"));
     });

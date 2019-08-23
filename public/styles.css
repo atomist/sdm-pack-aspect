@@ -46,6 +46,10 @@ header .page-title {
     background: rgba(34, 106, 106, 0.2);
 }
 
+.scoreCategoryName {
+    font-family: "American Typewriter", sans-serif;
+}
+
 /* "explore" sunburst page */
 
 .percentageOfProjectWithoutTag {

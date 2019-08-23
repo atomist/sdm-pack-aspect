@@ -18,7 +18,7 @@ import { logger } from "@atomist/automation-client";
 
 export type FiveStar = 0 | 1 | 2 | 3 | 4 | 5;
 
-export const AlwaysIncludeCategory: string = "*";
+export const AlwaysIncludeCategory: "*" = "*";
 
 /**
  * Represents a quality ranking of a particular element of a project.

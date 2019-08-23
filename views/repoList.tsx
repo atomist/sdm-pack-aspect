@@ -22,6 +22,7 @@ export interface RepoListProps {
     sortOrder: SortOrder;
     byOrg: boolean;
     expand: boolean;
+    category: "*" | string;
 }
 
 function toRepoListItem(rfd: RepoForDisplay): React.ReactElement {
@@ -37,8 +38,8 @@ function toRepoListItem(rfd: RepoForDisplay): React.ReactElement {
 }
 
 function displayProjects(owner: string,
-                         repos: RepoForDisplay[],
-                         props: RepoListProps): React.ReactElement {
+    repos: RepoForDisplay[],
+    props: RepoListProps): React.ReactElement {
     const sorted = _.sortBy(repos,
         p => props.sortOrder === "score" ?
             p.score :
@@ -53,10 +54,14 @@ function displayProjects(owner: string,
 
 export function RepoList(props: RepoListProps): React.ReactElement {
     const projectsByOrg = _.groupBy(props.repos, p => p.owner);
+    const orgCount = Object.entries(projectsByOrg).length;
+    const categoryDescription = props.category === "*" ? undefined :
+        <h3>Scoring by category: <span className="scoreCategoryName">{props.category}</span></h3>;
     return <div>
-        <h2>{Object.entries(projectsByOrg).length} organizations containing {" "}
-            {props.repos.length} repositories and {" "}
+        <h2>{orgCount} organizations: {" "}
+            {props.repos.length} repositories, {" "}
             {props.virtualProjectCount} virtual projects </h2>
+        <h3>{categoryDescription}</h3>
 
         {props.byOrg ? reposByOrg(props) : reposRanked(props)}
     </div>;
