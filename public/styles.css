@@ -57,10 +57,12 @@ header .page-title {
 }
 
 .ongoingAnalysis {
+    padding: 5px;
     background-color: lightgreen;
 }
 
 .nongoingAnalysis {
+    padding: 5px;
     background-color: lightgray;
 }
 

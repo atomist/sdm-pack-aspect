@@ -47,8 +47,8 @@ import {
 export class LocalSpider implements Spider {
 
     public async spider(criteria: ScmSearchCriteria,
-                        analyzer: Analyzer,
-                        opts: SpiderOptions): Promise<SpiderResult> {
+        analyzer: Analyzer,
+        opts: SpiderOptions): Promise<SpiderResult> {
         const repoIterator = findRepositoriesUnder(this.localDirectory);
         const results: SpiderResult[] = [];
 
@@ -56,7 +56,11 @@ export class LocalSpider implements Spider {
             description: "local analysis under " + this.localDirectory,
         });
 
-        for await (const repoDir of repoIterator) {
+        const maxRepos = 1000;
+        const plannedRepoDirs = await takeFromIterator(maxRepos, repoIterator);
+        analysisBeingTracked.plan(plannedRepoDirs);
+
+        for (const repoDir of plannedRepoDirs) {
             logger.info("Analyzing local repo at %s", repoDir);
             results.push(await spiderOneLocalRepo(opts, criteria, analyzer, repoDir));
         }
@@ -70,6 +74,18 @@ export class LocalSpider implements Spider {
 
     constructor(public readonly localDirectory: string) {
     }
+}
+
+async function takeFromIterator<T>(max: number, iter: AsyncIterable<T>): Promise<T[]> {
+    let i = 0;
+    const result: T[] = [];
+    for await (const t of iter) {
+        if (++i > max) {
+            return result;
+        }
+        result.push(t);
+    }
+    return result;
 }
 
 function combineSpiderResults(r1: SpiderResult, r2: SpiderResult): SpiderResult {
@@ -99,9 +115,9 @@ const oneSpiderResult = {
 };
 
 async function spiderOneLocalRepo(opts: SpiderOptions,
-                                  criteria: ScmSearchCriteria,
-                                  analyzer: Analyzer,
-                                  repoDir: string): Promise<SpiderResult> {
+    criteria: ScmSearchCriteria,
+    analyzer: Analyzer,
+    repoDir: string): Promise<SpiderResult> {
     const localRepoRef = await repoRefFromLocalRepo(repoDir);
 
     if (await existingRecordShouldBeKept(opts, localRepoRef)) {

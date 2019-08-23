@@ -1,7 +1,7 @@
 import { RepoRef } from "@atomist/automation-client";
 import { SpiderResult } from "../offline/spider/Spider";
 
-type AnalysisTrackingRepo = Pick<RepoRef, "owner" | "repo" | "url">;
+type AnalysisTrackingRepo = string | Pick<RepoRef, "owner" | "repo" | "url">;
 
 type AnalysisProgress = "Going" | "Stopped";
 
@@ -11,8 +11,18 @@ interface AnalysisForTracking {
     progress: AnalysisProgress;
 }
 
+interface RepoForReporting {
+    description: string;
+}
+interface AnalysisForReporting {
+    description: string;
+    analysisId: string;
+    progress: AnalysisProgress;
+    plannedRepos: RepoForReporting[];
+}
+
 export interface AnalysisReport {
-    analyses: AnalysisForTracking[];
+    analyses: AnalysisForReporting[];
 }
 
 export interface AnalysisTracking {
@@ -22,12 +32,29 @@ export interface AnalysisTracking {
 
 // make the interface later
 export class AnalysisBeingTracked {
+    private plannedRepos: AnalysisTrackingRepo[] = [];
     constructor(public readonly me: AnalysisForTracking) {
     }
-    public plan(repos: AnalysisTrackingRepo[]): void { }
+    public plan(repos: AnalysisTrackingRepo[]): void {
+        for (const r of repos) {
+            this.plannedRepos.push(r);
+        }
+    }
 
     public stop(result: SpiderResult): void {
         this.me.progress = "Stopped";
+    }
+
+    public report(): AnalysisForReporting {
+        return {
+            ...this.me,
+            plannedRepos: this.plannedRepos.map(s => {
+                if (typeof s === "string") {
+                    return { description: s };
+                }
+                return { description: s.url };
+            }),
+        };
     }
 }
 
@@ -50,7 +77,7 @@ class AnalysisTracker implements AnalysisTracking {
 
     public report() {
         return {
-            analyses: this.analyses.map(a => a.me),
+            analyses: this.analyses.map(a => a.report()),
         };
     }
 

@@ -1,19 +1,35 @@
 import * as React from "react";
 
+interface AnalysisTrackingRepo {
+    description: string;
+}
 interface AnalysisTrackingAnalysis {
     description: string;
     analysisId: string;
     progress: "Going" | "Stopped";
+    plannedRepos: AnalysisTrackingRepo[];
 }
 
 export interface AnalysisTrackingProps {
     analyses: AnalysisTrackingAnalysis[];
 }
 
+function displayRepository(repo: AnalysisTrackingRepo & { repoAnalysisId: string }) {
+    return <li key={repo.repoAnalysisId}>{repo.description}</li>;
+}
+
+function listRepositories(repos: AnalysisTrackingRepo[]) {
+    return <ul>
+        {repos.map((r, i) => displayRepository({ ...r, repoAnalysisId: "" + i }))}
+    </ul>;
+}
+
 function displayAnalysis(analysis: AnalysisTrackingAnalysis) {
     const analysisStatusClass = analysis.progress === "Going" ? "ongoingAnalysis" : "nongoingAnalysis";
     return <div className={analysisStatusClass}>
         {analysis.description}
+        <h4>Repositories:</h4>
+        {listRepositories(analysis.plannedRepos)}
     </div>;
 }
 
