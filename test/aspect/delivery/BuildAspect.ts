@@ -22,12 +22,11 @@ import {
 } from "@atomist/sdm";
 import { toArray } from "@atomist/sdm-core/lib/util/misc/array";
 import { Build } from "@atomist/sdm-pack-build";
-import { Aspect, FP, sha256 } from "@atomist/sdm-pack-fingerprints";
+import { Aspect, FP, PublishFingerprints, sha256 } from "@atomist/sdm-pack-fingerprints";
 import { Error } from "tslint/lib/error";
 import { Omit } from "../../../lib/util/omit";
 import {
     DeliveryAspect,
-    FingerprintPublisher,
 } from "./DeliveryAspect";
 
 export type BuildAspect<DATA = any> = DeliveryAspect<{ build: Build }, DATA>;
@@ -44,23 +43,20 @@ export interface BuildTimeData {
  * Create an SDM BuildListener from BuildAspect
  */
 export function buildOutcomeAspect<DATA>(opts: Omit<Aspect, "extract" | "consolidate"> & {
-    build?: Build,
-    publisher: FingerprintPublisher,
     fingerprintFinder: FindFingerprintsInBuild,
 }): BuildAspect<DATA> {
-    // TODO default publisher
     return {
         ...opts,
         extract: async () => [],
-        register: (sdm, goals) => {
+        register: (sdm, goals, publisher) => {
             if (!goals.build) {
                 throw new Error("No build goal supplied. Cannot register a build aspect");
             }
-            logger.info("Registering build aspect %s", opts.name);
-            return goals.build.withListener(buildListener(opts.fingerprintFinder, opts.publisher));
+            logger.info("Registering build outcome aspect '%s'", opts.name);
+            return goals.build.withListener(buildListener(opts.fingerprintFinder, publisher));
         },
         stats: {
-            basicStatsPath: "millis",
+            basicStatsPath: "elapsedMillis",
             defaultStatStatus: {
                 entropy: false,
             },
@@ -70,29 +66,35 @@ export function buildOutcomeAspect<DATA>(opts: Omit<Aspect, "extract" | "consoli
 
 export const BuildTimeType = "build-time";
 
-export function buildTimeAspect(opts: Omit<Aspect, "name" | "displayName" | "extract" | "consolidate"> & {
-    build?: Build,
-    publisher: FingerprintPublisher,
-}): BuildAspect<BuildTimeData> {
+/**
+ * Log build time
+ * @param {Omit<Aspect, "name" | "displayName" | "extract" | "consolidate">} opts
+ * @return {BuildAspect<BuildTimeData>}
+ */
+export function buildTimeAspect(opts: Omit<Aspect, "name" | "displayName" | "extract" | "consolidate"> = {}): BuildAspect<BuildTimeData> {
     return buildOutcomeAspect({
         ...opts,
         name: "build-time",
         displayName: "Build time",
         fingerprintFinder: async bi => {
-            // TODO fix me
-            const millis = -1; // bi.build.timestamp - bi.build.startedAt;
-            const data = {millis };
-            return {
-                name: BuildTimeType,
-                type: BuildTimeType,
-                data,
-                sha: sha256(JSON.stringify(data)),
-            };
+            try {
+                const elapsedMillis = parseInt(bi.build.timestamp, 10) - parseInt(bi.build.startedAt, 10);
+                const data = { millis: elapsedMillis };
+                return {
+                    name: BuildTimeType,
+                    type: BuildTimeType,
+                    data,
+                    sha: sha256(JSON.stringify(data)),
+                };
+            } catch (err) {
+                logger.warn("Couldn't parse build timestamps %s and %s", bi.build.timestamp, bi.build.startedAt);
+                return undefined;
+            }
         },
     });
 }
 
-function buildListener(fingerprintFinder: FindFingerprintsInBuild, publisher: FingerprintPublisher): BuildListener {
+function buildListener(fingerprintFinder: FindFingerprintsInBuild, publisher: PublishFingerprints): BuildListener {
     return async bi => {
         if (buildCompletions.includes(bi.build.status)) {
             const fps = await fingerprintFinder(bi);

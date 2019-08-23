@@ -27,12 +27,11 @@ import {
 } from "@atomist/sdm";
 import { isInLocalMode } from "@atomist/sdm-core";
 import { toArray } from "@atomist/sdm-core/lib/util/misc/array";
-import { Build } from "@atomist/sdm-pack-build";
 import {
     Aspect,
     cachingVirtualProjectFinder,
     fileNamesVirtualProjectFinder,
-    fingerprintSupport,
+    fingerprintSupport, PublishFingerprints,
     VirtualProjectFinder,
 } from "@atomist/sdm-pack-fingerprints";
 import {
@@ -93,7 +92,11 @@ export interface AspectSupportOptions extends Partial<DeliveryGoals> {
 
     undesirableUsageChecker?: UndesirableUsageChecker;
 
+<<<<<<< HEAD
     exposeWeb?: boolean;
+=======
+    publishFingerprints?: PublishFingerprints;
+>>>>>>> Upgrade fingerprints pack
 }
 
 export function aspectSupport(options: AspectSupportOptions): ExtensionPack {
@@ -116,11 +119,12 @@ export function aspectSupport(options: AspectSupportOptions): ExtensionPack {
                 sdm.addExtensionPacks(fingerprintSupport({
                     pushImpactGoal: options.pushImpactGoal,
                     aspects: options.aspects,
+                    publishFingerprints: options.publishFingerprints,
                 }));
                 if (!!options.build) {
                     toArray(options.aspects)
                         .filter(isDeliveryAspect)
-                        .forEach(da => da.register(sdm, options));
+                        .forEach(da => da.register(sdm, options, options.publishFingerprints));
                 }
             }
 

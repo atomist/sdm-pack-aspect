@@ -15,13 +15,12 @@
  */
 
 import {
-    SdmContext,
     SoftwareDeliveryMachine,
 } from "@atomist/sdm";
 import { Build } from "@atomist/sdm-pack-build";
 import {
     Aspect,
-    FP,
+    FP, PublishFingerprints,
 } from "@atomist/sdm-pack-fingerprints";
 
 // TODO does this exist
@@ -29,12 +28,12 @@ export interface DeliveryGoals {
     build?: Build;
 }
 
-// TODO does this exist anywhere
-export type FingerprintPublisher = (ctx: SdmContext, fps: FP[]) => Promise<boolean>;
-
 export interface DeliveryAspect<GOALS extends DeliveryGoals, DATA = any> extends Aspect<DATA> {
 
-    register(sdm: SoftwareDeliveryMachine, deliveryGoals: GOALS): void;
+    /**
+     * Cause this to emit fingerprints
+     */
+    register(sdm: SoftwareDeliveryMachine, deliveryGoals: GOALS, publisher: PublishFingerprints): void;
 
 }
 
