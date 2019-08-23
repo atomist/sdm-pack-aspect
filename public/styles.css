@@ -50,8 +50,18 @@ header .page-title {
     font-family: "American Typewriter", sans-serif;
 }
 
+/* analysis tracking page */
+
 .typeThisAtCommandLine {
     font-family: "American Typewriter", sans-serif;
+}
+
+.ongoingAnalysis {
+    background-color: lightgreen;
+}
+
+.nongoingAnalysis {
+    background-color: lightgray;
 }
 
 /* "explore" sunburst page */

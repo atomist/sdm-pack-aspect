@@ -3,6 +3,7 @@ import * as React from "react";
 interface AnalysisTrackingAnalysis {
     description: string;
     analysisId: string;
+    progress: "Going" | "Stopped";
 }
 
 export interface AnalysisTrackingProps {
@@ -10,13 +11,14 @@ export interface AnalysisTrackingProps {
 }
 
 function displayAnalysis(analysis: AnalysisTrackingAnalysis) {
-    return <li key={analysis.analysisId}>
-        analysis.description
-    </li>;
+    const analysisStatusClass = analysis.progress === "Going" ? "ongoingAnalysis" : "nongoingAnalysis";
+    return <div className={analysisStatusClass}>
+        {analysis.description}
+    </div>;
 }
 
 function listAnalyses(analyses: AnalysisTrackingAnalysis[]) {
-    return <ul>${analyses.map(displayAnalysis)}</ul>;
+    return <div className="analysisList">{analyses.map(displayAnalysis)}</div>;
 }
 
 export function AnalysisTrackingPage(props: AnalysisTrackingProps): React.ReactElement {
