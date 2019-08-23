@@ -22,11 +22,15 @@ export interface ProjectAspectForDisplay {
 export interface RepoExplorerProps {
     repo: ScoredRepo;
     aspects: ProjectAspectForDisplay[];
+    category: "*" | string;
 }
 
 export function RepoExplorer(props: RepoExplorerProps): React.ReactElement {
+    const categoryDescription = props.category === "*" ? undefined :
+        <h3>Scoring by category: <span className="scoreCategoryName">{props.category}</span></h3>;
     return <div>
         <h1>{props.repo.repoRef.owner} / <a href={props.repo.repoRef.url}>{props.repo.repoRef.repo}</a></h1>
+        {categoryDescription}
 
         {displayWeightedScores(props.repo.weightedScore)}
 
@@ -46,7 +50,7 @@ export function RepoExplorer(props: RepoExplorerProps): React.ReactElement {
 function displayRawFingerprints(props: RepoExplorerProps): React.ReactElement {
     return collapsible("raw-fp", "Raw Fingerprints",
         <pre>
-        {JSON.stringify(props.repo.analysis.fingerprints, undefined, 2)}
+            {JSON.stringify(props.repo.analysis.fingerprints, undefined, 2)}
         </pre>,
         false);
 
@@ -115,7 +119,7 @@ function displayFingerprint(fingerprint: ProjectFingerprintForDisplay): React.Re
 function displayCodeMetrics(props: RepoExplorerProps): React.ReactElement {
     const cmf = props.repo.analysis.fingerprints.find(isCodeMetricsFingerprint);
     if (!cmf) {
-        return <div/>;
+        return <div />;
     }
 
     return collapsible("languages", "Languages",
