@@ -1,3 +1,5 @@
+import { logger } from "@atomist/automation-client";
+
 /*
  * Copyright © 2019 Atomist, Inc.
  *
@@ -58,8 +60,8 @@ export interface Scored {
  * @return {Promise<Scores>}
  */
 export async function scoresFor<T, CONTEXT>(scoreFunctions: Array<(t: T, c: CONTEXT) => Promise<Score | undefined>>,
-    toScore: T,
-    context: CONTEXT): Promise<Scores> {
+                                            toScore: T,
+                                            context: CONTEXT): Promise<Scores> {
     const scores: Scores = {};
     for (const scorer of scoreFunctions) {
         const score = await scorer(toScore, context);
@@ -96,7 +98,7 @@ export interface WeightedScore {
  * Returns a real number from 0 to 5
  */
 export function weightedCompositeScore(scored: Scored,
-    weightings: ScoreWeightings = {}): WeightedScore | undefined {
+                                       weightings: ScoreWeightings = {}): WeightedScore | undefined {
     const keys = Object.getOwnPropertyNames(scored.scores);
     if (keys.length === 0) {
         return {
@@ -110,6 +112,10 @@ export function weightedCompositeScore(scored: Scored,
     let divideBy = 0;
     const scores = keys.map(k => scored.scores[k]);
     for (const score of scores) {
+        if (Number.isNaN(score.score)) {
+            logger.error("Invalid score: %j", score);
+            continue;
+        }
         const weighting = weightings[score.name] || 1;
         weightedScores[score.name] = {
             ...score,
