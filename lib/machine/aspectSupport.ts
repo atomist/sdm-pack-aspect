@@ -31,7 +31,8 @@ import {
     Aspect,
     cachingVirtualProjectFinder,
     fileNamesVirtualProjectFinder,
-    fingerprintSupport, PublishFingerprints,
+    fingerprintSupport,
+    PublishFingerprints,
     VirtualProjectFinder,
 } from "@atomist/sdm-pack-fingerprints";
 import {

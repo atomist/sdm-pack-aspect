@@ -20,7 +20,8 @@ import {
 import { Build } from "@atomist/sdm-pack-build";
 import {
     Aspect,
-    FP, PublishFingerprints,
+    FP,
+    PublishFingerprints,
 } from "@atomist/sdm-pack-fingerprints";
 
 // TODO does this exist
