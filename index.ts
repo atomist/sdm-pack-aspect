@@ -22,7 +22,6 @@ export * from "./lib/tagger/taggers";
 export * from "./lib/tagger/commonTaggers";
 export * from "./lib/scorer/Score";
 export * from "./lib/scorer/scoring";
-export * from "./lib/scorer/scorerUtils";
 export * from "./lib/aspect/common/codeMetrics";
 export * from "./lib/aspect/common/codeOwnership";
 export * from "./lib/aspect/common/stackAspect";
