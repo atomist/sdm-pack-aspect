@@ -243,13 +243,14 @@ function exposeDrift(express: Express, aspectRegistry: AspectRegistry, store: Pr
     express.get("/api/v1/:workspace_id/drift", [corsHandler(), ...authHandlers()], async (req, res) => {
             const type = req.query.type;
             const band = req.query.band === "true";
+            const showAll = req.query.showAll === "true";
             const percentile: number = req.query.percentile ? parseFloat(req.query.percentile) : 0;
             logger.info("Entropy query: query.percentile='%s', percentile=%d, type=%s",
                 req.query.percentile, percentile, type);
 
             let driftTree = await store.aspectDriftTree(req.params.workspace_id, percentile, type);
             fillInAspectNames(aspectRegistry, driftTree.tree);
-            if (!type) {
+            if (!type && !showAll) {
                 driftTree = removeAspectsWithoutMeaningfulEntropy(aspectRegistry, driftTree);
             }
             if (band) {
