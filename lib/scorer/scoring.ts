@@ -48,7 +48,7 @@ export async function scoreRepo(scorers: RepositoryScorer[],
     // Remove scores that don't match our desired category
     for (const key of Object.keys(scores)) {
         const score = scores[key];
-        if (opts.category && score.category !== opts.category && score.category !== AlwaysIncludeCategory) {
+        if (opts.category && score.category !== opts.category && opts.category !== AlwaysIncludeCategory) {
             delete scores[key];
         }
     }
