@@ -25,7 +25,7 @@ import {
 import { execPromise } from "@atomist/sdm";
 import * as fs from "fs-extra";
 import * as path from "path";
-import { globalAnalysisTracking } from "../../../tracking/analysesTracker";
+import { globalAnalysisTracking } from "../../../tracking/analysisTracker";
 import {
     combinePersistResults,
     emptyPersistResult,
@@ -48,7 +48,7 @@ import {
     SpiderResult,
 } from "../Spider";
 
-class AnalysisRun<FoundRepo> {
+export class AnalysisRun<FoundRepo> {
     constructor(
         private readonly world: {
             howToFindRepos: () => AsyncIterable<FoundRepo>,
@@ -78,7 +78,8 @@ class AnalysisRun<FoundRepo> {
         });
 
         const plannedRepos = await takeFromIterator(this.params.maxRepos, this.world.howToFindRepos());
-        analysisBeingTracked.plan(plannedRepos.map(pr => (this.world.describeFoundRepo(pr))));
+        const trackedRepos =
+            plannedRepos.map(pr => analysisBeingTracked.plan(({ description: this.world.describeFoundRepo(pr) })));
 
         const results: SpiderResult[] = [];
 
@@ -91,6 +92,9 @@ class AnalysisRun<FoundRepo> {
         }
 
         logger.debug("Computing analytics over all fingerprints...");
+
+        // Question for Rod: should this run intermittently or only at the end?
+
         await computeAnalytics(this.world.persister, this.params.workspaceId);
         const finalResult = results.reduce(combineSpiderResults, emptySpiderResult);
         analysisBeingTracked.stop(finalResult);

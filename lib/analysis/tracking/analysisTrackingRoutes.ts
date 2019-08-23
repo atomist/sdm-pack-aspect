@@ -5,7 +5,7 @@ import {
     RequestHandler,
 } from "express";
 import { renderStaticReactNode } from "../../../views/topLevelPage";
-import { AnalysisTracking } from "./analysesTracker";
+import { AnalysisTracking } from "./analysisTracker";
 import { AnalysisTrackingPage } from "./analysisTrackingPage";
 
 export function exposeAnalysisTrackingPage(express: Express,

@@ -15,6 +15,7 @@
  */
 
 import {
+    GitProject,
     LocalProject,
     logger,
     Project,
@@ -30,6 +31,7 @@ import {
     existingRecordShouldBeKept,
     persistRepoInfo,
 } from "../common";
+import { AnalysisRun } from "../local/LocalSpider";
 import { ScmSearchCriteria } from "../ScmSearchCriteria";
 import {
     Analyzer,
@@ -56,8 +58,32 @@ export interface Cloner {
 export class GitHubSpider implements Spider {
 
     public async spider(criteria: ScmSearchCriteria,
-                        analyzer: Analyzer,
-                        opts: SpiderOptions): Promise<SpiderResult> {
+        analyzer: Analyzer,
+        opts: SpiderOptions): Promise<SpiderResult> {
+
+        const run = new AnalysisRun<GitHubSearchResult>({
+            howToFindRepos: () => this.queryFunction(process.env.GITHUB_TOKEN, criteria),
+            determineRepoRef: sourceData => Promise.resolve({
+                owner: sourceData.owner.login,
+                repo: sourceData.name,
+                url: sourceData.url,
+            }),
+            describeFoundRepo: sourceData => sourceData.url,
+            howToClone: (rr, fr) => {
+                return this.cloner.clone(fr) as Promise<GitProject>;
+            },
+            analyzer,
+            persister: opts.persister,
+
+            keepExistingPersisted: opts.keepExistingPersisted,
+            projectFilter: criteria.projectTest,
+
+        }, {
+                workspaceId: opts.workspaceId,
+                description: "querying GitHub: " + criteria.githubQueries.join(" and "),
+                maxRepos: 1000,
+            });
+
         let repoCount = 0;
         const keepExisting: RepoUrl[] = [];
         const errors: SpiderFailure[] = [];
@@ -75,6 +101,7 @@ export class GitHubSpider implements Spider {
                 }
 
                 logger.debug("Computing analytics over fingerprints...");
+                // Question for Rod: should this run intermittently or only at the end?
                 await computeAnalytics(opts.persister, opts.workspaceId);
 
                 logTimings(analyzer.timings);
@@ -127,8 +154,8 @@ export class GitHubSpider implements Spider {
             projectsDetected: analyzeResults.projectCount,
             failed:
                 [...errors,
-                    ...analyzeResults.failedToPersist,
-                    ...analyzeResults.failedToCloneOrAnalyze],
+                ...analyzeResults.failedToPersist,
+                ...analyzeResults.failedToCloneOrAnalyze],
             keptExisting: keepExisting,
             persistedAnalyses: analyzeResults.persisted,
         };
@@ -191,9 +218,9 @@ function combineAnalyzeAndPersistResult(one: AnalyzeAndPersistResult, two: Analy
  * @return {Promise<void>}
  */
 async function runAnalysis(cloner: Cloner,
-                           sourceData: GitHubSearchResult,
-                           criteria: ScmSearchCriteria,
-                           analyzer: Analyzer): Promise<AnalyzeResult & { analyzeResults?: AnalyzeResults, sourceData: GitHubSearchResult }> {
+    sourceData: GitHubSearchResult,
+    criteria: ScmSearchCriteria,
+    analyzer: Analyzer): Promise<AnalyzeResult & { analyzeResults?: AnalyzeResults, sourceData: GitHubSearchResult }> {
     const startTime = new Date().getTime();
     let project;
     let clonedIn: number;
@@ -255,8 +282,8 @@ async function runAnalysis(cloner: Cloner,
 }
 
 async function runPersist(criteria: ScmSearchCriteria,
-                          opts: SpiderOptions,
-                          ar: AnalyzeResult & { analyzeResults?: AnalyzeResults, sourceData: GitHubSearchResult }): Promise<AnalyzeAndPersistResult> {
+    opts: SpiderOptions,
+    ar: AnalyzeResult & { analyzeResults?: AnalyzeResults, sourceData: GitHubSearchResult }): Promise<AnalyzeAndPersistResult> {
     const persistResults: PersistResult[] = [];
 
     logger.debug("Persisting...");

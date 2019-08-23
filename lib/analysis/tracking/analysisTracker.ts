@@ -1,24 +1,25 @@
 import { RepoRef } from "@atomist/automation-client";
 import { SpiderResult } from "../offline/spider/Spider";
 
-type AnalysisTrackingRepo = string | Pick<RepoRef, "owner" | "repo" | "url">;
+interface AnalysisTrackingRepo { description: string; }
 
 type AnalysisProgress = "Going" | "Stopped";
 
 interface AnalysisForTracking {
     description: string;
-    analysisId: string;
+    analysisKey: string;
     progress: AnalysisProgress;
 }
 
 interface RepoForReporting {
     description: string;
+    repoKey: string;
 }
 interface AnalysisForReporting {
     description: string;
-    analysisId: string;
+    analysisKey: string;
     progress: AnalysisProgress;
-    plannedRepos: RepoForReporting[];
+    repos: RepoForReporting[];
 }
 
 export interface AnalysisReport {
@@ -30,15 +31,37 @@ export interface AnalysisTracking {
     report(): AnalysisReport;
 }
 
+export class RepoBeingTracked {
+
+    constructor(private readonly params: {
+        description: string;
+        repoKey: string;
+    }) {
+
+    }
+
+    public report(): RepoForReporting {
+        return {
+            ...this.params,
+        };
+    }
+}
+
 // make the interface later
 export class AnalysisBeingTracked {
-    private plannedRepos: AnalysisTrackingRepo[] = [];
+    private repos: RepoBeingTracked[] = [];
     constructor(public readonly me: AnalysisForTracking) {
     }
-    public plan(repos: AnalysisTrackingRepo[]): void {
-        for (const r of repos) {
-            this.plannedRepos.push(r);
-        }
+
+    private repoCount: number = 0;
+
+    public plan(repo: AnalysisTrackingRepo): RepoBeingTracked {
+        const newRepo = new RepoBeingTracked({
+            ...repo,
+            repoKey: this.me.analysisKey + "/repo#" + this.repoCount++,
+        });
+        this.repos.push(newRepo);
+        return newRepo;
     }
 
     public stop(result: SpiderResult): void {
@@ -48,12 +71,7 @@ export class AnalysisBeingTracked {
     public report(): AnalysisForReporting {
         return {
             ...this.me,
-            plannedRepos: this.plannedRepos.map(s => {
-                if (typeof s === "string") {
-                    return { description: s };
-                }
-                return { description: s.url };
-            }),
+            repos: this.repos.map(s => s.report()),
         };
     }
 }
@@ -68,7 +86,7 @@ class AnalysisTracker implements AnalysisTracking {
         const analysisId = "analysis#" + this.counter++;
         const newAnalysis: AnalysisBeingTracked = new AnalysisBeingTracked({
             ...params,
-            analysisId,
+            analysisKey: analysisId,
             progress: "Going",
         });
         this.analyses.push(newAnalysis);

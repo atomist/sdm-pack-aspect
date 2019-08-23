@@ -5,9 +5,9 @@ interface AnalysisTrackingRepo {
 }
 interface AnalysisTrackingAnalysis {
     description: string;
-    analysisId: string;
+    analysisKey: string;
     progress: "Going" | "Stopped";
-    plannedRepos: AnalysisTrackingRepo[];
+    repos: AnalysisTrackingRepo[];
 }
 
 export interface AnalysisTrackingProps {
@@ -29,7 +29,7 @@ function displayAnalysis(analysis: AnalysisTrackingAnalysis) {
     return <div className={analysisStatusClass}>
         {analysis.description}
         <h4>Repositories:</h4>
-        {listRepositories(analysis.plannedRepos)}
+        {listRepositories(analysis.repos)}
     </div>;
 }
 
