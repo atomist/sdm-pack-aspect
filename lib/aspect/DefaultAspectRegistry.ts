@@ -173,7 +173,7 @@ export function defaultedToDisplayableFingerprint(aspect?: Aspect): (fpi: FP) =>
 }
 
 function tagsFor(fp: FP, id: RemoteRepoRef, tagContext: TagContext, taggers: Tagger[]): Tag[] {
-    return _.uniqBy(taggers
+    return _.uniqBy(taggers.filter(t => t !== undefined)
             .map(tagger => ({ ...tagger, tag: tagger.test(fp, id, tagContext) }))
             .filter(t => !!t.tag),
         tag => tag.name);
