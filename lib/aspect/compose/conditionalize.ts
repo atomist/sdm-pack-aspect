@@ -35,10 +35,10 @@ export function conditionalize(aspect: Aspect,
         displayName: details.displayName || aspect.displayName,
         toDisplayableFingerprintName: details.toDisplayableFingerprintName || aspect.toDisplayableFingerprintName,
         toDisplayableFingerprint: details.toDisplayableFingerprint || aspect.toDisplayableFingerprint,
-        extract: async p => {
+        extract: async (p, pli) => {
             const testResult = await test(p);
             if (testResult) {
-                const rawFingerprints = toArray(await aspect.extract(p));
+                const rawFingerprints = toArray(await aspect.extract(p, pli));
                 return rawFingerprints.map(raw => {
                     const merged = {
                         ...raw,

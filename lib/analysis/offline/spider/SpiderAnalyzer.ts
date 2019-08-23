@@ -90,7 +90,8 @@ async function extractAtomicAspects(p: Project,
 async function extractify(aspect: Aspect, p: Project, timeRecorder: TimeRecorder): Promise<FP[]> {
     try {
         const timed = await time(
-            async () => aspect.extract(p));
+            // TODO fake up push invocation
+            async () => aspect.extract(p, undefined));
         addTiming(aspect.name, timed.millis, timeRecorder);
         const result = !!timed.result ? toArray(timed.result) : [];
         return result;
