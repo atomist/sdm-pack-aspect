@@ -25,7 +25,10 @@ import {
     metadata,
     PushImpact,
 } from "@atomist/sdm";
-import { isInLocalMode } from "@atomist/sdm-core";
+import {
+    AllGoals,
+    isInLocalMode,
+} from "@atomist/sdm-core";
 import { toArray } from "@atomist/sdm-core/lib/util/misc/array";
 import {
     Aspect,
@@ -35,10 +38,7 @@ import {
     PublishFingerprints,
     VirtualProjectFinder,
 } from "@atomist/sdm-pack-fingerprints";
-import {
-    DeliveryGoals,
-    isDeliveryAspect,
-} from "../../test/aspect/delivery/DeliveryAspect";
+import { isDeliveryAspect } from "../../test/aspect/delivery/DeliveryAspect";
 import { ClientFactory } from "../analysis/offline/persist/pgUtils";
 import {
     analyzeGitHubByQueryCommandRegistration,
@@ -79,9 +79,8 @@ export const DefaultScoreWeightings: ScoreWeightings = {
     anchor: 3,
 };
 
-export interface AspectSupportOptions extends Partial<DeliveryGoals> {
+export interface AspectSupportOptions {
     aspects: Aspect | Aspect[];
-    pushImpactGoal?: PushImpact;
 
     virtualProjectFinder?: VirtualProjectFinder;
 
@@ -93,11 +92,11 @@ export interface AspectSupportOptions extends Partial<DeliveryGoals> {
 
     undesirableUsageChecker?: UndesirableUsageChecker;
 
-<<<<<<< HEAD
     exposeWeb?: boolean;
-=======
     publishFingerprints?: PublishFingerprints;
->>>>>>> Upgrade fingerprints pack
+
+    // TODO cd this is hacky
+    goals?: Partial<Pick<AllGoals, "build" | "pushImpact">>;
 }
 
 export function aspectSupport(options: AspectSupportOptions): ExtensionPack {
@@ -115,17 +114,20 @@ export function aspectSupport(options: AspectSupportOptions): ExtensionPack {
                 sdm.addCommand(analyzeGitHubOrganizationCommandRegistration(analyzer));
                 sdm.addCommand(analyzeLocalCommandRegistration(analyzer));
             }
+            if (!!options.goals) {
 
-            if (!!options.pushImpactGoal) {
-                sdm.addExtensionPacks(fingerprintSupport({
-                    pushImpactGoal: options.pushImpactGoal,
-                    aspects: options.aspects,
-                    publishFingerprints: options.publishFingerprints,
-                }));
-                if (!!options.build) {
+                if (!!options.goals.pushImpact) {
+                    sdm.addExtensionPacks(fingerprintSupport({
+                        pushImpactGoal: options.goals.pushImpact as PushImpact,
+                        aspects: options.aspects,
+                        publishFingerprints: options.publishFingerprints,
+                    }));
+                }
+
+                if (!!options.goals.build) {
                     toArray(options.aspects)
                         .filter(isDeliveryAspect)
-                        .forEach(da => da.register(sdm, options, options.publishFingerprints));
+                        .forEach(da => da.register(sdm, options.goals, options.publishFingerprints));
                 }
             }
 

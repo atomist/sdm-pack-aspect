@@ -17,10 +17,9 @@
 import { Configuration } from "@atomist/automation-client";
 import { loadUserConfiguration } from "@atomist/automation-client/lib/configuration";
 import {
-    PushImpact,
-    whenPushSatisfies,
-} from "@atomist/sdm";
-import { configure } from "@atomist/sdm-core";
+    AllGoals,
+    configure,
+} from "@atomist/sdm-core";
 import { Build } from "@atomist/sdm-pack-build";
 import { LeinDeps } from "@atomist/sdm-pack-clojure/lib/fingerprints/clojure";
 import {
@@ -83,25 +82,36 @@ process.env.ATOMIST_MODE = "local";
 
 const virtualProjectFinder: VirtualProjectFinder = DefaultVirtualProjectFinder;
 
-const build: Build = new Build()
-    .with({
-        ...MavenDefaultOptions,
-        builder: mavenBuilder(),
-    });
-
 const store = new PostgresProjectAnalysisResultStore(sdmConfigClientFactory(loadUserConfiguration()));
+
+interface TestGoals extends AllGoals {
+    build: Build;
+}
 
 /**
  * Sample configuration to enable testing
  * @type {Configuration}
  */
-export const configuration: Configuration = configure(async sdm => {
+export const configuration: Configuration = configure<TestGoals>(async sdm => {
+
+    const goals = await sdm.createGoals(async s => {
+
+        const build: Build = new Build()
+            .with({
+                ...MavenDefaultOptions,
+                builder: mavenBuilder(),
+            });
+
+        return {
+            build,
+        };
+    }, []);
+
     sdm.addExtensionPacks(
         aspectSupport({
             aspects: aspects(),
 
-            pushImpactGoal: new PushImpact(),
-            build,
+            goals,
 
             scorers: scorers(),
 
@@ -117,9 +127,12 @@ export const configuration: Configuration = configure(async sdm => {
         }),
     );
 
-    sdm.withPushRules(
-        whenPushSatisfies(IsMaven).setGoals(build),
-    );
+    return {
+        build: {
+            test: IsMaven,
+            goals: goals.build,
+        },
+    };
 
 });
 
