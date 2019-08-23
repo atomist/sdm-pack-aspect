@@ -16,6 +16,9 @@
 
 import { PublishFingerprints } from "@atomist/sdm-pack-fingerprints";
 import { ProjectAnalysisResultStore } from "../../../lib/analysis/offline/persist/ProjectAnalysisResultStore";
+import { logger } from "@atomist/automation-client";
+import { Analyzed } from "../../../lib/aspect/AspectRegistry";
+import { ProjectAnalysisResult } from "../../../lib/analysis/ProjectAnalysisResult";
 
 /**
  * "Publish" fingerprints to local store
@@ -24,16 +27,21 @@ import { ProjectAnalysisResultStore } from "../../../lib/analysis/offline/persis
  */
 export function storeFingerprints(store: ProjectAnalysisResultStore): PublishFingerprints {
     return async (i, fingerprints) => {
-        await store.persist({
+        const analysis: Analyzed = {
+            id: i.id,
+            fingerprints,
+        };
+        const paResult: ProjectAnalysisResult = {
             repoRef: i.id,
-            // TODO do we need to set this?
-            timestamp: undefined,
             workspaceId: i.context.workspaceId,
-            analysis: {
-                id: i.id,
-                fingerprints,
-            },
-        });
-        return true;
+            // TODO do we need to set this
+            timestamp: undefined,
+            analysis,
+        };
+        logger.info("Routing %d fingerprints to local database for workspace %s",
+            fingerprints.length, i.context.workspaceId);
+        const results = await store.persist(paResult);
+        logger.info("Persistence results: %j", results);
+        return results.failed.length === 0;
     };
 }
