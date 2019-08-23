@@ -36,7 +36,8 @@ import {
 } from "@atomist/sdm-pack-fingerprints";
 import { ClientFactory } from "../analysis/offline/persist/pgUtils";
 import {
-    analyzeGitHubCommandRegistration,
+    analyzeGitHubByQueryCommandRegistration,
+    analyzeGitHubOrganizationCommandRegistration,
     analyzeLocalCommandRegistration,
 } from "../analysis/offline/spider/analyzeCommand";
 import {
@@ -98,7 +99,8 @@ export function aspectSupport(options: AspectSupportOptions): ExtensionPack {
                     toArray(options.aspects),
                     options.virtualProjectFinder || exports.DefaultVirtualProjectFinder);
 
-                sdm.addCommand(analyzeGitHubCommandRegistration(analyzer));
+                sdm.addCommand(analyzeGitHubByQueryCommandRegistration(analyzer));
+                sdm.addCommand(analyzeGitHubOrganizationCommandRegistration(analyzer));
                 sdm.addCommand(analyzeLocalCommandRegistration(analyzer));
 
                 const { customizers, routesToSuggestOnStartup } =
@@ -132,9 +134,9 @@ function suggestRoute({ title, route }: { title: string, route: string }):
 function orgVisualizationEndpoints(dbClientFactory: ClientFactory,
                                    httpClientFactory: HttpClientFactory,
                                    options: AspectSupportOptions): {
-    routesToSuggestOnStartup: Array<{ title: string, route: string }>,
-    customizers: ExpressCustomizer[],
-} {
+        routesToSuggestOnStartup: Array<{ title: string, route: string }>,
+        customizers: ExpressCustomizer[],
+    } {
     const resultStore = analysisResultStore(dbClientFactory);
     const aspectRegistry = new DefaultAspectRegistry({
         idealStore: resultStore,
@@ -161,7 +163,7 @@ function orgVisualizationEndpoints(dbClientFactory: ClientFactory,
     return {
         routesToSuggestOnStartup:
             [...aboutStaticPages.routesToSuggestOnStartup,
-                ...aboutTheApi.routesToSuggestOnStartup],
+            ...aboutTheApi.routesToSuggestOnStartup],
         customizers: [aboutStaticPages.customizer, aboutTheApi.customizer],
     };
 }
