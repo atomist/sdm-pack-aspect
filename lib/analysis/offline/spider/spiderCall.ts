@@ -67,7 +67,7 @@ export interface SpiderAppOptions {
  * Spider a GitHub.com org
  */
 export async function spider(params: SpiderAppOptions,
-    analyzer: Analyzer): Promise<SpiderResult> {
+                             analyzer: Analyzer): Promise<SpiderResult> {
     const { search, workspaceId } = params;
     const org = params.owner;
     const searchInRepoName = search ? ` ${search} in:name` : "";
@@ -111,6 +111,9 @@ export async function spider(params: SpiderAppOptions,
         {
             persister,
             keepExistingPersisted: async existing => {
+                if (!existing || !existing.analysis) {
+                    return false;
+                }
                 // Perform a computation here to return true if an existing analysis seems valid
                 const keep = !params.update;
                 logger.debug(keep ?

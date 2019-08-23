@@ -38,7 +38,7 @@ export async function existingRecordShouldBeKept(
         keepExistingPersisted: ProjectAnalysisResultFilter,
     },
     repoId: RepoId): Promise<boolean> {
-    const found = await opts.persister.loadByRepoRef(repoId, false);
+    const found = await opts.persister.loadByRepoRef(repoId, true);
     if (!found || !found.analysis) {
         return false;
     }
