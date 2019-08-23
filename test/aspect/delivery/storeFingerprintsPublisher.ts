@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
+import { logger } from "@atomist/automation-client";
 import { PublishFingerprints } from "@atomist/sdm-pack-fingerprints";
 import { ProjectAnalysisResultStore } from "../../../lib/analysis/offline/persist/ProjectAnalysisResultStore";
-import { logger } from "@atomist/automation-client";
-import { Analyzed } from "../../../lib/aspect/AspectRegistry";
 import { ProjectAnalysisResult } from "../../../lib/analysis/ProjectAnalysisResult";
+import { Analyzed } from "../../../lib/aspect/AspectRegistry";
 
 /**
  * "Publish" fingerprints to local store
