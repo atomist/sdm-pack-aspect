@@ -15,37 +15,20 @@
  */
 
 import { logger } from "@atomist/automation-client";
-import {
-    GoalExecutionListener,
-    GoalExecutionListenerInvocation,
-    PushImpactListenerInvocation,
-    SdmGoalState,
-} from "@atomist/sdm";
-import { toArray } from "@atomist/sdm-core/lib/util/misc/array";
 import { Build } from "@atomist/sdm-pack-build";
-import {
-    Aspect,
-    FP,
-    PublishFingerprints,
-    sha256,
-} from "@atomist/sdm-pack-fingerprints";
-import { bandFor, Default } from "../../../lib/util/bands";
+import { Aspect, sha256, } from "@atomist/sdm-pack-fingerprints";
+import { bandFor, Default, } from "../../../lib/util/bands";
 import { Omit } from "../../../lib/util/omit";
 import { DeliveryAspect } from "./DeliveryAspect";
+import { FindFingerprintsFromGoalExecution, goalExecutionFingerprinter } from "./support/goalListener";
 
 export type BuildAspect<DATA = any> = DeliveryAspect<{ build: Build }, DATA>;
-
-export type FindFingerprintsInBuild = (gei: GoalExecutionListenerInvocation) => Promise<FP[] | FP>;
-
-export interface BuildTimeData {
-    elapsedMillis: number;
-}
 
 /**
  * Create an SDM BuildListener from BuildAspect
  */
 export function buildOutcomeAspect<DATA>(opts: Omit<Aspect, "extract" | "consolidate"> & {
-    fingerprintFinder: FindFingerprintsInBuild,
+    fingerprintFinder: FindFingerprintsFromGoalExecution,
 }): BuildAspect<DATA> {
     return {
         ...opts,
@@ -55,7 +38,7 @@ export function buildOutcomeAspect<DATA>(opts: Omit<Aspect, "extract" | "consoli
                 throw new Error("No build goal supplied. Cannot register a build aspect");
             }
             logger.info("Registering build outcome aspect '%s'", opts.name);
-            return goals.build.withExecutionListener(buildListener(opts.fingerprintFinder, publisher));
+            return goals.build.withExecutionListener(goalExecutionFingerprinter(opts.fingerprintFinder, publisher));
         },
         stats: {
             basicStatsPath: "elapsedMillis",
@@ -66,17 +49,19 @@ export function buildOutcomeAspect<DATA>(opts: Omit<Aspect, "extract" | "consoli
     };
 }
 
+export interface BuildTimeData {
+    elapsedMillis: number;
+}
+
 export const BuildTimeType = "build-time";
 
 /**
- * Log build time
- * @param {Omit<Aspect, "name" | "displayName" | "extract" | "consolidate">} opts
- * @return {BuildAspect<BuildTimeData>}
+ * Capture build time
  */
 export function buildTimeAspect(opts: Omit<Aspect, "name" | "displayName" | "extract" | "consolidate"> = {}): BuildAspect<BuildTimeData> {
     return buildOutcomeAspect<BuildTimeData>({
         ...opts,
-        name: "build-time",
+        name: BuildTimeType,
         displayName: "Build time",
         fingerprintFinder: async gei => {
             const elapsedMillis = Date.now() - gei.goalEvent.ts;
@@ -103,21 +88,3 @@ export function buildTimeAspect(opts: Omit<Aspect, "name" | "displayName" | "ext
     });
 }
 
-function buildListener(fingerprintFinder: FindFingerprintsInBuild, publisher: PublishFingerprints): GoalExecutionListener {
-    return async gei => {
-        if (gei.goalEvent.state !== SdmGoalState.in_process) {
-            const fps = await fingerprintFinder(gei);
-            const pili: PushImpactListenerInvocation = {
-                ...gei,
-                // TODO replace by throwing error
-                project: undefined,
-                impactedSubProject: undefined,
-                filesChanged: undefined,
-                commit: gei.goalEvent.push.after,
-                push: gei.goalEvent.push,
-            };
-            return publisher(pili, toArray(fps), {});
-        }
-        return false;
-    };
-}

@@ -15,8 +15,9 @@
  */
 
 import {
+    GitProject, HandlerContext,
     logger,
-    Project,
+    Project, ProjectOperationCredentials,
     RemoteRepoRef,
 } from "@atomist/automation-client";
 import { toArray } from "@atomist/sdm-core/lib/util/misc/array";
@@ -33,7 +34,13 @@ import {
     Analyzer,
     TimeRecorder,
 } from "./Spider";
+import { PreferenceStore, PushImpactListenerInvocation } from "@atomist/sdm";
+import { Error } from "tslint/lib/error";
 
+/**
+ * Analyzer implementation that captures timings that are useful during
+ * development, but don't need to be captured during regular execution.
+ */
 export class SpiderAnalyzer implements Analyzer {
 
     public readonly timings: TimeRecorder = {};
@@ -41,17 +48,12 @@ export class SpiderAnalyzer implements Analyzer {
     public async analyze(p: Project): Promise<Analyzed> {
         const fingerprints: FP[] = [];
 
-        const regularAspects: Aspect[] = this.aspects.filter(a => !!(a as any).extract) as any;
-        const atomicAspects = this.aspects.filter(aspect => !!aspect.consolidate);
-
         if (this.virtualProjectFinder) {
             // Seed the virtual project finder if we have one
             await this.virtualProjectFinder.findVirtualProjectInfo(p);
         }
-        await extractRegularAspects(p, regularAspects,
-            fingerprints, this.timings);
-
-        await extractAtomicAspects(p, atomicAspects, fingerprints);
+        await extractRegularAspects(p, this.aspects, fingerprints, this.timings);
+        await extractAtomicAspects(p, this.aspects.filter(aspect => !!aspect.consolidate), fingerprints);
 
         return {
             id: p.id as RemoteRepoRef,
@@ -70,8 +72,7 @@ async function extractRegularAspects(p: Project,
                                      fingerprints: FP[],
                                      timings: TimeRecorder): Promise<void> {
     await Promise.all(aspects
-    // TODO why is this cast needed?
-        .map(aspect => extractify(aspect as any, p, timings)
+        .map(aspect => extractify(aspect, p, timings)
             .then(fps =>
                 fingerprints.push(...fps),
             )));
@@ -88,10 +89,27 @@ async function extractAtomicAspects(p: Project,
 }
 
 async function extractify(aspect: Aspect, p: Project, timeRecorder: TimeRecorder): Promise<FP[]> {
+    const minimalPushImpactListenerInvocation: PushImpactListenerInvocation = {
+        id: p.id as any,
+        get context(): HandlerContext { throw new Error("Unsupported"); },
+        commit: {
+            sha: p.id.sha,
+        },
+        project: p as GitProject,
+        push: {
+            repo: undefined,
+            branch: "master",
+        },
+        addressChannels: async () => {},
+        get filesChanged(): string[] { throw new Error("Unsupported"); },
+        get credentials(): ProjectOperationCredentials { throw new Error("Unsupported"); },
+        impactedSubProject: p,
+        get preferences(): PreferenceStore { throw new Error("Unsupported"); },
+        configuration: {},
+    };
+
     try {
-        const timed = await time(
-            // TODO fake up push invocation
-            async () => aspect.extract(p, undefined));
+        const timed = await time(async () => aspect.extract(p, minimalPushImpactListenerInvocation));
         addTiming(aspect.name, timed.millis, timeRecorder);
         const result = !!timed.result ? toArray(timed.result) : [];
         return result;
