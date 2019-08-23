@@ -47,8 +47,8 @@ import {
 export class LocalSpider implements Spider {
 
     public async spider(criteria: ScmSearchCriteria,
-                        analyzer: Analyzer,
-                        opts: SpiderOptions): Promise<SpiderResult> {
+        analyzer: Analyzer,
+        opts: SpiderOptions): Promise<SpiderResult> {
         const repoIterator = findRepositoriesUnder(this.localDirectory);
         const results: SpiderResult[] = [];
 
@@ -61,7 +61,9 @@ export class LocalSpider implements Spider {
 
         logger.debug("Computing analytics over all fingerprints...");
         await computeAnalytics(opts.persister, opts.workspaceId);
-        return results.reduce(combineSpiderResults, emptySpiderResult);
+        const finalResult = results.reduce(combineSpiderResults, emptySpiderResult);
+        analysisBeingTracked.stop(finalResult);
+        return finalResult;
     }
 
     constructor(public readonly localDirectory: string) {
@@ -95,9 +97,9 @@ const oneSpiderResult = {
 };
 
 async function spiderOneLocalRepo(opts: SpiderOptions,
-                                  criteria: ScmSearchCriteria,
-                                  analyzer: Analyzer,
-                                  repoDir: string): Promise<SpiderResult> {
+    criteria: ScmSearchCriteria,
+    analyzer: Analyzer,
+    repoDir: string): Promise<SpiderResult> {
     const localRepoRef = await repoRefFromLocalRepo(repoDir);
 
     if (await existingRecordShouldBeKept(opts, localRepoRef)) {

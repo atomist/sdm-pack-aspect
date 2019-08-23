@@ -1,4 +1,5 @@
 import { RepoRef } from "@atomist/automation-client";
+import { SpiderResult } from "../offline/spider/Spider";
 
 type AnalysisTrackingRepo = Pick<RepoRef, "owner" | "repo" | "url">;
 
@@ -22,10 +23,12 @@ export interface AnalysisTracking {
 // make the interface later
 export class AnalysisBeingTracked {
     constructor(public readonly me: AnalysisForTracking) {
-
     }
     public plan(repos: AnalysisTrackingRepo[]): void { }
 
+    public stop(result: SpiderResult): void {
+        this.me.progress = "Stopped";
+    }
 }
 
 class AnalysisTracker implements AnalysisTracking {
