@@ -120,12 +120,23 @@ export type ScoredRepo = TaggedRepo & { weightedScore: WeightedScore };
  */
 export type RepositoryScorer = (repo: TaggedRepo, allRepos: TaggedRepo[]) => Promise<Score | undefined>;
 
+export interface TagAndScoreOptions {
+
+    /**
+     * If this is set, score only for this category
+     * '*' means all
+     */
+    readonly category?: string;
+}
+
 /**
  * Manage a number of aspects.
  */
 export interface AspectRegistry {
 
-    tagAndScoreRepos(workspaceId: string, repos: ProjectAnalysisResult[]): Promise<ScoredRepo[]>;
+    tagAndScoreRepos(workspaceId: string,
+                     repos: ProjectAnalysisResult[],
+                     opts: TagAndScoreOptions): Promise<ScoredRepo[]>;
 
     availableTags: Tag[];
 

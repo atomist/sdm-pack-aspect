@@ -16,10 +16,11 @@
 
 import {
     RepositoryScorer,
-    ScoredRepo,
+    ScoredRepo, TagAndScoreOptions,
     TaggedRepo,
 } from "../aspect/AspectRegistry";
 import {
+    AlwaysIncludeCategory,
     FiveStar,
     Score,
     Scores,
@@ -29,8 +30,9 @@ import {
 
 export async function scoreRepos(scorers: RepositoryScorer[],
                                  repos: TaggedRepo[],
-                                 weightings: ScoreWeightings): Promise<ScoredRepo[]> {
-    return Promise.all(repos.map(repo => scoreRepo(scorers, repo, repos, weightings)));
+                                 weightings: ScoreWeightings,
+                                 opts: TagAndScoreOptions): Promise<ScoredRepo[]> {
+    return Promise.all(repos.map(repo => scoreRepo(scorers, repo, repos, weightings, opts)));
 }
 
 /**
@@ -39,8 +41,16 @@ export async function scoreRepos(scorers: RepositoryScorer[],
 export async function scoreRepo(scorers: RepositoryScorer[],
                                 repo: TaggedRepo,
                                 allRepos: TaggedRepo[],
-                                weightings: ScoreWeightings): Promise<ScoredRepo> {
+                                weightings: ScoreWeightings,
+                                opts: TagAndScoreOptions): Promise<ScoredRepo> {
     const scores = await scoresFor(scorers, repo, allRepos);
+    // Remove scores that don't match our desired category
+    for (const key of Object.keys(scores)) {
+        const score = scores[key];
+        if (opts.category && score.category !== opts.category && score.category !== AlwaysIncludeCategory) {
+            delete scores[key];
+        }
+    }
     return {
         ...repo,
         weightedScore: weightedCompositeScore({ scores }, weightings),

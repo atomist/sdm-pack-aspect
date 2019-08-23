@@ -16,6 +16,8 @@
 
 export type FiveStar = 0 | 1 | 2 | 3 | 4 | 5;
 
+export const AlwaysIncludeCategory: string = "*";
+
 /**
  * Represents a quality ranking of a particular element of a project.
  */
@@ -97,7 +99,10 @@ export function weightedCompositeScore(scored: Scored,
                                        weightings: ScoreWeightings = {}): WeightedScore | undefined {
     const keys = Object.getOwnPropertyNames(scored.scores);
     if (keys.length === 0) {
-        return undefined;
+        return {
+            weightedScore: 3,
+            weightedScores: {},
+        };
     }
 
     const weightedScores: WeightedScores = {};

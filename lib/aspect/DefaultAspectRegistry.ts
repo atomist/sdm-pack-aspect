@@ -24,7 +24,7 @@ import {
     isTagger,
     RepositoryScorer,
     ScoredRepo,
-    Tag,
+    Tag, TagAndScoreOptions,
     TaggedRepo,
     Tagger,
     TaggerDefinition,
@@ -75,7 +75,9 @@ export class DefaultAspectRegistry implements AspectRegistry {
             tag => tag.name);
     }
 
-    public async tagAndScoreRepos(workspaceId: string, repos: ProjectAnalysisResult[]): Promise<ScoredRepo[]> {
+    public async tagAndScoreRepos(workspaceId: string,
+                                  repos: ProjectAnalysisResult[],
+                                  tsOpts: TagAndScoreOptions): Promise<ScoredRepo[]> {
         const scored = await showTiming(`Tag and score ${repos.length} repos`,
             async () => scoreRepos(
                 this.scorers,
@@ -86,7 +88,8 @@ export class DefaultAspectRegistry implements AspectRegistry {
                     workspaceId,
                     aspectRegistry: this,
                 }, repos),
-                this.opts.scoreWeightings));
+                this.opts.scoreWeightings,
+                tsOpts));
         return scored;
     }
 

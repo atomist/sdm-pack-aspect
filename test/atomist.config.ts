@@ -30,6 +30,7 @@ import {
     Aspect,
     makeVirtualProjectAware,
 } from "@atomist/sdm-pack-fingerprints";
+import { PowerShellLanguage, ShellLanguage, YamlLanguage } from "@atomist/sdm-pack-sloc/lib/languages";
 import {
     RepositoryScorer,
     TaggerDefinition,
@@ -125,20 +126,19 @@ function aspects(): Aspect[] {
 
 export function scorers(): RepositoryScorer[] {
     return [
-        // anchorScoreAt(2),
-        // penalizeForExcessiveBranches({ branchLimit: 5 }),
-        // PenalizeWarningAndErrorTags,
-        // PenalizeMonorepos,
-        // TypeScriptProjectsMustUseTsLint,
-        // PenalizeNoLicense,
-        // limitLanguages({ limit: 4 }),
+        commonScorers.anchorScoreAt(2),
+        commonScorers.penalizeForExcessiveBranches({ branchLimit: 5 }),
+        commonScorers.PenalizeWarningAndErrorTags,
+        commonScorers.PenalizeMonorepos,
+        commonScorers.limitLanguages({ limit: 4 }),
         // Adjust depending on the service granularity you want
-        // limitLinesOfCode({ limit: 30000 }),
-        // limitLinesOfCodeIn({ language: YamlLanguage, limit: 500, freeAmount: 200 }),
-        // limitLinesOfCodeIn({ language: PowerShellLanguage, limit: 200, freeAmount: 100 }),
-        // limitLinesOfCodeIn({ language: ShellLanguage, limit: 200, freeAmount: 100 }),
-        // requireRecentCommit({ days: 30 }),
-        commonScorers.requireAspectOfType({ type: CodeOfConductType, reason: "Repos should have a code of conduct" }),
+        commonScorers.limitLinesOfCode({ limit: 30000 }),
+        commonScorers.limitLinesOfCodeIn({ language: YamlLanguage, limit: 500, freeAmount: 200 }),
+        commonScorers.limitLinesOfCodeIn({ language: PowerShellLanguage, limit: 200, freeAmount: 100 }),
+        commonScorers.limitLinesOfCodeIn({ language: ShellLanguage, limit: 200, freeAmount: 100 }),
+        commonScorers.requireRecentCommit({ days: 30 }),
+        commonScorers.PenalizeNoLicense,
+        commonScorers.PenalizeNoCodeOfConduct,
         commonScorers.requireGlobAspect({ glob: "CHANGELOG.md" }),
         commonScorers.requireGlobAspect({ glob: "CONTRIBUTING.md" }),
     ];

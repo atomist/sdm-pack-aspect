@@ -14,21 +14,26 @@
  * limitations under the License.
  */
 
+import { sha256 } from "@atomist/sdm-pack-fingerprints";
 import { Language } from "@atomist/sdm-pack-sloc/lib/slocReport";
 import * as _ from "lodash";
 import { RepositoryScorer } from "../aspect/AspectRegistry";
 import { CodeMetricsType } from "../aspect/common/codeMetrics";
+import { CodeOfConductType } from "../aspect/community/codeOfConduct";
 import {
     hasNoLicense,
     LicenseType,
 } from "../aspect/community/license";
+import { isGlobMatchFingerprint } from "../aspect/compose/globAspect";
 import { BranchCountType } from "../aspect/git/branchCount";
 import { daysSince } from "../aspect/git/dateUtils";
 import { GitRecencyType } from "../aspect/git/gitActivity";
-import { FiveStar } from "./Score";
+import { AlwaysIncludeCategory, FiveStar } from "./Score";
 import { adjustBy } from "./scoring";
-import { sha256 } from "@atomist/sdm-pack-fingerprints";
-import { isGlobMatchFingerprint } from "../aspect/compose/globAspect";
+
+export const CommunityCategory: string = "community";
+
+export const CodeCategory: string = "code";
 
 /**
  * Use to anchor scores to penalize repositories about which we know little.
@@ -38,6 +43,7 @@ export function anchorScoreAt(score: FiveStar): RepositoryScorer {
     return async () => {
         return {
             name: "anchor",
+            category: AlwaysIncludeCategory,
             reason: `Weight to ${score} stars to penalize repositories about which we know little`,
             score,
         };
@@ -96,6 +102,7 @@ export function limitLinesOfCode(opts: { limit: number }): RepositoryScorer {
         }
         return {
             name: "total-loc",
+            category: CodeCategory,
             score: adjustBy(-cm.data.lines / opts.limit),
             reason: `Found ${cm.data.lines} total lines of code`,
         };
@@ -170,10 +177,18 @@ export const PenalizeNoLicense: RepositoryScorer =
         const bad = !license || hasNoLicense(license.data);
         return {
             name: "license",
+            category: CommunityCategory,
             score: bad ? 1 : 5,
             reason: bad ? "Repositories should have a license" : "Repository has a license",
         };
     };
+
+export const PenalizeNoCodeOfConduct: RepositoryScorer =
+    requireAspectOfType({
+        type: CodeOfConductType,
+        category: CommunityCategory,
+        reason: "Repos should have a code of conduct",
+    });
 
 /**
  * Mark down repositories that don't have this type of aspect.
@@ -185,12 +200,14 @@ export function requireAspectOfType(opts: {
     type: string,
     reason: string,
     data?: any,
+    category?: string,
 }): RepositoryScorer {
     return async repo => {
         const found = repo.analysis.fingerprints.find(fp => fp.type === opts.type &&
             (opts.data ? fp.sha = sha256(JSON.stringify(opts.data)) : true));
         return {
             name: `${opts.type}-required`,
+            category: opts.category,
             score: !!found ? 5 : 1,
             reason: !found ? opts.reason : "Satisfactory",
         };
@@ -201,7 +218,7 @@ export function requireAspectOfType(opts: {
  * Must exactly match the glob pattern
  * @return {RepositoryScorer}
  */
-export function requireGlobAspect(opts: { glob: string }): RepositoryScorer {
+export function requireGlobAspect(opts: { glob: string, category?: string }): RepositoryScorer {
     return async repo => {
         const globs = repo.analysis.fingerprints.filter(isGlobMatchFingerprint);
         const found = globs
@@ -209,6 +226,7 @@ export function requireGlobAspect(opts: { glob: string }): RepositoryScorer {
             .filter(f => f.data.matches.length > 0);
         return {
             name: `${opts.glob}-required`,
+            category: opts.category,
             score: !!found ? 5 : 1,
             reason: !found ? `Should have file for ${opts.glob}` : "Satisfactory",
         };

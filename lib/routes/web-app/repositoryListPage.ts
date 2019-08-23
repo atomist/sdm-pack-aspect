@@ -39,6 +39,7 @@ export function exposeRepositoryListPage(express: Express,
         const workspaceId = req.query.workspace || req.params.workspace_id || "*";
         const sortOrder: SortOrder = req.query.sortOrder || "score";
         const byOrg = req.query.byOrg !== "false";
+        const category = req.query.category;
 
         const allAnalysisResults = await store.loadInWorkspace(workspaceId, true);
 
@@ -48,7 +49,7 @@ export function exposeRepositoryListPage(express: Express,
             return res.send(`No matching repos for organization ${req.query.owner}`);
         }
 
-        const relevantRepos = await aspectRegistry.tagAndScoreRepos(workspaceId, relevantAnalysisResults);
+        const relevantRepos = await aspectRegistry.tagAndScoreRepos(workspaceId, relevantAnalysisResults, { category });
         const reposForDisplay: RepoForDisplay[] = relevantRepos
             .map(ar => ({
                 url: ar.repoRef.url,

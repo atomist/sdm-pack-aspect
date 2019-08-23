@@ -112,6 +112,7 @@ function exposeRepositoryPage(express: Express,
         const workspaceId = req.query.workspaceId || "*";
         const id = req.query.id;
         const analysisResult = await store.loadById(id);
+        const category = req.query.category;
         if (!analysisResult) {
             return res.send(`No project at ${JSON.stringify(id)}`);
         }
@@ -128,7 +129,7 @@ function exposeRepositoryPage(express: Express,
             })),
         }));
 
-        const repo = (await aspectRegistry.tagAndScoreRepos(workspaceId, [analysisResult]))[0];
+        const repo = (await aspectRegistry.tagAndScoreRepos(workspaceId, [analysisResult], { category }))[0];
         return res.send(renderStaticReactNode(
             RepoExplorer({
                 repo,
