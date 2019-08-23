@@ -57,7 +57,7 @@ function idealDisplay(af: MaybeAnIdeal): React.ReactElement {
     return result;
 }
 
-function displayImportantAspect(f: AspectFingerprintsForDisplay, i: number): React.ReactElement {
+function displayAspect(f: AspectFingerprintsForDisplay, i: number): React.ReactElement {
     const key = "collapsible" + i;
     const expandByDefault = f.fingerprints.length === 1;
 
@@ -121,24 +121,11 @@ function fingerprintListItem(f: FingerprintForDisplay): React.ReactElement {
 }
 
 export function displayAspects(props: OverviewProps): React.ReactElement {
-    if (props.projectsAnalyzed === 0) {
-        return <div>
-            <h2>No projects analyzed</h2>
-            Use the spider command to analyze some projects.
-            See <a
-                href="https://github.com/atomist-blogs/org-visualizer/blob/master/README.md#analyze-your-repositories">the
-            README</a> for details.
-        </div>;
-    }
-
     return <div>
-
-        {displayDashboards(props)}
-
         <h2>Aspects</h2>
         <div className="importantFeatures">
             <ul>
-                {props.importantAspects.map(displayImportantAspect)}
+                {props.importantAspects.map(displayAspect)}
             </ul>
         </div>
         {displayUnfoundAspects(props.unfoundAspects)}
@@ -186,13 +173,25 @@ function displayCustomReports(): React.ReactElement {
 // tslint:disable:max-line-length
 
 export function Overview(props: OverviewProps): React.ReactElement {
+    if (props.projectsAnalyzed === 0) {
+        return <div>
+            <h2>No projects analyzed</h2>
+            Use the spider command to analyze some projects.
+            See <a
+                href="https://github.com/atomist-blogs/org-visualizer/blob/master/README.md#analyze-your-repositories">the
+            README</a> for details.
+            {displayDeveloperResources()}
+        </div>;
+    }
+
     return <div>
+        {displayDashboards(props)}
         {displayAspects(props)}
-        {displayDeveloper()}
+        {displayDeveloperResources()}
     </div>;
 }
 
-function displayDeveloper(): React.ReactElement {
+function displayDeveloperResources(): React.ReactElement {
     return <div>
         <h2>Developer</h2>
         <ul>
