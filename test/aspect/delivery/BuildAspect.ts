@@ -15,13 +15,20 @@
  */
 
 import { logger } from "@atomist/automation-client";
-import { BuildListener, BuildListenerInvocation, BuildStatus } from "@atomist/sdm";
+import {
+    BuildListener,
+    BuildListenerInvocation,
+    BuildStatus,
+} from "@atomist/sdm";
 import { toArray } from "@atomist/sdm-core/lib/util/misc/array";
 import { Build } from "@atomist/sdm-pack-build";
 import { Aspect, FP, sha256 } from "@atomist/sdm-pack-fingerprints";
 import { Error } from "tslint/lib/error";
 import { Omit } from "../../../lib/util/omit";
-import { DeliveryAspect, FingerprintPublisher } from "./DeliveryAspect";
+import {
+    DeliveryAspect,
+    FingerprintPublisher,
+} from "./DeliveryAspect";
 
 export type BuildAspect<DATA = any> = DeliveryAspect<{ build: Build }, DATA>;
 
