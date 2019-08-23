@@ -18,7 +18,9 @@ import { logger } from "@atomist/automation-client";
 import {
     BuildListener,
     BuildListenerInvocation,
-    BuildStatus, PushImpactListenerInvocation, PushListenerInvocation,
+    BuildStatus,
+    PushImpactListenerInvocation,
+    PushListenerInvocation,
 } from "@atomist/sdm";
 import { toArray } from "@atomist/sdm-core/lib/util/misc/array";
 import { Build } from "@atomist/sdm-pack-build";
