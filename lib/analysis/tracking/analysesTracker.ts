@@ -6,7 +6,7 @@ type AnalysisProgress = "Going" | "Stopped";
 
 interface AnalysisForTracking {
     description: string;
-    trackedAnalysisId: string;
+    analysisId: string;
     progress: AnalysisProgress;
 }
 
@@ -35,10 +35,10 @@ class AnalysisTracker implements AnalysisTracking {
 
     // is there an "unpick" ?
     public startAnalysis(params: Pick<AnalysisForTracking, "description">): AnalysisBeingTracked {
-        const trackedAnalysisId = "analysis#" + this.counter++;
+        const analysisId = "analysis#" + this.counter++;
         const newAnalysis: AnalysisBeingTracked = new AnalysisBeingTracked({
             ...params,
-            trackedAnalysisId,
+            analysisId,
             progress: "Going",
         });
         this.analyses.push(newAnalysis);

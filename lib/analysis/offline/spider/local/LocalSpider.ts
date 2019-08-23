@@ -23,6 +23,7 @@ import {
 import { execPromise } from "@atomist/sdm";
 import * as fs from "fs-extra";
 import * as path from "path";
+import { globalAnalysisTracking } from "../../../tracking/analysesTracker";
 import {
     combinePersistResults,
     emptyPersistResult,
@@ -50,6 +51,8 @@ export class LocalSpider implements Spider {
                         opts: SpiderOptions): Promise<SpiderResult> {
         const repoIterator = findRepositoriesUnder(this.localDirectory);
         const results: SpiderResult[] = [];
+
+        const analysisBeingTracked = globalAnalysisTracking.startAnalysis({ description: "some local analysis" });
 
         for await (const repoDir of repoIterator) {
             logger.info("Analyzing local repo at %s", repoDir);
