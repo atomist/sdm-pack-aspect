@@ -47,12 +47,14 @@ import {
 export class LocalSpider implements Spider {
 
     public async spider(criteria: ScmSearchCriteria,
-        analyzer: Analyzer,
-        opts: SpiderOptions): Promise<SpiderResult> {
+                        analyzer: Analyzer,
+                        opts: SpiderOptions): Promise<SpiderResult> {
         const repoIterator = findRepositoriesUnder(this.localDirectory);
         const results: SpiderResult[] = [];
 
-        const analysisBeingTracked = globalAnalysisTracking.startAnalysis({ description: "some local analysis" });
+        const analysisBeingTracked = globalAnalysisTracking.startAnalysis({
+            description: "local analysis under " + this.localDirectory,
+        });
 
         for await (const repoDir of repoIterator) {
             logger.info("Analyzing local repo at %s", repoDir);
@@ -97,9 +99,9 @@ const oneSpiderResult = {
 };
 
 async function spiderOneLocalRepo(opts: SpiderOptions,
-    criteria: ScmSearchCriteria,
-    analyzer: Analyzer,
-    repoDir: string): Promise<SpiderResult> {
+                                  criteria: ScmSearchCriteria,
+                                  analyzer: Analyzer,
+                                  repoDir: string): Promise<SpiderResult> {
     const localRepoRef = await repoRefFromLocalRepo(repoDir);
 
     if (await existingRecordShouldBeKept(opts, localRepoRef)) {
