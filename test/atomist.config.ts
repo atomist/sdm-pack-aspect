@@ -20,7 +20,9 @@ import { AcceptEverythingUndesirableUsageChecker } from "../lib/aspect/ProblemSt
 process.env.ATOMIST_MODE = "local";
 
 import { Configuration } from "@atomist/automation-client";
+import { PushImpact } from "@atomist/sdm";
 import { configure } from "@atomist/sdm-core";
+import { Build } from "@atomist/sdm-pack-build";
 import { LeinDeps } from "@atomist/sdm-pack-clojure/lib/fingerprints/clojure";
 import {
     DockerfilePath,
@@ -38,6 +40,7 @@ import {
     ShellLanguage,
     YamlLanguage,
 } from "@atomist/sdm-pack-sloc/lib/languages";
+import { mavenBuilder, MavenDefaultOptions, MavenPerBranchDeployment } from "@atomist/sdm-pack-spring";
 import * as _ from "lodash";
 import {
     CombinationTagger,
@@ -69,11 +72,8 @@ import {
 } from "../lib/machine/aspectSupport";
 import * as commonScorers from "../lib/scorer/commonScorers";
 import * as commonTaggers from "../lib/tagger/commonTaggers";
-import { mavenBuilder, MavenDefaultOptions, MavenPerBranchDeployment } from "@atomist/sdm-pack-spring";
-import { Build } from "@atomist/sdm-pack-build";
 import { buildTimeAspect } from "./aspect/delivery/BuildAspect";
 import { DeliveryGoals } from "./aspect/delivery/DeliveryAspect";
-import { PushImpact } from "@atomist/sdm";
 
 const virtualProjectFinder: VirtualProjectFinder = DefaultVirtualProjectFinder;
 
