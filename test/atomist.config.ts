@@ -40,7 +40,11 @@ import {
     ShellLanguage,
     YamlLanguage,
 } from "@atomist/sdm-pack-sloc/lib/languages";
-import { mavenBuilder, MavenDefaultOptions, MavenPerBranchDeployment } from "@atomist/sdm-pack-spring";
+import {
+    mavenBuilder,
+    MavenDefaultOptions,
+    MavenPerBranchDeployment,
+} from "@atomist/sdm-pack-spring";
 import * as _ from "lodash";
 import {
     CombinationTagger,
@@ -67,7 +71,8 @@ import { branchCount } from "../lib/aspect/git/branchCount";
 import { GitRecency } from "../lib/aspect/git/gitActivity";
 import { ExposedSecrets } from "../lib/aspect/secret/exposedSecrets";
 import {
-    aspectSupport, AspectSupportOptions,
+    aspectSupport,
+    AspectSupportOptions,
     DefaultVirtualProjectFinder,
 } from "../lib/machine/aspectSupport";
 import * as commonScorers from "../lib/scorer/commonScorers";

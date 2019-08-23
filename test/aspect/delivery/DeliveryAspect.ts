@@ -14,9 +14,15 @@
  * limitations under the License.
  */
 
-import { SdmContext, SoftwareDeliveryMachine } from "@atomist/sdm";
+import {
+    SdmContext,
+    SoftwareDeliveryMachine,
+} from "@atomist/sdm";
 import { Build } from "@atomist/sdm-pack-build";
-import { Aspect, FP } from "@atomist/sdm-pack-fingerprints";
+import {
+    Aspect,
+    FP,
+} from "@atomist/sdm-pack-fingerprints";
 
 // TODO does this exist
 export interface DeliveryGoals {
