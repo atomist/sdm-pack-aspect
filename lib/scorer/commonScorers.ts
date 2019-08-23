@@ -28,7 +28,10 @@ import { isGlobMatchFingerprint } from "../aspect/compose/globAspect";
 import { BranchCountType } from "../aspect/git/branchCount";
 import { daysSince } from "../aspect/git/dateUtils";
 import { GitRecencyType } from "../aspect/git/gitActivity";
-import { AlwaysIncludeCategory, FiveStar } from "./Score";
+import {
+    AlwaysIncludeCategory,
+    FiveStar,
+} from "./Score";
 import { adjustBy } from "./scoring";
 
 export const CommunityCategory: string = "community";

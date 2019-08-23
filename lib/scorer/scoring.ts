@@ -16,7 +16,8 @@
 
 import {
     RepositoryScorer,
-    ScoredRepo, TagAndScoreOptions,
+    ScoredRepo,
+    TagAndScoreOptions,
     TaggedRepo,
 } from "../aspect/AspectRegistry";
 import {

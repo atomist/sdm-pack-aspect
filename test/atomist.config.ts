@@ -30,7 +30,11 @@ import {
     Aspect,
     makeVirtualProjectAware,
 } from "@atomist/sdm-pack-fingerprints";
-import { PowerShellLanguage, ShellLanguage, YamlLanguage } from "@atomist/sdm-pack-sloc/lib/languages";
+import {
+    PowerShellLanguage,
+    ShellLanguage,
+    YamlLanguage,
+} from "@atomist/sdm-pack-sloc/lib/languages";
 import {
     RepositoryScorer,
     TaggerDefinition,
