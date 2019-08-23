@@ -17,19 +17,13 @@
 import {
     SoftwareDeliveryMachine,
 } from "@atomist/sdm";
-import { Build } from "@atomist/sdm-pack-build";
+import { AllGoals } from "@atomist/sdm-core";
 import {
     Aspect,
-    FP,
     PublishFingerprints,
 } from "@atomist/sdm-pack-fingerprints";
 
-// TODO does this exist
-export interface DeliveryGoals {
-    build?: Build;
-}
-
-export interface DeliveryAspect<GOALS extends DeliveryGoals, DATA = any> extends Aspect<DATA> {
+export interface DeliveryAspect<GOALS extends AllGoals, DATA = any> extends Aspect<DATA> {
 
     /**
      * Cause this to emit fingerprints

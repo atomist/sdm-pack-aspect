@@ -16,26 +16,25 @@
 
 import { logger } from "@atomist/automation-client";
 import {
-    BuildListener,
-    BuildListenerInvocation,
-    BuildStatus,
+    GoalExecutionListener,
+    GoalExecutionListenerInvocation,
     PushImpactListenerInvocation,
-    PushListenerInvocation,
+    SdmGoalState,
 } from "@atomist/sdm";
 import { toArray } from "@atomist/sdm-core/lib/util/misc/array";
 import { Build } from "@atomist/sdm-pack-build";
-import { Aspect, FP, PublishFingerprints, sha256 } from "@atomist/sdm-pack-fingerprints";
-import { Error } from "tslint/lib/error";
-import { Omit } from "../../../lib/util/omit";
 import {
-    DeliveryAspect,
-} from "./DeliveryAspect";
+    Aspect,
+    FP,
+    PublishFingerprints,
+    sha256,
+} from "@atomist/sdm-pack-fingerprints";
+import { Omit } from "../../../lib/util/omit";
+import { DeliveryAspect } from "./DeliveryAspect";
 
 export type BuildAspect<DATA = any> = DeliveryAspect<{ build: Build }, DATA>;
 
-const buildCompletions = [BuildStatus.broken, BuildStatus.error, BuildStatus.failed, BuildStatus.passed];
-
-export type FindFingerprintsInBuild = (completedBuild: BuildListenerInvocation) => Promise<FP[] | FP>;
+export type FindFingerprintsInBuild = (gei: GoalExecutionListenerInvocation) => Promise<FP[] | FP>;
 
 export interface BuildTimeData {
     millis: number;
@@ -55,7 +54,7 @@ export function buildOutcomeAspect<DATA>(opts: Omit<Aspect, "extract" | "consoli
                 throw new Error("No build goal supplied. Cannot register a build aspect");
             }
             logger.info("Registering build outcome aspect '%s'", opts.name);
-            return goals.build.withListener(buildListener(opts.fingerprintFinder, publisher));
+            return goals.build.withExecutionListener(buildListener(opts.fingerprintFinder, publisher));
         },
         stats: {
             basicStatsPath: "elapsedMillis",
@@ -78,37 +77,31 @@ export function buildTimeAspect(opts: Omit<Aspect, "name" | "displayName" | "ext
         ...opts,
         name: "build-time",
         displayName: "Build time",
-        fingerprintFinder: async bi => {
-            try {
-                const elapsedMillis = parseInt(bi.build.timestamp, 10) - parseInt(bi.build.startedAt, 10);
-                const data = { millis: elapsedMillis };
-                return {
-                    name: BuildTimeType,
-                    type: BuildTimeType,
-                    data,
-                    sha: sha256(JSON.stringify(data)),
-                };
-            } catch (err) {
-                logger.warn("Couldn't parse build timestamps %s and %s", bi.build.timestamp, bi.build.startedAt);
-                return undefined;
-            }
+        fingerprintFinder: async gei => {
+            const elapsedMillis = Date.now() - gei.goalEvent.ts;
+            const data = { millis: elapsedMillis };
+            return {
+                name: BuildTimeType,
+                type: BuildTimeType,
+                data,
+                sha: sha256(JSON.stringify(data)),
+            };
         },
     });
 }
 
-function buildListener(fingerprintFinder: FindFingerprintsInBuild, publisher: PublishFingerprints): BuildListener {
-    return async bi => {
-        if (buildCompletions.includes(bi.build.status)) {
-            const fps = await fingerprintFinder(bi);
+function buildListener(fingerprintFinder: FindFingerprintsInBuild, publisher: PublishFingerprints): GoalExecutionListener {
+    return async gei => {
+        if (gei.goalEvent.state !== SdmGoalState.in_process) {
+            const fps = await fingerprintFinder(gei);
             const pili: PushImpactListenerInvocation = {
-                ...bi,
+                ...gei,
                 // TODO replace by throwing error
                 project: undefined,
-                ...bi.build,
                 impactedSubProject: undefined,
                 filesChanged: undefined,
-                commit: bi.build.commit,
-                push: bi.build.push,
+                commit: gei.goalEvent.push.after,
+                push: gei.goalEvent.push,
             };
             return publisher(pili, toArray(fps), {});
         }
