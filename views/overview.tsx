@@ -149,8 +149,8 @@ function displayDashboards(props: OverviewProps): React.ReactElement {
                 true)}
             {collapsible("repo-nav", "Repository List",
                 <ul>
-                    <li><a href="./repositories?byOrg=true">By organization</a></li>
-                    <li><a href="./repositories?byOrg=false">Ranked</a></li>
+                    <li key="repo-nav-by-org"><a href="./repositories?byOrg=true">By organization</a></li>
+                    <li key="repo-nav-not-by-org"><a href="./repositories?byOrg=false">Ranked</a></li>
                 </ul>,
                 true)}
             {collapsible("custom-reports", "Custom Reports",
