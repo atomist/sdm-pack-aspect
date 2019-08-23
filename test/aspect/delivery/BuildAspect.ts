@@ -29,7 +29,10 @@ import {
     PublishFingerprints,
     sha256,
 } from "@atomist/sdm-pack-fingerprints";
-import { bandFor, Default } from "../../../lib/util/bands";
+import {
+    bandFor,
+    Default,
+} from "../../../lib/util/bands";
 import { Omit } from "../../../lib/util/omit";
 import { DeliveryAspect } from "./DeliveryAspect";
 
