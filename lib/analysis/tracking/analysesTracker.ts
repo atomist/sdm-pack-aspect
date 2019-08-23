@@ -15,35 +15,39 @@ export interface AnalysisReport {
 }
 
 export interface AnalysisTracking {
-    plan(repos: AnalysisTrackingRepo[]): void;
-    startAnalysis(params: Pick<AnalysisForTracking, "description">): AnalysisForTracking;
+    startAnalysis(params: Pick<AnalysisForTracking, "description">): AnalysisBeingTracked;
     report(): AnalysisReport;
+}
+
+// make the interface later
+export class AnalysisBeingTracked {
+    constructor(public readonly me: AnalysisForTracking) {
+
+    }
+    public plan(repos: AnalysisTrackingRepo[]): void { }
+
 }
 
 class AnalysisTracker implements AnalysisTracking {
 
     private counter: number = 1;
-    private analyses: AnalysisForTracking[] = [];
+    private analyses: AnalysisBeingTracked[] = [];
 
     // is there an "unpick" ?
-    public startAnalysis(params: Pick<AnalysisForTracking, "description">): AnalysisForTracking {
+    public startAnalysis(params: Pick<AnalysisForTracking, "description">): AnalysisBeingTracked {
         const trackedAnalysisId = "analysis#" + this.counter++;
-        const newAnalysis: AnalysisForTracking = {
+        const newAnalysis: AnalysisBeingTracked = new AnalysisBeingTracked({
             ...params,
             trackedAnalysisId,
             progress: "Going",
-        };
+        });
         this.analyses.push(newAnalysis);
         return newAnalysis;
     }
 
-    public plan(repos: AnalysisTrackingRepo[]) {
-
-    }
-
     public report() {
         return {
-            analyses: this.analyses,
+            analyses: this.analyses.map(a => a.me),
         };
     }
 
