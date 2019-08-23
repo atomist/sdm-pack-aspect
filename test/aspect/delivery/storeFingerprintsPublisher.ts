@@ -19,6 +19,7 @@ import { PublishFingerprints } from "@atomist/sdm-pack-fingerprints";
 import { ProjectAnalysisResultStore } from "../../../lib/analysis/offline/persist/ProjectAnalysisResultStore";
 import { ProjectAnalysisResult } from "../../../lib/analysis/ProjectAnalysisResult";
 import { Analyzed } from "../../../lib/aspect/AspectRegistry";
+import { computeAnalyticsForFingerprintKind } from "../../../lib/analysis/offline/spider/analytics";
 
 /**
  * "Publish" fingerprints to local store
@@ -42,6 +43,12 @@ export function storeFingerprints(store: ProjectAnalysisResultStore): PublishFin
             fingerprints.length, i.context.workspaceId);
         const results = await store.persist(paResult);
         logger.info("Persistence results: %j", results);
+
+        // TODO clean this up. It's inefficient and maybe should be in a stored proc
+        for (const fp of fingerprints) {
+            await computeAnalyticsForFingerprintKind(store, i.context.workspaceId, fp.type, fp.name);
+        }
+
         return results.failed.length === 0;
     };
 }

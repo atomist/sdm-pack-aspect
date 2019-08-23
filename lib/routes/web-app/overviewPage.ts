@@ -55,9 +55,10 @@ export function exposeOverviewPage(express: Express,
 
             const ideals = await aspectRegistry.idealStore.loadIdeals(workspaceId);
 
-            const aspectsEligibleForDisplay = aspectRegistry.aspects.filter(a => !!a.displayName)
+            const aspectsEligibleForDisplay = aspectRegistry.aspects
+                .filter(a => !!a.displayName)
                 .filter(a => fingerprintUsage.some(fu => fu.type === a.name));
-            const importantAspects: AspectFingerprintsForDisplay[] = _.sortBy(aspectsEligibleForDisplay, a => a.displayName)
+            const foundAspects: AspectFingerprintsForDisplay[] = _.sortBy(aspectsEligibleForDisplay, a => a.displayName)
                 .map(aspect => {
                     const fingerprintsForThisAspect = fingerprintUsage.filter(fu => fu.type === aspect.name);
                     return {
@@ -75,7 +76,7 @@ export function exposeOverviewPage(express: Express,
             res.send(renderStaticReactNode(
                 Overview({
                     projectsAnalyzed: repos.length,
-                    foundAspects: importantAspects,
+                    foundAspects,
                     unfoundAspects,
                     repos: repos.map(r => ({
                         id: r.id,
