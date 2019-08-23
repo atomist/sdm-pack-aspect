@@ -29,9 +29,9 @@ import {
     PublishFingerprints,
     sha256,
 } from "@atomist/sdm-pack-fingerprints";
+import { bandFor, Default } from "../../../lib/util/bands";
 import { Omit } from "../../../lib/util/omit";
 import { DeliveryAspect } from "./DeliveryAspect";
-import { bandFor, Default } from "../../../lib/util/bands";
 
 export type BuildAspect<DATA = any> = DeliveryAspect<{ build: Build }, DATA>;
 
