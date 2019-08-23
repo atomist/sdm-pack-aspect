@@ -3,9 +3,13 @@
 
 # @atomist/sdm-pack-aspect
 
-A tool for visualizing technology usage and drift across an organization. 
+This pack turns your [SDM](https://docs.atomist.com/developer/sdm/) into a tool for visualizing technology usage and [drift](https://blog.atomist.com/whats-lurking/) across an organization.
 
 The cloud native era has led to an explosion of repositories, which we lack tools to understand and manage at scale. See Rod Johnson's blog [This Will Surprise You](https://blog.atomist.com/this-will-surprise-you/) for further discussion.
+
+When you create an SDM with this pack, you can run it two ways:
+- locally, on your laptop. Trigger it to analyze code on your laptop or from GitHub, and then see the results in a simple web app at localhost.
+- connected to the Atomist service, triggering automatically, hooking into the Atomist web hook to make results available to your whole team, plus automation that helps you change the results.
 
 An Atomist **aspect** captures a concern in your project, in anything available from git: repository content (code and configuration) and git data such as branch counts and committer activity. Aspects support the following use cases:
 
