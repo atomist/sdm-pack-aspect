@@ -29,7 +29,9 @@ import {
 } from "@atomist/sdm-pack-docker";
 import {
     Aspect,
-    makeVirtualProjectAware, NpmDeps, VirtualProjectFinder,
+    makeVirtualProjectAware,
+    NpmDeps,
+    VirtualProjectFinder,
 } from "@atomist/sdm-pack-fingerprints";
 import {
     PowerShellLanguage,
