@@ -104,11 +104,14 @@ export class DefaultAspectRegistry implements AspectRegistry {
         return type ? this.aspects.find(f => f.name === type) : undefined;
     }
 
-    public async undesirableUsageCheckerFor(workspaceId: string): Promise<UndesirableUsageChecker> {
+    public async undesirableUsageCheckerFor(workspaceId: string): Promise<UndesirableUsageChecker | undefined> {
         // TODO going for check functions is inelegant
-        return chainUndesirableUsageCheckers(
-            (await problemStoreBackedUndesirableUsageCheckerFor(this.problemStore, workspaceId)).check,
-            this.opts.undesirableUsageChecker.check);
+        if (this.opts.undesirableUsageChecker) {
+            return chainUndesirableUsageCheckers(
+                (await problemStoreBackedUndesirableUsageCheckerFor(this.problemStore, workspaceId)).check,
+                this.opts.undesirableUsageChecker.check);
+        }
+        return undefined;
     }
 
     get idealStore(): IdealStore {
@@ -170,7 +173,7 @@ export function defaultedToDisplayableFingerprint(aspect?: Aspect): (fpi: FP) =>
 }
 
 function tagsFor(fp: FP, id: RemoteRepoRef, tagContext: TagContext, taggers: Tagger[]): Tag[] {
-    return _.uniqBy(taggers
+    return _.uniqBy(taggers.filter(t => t !== undefined)
             .map(tagger => ({ ...tagger, tag: tagger.test(fp, id, tagContext) }))
             .filter(t => !!t.tag),
         tag => tag.name);

@@ -160,6 +160,6 @@ export interface AspectRegistry {
     /**
      * Return an UndesirableUsageChecker for this workspace
      */
-    undesirableUsageCheckerFor(workspaceId: string): Promise<UndesirableUsageChecker>;
+    undesirableUsageCheckerFor(workspaceId: string): Promise<UndesirableUsageChecker | undefined>;
 
 }

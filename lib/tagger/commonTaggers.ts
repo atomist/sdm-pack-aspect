@@ -131,15 +131,18 @@ export const isProblematic: WorkspaceSpecificTagger = {
     create: async (workspaceId: string, aspectRegistry: AspectRegistry) => {
         logger.info("Creating problem tagger for workspace %s", workspaceId);
         const checker = await aspectRegistry.undesirableUsageCheckerFor(workspaceId);
-        return {
-            name: "problems",
-            description: "Undesirable usage",
-            severity: "error",
-            test: fp => {
-               const problem = checker.check(fp, workspaceId);
-               return !!problem;
-            },
-        };
+        if (checker) {
+            return {
+                name: "problems",
+                description: "Undesirable usage",
+                severity: "error",
+                test: fp => {
+                    const problem = checker.check(fp, workspaceId);
+                    return !!problem;
+                },
+            };
+        }
+        return undefined;
     },
 };
 
