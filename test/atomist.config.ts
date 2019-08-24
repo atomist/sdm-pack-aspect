@@ -16,6 +16,7 @@
 
 import { Configuration } from "@atomist/automation-client";
 import { loadUserConfiguration } from "@atomist/automation-client/lib/configuration";
+import { onAnyPush, PushImpact } from "@atomist/sdm";
 import {
     AllGoals,
     configure,
@@ -76,7 +77,6 @@ import * as commonScorers from "../lib/scorer/commonScorers";
 import * as commonTaggers from "../lib/tagger/commonTaggers";
 import { buildTimeAspect } from "./aspect/delivery/BuildAspect";
 import { storeFingerprints } from "./aspect/delivery/storeFingerprintsPublisher";
-import { onAnyPush, PushImpact } from "@atomist/sdm";
 
 // Ensure we start up in local mode
 process.env.ATOMIST_MODE = "local";
