@@ -80,6 +80,10 @@ export const DefaultScoreWeightings: ScoreWeightings = {
 };
 
 export interface AspectSupportOptions {
+
+    /**
+     * Aspects that drive behavior of this SDM
+     */
     aspects: Aspect | Aspect[];
 
     virtualProjectFinder?: VirtualProjectFinder;
@@ -93,12 +97,23 @@ export interface AspectSupportOptions {
     undesirableUsageChecker?: UndesirableUsageChecker;
 
     exposeWeb?: boolean;
+
+    /**
+     * Custom fingerprint routing. Used in local mode.
+     * Default behavior is to send fingerprints to Atomist.
+     */
     publishFingerprints?: PublishFingerprints;
 
-    // TODO cd this is hacky
+    /**
+     * Delivery goals to attach fingerprint behavior to, if provided.
+     * Delivery goals must have well-known names
+     */
     goals?: Partial<Pick<AllGoals, "build" | "pushImpact">>;
 }
 
+/**
+ * Return an extension pack to add aspect support with the given aspects to an SDM
+ */
 export function aspectSupport(options: AspectSupportOptions): ExtensionPack {
     return {
         ...metadata(),
@@ -106,6 +121,8 @@ export function aspectSupport(options: AspectSupportOptions): ExtensionPack {
             const cfg = sdm.configuration;
 
             if (isInLocalMode()) {
+                // If we're in local mode, expose analyzer commands and
+                // HTTP endpoints
                 const analyzer = createAnalyzer(
                     toArray(options.aspects),
                     options.virtualProjectFinder || exports.DefaultVirtualProjectFinder);
@@ -114,9 +131,13 @@ export function aspectSupport(options: AspectSupportOptions): ExtensionPack {
                 sdm.addCommand(analyzeGitHubOrganizationCommandRegistration(analyzer));
                 sdm.addCommand(analyzeLocalCommandRegistration(analyzer));
             }
-            if (!!options.goals) {
 
+            // Add support for calculating aspects on push and computing delivery aspects
+            // This is only possible in local mode if we have a fingerprint publisher,
+            // as we can't send to Atomist (the default)
+            if (!!options.goals && (!isInLocalMode() || !!options.publishFingerprints)) {
                 if (!!options.goals.pushImpact) {
+                    // Add supporting for calculating fingerprints on every push
                     sdm.addExtensionPacks(fingerprintSupport({
                         pushImpactGoal: options.goals.pushImpact as PushImpact,
                         aspects: options.aspects,
@@ -124,11 +145,10 @@ export function aspectSupport(options: AspectSupportOptions): ExtensionPack {
                     }));
                 }
 
-                if (!!options.goals.build) {
-                    toArray(options.aspects)
-                        .filter(isDeliveryAspect)
-                        .forEach(da => da.register(sdm, options.goals, options.publishFingerprints));
-                }
+                toArray(options.aspects)
+                    .filter(isDeliveryAspect)
+                    .filter(a => a.canRegister(sdm, options.goals))
+                    .forEach(da => da.register(sdm, options.goals, options.publishFingerprints));
             }
 
             const exposeWeb = options.exposeWeb !== undefined ? options.exposeWeb : isInLocalMode();

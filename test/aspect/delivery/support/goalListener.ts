@@ -28,7 +28,8 @@ import {
 
 export type FindFingerprintsFromGoalExecution = (gei: GoalExecutionListenerInvocation) => Promise<FP[] | FP>;
 
-export function goalExecutionFingerprinter(fingerprintFinder: FindFingerprintsFromGoalExecution, publisher: PublishFingerprints): GoalExecutionListener {
+export function goalExecutionFingerprinter(fingerprintFinder: FindFingerprintsFromGoalExecution,
+                                           publisher: PublishFingerprints): GoalExecutionListener {
     return async gei => {
         if (gei.goalEvent.state !== SdmGoalState.in_process) {
             const fps = await fingerprintFinder(gei);

@@ -42,6 +42,7 @@ export function buildOutcomeAspect<DATA>(opts: Omit<Aspect, "extract" | "consoli
     return {
         ...opts,
         extract: async () => [],
+        canRegister: (sdm, goals) => !!goals.build,
         register: (sdm, goals, publisher) => {
             if (!goals.build) {
                 throw new Error("No build goal supplied. Cannot register a build aspect");
