@@ -3,6 +3,7 @@ import * as React from "react";
 interface AnalysisTrackingRepo {
     description: string;
     progress: "Planned" | "Going" | "Stopped";
+    keptExisting: boolean;
 }
 interface AnalysisTrackingAnalysis {
     description: string;
@@ -16,7 +17,8 @@ export interface AnalysisTrackingProps {
 }
 
 function displayRepository(repo: AnalysisTrackingRepo & { repoAnalysisId: string }) {
-    return <li key={repo.repoAnalysisId}>{repo.description}</li>;
+    const className = repo.keptExisting ? "keptExistingAnalysis" : undefined;
+    return <li key={repo.repoAnalysisId} className={className}>{repo.description}</li>;
 }
 
 function listRepositories(title: string, repos: AnalysisTrackingRepo[]) {
