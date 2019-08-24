@@ -20,12 +20,14 @@ import {
     Project, ProjectOperationCredentials,
     RemoteRepoRef,
 } from "@atomist/automation-client";
+import { PreferenceStore, PushImpactListenerInvocation } from "@atomist/sdm";
 import { toArray } from "@atomist/sdm-core/lib/util/misc/array";
 import {
     Aspect,
     FP,
     VirtualProjectFinder,
 } from "@atomist/sdm-pack-fingerprints";
+import { Error } from "tslint/lib/error";
 import {
     Analyzed,
 } from "../../../aspect/AspectRegistry";
@@ -34,8 +36,6 @@ import {
     Analyzer,
     TimeRecorder,
 } from "./Spider";
-import { PreferenceStore, PushImpactListenerInvocation } from "@atomist/sdm";
-import { Error } from "tslint/lib/error";
 
 /**
  * Analyzer implementation that captures timings that are useful during
