@@ -15,12 +15,17 @@
  */
 
 import {
-    GitProject, HandlerContext,
+    GitProject,
+    HandlerContext,
     logger,
-    Project, ProjectOperationCredentials,
+    Project,
+    ProjectOperationCredentials,
     RemoteRepoRef,
 } from "@atomist/automation-client";
-import { PreferenceStore, PushImpactListenerInvocation } from "@atomist/sdm";
+import {
+    PreferenceStore,
+    PushImpactListenerInvocation,
+} from "@atomist/sdm";
 import { toArray } from "@atomist/sdm-core/lib/util/misc/array";
 import {
     Aspect,

@@ -20,7 +20,8 @@ import {
 } from "@atomist/sdm";
 import { AllGoals } from "@atomist/sdm-core";
 import {
-    Aspect, FP,
+    Aspect,
+    FP,
     PublishFingerprints,
 } from "@atomist/sdm-pack-fingerprints";
 
