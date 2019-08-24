@@ -28,6 +28,10 @@ import { Analyzed } from "../../../lib/aspect/AspectRegistry";
  */
 export function storeFingerprints(store: ProjectAnalysisResultStore): PublishFingerprints {
     return async (i, fingerprints) => {
+        if (fingerprints.length === 0) {
+            return true;
+        }
+
         const analysis: Analyzed = {
             id: i.id,
             fingerprints,

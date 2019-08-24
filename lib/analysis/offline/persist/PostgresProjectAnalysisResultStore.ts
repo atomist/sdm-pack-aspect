@@ -537,7 +537,7 @@ FROM repo_snapshots rs
     RIGHT JOIN repo_fingerprints rf ON rf.repo_snapshot_id = rs.id
     INNER JOIN fingerprints f ON rf.fingerprint_id = f.id
 WHERE rs.workspace_id ${workspaceId === "*" ? "<>" : "="} $1
-    AND ${type ? "type = $2" : "true"} AND ${name ? "f.name = $3" : "true"}`;
+    AND ${type ? "f.feature_name = $2" : "true"} AND ${name ? "f.name = $3" : "true"}`;
     return doWithClient(sql, clientFactory, async client => {
         const params = [workspaceId];
         if (!!type) {
