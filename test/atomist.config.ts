@@ -16,7 +16,10 @@
 
 import { Configuration } from "@atomist/automation-client";
 import { loadUserConfiguration } from "@atomist/automation-client/lib/configuration";
-import { onAnyPush, PushImpact } from "@atomist/sdm";
+import {
+    onAnyPush,
+    PushImpact,
+} from "@atomist/sdm";
 import {
     AllGoals,
     configure,
