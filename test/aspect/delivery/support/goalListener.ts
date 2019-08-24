@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
+import { GitProject, Project } from "@atomist/automation-client";
 import {
     GoalExecutionListener,
     GoalExecutionListenerInvocation,
     PushImpactListenerInvocation,
-    SdmGoalState
+    SdmGoalState,
 } from "@atomist/sdm";
-import { GitProject, Project } from "@atomist/automation-client";
 import { toArray } from "@atomist/sdm-core/lib/util/misc/array";
 import { FP, PublishFingerprints } from "@atomist/sdm-pack-fingerprints";
 
@@ -32,9 +32,9 @@ export function goalExecutionFingerprinter(fingerprintFinder: FindFingerprintsFr
             const fps = await fingerprintFinder(gei);
             const pili: PushImpactListenerInvocation = {
                 ...gei,
-                get project(): GitProject { throw new Error("UnsupportedOperation");},
-                get impactedSubProject(): Project { throw new Error("UnsupportedOperation");},
-                get filesChanged(): string[] { throw new Error("UnsupportedOperation");},
+                get project(): GitProject { throw new Error("UnsupportedOperation"); },
+                get impactedSubProject(): Project { throw new Error("UnsupportedOperation"); },
+                get filesChanged(): string[] { throw new Error("UnsupportedOperation"); },
                 commit: gei.goalEvent.push.after,
                 push: gei.goalEvent.push,
             };
