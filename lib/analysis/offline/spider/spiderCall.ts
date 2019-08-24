@@ -83,7 +83,7 @@ export async function spider(params: SpiderAppOptions,
             new GitCommandGitProjectCloner(TmpDirectoryManager)) :
         new LocalSpider(params.localDirectory);
     const persister = new PostgresProjectAnalysisResultStore(sdmConfigClientFactory(loadUserConfiguration()));
-    const query = params.query || `org:${org}` + searchInRepoName;
+    const query = params.query || `org:${org} fork:true` + searchInRepoName;
 
     const criteria: ScmSearchCriteria = {
         // See the GitHub search API documentation at
