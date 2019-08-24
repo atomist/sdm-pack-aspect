@@ -4,6 +4,7 @@ import { SpiderResult } from "../offline/spider/Spider";
 interface AnalysisTrackingRepo { description: string; }
 
 type AnalysisProgress = "Going" | "Stopped";
+type RepoProgress = "Planned" | "Going" | "Stopped";
 
 interface AnalysisForTracking {
     description: string;
@@ -14,6 +15,7 @@ interface AnalysisForTracking {
 interface RepoForReporting {
     description: string;
     repoKey: string;
+    progress: RepoProgress;
 }
 interface AnalysisForReporting {
     description: string;
@@ -49,6 +51,7 @@ export class RepoBeingTracked {
     public report(): RepoForReporting {
         return {
             ...this.params,
+            progress: this.existingWasKept ? "Stopped" : "Planned",
         };
     }
 }

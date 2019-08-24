@@ -2,6 +2,7 @@ import * as React from "react";
 
 interface AnalysisTrackingRepo {
     description: string;
+    progress: "Planned" | "Going" | "Stopped";
 }
 interface AnalysisTrackingAnalysis {
     description: string;
@@ -18,10 +19,10 @@ function displayRepository(repo: AnalysisTrackingRepo & { repoAnalysisId: string
     return <li key={repo.repoAnalysisId}>{repo.description}</li>;
 }
 
-function listRepositories(repos: AnalysisTrackingRepo[]) {
-    return <ul>
+function listRepositories(title: string, repos: AnalysisTrackingRepo[]) {
+    return <div>{title}<ul>
         {repos.map((r, i) => displayRepository({ ...r, repoAnalysisId: "" + i }))}
-    </ul>;
+    </ul></div>;
 }
 
 function displayAnalysis(analysis: AnalysisTrackingAnalysis) {
@@ -29,7 +30,10 @@ function displayAnalysis(analysis: AnalysisTrackingAnalysis) {
     return <div className={analysisStatusClass}>
         {analysis.description}
         <h4>Repositories:</h4>
-        {listRepositories(analysis.repos)}
+        <div className="repositoryColumns">
+            {listRepositories("Planned", analysis.repos.filter(r => r.progress === "Planned"))}
+            {listRepositories("Stopped", analysis.repos.filter(r => r.progress === "Stopped"))}
+        </div>
     </div>;
 }
 

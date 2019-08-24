@@ -66,6 +66,13 @@ header .page-title {
     background-color: lightgray;
 }
 
+div.repositoryColumns div {
+    display: inline-block;
+    border: 1px dotted blue;
+    vertical-align: top;
+    padding: 5px;
+}
+
 /* "explore" sunburst page */
 
 .percentageOfProjectWithoutTag {
