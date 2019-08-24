@@ -31,6 +31,11 @@ import {
 export interface DeliveryAspect<GOALS extends AllGoals, DATA = any> extends Aspect<DATA> {
 
     /**
+     * Can this delivery aspect be registered given these goals
+     */
+    canRegister(sdm: SoftwareDeliveryMachine, goals: GOALS): boolean;
+
+    /**
      * Cause this to emit fingerprints
      */
     register(sdm: SoftwareDeliveryMachine, deliveryGoals: GOALS, publisher: PublishFingerprints): void;

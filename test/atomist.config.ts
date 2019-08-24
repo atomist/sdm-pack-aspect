@@ -76,6 +76,7 @@ import * as commonScorers from "../lib/scorer/commonScorers";
 import * as commonTaggers from "../lib/tagger/commonTaggers";
 import { buildTimeAspect } from "./aspect/delivery/BuildAspect";
 import { storeFingerprints } from "./aspect/delivery/storeFingerprintsPublisher";
+import { onAnyPush, PushImpact } from "@atomist/sdm";
 
 // Ensure we start up in local mode
 process.env.ATOMIST_MODE = "local";
@@ -102,8 +103,14 @@ export const configuration: Configuration = configure<TestGoals>(async sdm => {
                 builder: mavenBuilder(),
             });
 
+        const pushImpact = new PushImpact();
+
         return {
+            // This illustrates a delivery goal
             build,
+
+            // This illustrates pushImpact
+            pushImpact,
         };
     }, []);
 
@@ -128,6 +135,10 @@ export const configuration: Configuration = configure<TestGoals>(async sdm => {
     );
 
     return {
+        fingerprint: {
+            test: onAnyPush(),
+            goals: goals.pushImpact,
+        },
         build: {
             test: IsMaven,
             goals: goals.build,
