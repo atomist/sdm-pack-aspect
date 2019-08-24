@@ -15,6 +15,7 @@ interface AnalysisForTracking {
 interface RepoForReporting {
     description: string;
     repoKey: string;
+    keptExisting: boolean;
     progress: RepoProgress;
 }
 interface AnalysisForReporting {
@@ -52,6 +53,7 @@ export class RepoBeingTracked {
         return {
             ...this.params,
             progress: this.existingWasKept ? "Stopped" : "Planned",
+            keptExisting: this.existingWasKept,
         };
     }
 }

@@ -98,6 +98,7 @@ export class AnalysisRun<FoundRepo> {
             trackedRepo.repoRef = await this.world.determineRepoRef(trackedRepo.foundRepo);
 
             if (await existingRecordShouldBeKept(this.world, trackedRepo.repoRef)) {
+                // enhancement: record timestamp of kept record
                 trackedRepo.tracking.keptExisting();
                 results.push({
                     ...oneSpiderResult,

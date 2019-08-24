@@ -71,6 +71,12 @@ div.repositoryColumns div {
     border: 1px dotted blue;
     vertical-align: top;
     padding: 5px;
+    width: 30%;
+}
+
+.keptExistingAnalysis {
+    color: gray;
+    font-style: italic;
 }
 
 /* "explore" sunburst page */
