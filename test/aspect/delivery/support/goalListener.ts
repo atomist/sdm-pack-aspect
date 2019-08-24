@@ -14,7 +14,10 @@
  * limitations under the License.
  */
 
-import { GitProject, Project } from "@atomist/automation-client";
+import {
+    GitProject,
+    Project,
+} from "@atomist/automation-client";
 import {
     GoalExecutionListener,
     GoalExecutionListenerInvocation,
@@ -22,7 +25,10 @@ import {
     SdmGoalState,
 } from "@atomist/sdm";
 import { toArray } from "@atomist/sdm-core/lib/util/misc/array";
-import { FP, PublishFingerprints } from "@atomist/sdm-pack-fingerprints";
+import {
+    FP,
+    PublishFingerprints,
+} from "@atomist/sdm-pack-fingerprints";
 
 export type FindFingerprintsFromGoalExecution = (gei: GoalExecutionListenerInvocation) => Promise<FP[] | FP>;
 

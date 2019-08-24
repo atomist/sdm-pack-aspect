@@ -17,10 +17,16 @@
 import { logger } from "@atomist/automation-client";
 import { Build } from "@atomist/sdm-pack-build";
 import { Aspect, sha256 } from "@atomist/sdm-pack-fingerprints";
-import { bandFor, Default } from "../../../lib/util/bands";
+import {
+    bandFor,
+    Default,
+} from "../../../lib/util/bands";
 import { Omit } from "../../../lib/util/omit";
 import { DeliveryAspect } from "./DeliveryAspect";
-import { FindFingerprintsFromGoalExecution, goalExecutionFingerprinter } from "./support/goalListener";
+import {
+    FindFingerprintsFromGoalExecution,
+    goalExecutionFingerprinter,
+} from "./support/goalListener";
 
 export type BuildAspect<DATA = any> = DeliveryAspect<{ build: Build }, DATA>;
 
