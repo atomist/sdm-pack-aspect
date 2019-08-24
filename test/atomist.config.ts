@@ -139,7 +139,6 @@ export const configuration: Configuration = configure<TestGoals>(async sdm => {
 
     return {
         fingerprint: {
-            test: onAnyPush(),
             goals: goals.pushImpact,
         },
         build: {
