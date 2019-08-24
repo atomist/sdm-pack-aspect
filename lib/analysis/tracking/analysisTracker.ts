@@ -33,11 +33,17 @@ export interface AnalysisTracking {
 
 export class RepoBeingTracked {
 
+    public existingWasKept: boolean = false;
+
     constructor(private readonly params: {
         description: string;
         repoKey: string;
     }) {
 
+    }
+
+    public keptExisting(): void {
+        this.existingWasKept = true;
     }
 
     public report(): RepoForReporting {

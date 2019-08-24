@@ -25,7 +25,7 @@ import {
 import { execPromise } from "@atomist/sdm";
 import * as fs from "fs-extra";
 import * as path from "path";
-import { globalAnalysisTracking } from "../../../tracking/analysisTracker";
+import { globalAnalysisTracking, RepoBeingTracked } from "../../../tracking/analysisTracker";
 import {
     combinePersistResults,
     emptyPersistResult,
@@ -48,7 +48,14 @@ import {
     SpiderResult,
 } from "../Spider";
 
+interface TrackedRepo<FoundRepo> {
+    foundRepo: FoundRepo;
+    tracking: RepoBeingTracked;
+    repoRef?: RepoRef;
+}
+
 export class AnalysisRun<FoundRepo> {
+
     constructor(
         private readonly world: {
             howToFindRepos: () => AsyncIterable<FoundRepo>,
@@ -78,22 +85,82 @@ export class AnalysisRun<FoundRepo> {
         });
 
         const plannedRepos = await takeFromIterator(this.params.maxRepos, this.world.howToFindRepos());
-        const trackedRepos =
-            plannedRepos.map(pr => analysisBeingTracked.plan(({ description: this.world.describeFoundRepo(pr) })));
+        const trackedRepos: Array<TrackedRepo<FoundRepo>> =
+            plannedRepos.map(pr => ({
+                tracking: analysisBeingTracked.plan(({ description: this.world.describeFoundRepo(pr) })),
+                foundRepo: pr,
+            }));
 
         const results: SpiderResult[] = [];
 
         // simplest: do them all
-        for (const foundRepo of plannedRepos) {
-            const rr = await this.world.determineRepoRef(foundRepo);
-            logger.info("Analyzing local repo at %s", foundRepo);
-            results.push(await spiderOneRepo(this.world, { workspaceId: this.params.workspaceId },
-                rr, foundRepo));
+        for (const trackedRepo of trackedRepos) {
+            trackedRepo.repoRef = await this.world.determineRepoRef(trackedRepo.foundRepo);
+
+            if (await existingRecordShouldBeKept(this.world, trackedRepo.repoRef)) {
+                trackedRepo.tracking.keptExisting();
+                results.push({
+                    ...oneSpiderResult,
+                    keptExisting: [trackedRepo.repoRef.url],
+                });
+                continue;
+            }
+
+            const project = await this.world.howToClone(trackedRepo.repoRef, trackedRepo.foundRepo);
+            if (this.world.projectFilter && !await this.world.projectFilter(project)) {
+                results.push({
+                    ...oneSpiderResult,
+                    projectsDetected: 0,        // does not count as a project
+                });
+                continue;
+            }
+
+            let analyzeResults: AnalyzeResults;
+            try {
+                analyzeResults = await analyze(project, this.world.analyzer, undefined);
+            } catch (err) {
+                results.push({
+                    ...oneSpiderResult,
+                    failed: [{
+                        repoUrl: trackedRepo.repoRef.url,
+                        whileTryingTo: "analyze",
+                        message: err.message,
+                    }],
+                });
+                continue;
+            }
+
+            const persistResults: PersistResult[] = [];
+            for (const repoInfo of analyzeResults.repoInfos) {
+                const persistResult = await persistRepoInfo(
+                    // tslint:disable-next-line:no-object-literal-type-assertion
+                    {
+                        workspaceId: this.params.workspaceId,
+                        persister: this.world.persister,
+                    } as SpiderOptions,
+                    repoInfo,
+                    {
+                        sourceData: this.world.describeFoundRepo(trackedRepo.foundRepo),
+                        url: trackedRepo.repoRef.url,
+                        timestamp: new Date(),
+                    });
+                persistResults.push(persistResult);
+            }
+            const combinedPersistResult = persistResults.reduce(combinePersistResults, emptyPersistResult);
+
+            results.push({
+                repositoriesDetected: 1,
+                projectsDetected: analyzeResults.projectsDetected,
+                failed: combinedPersistResult.failed,
+                persistedAnalyses: combinedPersistResult.succeeded,
+                keptExisting: [],
+            });
         }
 
         logger.debug("Computing analytics over all fingerprints...");
 
         // Question for Rod: should this run intermittently or only at the end?
+        // Answer from Rod: intermitently.
 
         await computeAnalytics(this.world.persister, this.params.workspaceId);
         const finalResult = results.reduce(combineSpiderResults, emptySpiderResult);
@@ -168,70 +235,6 @@ const oneSpiderResult = {
     repositoriesDetected: 1,
     projectsDetected: 1,
 };
-
-async function spiderOneRepo<FoundRepo>(
-    world: {
-        howToClone: (rr: RepoRef, fr: FoundRepo) => Promise<GitProject>,
-        analyzer: Analyzer,
-        persister: ProjectAnalysisResultStore,
-        describeFoundRepo: (f: FoundRepo) => string,
-        keepExistingPersisted: ProjectAnalysisResultFilter,
-        projectFilter?: (p: Project) => Promise<boolean>,
-    },
-    opts: {
-        workspaceId: string,
-    },
-    localRepoRef: RepoRef,
-    repoDir: FoundRepo): Promise<SpiderResult> {
-
-    if (await existingRecordShouldBeKept({ keepExistingPersisted: world.keepExistingPersisted, persister: world.persister }, localRepoRef)) {
-        return {
-            ...oneSpiderResult,
-            keptExisting: [localRepoRef.url],
-        };
-    }
-
-    const project = await world.howToClone(localRepoRef, repoDir);
-    if (world.projectFilter && !await world.projectFilter(project)) {
-        return {
-            ...oneSpiderResult,
-            projectsDetected: 0,        // does not count as a project
-        };
-    }
-
-    let analyzeResults: AnalyzeResults;
-    try {
-        analyzeResults = await analyze(project, world.analyzer, undefined);
-    } catch (err) {
-        return {
-            ...oneSpiderResult,
-            failed: [{
-                repoUrl: localRepoRef.url,
-                whileTryingTo: "analyze",
-                message: err.message,
-            }],
-        };
-    }
-
-    const persistResults: PersistResult[] = [];
-    for (const repoInfo of analyzeResults.repoInfos) {
-        const persistResult = await persistRepoInfo({ workspaceId: opts.workspaceId, persister: world.persister } as SpiderOptions, repoInfo, {
-            sourceData: world.describeFoundRepo(repoDir),
-            url: localRepoRef.url,
-            timestamp: new Date(),
-        });
-        persistResults.push(persistResult);
-    }
-    const combinedPersistResult = persistResults.reduce(combinePersistResults, emptyPersistResult);
-
-    return {
-        repositoriesDetected: 1,
-        projectsDetected: analyzeResults.projectsDetected,
-        failed: combinedPersistResult.failed,
-        persistedAnalyses: combinedPersistResult.succeeded,
-        keptExisting: [],
-    };
-}
 
 async function* findRepositoriesUnder(dir: string): AsyncIterable<string> {
     try {
