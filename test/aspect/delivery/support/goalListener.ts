@@ -15,10 +15,6 @@
  */
 
 import {
-    GitProject,
-    Project,
-} from "@atomist/automation-client";
-import {
     GoalExecutionListener,
     GoalExecutionListenerInvocation,
     PushImpactListenerInvocation,
@@ -38,9 +34,9 @@ export function goalExecutionFingerprinter(fingerprintFinder: FindFingerprintsFr
             const fps = await fingerprintFinder(gei);
             const pili: PushImpactListenerInvocation = {
                 ...gei,
-                get project(): GitProject { throw new Error("UnsupportedOperation"); },
-                get impactedSubProject(): Project { throw new Error("UnsupportedOperation"); },
-                get filesChanged(): string[] { throw new Error("UnsupportedOperation"); },
+                project: undefined,
+                impactedSubProject: undefined,
+                filesChanged: undefined,
                 commit: gei.goalEvent.push.after,
                 push: gei.goalEvent.push,
             };

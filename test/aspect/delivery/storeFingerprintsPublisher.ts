@@ -35,7 +35,6 @@ export function storeFingerprints(store: ProjectAnalysisResultStore): PublishFin
         const paResult: ProjectAnalysisResult = {
             repoRef: i.id,
             workspaceId: i.context.workspaceId,
-            // TODO do we need to set this
             timestamp: undefined,
             analysis,
         };
@@ -44,7 +43,6 @@ export function storeFingerprints(store: ProjectAnalysisResultStore): PublishFin
         const results = await store.persist(paResult);
         logger.info("Persistence results: %j", results);
 
-        // TODO clean this up. It's inefficient and maybe should be in a stored proc
         for (const fp of fingerprints) {
             await computeAnalyticsForFingerprintKind(store, i.context.workspaceId, fp.type, fp.name);
         }
