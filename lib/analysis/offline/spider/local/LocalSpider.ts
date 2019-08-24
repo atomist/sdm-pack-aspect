@@ -272,7 +272,7 @@ async function repoRefFromLocalRepo(repoDir: string): Promise<RepoRef> {
         .catch(oops => inventRepoId(repoDir));
 
     const sha = await execPromise("git", ["rev-parse", "HEAD"], { cwd: repoDir })
-        .then(execHappened => execHappened.stdout)
+        .then(execHappened => execHappened.stdout.trim())
         .catch(oops => "unknown");
 
     return {
