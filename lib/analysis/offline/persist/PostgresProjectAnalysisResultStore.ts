@@ -454,7 +454,7 @@ VALUES ($1, $2, $3, $4, $5, $6, $7, $8, current_timestamp)`;
             }, {
                 insertedCount: 0,
                 failures: analyzed.fingerprints
-                    .map(failedFingerprint => ({ failedFingerprint, error: undefined }))
+                    .map(failedFingerprint => ({ failedFingerprint, error: undefined })),
             });
     }
 
