@@ -154,7 +154,7 @@ export interface ProjectAnalysisResultStore {
                             type?: string,
                             name?: string): Promise<Array<FP & { id: string }>>;
 
-    fingerprintsForProject(id: string): Promise<FP[]>;
+    fingerprintsForProject(id: string): Promise<Array<FP & { timestamp?: Date }>>;
 
     /**
      * Return the average number of fingerprints in the workspace

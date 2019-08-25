@@ -109,9 +109,9 @@ export function addWebAppRoutes(
 }
 
 function exposeRepositoryPage(express: Express,
-                              handlers: RequestHandler[],
-                              aspectRegistry: AspectRegistry,
-                              store: ProjectAnalysisResultStore): void {
+    handlers: RequestHandler[],
+    aspectRegistry: AspectRegistry,
+    store: ProjectAnalysisResultStore): void {
     express.get("/repository", ...handlers, async (req, res) => {
         const workspaceId = req.query.workspaceId || "*";
         const id = req.query.id;
@@ -121,7 +121,10 @@ function exposeRepositoryPage(express: Express,
             return res.send(`No project at ${JSON.stringify(id)}`);
         }
 
-        const aspectsAndFingerprints = await projectFingerprints(aspectRegistry, await store.fingerprintsForProject(id));
+        const allFingerprints = await store.fingerprintsForProject(id);
+        const mostRecentTimestampMillis = Math.max(...allFingerprints.map(fp => fp.timestamp.getTime()));
+        const aspectsAndFingerprints = await projectFingerprints(aspectRegistry,
+            allFingerprints);
 
         // assign style based on ideal
         const ffd: ProjectAspectForDisplay[] = aspectsAndFingerprints.map(aspectAndFingerprints => ({
@@ -136,6 +139,7 @@ function exposeRepositoryPage(express: Express,
         const repo = (await aspectRegistry.tagAndScoreRepos(workspaceId, [analysisResult], { category }))[0];
         return res.send(renderStaticReactNode(
             RepoExplorer({
+                timestamp: new Date(mostRecentTimestampMillis),
                 repo,
                 aspects: _.sortBy(ffd.filter(f => !!f.aspect.displayName), f => f.aspect.displayName),
                 category,
@@ -144,9 +148,9 @@ function exposeRepositoryPage(express: Express,
 }
 
 function exposeExplorePage(express: Express,
-                           handlers: RequestHandler[],
-                           httpClientFactory: HttpClientFactory,
-                           aspectRegistry: AspectRegistry): void {
+    handlers: RequestHandler[],
+    httpClientFactory: HttpClientFactory,
+    aspectRegistry: AspectRegistry): void {
     express.get("/explore", ...handlers, async (req, res) => {
         const tags = req.query.tags || "";
         const workspaceId = req.query.workspaceId || "*";
@@ -162,9 +166,9 @@ function exposeExplorePage(express: Express,
 }
 
 function exposeDriftPage(express: Express,
-                         handlers: RequestHandler[],
-                         httpClientFactory: HttpClientFactory,
-                         aspectRegistry: AspectRegistry): void {
+    handlers: RequestHandler[],
+    httpClientFactory: HttpClientFactory,
+    aspectRegistry: AspectRegistry): void {
     express.get("/drift", ...handlers, async (req, res) => {
         const workspaceId = req.query.workspaceId || "*";
         const percentile = req.query.percentile || 0;
@@ -184,9 +188,9 @@ function exposeDriftPage(express: Express,
 }
 
 function exposeFingerprintReportPage(express: Express,
-                                     handlers: RequestHandler[],
-                                     httpClientFactory: HttpClientFactory,
-                                     aspectRegistry: AspectRegistry): void {
+    handlers: RequestHandler[],
+    httpClientFactory: HttpClientFactory,
+    aspectRegistry: AspectRegistry): void {
     express.get("/fingerprint/:type/:name", ...handlers, async (req, res) => {
         const type = req.params.type;
         const name = req.params.name;
@@ -214,9 +218,9 @@ function exposeFingerprintReportPage(express: Express,
 }
 
 function exposeCustomReportPage(express: Express,
-                                handlers: RequestHandler[],
-                                httpClientFactory: HttpClientFactory,
-                                aspectRegistry: AspectRegistry): void {
+    handlers: RequestHandler[],
+    httpClientFactory: HttpClientFactory,
+    aspectRegistry: AspectRegistry): void {
     express.get("/report/:name", ...handlers, async (req, res) => {
         const name = req.params.name;
         const workspaceId = req.query.workspaceId || "*";
@@ -236,16 +240,16 @@ function exposeCustomReportPage(express: Express,
 
 // TODO fix any
 async function renderDataUrl(workspaceId: string,
-                             page: {
+    page: {
         title: string,
         heading: string,
         subheading?: string,
         dataUrl: string,
     },
-                             aspectRegistry: AspectRegistry,
-                             httpClientFactory: HttpClientFactory,
-                             req: any,
-                             res: any): Promise<void> {
+    aspectRegistry: AspectRegistry,
+    httpClientFactory: HttpClientFactory,
+    req: any,
+    res: any): Promise<void> {
     let tree: TagTree;
     const possibleIdealsForDisplay: PossibleIdealForDisplay[] = [];
 
@@ -320,8 +324,8 @@ function displayIdeal(fingerprint: AugmentedFingerprintForDisplay, aspect: Aspec
 }
 
 async function lookForIdealDisplay(aspectRegistry: AspectRegistry,
-                                   aspectType: string,
-                                   fingerprintName: string): Promise<{ displayValue: string } | undefined> {
+    aspectType: string,
+    fingerprintName: string): Promise<{ displayValue: string } | undefined> {
     if (!aspectType) {
         return undefined;
     }

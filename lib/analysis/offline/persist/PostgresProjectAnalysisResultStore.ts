@@ -230,7 +230,7 @@ GROUP BY repo_snapshots.id`;
                 const fid = await this.ensureFingerprintStored(ideal.ideal, client);
                 await client.query(`INSERT INTO ideal_fingerprints (workspace_id, fingerprint_id, authority)
 values ($1, $2, 'local-user')`, [
-                    workspaceId, fid]);
+                        workspaceId, fid]);
             });
         } else {
             throw new Error("Elimination ideals not yet supported");
@@ -332,7 +332,7 @@ WHERE id = $1`;
         return fingerprintsInWorkspace(this.clientFactory, workspaceId, distinct, type, name);
     }
 
-    public async fingerprintsForProject(snapshotId: string): Promise<FP[]> {
+    public async fingerprintsForProject(snapshotId: string): Promise<Array<FP & { timestamp: Date }>> {
         return fingerprintsForProject(this.clientFactory, snapshotId);
     }
 
@@ -358,7 +358,7 @@ GROUP by repo_snapshots.id) stats;`;
         values ($1, $2, $3, $4, $5, $6)
         ON CONFLICT ON CONSTRAINT fingerprint_analytics_pkey DO UPDATE SET entropy = $4, variants = $5, count = $6`;
                 await client.query(sql, [kind.type, kind.name, workspaceId,
-                    cohortAnalysis.entropy, cohortAnalysis.variants, cohortAnalysis.count]);
+                cohortAnalysis.entropy, cohortAnalysis.variants, cohortAnalysis.count]);
             }
             return true;
         });
@@ -555,8 +555,8 @@ WHERE rs.workspace_id ${workspaceId === "*" ? "<>" : "="} $1
 }
 
 async function fingerprintsForProject(clientFactory: ClientFactory,
-                                      snapshotId: string): Promise<FP[]> {
-    const sql = `SELECT f.name as fingerprintName, f.feature_name, f.sha, f.data, rf.path
+                                      snapshotId: string): Promise<Array<FP & { timestamp: Date }>> {
+    const sql = `SELECT f.name as fingerprintName, f.feature_name, f.sha, f.data, rf.path, rs.timestamp
 FROM repo_fingerprints rf, repo_snapshots rs, fingerprints f
 WHERE rs.id = $1 AND rf.repo_snapshot_id = rs.id AND rf.fingerprint_id = f.id
 ORDER BY feature_name, fingerprintName ASC`;
@@ -569,6 +569,7 @@ ORDER BY feature_name, fingerprintName ASC`;
                 sha: row.sha,
                 data: row.data,
                 path: row.path,
+                timestamp: row.timestamp,
             };
         });
     }, []);

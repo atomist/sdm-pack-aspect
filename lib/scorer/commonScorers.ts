@@ -64,6 +64,9 @@ export function requireRecentCommit(opts: { days: number }): RepositoryScorer {
         if (!grt) {
             return undefined;
         }
+        if (!grt.data.lastCommitTime) {
+            return undefined;
+        }
         const date = new Date(grt.data.lastCommitTime);
         const days = daysSince(date);
         return {
