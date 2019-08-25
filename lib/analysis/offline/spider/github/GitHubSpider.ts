@@ -58,8 +58,8 @@ export interface Cloner {
 export class GitHubSpider implements Spider {
 
     public async spider(criteria: ScmSearchCriteria,
-        analyzer: Analyzer,
-        opts: SpiderOptions): Promise<SpiderResult> {
+                        analyzer: Analyzer,
+                        opts: SpiderOptions): Promise<SpiderResult> {
 
         const run = new AnalysisRun<GitHubSearchResult>({
             howToFindRepos: () => this.queryFunction(process.env.GITHUB_TOKEN, criteria),
@@ -219,9 +219,9 @@ function combineAnalyzeAndPersistResult(one: AnalyzeAndPersistResult, two: Analy
  * @return {Promise<void>}
  */
 async function runAnalysis(cloner: Cloner,
-    sourceData: GitHubSearchResult,
-    criteria: ScmSearchCriteria,
-    analyzer: Analyzer): Promise<AnalyzeResult & { analyzeResults?: AnalyzeResults, sourceData: GitHubSearchResult }> {
+                           sourceData: GitHubSearchResult,
+                           criteria: ScmSearchCriteria,
+                           analyzer: Analyzer): Promise<AnalyzeResult & { analyzeResults?: AnalyzeResults, sourceData: GitHubSearchResult }> {
     const startTime = new Date().getTime();
     let project;
     let clonedIn: number;
@@ -283,8 +283,8 @@ async function runAnalysis(cloner: Cloner,
 }
 
 async function runPersist(criteria: ScmSearchCriteria,
-    opts: SpiderOptions,
-    ar: AnalyzeResult & { analyzeResults?: AnalyzeResults, sourceData: GitHubSearchResult }): Promise<AnalyzeAndPersistResult> {
+                          opts: SpiderOptions,
+                          ar: AnalyzeResult & { analyzeResults?: AnalyzeResults, sourceData: GitHubSearchResult }): Promise<AnalyzeAndPersistResult> {
     const persistResults: PersistResult[] = [];
 
     logger.debug("Persisting...");
@@ -349,7 +349,7 @@ async function* queryByCriteria(token: string, criteria: ScmSearchCriteria): Asy
                 r.timestamp = new Date();
             });
             for (const newResult of newResults) {
-                yield newResult;
+                yield dropIrrelevantFields(newResult);
             }
             logger.debug(`Looked at ${retrieved} repos of max ${criteria.maxRetrieved}...`);
             if (retrieved > criteria.maxRetrieved) {
