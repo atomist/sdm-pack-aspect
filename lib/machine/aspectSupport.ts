@@ -38,7 +38,6 @@ import {
     PublishFingerprints,
     VirtualProjectFinder,
 } from "@atomist/sdm-pack-fingerprints";
-import { isDeliveryAspect } from "../aspect/delivery/DeliveryAspect";
 import { ClientFactory } from "../analysis/offline/persist/pgUtils";
 import {
     analyzeGitHubByQueryCommandRegistration,
@@ -51,6 +50,7 @@ import {
     TaggerDefinition,
 } from "../aspect/AspectRegistry";
 import { DefaultAspectRegistry } from "../aspect/DefaultAspectRegistry";
+import { isDeliveryAspect } from "../aspect/delivery/DeliveryAspect";
 import { UndesirableUsageChecker } from "../aspect/ProblemStore";
 import { api } from "../routes/api";
 import { addWebAppRoutes } from "../routes/web-app/webAppRoutes";

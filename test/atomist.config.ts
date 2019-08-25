@@ -73,6 +73,8 @@ import {
 } from "../lib/aspect/community/oss";
 import { isFileMatchFingerprint } from "../lib/aspect/compose/fileMatchAspect";
 import { globAspect } from "../lib/aspect/compose/globAspect";
+import { buildTimeAspect } from "../lib/aspect/delivery/BuildAspect";
+import { storeFingerprints } from "../lib/aspect/delivery/storeFingerprintsPublisher";
 import { branchCount } from "../lib/aspect/git/branchCount";
 import { GitRecency } from "../lib/aspect/git/gitActivity";
 import { AcceptEverythingUndesirableUsageChecker } from "../lib/aspect/ProblemStore";
@@ -84,8 +86,6 @@ import {
 import { sdmConfigClientFactory } from "../lib/machine/machine";
 import * as commonScorers from "../lib/scorer/commonScorers";
 import * as commonTaggers from "../lib/tagger/commonTaggers";
-import { buildTimeAspect } from "../lib/aspect/delivery/BuildAspect";
-import { storeFingerprints } from "../lib/aspect/delivery/storeFingerprintsPublisher";
 
 // Ensure we start up in local mode
 process.env.ATOMIST_MODE = "local";
