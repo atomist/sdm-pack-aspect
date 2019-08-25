@@ -37,7 +37,11 @@ import {
     NpmDeps,
     VirtualProjectFinder,
 } from "@atomist/sdm-pack-fingerprints";
-import { IsNode, nodeBuilder, npmBuilderOptionsFromFile } from "@atomist/sdm-pack-node";
+import {
+    IsNode,
+    nodeBuilder,
+    npmBuilderOptionsFromFile,
+} from "@atomist/sdm-pack-node";
 import {
     PowerShellLanguage,
     ShellLanguage,
