@@ -14,13 +14,18 @@
  * limitations under the License.
  */
 
-import { AcceptEverythingUndesirableUsageChecker } from "../lib/aspect/ProblemStore";
-
-// Ensure we start up in local mode
-process.env.ATOMIST_MODE = "local";
-
 import { Configuration } from "@atomist/automation-client";
-import { configure } from "@atomist/sdm-core";
+import { loadUserConfiguration } from "@atomist/automation-client/lib/configuration";
+import {
+    anySatisfied,
+    onAnyPush,
+    PushImpact,
+} from "@atomist/sdm";
+import {
+    AllGoals,
+    configure,
+} from "@atomist/sdm-core";
+import { Build } from "@atomist/sdm-pack-build";
 import { LeinDeps } from "@atomist/sdm-pack-clojure/lib/fingerprints/clojure";
 import {
     DockerfilePath,
@@ -29,16 +34,26 @@ import {
 } from "@atomist/sdm-pack-docker";
 import {
     Aspect,
-    makeVirtualProjectAware,
     NpmDeps,
     VirtualProjectFinder,
 } from "@atomist/sdm-pack-fingerprints";
+import {
+    IsNode,
+    nodeBuilder,
+    npmBuilderOptionsFromFile,
+} from "@atomist/sdm-pack-node";
 import {
     PowerShellLanguage,
     ShellLanguage,
     YamlLanguage,
 } from "@atomist/sdm-pack-sloc/lib/languages";
+import {
+    IsMaven,
+    mavenBuilder,
+    MavenDefaultOptions,
+} from "@atomist/sdm-pack-spring";
 import * as _ from "lodash";
+import { PostgresProjectAnalysisResultStore } from "../lib/analysis/offline/persist/PostgresProjectAnalysisResultStore";
 import {
     CombinationTagger,
     RepositoryScorer,
@@ -47,9 +62,7 @@ import {
 import { CodeMetricsAspect } from "../lib/aspect/common/codeMetrics";
 import { CodeOwnership } from "../lib/aspect/common/codeOwnership";
 import { CiAspect } from "../lib/aspect/common/stackAspect";
-import {
-    CodeOfConduct,
-} from "../lib/aspect/community/codeOfConduct";
+import { CodeOfConduct } from "../lib/aspect/community/codeOfConduct";
 import {
     License,
     LicensePresence,
@@ -62,24 +75,64 @@ import { isFileMatchFingerprint } from "../lib/aspect/compose/fileMatchAspect";
 import { globAspect } from "../lib/aspect/compose/globAspect";
 import { branchCount } from "../lib/aspect/git/branchCount";
 import { GitRecency } from "../lib/aspect/git/gitActivity";
+import { AcceptEverythingUndesirableUsageChecker } from "../lib/aspect/ProblemStore";
 import { ExposedSecrets } from "../lib/aspect/secret/exposedSecrets";
 import {
     aspectSupport,
     DefaultVirtualProjectFinder,
 } from "../lib/machine/aspectSupport";
+import { sdmConfigClientFactory } from "../lib/machine/machine";
 import * as commonScorers from "../lib/scorer/commonScorers";
 import * as commonTaggers from "../lib/tagger/commonTaggers";
+import { buildTimeAspect } from "./aspect/delivery/BuildAspect";
+import { storeFingerprints } from "./aspect/delivery/storeFingerprintsPublisher";
+
+// Ensure we start up in local mode
+process.env.ATOMIST_MODE = "local";
+
+// Ensure we use this workspace so we can see all fingerprints with the local UI
+process.env.ATOMIST_WORKSPACES = "local";
 
 const virtualProjectFinder: VirtualProjectFinder = DefaultVirtualProjectFinder;
+
+const store = new PostgresProjectAnalysisResultStore(sdmConfigClientFactory(loadUserConfiguration()));
+
+interface TestGoals extends AllGoals {
+    build: Build;
+}
 
 /**
  * Sample configuration to enable testing
  * @type {Configuration}
  */
-export const configuration: Configuration = configure(async sdm => {
+export const configuration: Configuration = configure<TestGoals>(async sdm => {
+
+    const goals = await sdm.createGoals(async () => {
+        const build: Build = new Build()
+            .with({
+                ...MavenDefaultOptions,
+                builder: mavenBuilder(),
+            });
+            // .with({
+            //     builder: nodeBuilder(),
+            // });
+
+        const pushImpact = new PushImpact();
+
+        return {
+            // This illustrates a delivery goal
+            build,
+
+            // This illustrates pushImpact
+            pushImpact,
+        };
+    }, []);
+
     sdm.addExtensionPacks(
         aspectSupport({
             aspects: aspects(),
+
+            goals,
 
             scorers: scorers(),
 
@@ -89,9 +142,21 @@ export const configuration: Configuration = configure(async sdm => {
             // Customize this to respond to undesirable usages
             undesirableUsageChecker: AcceptEverythingUndesirableUsageChecker,
 
+            publishFingerprints: storeFingerprints(store),
             virtualProjectFinder,
         }),
     );
+
+    return {
+        fingerprint: {
+            goals: goals.pushImpact,
+        },
+        build: {
+            test: anySatisfied(IsMaven /*, IsNode */),
+            goals: goals.build,
+        },
+    };
+
 });
 
 function aspects(): Aspect[] {
@@ -124,7 +189,9 @@ function aspects(): Aspect[] {
         globAspect({ name: "readme", displayName: "Readme file", glob: "README.md" }),
         // allMavenDependenciesAspect,    // This is expensive
         LeinDeps,
-    ].map(aspect => makeVirtualProjectAware(aspect, virtualProjectFinder));
+
+        buildTimeAspect(),
+    ];
 }
 
 export function scorers(): RepositoryScorer[] {

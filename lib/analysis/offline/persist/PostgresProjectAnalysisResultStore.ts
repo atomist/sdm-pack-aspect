@@ -55,6 +55,7 @@ import {
 import {
     combinePersistResults,
     emptyPersistResult,
+    FingerprintInsertionResult,
     FingerprintKind,
     FingerprintUsage,
     PersistResult,
@@ -405,7 +406,7 @@ GROUP by repo_snapshots.id) stats;`;
             await deleteOldSnapshotForRepository(repoRef, client);
 
             // Use this as unique database id
-            const id = repoRef.url.replace("/", "") + "_" + repoRef.sha;
+            const id = snapshotIdFor(repoRef);
             const shaToUse = repoRef.sha;
             const repoSnapshotsInsertSql = `INSERT INTO repo_snapshots (id, workspace_id, provider_id, owner, name, url,
     commit_sha, query, timestamp)
@@ -446,11 +447,20 @@ VALUES ($1, $2, $3, $4, $5, $6, $7, $8, current_timestamp)`;
         }
     }
 
+    public async persistAdditionalFingerprints(analyzed: Analyzed): Promise<FingerprintInsertionResult> {
+        return doWithClient(`Persist additional fingerprints for project at ${analyzed.id.url}`,
+            this.clientFactory,
+            async client => {
+                return this.persistFingerprints(analyzed, snapshotIdFor(analyzed.id), client);
+            }, {
+                insertedCount: 0,
+                failures: analyzed.fingerprints
+                    .map(failedFingerprint => ({ failedFingerprint, error: undefined })),
+            });
+    }
+
     // Persist the fingerprints for this analysis
-    private async persistFingerprints(pa: Analyzed, id: string, client: ClientBase): Promise<{
-        insertedCount: number,
-        failures: Array<{ failedFingerprint: FP; error: Error }>,
-    }> {
+    private async persistFingerprints(pa: Analyzed, id: string, client: ClientBase): Promise<FingerprintInsertionResult> {
         let insertedCount = 0;
         const failures: Array<{ failedFingerprint: FP; error: Error }> = [];
         for (const fp of pa.fingerprints) {
@@ -537,7 +547,7 @@ FROM repo_snapshots rs
     RIGHT JOIN repo_fingerprints rf ON rf.repo_snapshot_id = rs.id
     INNER JOIN fingerprints f ON rf.fingerprint_id = f.id
 WHERE rs.workspace_id ${workspaceId === "*" ? "<>" : "="} $1
-    AND ${type ? "type = $2" : "true"} AND ${name ? "f.name = $3" : "true"}`;
+    AND ${type ? "f.feature_name = $2" : "true"} AND ${name ? "f.name = $3" : "true"}`;
     return doWithClient(sql, clientFactory, async client => {
         const params = [workspaceId];
         if (!!type) {
@@ -618,4 +628,8 @@ function rowToRepoRef(row: { provider_id: string, owner: string, name: string, u
         ...row,
         repo: row.name,
     });
+}
+
+function snapshotIdFor(repoRef: RemoteRepoRef): string {
+    return repoRef.url.replace("/", "") + "_" + repoRef.sha;
 }
