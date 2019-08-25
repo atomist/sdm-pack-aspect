@@ -54,7 +54,8 @@ import {
 } from "./pgUtils";
 import {
     combinePersistResults,
-    emptyPersistResult, FingerprintInsertionResult,
+    emptyPersistResult,
+    FingerprintInsertionResult,
     FingerprintKind,
     FingerprintUsage,
     PersistResult,
