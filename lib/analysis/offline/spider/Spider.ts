@@ -43,11 +43,6 @@ export interface SpiderOptions {
      * Is this record OK or should it be refreshed?
      */
     keepExistingPersisted: ProjectAnalysisResultFilter;
-
-    /**
-     * Invoked after the repo is persisted to perform any additional actions.
-     */
-    onPersisted?: (repo: SpideredRepo) => Promise<void>;
 }
 
 export type RepoUrl = string;

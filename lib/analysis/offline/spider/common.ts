@@ -57,9 +57,9 @@ export interface RepoInfo {
  * Find project or subprojects
  */
 export async function analyze(project: Project,
-                              analyzer: Analyzer,
+    analyzer: Analyzer,
     // todo: remove unused parameter
-                              criteria: ScmSearchCriteria): Promise<AnalyzeResults> {
+    criteria: ScmSearchCriteria): Promise<AnalyzeResults> {
     return { projectsDetected: 1, repoInfos: [await analyzeProject(project, analyzer)] };
 }
 
@@ -67,7 +67,7 @@ export async function analyze(project: Project,
  * Analyze a project.
  */
 async function analyzeProject(project: Project,
-                              analyzer: Analyzer): Promise<RepoInfo> {
+    analyzer: Analyzer): Promise<RepoInfo> {
     const analysis = await analyzer.analyze(project);
     return {
         analysis,
@@ -102,13 +102,5 @@ export async function persistRepoInfo(
         query: moreInfo.query,
     };
     const persistResult = await opts.persister.persist(toPersist);
-    if (opts.onPersisted) {
-        try {
-            await opts.onPersisted(toPersist);
-        } catch (err) {
-            logger.warn("Failed to action after persist repo %j: %s",
-                toPersist.analysis.id, err.message);
-        }
-    }
     return persistResult;
 }
