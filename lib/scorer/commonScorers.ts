@@ -68,7 +68,7 @@ export function requireRecentCommit(opts: { days: number }): RepositoryScorer {
         const days = daysSince(date);
         return {
             name: "recency",
-            score: adjustBy(-days / opts.days),
+            score: adjustBy(-days / (opts.days || 1)),
             reason: `Last commit ${days} days ago`,
         };
     };
