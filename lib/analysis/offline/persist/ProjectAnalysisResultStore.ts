@@ -23,7 +23,7 @@ import {
     PersistenceResult,
     SpiderFailure,
 } from "../spider/Spider";
-import { ClientFactory } from "./pgUtils";
+import { Analyzed, HasFingerprints } from "../../../aspect/AspectRegistry";
 
 export interface PersistResult {
     attemptedCount: number;
@@ -70,6 +70,11 @@ export interface TreeQuery {
     byName: boolean;
 
     includeWithout: boolean;
+}
+
+export interface FingerprintInsertionResult {
+    insertedCount: number;
+    failures: Array<{ failedFingerprint: FP; error: Error }>;
 }
 
 /**
@@ -129,6 +134,11 @@ export interface ProjectAnalysisResultStore {
     loadById(id: string): Promise<ProjectAnalysisResult | undefined>;
 
     persist(repos: ProjectAnalysisResult | AsyncIterable<ProjectAnalysisResult> | ProjectAnalysisResult[]): Promise<PersistResult>;
+
+    /**
+     * Persist fingerprints for this snapshot id, which must already exist.
+     */
+    persistAdditionalFingerprints(analyzed: Analyzed): Promise<FingerprintInsertionResult>;
 
     /**
      * Return distinct fingerprint type/name combinations in this workspace

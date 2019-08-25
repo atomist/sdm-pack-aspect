@@ -44,13 +44,24 @@ export function storeFingerprints(store: ProjectAnalysisResultStore): PublishFin
         };
         logger.info("Routing %d fingerprints to local database for workspace %s",
             fingerprints.length, i.context.workspaceId);
-        const results = await store.persist(paResult);
-        logger.info("Persistence results: %j", results);
+        const found = await store.loadByRepoRef(paResult.analysis.id, false);
+        if (!!found) {
+            const results = await store.persistAdditionalFingerprints(paResult.analysis);
+            logger.info("Persisting additional fingerprint results for %s: %j", paResult.analysis.id.url, results);
 
-        for (const fp of fingerprints) {
-            await computeAnalyticsForFingerprintKind(store, i.context.workspaceId, fp.type, fp.name);
+            for (const fp of fingerprints) {
+                await computeAnalyticsForFingerprintKind(store, i.context.workspaceId, fp.type, fp.name);
+            }
+
+            return results.failures.length === 0;
+        } else {
+            const results = await store.persist(paResult);
+            logger.info("Persisting snapshot for %s: %j", paResult.analysis.id.url, results);
+
+            for (const fp of fingerprints) {
+                await computeAnalyticsForFingerprintKind(store, i.context.workspaceId, fp.type, fp.name);
+            }
+            return results.failed.length === 0;
         }
-
-        return results.failed.length === 0;
     };
 }
