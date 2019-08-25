@@ -37,6 +37,7 @@ import {
     NpmDeps,
     VirtualProjectFinder,
 } from "@atomist/sdm-pack-fingerprints";
+import { IsNode, nodeBuilder, npmBuilderOptionsFromFile } from "@atomist/sdm-pack-node";
 import {
     PowerShellLanguage,
     ShellLanguage,
@@ -81,7 +82,6 @@ import * as commonScorers from "../lib/scorer/commonScorers";
 import * as commonTaggers from "../lib/tagger/commonTaggers";
 import { buildTimeAspect } from "./aspect/delivery/BuildAspect";
 import { storeFingerprints } from "./aspect/delivery/storeFingerprintsPublisher";
-import { IsNode, nodeBuilder, npmBuilderOptionsFromFile } from "@atomist/sdm-pack-node";
 
 // Ensure we start up in local mode
 process.env.ATOMIST_MODE = "local";
