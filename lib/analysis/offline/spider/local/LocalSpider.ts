@@ -56,6 +56,7 @@ interface TrackedRepo<FoundRepo> {
 }
 
 export class AnalysisRun<FoundRepo> {
+    opts: any;
 
     constructor(
         private readonly world: {
@@ -137,6 +138,7 @@ export class AnalysisRun<FoundRepo> {
                 continue;
             }
 
+            // analyze !
             let analysis: Analyzed;
             try {
                 analysis = await this.world.analyzer.analyze(project);
@@ -153,18 +155,16 @@ export class AnalysisRun<FoundRepo> {
                 continue;
             }
 
-            const persistResult = await persistRepoInfo(
-                // tslint:disable-next-line:no-object-literal-type-assertion
-                {
-                    workspaceId: this.params.workspaceId,
-                    persister: this.world.persister,
-                } as SpiderOptions,
-                { analysis },
-                {
-                    sourceData: this.world.describeFoundRepo(trackedRepo.foundRepo),
-                    url: trackedRepo.repoRef.url,
-                    timestamp: new Date(),
-                });
+            // save :-)
+            const persistResult = await this.world.persister.persist({
+                workspaceId: this.params.workspaceId,
+                repoRef: trackedRepo.repoRef,
+                analysis: {
+                    ...analysis,
+                    id: trackedRepo.repoRef, // necessary?
+                },
+                timestamp: new Date(),
+            });
 
             results.push({
                 repositoriesDetected: 1,

@@ -17,6 +17,7 @@
 import {
     RemoteRepoRef,
     Severity,
+    RepoRef,
 } from "@atomist/automation-client";
 import {
     FP,
@@ -45,7 +46,7 @@ export interface HasFingerprints {
 /**
  * Result of an analysis. We must always have at least fingerprints and repo identification
  */
-export type Analyzed = HasFingerprints & { id: RemoteRepoRef };
+export type Analyzed = HasFingerprints & { id: RepoRef };
 
 /**
  * Tag based on fingerprint data.
@@ -70,11 +71,11 @@ export interface Tagger extends Tag {
     /**
      * Test for the relevance of this tag
      * @param {FP} fp fingerprint to test
-     * @param {RemoteRepoRef} id id of repo to text
+     * @param {RepoRef} id id of repo to text
      * @param {TagContext} tagContext context of this cohort of repos
      * @return {boolean}
      */
-    test(fp: FP, id: RemoteRepoRef, tagContext: TagContext): boolean;
+    test(fp: FP, id: RepoRef, tagContext: TagContext): boolean;
 }
 
 export interface WorkspaceSpecificTagger {
@@ -105,7 +106,7 @@ export interface CombinationTagger extends Tag {
      * @param {TagContext} tagContext context of this cohort of repos
      * @return {boolean}
      */
-    test(fp: FP[], id: RemoteRepoRef, tagContext: TagContext): boolean;
+    test(fp: FP[], id: RepoRef, tagContext: TagContext): boolean;
 }
 
 export type TaggedRepo = ProjectAnalysisResult & { tags: Tag[] };
@@ -135,8 +136,8 @@ export interface TagAndScoreOptions {
 export interface AspectRegistry {
 
     tagAndScoreRepos(workspaceId: string,
-                     repos: ProjectAnalysisResult[],
-                     opts: TagAndScoreOptions): Promise<ScoredRepo[]>;
+        repos: ProjectAnalysisResult[],
+        opts: TagAndScoreOptions): Promise<ScoredRepo[]>;
 
     availableTags: Tag[];
 

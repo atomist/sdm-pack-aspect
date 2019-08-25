@@ -60,8 +60,8 @@ function displayResources(props: RepoExplorerProps): React.ReactElement {
     return collapsible("Resources", "Resources",
         <ul>
             <li>Source - <a href={props.repo.repoRef.url} target="_blank">{props.repo.repoRef.url}</a></li>
-            <li><a href={props.repo.repoRef.cloneUrl(undefined)}>Clone
-                URL</a> - {props.repo.repoRef.cloneUrl(undefined)}</li>
+            <li><a href={props.repo.repoRef.url}>
+                URL</a> - {props.repo.repoRef.url}</li>
         </ul>, true);
 }
 
