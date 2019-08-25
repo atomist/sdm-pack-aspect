@@ -17,6 +17,7 @@
 import { Configuration } from "@atomist/automation-client";
 import { loadUserConfiguration } from "@atomist/automation-client/lib/configuration";
 import {
+    anySatisfied,
     onAnyPush,
     PushImpact,
 } from "@atomist/sdm";
@@ -80,9 +81,13 @@ import * as commonScorers from "../lib/scorer/commonScorers";
 import * as commonTaggers from "../lib/tagger/commonTaggers";
 import { buildTimeAspect } from "./aspect/delivery/BuildAspect";
 import { storeFingerprints } from "./aspect/delivery/storeFingerprintsPublisher";
+import { IsNode, nodeBuilder, npmBuilderOptionsFromFile } from "@atomist/sdm-pack-node";
 
 // Ensure we start up in local mode
 process.env.ATOMIST_MODE = "local";
+
+// Ensure we use this workspace so we can see all fingerprints with the local UI
+process.env.ATOMIST_WORKSPACES = "local";
 
 const virtualProjectFinder: VirtualProjectFinder = DefaultVirtualProjectFinder;
 
@@ -98,13 +103,15 @@ interface TestGoals extends AllGoals {
  */
 export const configuration: Configuration = configure<TestGoals>(async sdm => {
 
-    const goals = await sdm.createGoals(async s => {
-
+    const goals = await sdm.createGoals(async () => {
         const build: Build = new Build()
             .with({
                 ...MavenDefaultOptions,
                 builder: mavenBuilder(),
             });
+            // .with({
+            //     builder: nodeBuilder(),
+            // });
 
         const pushImpact = new PushImpact();
 
@@ -132,7 +139,6 @@ export const configuration: Configuration = configure<TestGoals>(async sdm => {
             undesirableUsageChecker: AcceptEverythingUndesirableUsageChecker,
 
             publishFingerprints: storeFingerprints(store),
-
             virtualProjectFinder,
         }),
     );
@@ -142,7 +148,7 @@ export const configuration: Configuration = configure<TestGoals>(async sdm => {
             goals: goals.pushImpact,
         },
         build: {
-            test: IsMaven,
+            test: anySatisfied(IsMaven /*, IsNode */),
             goals: goals.build,
         },
     };
