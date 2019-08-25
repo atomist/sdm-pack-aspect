@@ -16,6 +16,7 @@
 
 import { RepoRef } from "@atomist/automation-client";
 import { FP } from "@atomist/sdm-pack-fingerprints";
+import { Analyzed, HasFingerprints } from "../../../aspect/AspectRegistry";
 import { PlantedTree } from "../../../tree/sunburst";
 import { ProjectAnalysisResult } from "../../ProjectAnalysisResult";
 import { CohortAnalysis } from "../spider/analytics";
@@ -23,7 +24,6 @@ import {
     PersistenceResult,
     SpiderFailure,
 } from "../spider/Spider";
-import { Analyzed, HasFingerprints } from "../../../aspect/AspectRegistry";
 
 export interface PersistResult {
     attemptedCount: number;

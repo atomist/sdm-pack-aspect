@@ -82,7 +82,8 @@ export const DefaultScoreWeightings: ScoreWeightings = {
 export interface AspectSupportOptions {
 
     /**
-     * Aspects that drive behavior of this SDM
+     * Aspects that cause this SDM to calculate fingerprints from projects
+     * and delivery events.
      */
     aspects: Aspect | Aspect[];
 
