@@ -17,6 +17,7 @@
 import {
     InMemoryProject,
     RepoRef,
+    GitProject,
 } from "@atomist/automation-client";
 import { TmpDirectoryManager } from "@atomist/automation-client/lib/spi/clone/tmpDirectoryManager";
 import { FP } from "@atomist/sdm-pack-fingerprints";
@@ -202,7 +203,7 @@ describe("GithubSpider", () => {
     // TODO this is currently hanging, possible because monorepo support doesn't like in memory project
     it.skip("can make and persist an analysis", async () => {
         const subject = new GitHubSpider(
-            { clone: async () => InMemoryProject.of({ path: "README.md", content: "hi there" }) },
+            { clone: async () => InMemoryProject.of({ path: "README.md", content: "hi there" }) as unknown as GitProject },
             async function* (t, q) {
                 yield oneSearchResult;
             },

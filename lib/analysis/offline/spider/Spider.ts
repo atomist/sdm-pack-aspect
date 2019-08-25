@@ -62,10 +62,11 @@ export interface SpiderFailure {
 
 export interface SpiderResult {
     repositoriesDetected: number;
-    projectsDetected: number;
+    projectsDetected?: number; // deprecated
     failed: SpiderFailure[];
     keptExisting: RepoUrl[];
     persistedAnalyses: PersistenceResult[];
+    millisTaken?: number;
 }
 
 export const EmptySpiderResult: SpiderResult = {
@@ -114,6 +115,6 @@ export function logTimings(recorder: TimeRecorder): void {
 export interface Spider {
 
     spider(criteria: ScmSearchCriteria,
-           analyzer: Analyzer,
-           opts: SpiderOptions): Promise<SpiderResult>;
+        analyzer: Analyzer,
+        opts: SpiderOptions): Promise<SpiderResult>;
 }

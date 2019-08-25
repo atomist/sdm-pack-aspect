@@ -16,10 +16,14 @@
 
 import {
     GitCommandGitProject,
+    LocalProject,
+    logger,
     Project,
+    GitProject,
 } from "@atomist/automation-client";
 import { GitHubRepoRef } from "@atomist/automation-client/lib/operations/common/GitHubRepoRef";
 import { DirectoryManager } from "@atomist/automation-client/lib/spi/clone/DirectoryManager";
+import { execPromise } from "@atomist/sdm";
 import {
     Cloner,
     GitHubSearchResult,
@@ -30,8 +34,8 @@ import {
  */
 export class GitCommandGitProjectCloner implements Cloner {
 
-    public async clone(sourceData: GitHubSearchResult): Promise<Project> {
-        return GitCommandGitProject.cloned(
+    public async clone(sourceData: GitHubSearchResult): Promise<GitProject> {
+        const project = await GitCommandGitProject.cloned(
             process.env.GITHUB_TOKEN ? { token: process.env.GITHUB_TOKEN } : undefined,
             GitHubRepoRef.from({
                 owner: sourceData.owner.login,
@@ -43,7 +47,16 @@ export class GitCommandGitProjectCloner implements Cloner {
                 depth: 1,
             },
             this.directoryManager);
+
+        if (!project.id.sha) {
+            const sha = await execPromise("git", ["rev-parse", "HEAD"], {
+                cwd: (project as LocalProject).baseDir,
+            });
+            project.id.sha = sha.stdout.trim();
+            logger.debug(`Set sha to ${project.id.sha}`);
+        }
+        return project;
     }
 
-    public constructor(private readonly directoryManager: DirectoryManager) {}
+    public constructor(private readonly directoryManager: DirectoryManager) { }
 }

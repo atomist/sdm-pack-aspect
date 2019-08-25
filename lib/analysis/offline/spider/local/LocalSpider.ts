@@ -25,6 +25,7 @@ import {
 import { execPromise } from "@atomist/sdm";
 import * as fs from "fs-extra";
 import * as path from "path";
+import { Analyzed } from "../../../../aspect/AspectRegistry";
 import { globalAnalysisTracking, RepoBeingTracked } from "../../../tracking/analysisTracker";
 import {
     combinePersistResults,
@@ -95,30 +96,50 @@ export class AnalysisRun<FoundRepo> {
 
         // simplest: do them all
         for (const trackedRepo of trackedRepos) {
+            const startTime = new Date().getTime();
             trackedRepo.repoRef = await this.world.determineRepoRef(trackedRepo.foundRepo);
 
+            // we might choose to skip this one
             if (await existingRecordShouldBeKept(this.world, trackedRepo.repoRef)) {
                 // enhancement: record timestamp of kept record
                 trackedRepo.tracking.keptExisting();
                 results.push({
                     ...oneSpiderResult,
                     keptExisting: [trackedRepo.repoRef.url],
+                    millisTaken: new Date().getTime() - startTime,
                 });
                 continue;
             }
 
-            const project = await this.world.howToClone(trackedRepo.repoRef, trackedRepo.foundRepo);
+            // clone
+            let project: GitProject;
+            try {
+                project = await this.world.howToClone(trackedRepo.repoRef, trackedRepo.foundRepo);
+            } catch (err) {
+                results.push({
+                    ...oneSpiderResult,
+                    failed: [{
+                        repoUrl: trackedRepo.repoRef.url,
+                        whileTryingTo: "clone",
+                        message: err.message,
+                    }],
+                    millisTaken: new Date().getTime() - startTime,
+                });
+                continue;
+            }
+
+            // we might choose to skip this one (is this used anywhere?)
             if (this.world.projectFilter && !await this.world.projectFilter(project)) {
                 results.push({
                     ...oneSpiderResult,
-                    projectsDetected: 0,        // does not count as a project
+                    millisTaken: new Date().getTime() - startTime,       // does not count as a project
                 });
                 continue;
             }
 
-            let analyzeResults: AnalyzeResults;
+            let analysis: Analyzed;
             try {
-                analyzeResults = await analyze(project, this.world.analyzer, undefined);
+                analysis = await this.world.analyzer.analyze(project);
             } catch (err) {
                 results.push({
                     ...oneSpiderResult,
@@ -127,34 +148,30 @@ export class AnalysisRun<FoundRepo> {
                         whileTryingTo: "analyze",
                         message: err.message,
                     }],
+                    millisTaken: new Date().getTime() - startTime,
                 });
                 continue;
             }
 
-            const persistResults: PersistResult[] = [];
-            for (const repoInfo of analyzeResults.repoInfos) {
-                const persistResult = await persistRepoInfo(
-                    // tslint:disable-next-line:no-object-literal-type-assertion
-                    {
-                        workspaceId: this.params.workspaceId,
-                        persister: this.world.persister,
-                    } as SpiderOptions,
-                    repoInfo,
-                    {
-                        sourceData: this.world.describeFoundRepo(trackedRepo.foundRepo),
-                        url: trackedRepo.repoRef.url,
-                        timestamp: new Date(),
-                    });
-                persistResults.push(persistResult);
-            }
-            const combinedPersistResult = persistResults.reduce(combinePersistResults, emptyPersistResult);
+            const persistResult = await persistRepoInfo(
+                // tslint:disable-next-line:no-object-literal-type-assertion
+                {
+                    workspaceId: this.params.workspaceId,
+                    persister: this.world.persister,
+                } as SpiderOptions,
+                { analysis },
+                {
+                    sourceData: this.world.describeFoundRepo(trackedRepo.foundRepo),
+                    url: trackedRepo.repoRef.url,
+                    timestamp: new Date(),
+                });
 
             results.push({
                 repositoriesDetected: 1,
-                projectsDetected: analyzeResults.projectsDetected,
-                failed: combinedPersistResult.failed,
-                persistedAnalyses: combinedPersistResult.succeeded,
+                failed: [],
+                persistedAnalyses: persistResult.succeeded,
                 keptExisting: [],
+                millisTaken: new Date().getTime() - startTime,
             });
         }
 
@@ -173,8 +190,8 @@ export class AnalysisRun<FoundRepo> {
 export class LocalSpider implements Spider {
 
     public async spider(criteria: ScmSearchCriteria,
-                        analyzer: Analyzer,
-                        opts: SpiderOptions): Promise<SpiderResult> {
+        analyzer: Analyzer,
+        opts: SpiderOptions): Promise<SpiderResult> {
 
         const go = new AnalysisRun<string>({
             howToFindRepos: () => findRepositoriesUnder(this.localDirectory),

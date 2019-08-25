@@ -49,7 +49,7 @@ import {
  */
 export interface Cloner {
 
-    clone(sourceData: GitHubSearchResult): Promise<Project>;
+    clone(sourceData: GitHubSearchResult): Promise<GitProject>;
 }
 
 /**
@@ -69,8 +69,9 @@ export class GitHubSpider implements Spider {
                 url: sourceData.url,
             }),
             describeFoundRepo: sourceData => sourceData.url,
-            howToClone: (rr, fr) => {
-                return this.cloner.clone(fr) as Promise<GitProject>;
+            howToClone: async (rr, sourceData) => {
+                // should we set the sha on the repoRef?
+                return this.cloner.clone(sourceData);
             },
             analyzer,
             persister: opts.persister,
