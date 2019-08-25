@@ -23,8 +23,8 @@ import {
 import {
     bandFor,
     Default,
-} from "../../../lib/util/bands";
-import { Omit } from "../../../lib/util/omit";
+} from "../../util/bands";
+import { Omit } from "../../util/omit";
 import { DeliveryAspect } from "./DeliveryAspect";
 import {
     FindFingerprintsFromGoalExecution,

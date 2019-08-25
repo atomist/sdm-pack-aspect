@@ -16,10 +16,10 @@
 
 import { logger } from "@atomist/automation-client";
 import { PublishFingerprints } from "@atomist/sdm-pack-fingerprints";
-import { ProjectAnalysisResultStore } from "../../../lib/analysis/offline/persist/ProjectAnalysisResultStore";
-import { computeAnalyticsForFingerprintKind } from "../../../lib/analysis/offline/spider/analytics";
-import { ProjectAnalysisResult } from "../../../lib/analysis/ProjectAnalysisResult";
-import { Analyzed } from "../../../lib/aspect/AspectRegistry";
+import { ProjectAnalysisResultStore } from "../../analysis/offline/persist/ProjectAnalysisResultStore";
+import { computeAnalyticsForFingerprintKind } from "../../analysis/offline/spider/analytics";
+import { ProjectAnalysisResult } from "../../analysis/ProjectAnalysisResult";
+import { Analyzed } from "../AspectRegistry";
 
 /**
  * "Publish" fingerprints to local store

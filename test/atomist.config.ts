@@ -84,8 +84,8 @@ import {
 import { sdmConfigClientFactory } from "../lib/machine/machine";
 import * as commonScorers from "../lib/scorer/commonScorers";
 import * as commonTaggers from "../lib/tagger/commonTaggers";
-import { buildTimeAspect } from "./aspect/delivery/BuildAspect";
-import { storeFingerprints } from "./aspect/delivery/storeFingerprintsPublisher";
+import { buildTimeAspect } from "../lib/aspect/delivery/BuildAspect";
+import { storeFingerprints } from "../lib/aspect/delivery/storeFingerprintsPublisher";
 
 // Ensure we start up in local mode
 process.env.ATOMIST_MODE = "local";

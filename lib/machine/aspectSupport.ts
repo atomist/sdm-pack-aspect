@@ -38,7 +38,7 @@ import {
     PublishFingerprints,
     VirtualProjectFinder,
 } from "@atomist/sdm-pack-fingerprints";
-import { isDeliveryAspect } from "../../test/aspect/delivery/DeliveryAspect";
+import { isDeliveryAspect } from "../aspect/delivery/DeliveryAspect";
 import { ClientFactory } from "../analysis/offline/persist/pgUtils";
 import {
     analyzeGitHubByQueryCommandRegistration,
