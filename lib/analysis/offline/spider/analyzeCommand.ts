@@ -124,6 +124,7 @@ function analyzeFromGitHubOrganization(analyzer: Analyzer): CommandListener<Anal
         const spiderAppOptions: SpiderAppOptions = d.parameters;
         logger.info("analyze github org invoked with " + JSON.stringify(spiderAppOptions));
 
+        d.addressChannels("Check the progress of your analysis: http://localhost:" + d.configuration.http.port + "/analysis");
         const result = await spider(spiderAppOptions, analyzer);
         await d.addressChannels(`Analysis result: `
             + JSON.stringify(result, undefined, 2));
