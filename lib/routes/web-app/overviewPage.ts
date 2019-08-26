@@ -15,7 +15,6 @@
  */
 
 import { logger } from "@atomist/automation-client";
-import { metadata } from "@atomist/sdm";
 import {
     Aspect,
     Ideal,
@@ -23,10 +22,6 @@ import {
     isConcreteIdeal,
     supportsEntropy,
 } from "@atomist/sdm-pack-fingerprints";
-import {
-    Express,
-    RequestHandler,
-} from "express";
 import * as _ from "lodash";
 import {
     AspectFingerprintsForDisplay,
@@ -34,31 +29,21 @@ import {
     Overview,
 } from "../../../views/overview";
 import { renderStaticReactNode } from "../../../views/topLevelPage";
-import {
-    FingerprintUsage,
-    ProjectAnalysisResultStore,
-} from "../../analysis/offline/persist/ProjectAnalysisResultStore";
-import {
-    AspectRegistry,
-} from "../../aspect/AspectRegistry";
+import { FingerprintUsage } from "../../analysis/offline/persist/ProjectAnalysisResultStore";
 import { defaultedToDisplayableFingerprintName } from "../../aspect/DefaultAspectRegistry";
+import { WebAppConfig } from "./webAppRoutes";
 
-const instanceMetadata = metadata();
-
-export function exposeOverviewPage(express: Express,
-                                   handlers: RequestHandler[],
-                                   topLevelRoute: string,
-                                   aspectRegistry: AspectRegistry,
-                                   store: ProjectAnalysisResultStore): void {
-    express.get(topLevelRoute, ...handlers, async (req, res) => {
+export function exposeOverviewPage(conf: WebAppConfig,
+                                   topLevelRoute: string): void {
+    conf.express.get(topLevelRoute, ...conf.handlers, async (req, res) => {
         try {
-            const repos = await store.loadInWorkspace(req.query.workspace || req.params.workspace_id, false);
+            const repos = await conf.store.loadInWorkspace(req.query.workspace || req.params.workspace_id, false);
             const workspaceId = "*";
-            const fingerprintUsage = await store.fingerprintUsageForType(workspaceId);
+            const fingerprintUsage = await conf.store.fingerprintUsageForType(workspaceId);
 
-            const ideals = await aspectRegistry.idealStore.loadIdeals(workspaceId);
+            const ideals = await conf.aspectRegistry.idealStore.loadIdeals(workspaceId);
 
-            const aspectsEligibleForDisplay = aspectRegistry.aspects
+            const aspectsEligibleForDisplay = conf.aspectRegistry.aspects
                 .filter(a => !!a.displayName)
                 .filter(a => fingerprintUsage.some(fu => fu.type === a.name));
             const foundAspects: AspectFingerprintsForDisplay[] = _.sortBy(aspectsEligibleForDisplay, a => a.displayName)
@@ -71,10 +56,10 @@ export function exposeOverviewPage(express: Express,
                     };
                 });
 
-            const unfoundAspects: Aspect[] = aspectRegistry.aspects
+            const unfoundAspects: Aspect[] = conf.aspectRegistry.aspects
                 .filter(f => !!f.displayName)
                 .filter(f => !fingerprintUsage.some(fu => fu.type === f.name));
-            const virtualProjectCount = await store.virtualProjectCount(workspaceId);
+            const virtualProjectCount = await conf.store.virtualProjectCount(workspaceId);
 
             res.send(renderStaticReactNode(
                 Overview({
@@ -89,7 +74,7 @@ export function exposeOverviewPage(express: Express,
                     })),
                     virtualProjectCount,
                 }), `Atomist Visualizer (${repos.length} repositories)`,
-                instanceMetadata));
+                conf.instanceMetadata));
         } catch (e) {
             logger.error(e.stack);
             res.status(500).send("failure");

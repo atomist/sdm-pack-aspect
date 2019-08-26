@@ -22,6 +22,7 @@ import {
 import { ExpressCustomizer } from "@atomist/automation-client/lib/configuration";
 import {
     ExtensionPack,
+    ExtensionPackMetadata,
     metadata,
     PushImpact,
 } from "@atomist/sdm";
@@ -143,6 +144,12 @@ export interface AspectSupportOptions {
     goals?: Partial<Pick<AllGoals, "build" | "pushImpact">>;
 
     rebase?: RebaseOptions;
+
+    /**
+     * If this is provided, it can distinguish the UI instance.
+     * Helps distinguish different SDMs during development.
+     */
+    instanceMetadata?: ExtensionPackMetadata;
 }
 
 /**
@@ -234,7 +241,8 @@ function orgVisualizationEndpoints(dbClientFactory: ClientFactory,
         };
     }
 
-    const aboutStaticPages = addWebAppRoutes(aspectRegistry, resultStore, httpClientFactory);
+    const aboutStaticPages = addWebAppRoutes(aspectRegistry, resultStore, httpClientFactory,
+        options.instanceMetadata || metadata());
 
     return {
         routesToSuggestOnStartup:

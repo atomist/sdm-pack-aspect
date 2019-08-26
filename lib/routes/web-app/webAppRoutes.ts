@@ -19,7 +19,10 @@ import {
     logger,
 } from "@atomist/automation-client";
 import { ExpressCustomizer } from "@atomist/automation-client/lib/configuration";
-import { metadata } from "@atomist/sdm";
+import {
+    ExtensionPackMetadata,
+    metadata,
+} from "@atomist/sdm";
 import {
     ConcreteIdeal,
     FP,
@@ -47,8 +50,6 @@ import {
 } from "../../../views/sunburstPage";
 import { renderStaticReactNode } from "../../../views/topLevelPage";
 import { ProjectAnalysisResultStore } from "../../analysis/offline/persist/ProjectAnalysisResultStore";
-import { globalAnalysisTracking } from "../../analysis/tracking/analysisTracker";
-import { exposeAnalysisTrackingPage } from "../../analysis/tracking/analysisTrackingRoutes";
 import {
     AspectRegistry,
 } from "../../aspect/AspectRegistry";
@@ -66,7 +67,14 @@ import {
 import { exposeOverviewPage } from "./overviewPage";
 import { exposeRepositoryListPage } from "./repositoryListPage";
 
-const instanceMetadata = metadata();
+export interface WebAppConfig {
+    express: Express;
+    handlers: RequestHandler[];
+    aspectRegistry: AspectRegistry;
+    store: ProjectAnalysisResultStore;
+    instanceMetadata: ExtensionPackMetadata;
+    httpClientFactory: HttpClientFactory;
+}
 
 /**
  * Add the org page route to Atomist SDM Express server.
@@ -75,7 +83,8 @@ const instanceMetadata = metadata();
 export function addWebAppRoutes(
     aspectRegistry: AspectRegistry,
     store: ProjectAnalysisResultStore,
-    httpClientFactory: HttpClientFactory): {
+    httpClientFactory: HttpClientFactory,
+    instanceMetadata: ExtensionPackMetadata): {
         customizer: ExpressCustomizer,
         routesToSuggestOnStartup: Array<{ title: string, route: string }>,
     } {
@@ -98,36 +107,34 @@ export function addWebAppRoutes(
                 res.redirect(topLevelRoute);
             });
 
-            exposeDriftPage(express, handlers, httpClientFactory, aspectRegistry);
-            exposeOverviewPage(express, handlers, topLevelRoute, aspectRegistry, store);
-            exposeRepositoryListPage(express, handlers, aspectRegistry, store);
-            exposeRepositoryPage(express, handlers, aspectRegistry, store);
-            exposeExplorePage(express, handlers, httpClientFactory, aspectRegistry);
-            exposeFingerprintReportPage(express, handlers, httpClientFactory, aspectRegistry);
-            exposeCustomReportPage(express, handlers, httpClientFactory, aspectRegistry);
+            const conf: WebAppConfig = { express, handlers, aspectRegistry, store, instanceMetadata, httpClientFactory };
 
-            exposeAnalysisTrackingPage(express, handlers, globalAnalysisTracking);
+            exposeDriftPage(conf);
+            exposeOverviewPage(conf, topLevelRoute);
+            exposeRepositoryListPage(conf);
+            exposeRepositoryPage(conf);
+            exposeExplorePage(conf);
+            exposeFingerprintReportPage(conf);
+            exposeCustomReportPage(conf);
         },
     };
 }
 
-function exposeRepositoryPage(express: Express,
-                              handlers: RequestHandler[],
-                              aspectRegistry: AspectRegistry,
-                              store: ProjectAnalysisResultStore): void {
-    express.get("/repository", ...handlers, async (req, res) => {
+function exposeRepositoryPage(conf: WebAppConfig): void {
+    conf.express.get("/repository", ...conf.handlers, async (req, res) => {
         const workspaceId = req.query.workspaceId || "*";
         const id = req.query.id;
-        const analysisResult = await store.loadById(id);
+        const analysisResult = await conf.store.loadById(id);
         const category = req.query.category || "*";
         if (!analysisResult) {
             return res.send(`No project at ${JSON.stringify(id)}`);
         }
 
-        const allFingerprints = await store.fingerprintsForProject(id);
-        const mostRecentTimestampMillis = Math.max(...allFingerprints.map(fp => fp.timestamp.getTime()));
+        const allFingerprints = await conf.store.fingerprintsForProject(id);
+        const mostRecentTimestampMillis = Math.max(...allFingerprints.map(fp =>
+            fp.timestamp.getTime()));
         const commitSha = allFingerprints.length > 0 ? allFingerprints[0].commitSha : undefined;
-        const aspectsAndFingerprints = await projectFingerprints(aspectRegistry,
+        const aspectsAndFingerprints = await projectFingerprints(conf.aspectRegistry,
             allFingerprints);
 
         // assign style based on ideal
@@ -140,66 +147,58 @@ function exposeRepositoryPage(express: Express,
             })),
         }));
 
-        const repo = (await aspectRegistry.tagAndScoreRepos(workspaceId, [analysisResult], { category }))[0];
+        const repo = (await conf.aspectRegistry.tagAndScoreRepos(workspaceId, [analysisResult], { category }))[0];
         return res.send(renderStaticReactNode(
             RepoExplorer({
-                timestamp: new Date(mostRecentTimestampMillis),
                 repo,
                 aspects: _.sortBy(ffd.filter(f => !!f.aspect.displayName), f => f.aspect.displayName),
                 category,
+                timestamp: new Date(mostRecentTimestampMillis),
             }), `${repo.analysis.id.owner} / ${repo.analysis.id.repo}`,
-            instanceMetadata));
+            conf.instanceMetadata));
     });
 }
 
-function exposeExplorePage(express: Express,
-                           handlers: RequestHandler[],
-                           httpClientFactory: HttpClientFactory,
-                           aspectRegistry: AspectRegistry): void {
-    express.get("/explore", ...handlers, async (req, res) => {
+function exposeExplorePage(conf: WebAppConfig): void {
+    conf.express.get("/explore", ...conf.handlers, async (req, res) => {
         const tags = req.query.tags || "";
         const workspaceId = req.query.workspaceId || "*";
         const dataUrl = `/api/v1/${workspaceId}/explore?tags=${tags}`;
         const readable = describeSelectedTagsToAnimals(tags.split(","));
-        return renderDataUrl(workspaceId, {
+        return renderDataUrl(conf.instanceMetadata, workspaceId, {
             dataUrl,
             heading: "Explore repositories by tag",
             title: `Repositories matching ${readable}`,
         },
-            aspectRegistry, httpClientFactory, req, res);
+            conf.aspectRegistry, conf.httpClientFactory, req, res);
     });
 }
 
-function exposeDriftPage(express: Express,
-                         handlers: RequestHandler[],
-                         httpClientFactory: HttpClientFactory,
-                         aspectRegistry: AspectRegistry): void {
-    express.get("/drift", ...handlers, async (req, res) => {
+function exposeDriftPage(conf: WebAppConfig): void {
+    conf.express.get("/drift", ...conf.handlers, async (req, res) => {
         const workspaceId = req.query.workspaceId || "*";
         const percentile = req.query.percentile || 0;
         const type = req.query.type;
         const dataUrl = `/api/v1/${workspaceId}/drift` +
             `?percentile=${percentile}` +
             (!!type ? `&type=${type}` : "");
-        return renderDataUrl(workspaceId, {
+        return renderDataUrl(conf.instanceMetadata, workspaceId, {
             dataUrl,
             title: "Drift by aspect",
             heading: type ?
                 `Drift across aspect ${type} with entropy above ${percentile}th percentile` :
                 `Drift across all aspects with entropy above ${percentile}th percentile`,
             subheading: "Sizing shows degree of entropy",
-        }, aspectRegistry, httpClientFactory, req, res);
+        },
+            conf.aspectRegistry, conf.httpClientFactory, req, res);
     });
 }
 
-function exposeFingerprintReportPage(express: Express,
-                                     handlers: RequestHandler[],
-                                     httpClientFactory: HttpClientFactory,
-                                     aspectRegistry: AspectRegistry): void {
-    express.get("/fingerprint/:type/:name", ...handlers, async (req, res) => {
+function exposeFingerprintReportPage(conf: WebAppConfig): void {
+    conf.express.get("/fingerprint/:type/:name", ...conf.handlers, async (req, res) => {
         const type = req.params.type;
         const name = req.params.name;
-        const aspect = aspectRegistry.aspectOf(type);
+        const aspect = conf.aspectRegistry.aspectOf(type);
         if (!aspect) {
             res.status(400).send("No aspect found for type " + type);
             return;
@@ -213,20 +212,17 @@ function exposeFingerprintReportPage(express: Express,
             req.query.byOrg === "true"}&presence=${req.query.presence === "true"}&progress=${
             req.query.progress === "true"}&otherLabel=${req.query.otherLabel === "true"}&trim=${
             req.query.trim === "true"}`;
-        return renderDataUrl(workspaceId, {
+        return renderDataUrl(conf.instanceMetadata, workspaceId, {
             dataUrl,
             title: `Atomist aspect drift`,
             heading: aspect.displayName,
             subheading: fingerprintDisplayName,
-        }, aspectRegistry, httpClientFactory, req, res);
+        }, conf.aspectRegistry, conf.httpClientFactory, req, res);
     });
 }
 
-function exposeCustomReportPage(express: Express,
-                                handlers: RequestHandler[],
-                                httpClientFactory: HttpClientFactory,
-                                aspectRegistry: AspectRegistry): void {
-    express.get("/report/:name", ...handlers, async (req, res) => {
+function exposeCustomReportPage(conf: WebAppConfig): void {
+    conf.express.get("/report/:name", ...conf.handlers, async (req, res) => {
         const name = req.params.name;
         const workspaceId = req.query.workspaceId || "*";
         const queryString = jsonToQueryString(req.query);
@@ -235,16 +231,17 @@ function exposeCustomReportPage(express: Express,
         if (!reporter) {
             throw new Error(`No report named ${name}`);
         }
-        return renderDataUrl(workspaceId, {
+        return renderDataUrl(conf.instanceMetadata, workspaceId, {
             dataUrl,
             heading: name,
             title: reporter.summary,
-        }, aspectRegistry, httpClientFactory, req, res);
+        }, conf.aspectRegistry, conf.httpClientFactory, req, res);
     });
 }
 
 // TODO fix any
-async function renderDataUrl(workspaceId: string,
+async function renderDataUrl(instanceMetadata: ExtensionPackMetadata,
+                             workspaceId: string,
                              page: {
         title: string,
         heading: string,
