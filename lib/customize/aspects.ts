@@ -34,6 +34,7 @@ import {
     License,
     LicensePresence,
 } from "../aspect/community/license";
+import { NodeEngine } from "../aspect/community/nodeEngine";
 import {
     ChangelogAspect,
     ContributingAspect,
@@ -77,6 +78,7 @@ export function aspects(): Aspect[] {
         SpringBootStarter,
         TypeScriptVersion,
         new CodeOwnership(),
+        NodeEngine,
         NpmDependencies,
         CodeOfConduct,
         ExposedSecrets,
