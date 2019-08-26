@@ -16,30 +16,31 @@ export interface AnalysisTrackingProps {
     analyses: AnalysisTrackingAnalysis[];
 }
 
-function displayRepository(repo: AnalysisTrackingRepo & { repoAnalysisId: string }) {
+function displayRepository(repo: AnalysisTrackingRepo & { repoAnalysisId: string }): React.ReactElement {
     const className = repo.keptExisting ? "keptExistingAnalysis" : undefined;
     return <li key={repo.repoAnalysisId} className={className}>{repo.description}</li>;
 }
 
-function listRepositories(title: string, repos: AnalysisTrackingRepo[]) {
+function listRepositories(title: string, repos: AnalysisTrackingRepo[]): React.ReactElement {
     return <div>{title}<ul>
         {repos.map((r, i) => displayRepository({ ...r, repoAnalysisId: "" + i }))}
     </ul></div>;
 }
 
-function displayAnalysis(analysis: AnalysisTrackingAnalysis) {
+function displayAnalysis(analysis: AnalysisTrackingAnalysis): React.ReactElement {
     const analysisStatusClass = analysis.progress === "Going" ? "ongoingAnalysis" : "nongoingAnalysis";
     return <div className={analysisStatusClass}>
         {analysis.description}
         <h4>Repositories:</h4>
         <div className="repositoryColumns">
             {listRepositories("Planned", analysis.repos.filter(r => r.progress === "Planned"))}
+            {listRepositories("Going", analysis.repos.filter(r => r.progress === "Going"))}
             {listRepositories("Stopped", analysis.repos.filter(r => r.progress === "Stopped"))}
         </div>
     </div>;
 }
 
-function listAnalyses(analyses: AnalysisTrackingAnalysis[]) {
+function listAnalyses(analyses: AnalysisTrackingAnalysis[]): React.ReactElement {
     return <div className="analysisList">{analyses.map(displayAnalysis)}</div>;
 }
 

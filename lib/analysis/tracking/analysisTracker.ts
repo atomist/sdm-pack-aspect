@@ -46,6 +46,7 @@ export class RepoBeingTracked {
     public successfullyPersisted: boolean = false;
     public failureDetails: FailureDetails | undefined = undefined;
     public skipReason: string | undefined;
+    private analysisStartMillis: number | undefined;
 
     constructor(private readonly params: {
         description: string;
@@ -54,34 +55,39 @@ export class RepoBeingTracked {
 
     }
 
+    public beganAnalysis(): void {
+        this.analysisStartMillis = new Date().getTime();
+    }
+
     public setRepoRef(repoRef: RepoRef): void {
         this.repoRef = repoRef;
     }
-    public keptExisting(millisTaken: number): void {
-        this.millisTaken = millisTaken;
+    public keptExisting(): void {
+        this.millisTaken = new Date().getTime() - this.analysisStartMillis;
         this.existingWasKept = true;
     }
 
-    public failed(failureDetails: FailureDetails,
-                  millisTaken: number): void {
+    public failed(failureDetails: FailureDetails): void {
         this.failureDetails = failureDetails;
-        this.millisTaken = millisTaken;
+        this.millisTaken = this.millisTaken = new Date().getTime() - this.analysisStartMillis;
     }
 
-    public skipped(skipReason: string, millisTaken: number): void {
+    public skipped(skipReason: string): void {
         this.skipReason = skipReason || "unspecified reason";
-        this.millisTaken = millisTaken;
+        this.millisTaken = this.millisTaken = new Date().getTime() - this.analysisStartMillis;
     }
 
-    public persisted(millisTaken: number): void {
+    public persisted(): void {
         this.successfullyPersisted = true;
+        this.millisTaken = this.millisTaken = new Date().getTime() - this.analysisStartMillis;
     }
 
     public report(): RepoForReporting {
+        const isGoing = !!this.analysisStartMillis;
         const isDone = this.existingWasKept || this.successfullyPersisted || this.failureDetails || this.skipReason;
         return {
             ...this.params,
-            progress: isDone ? "Stopped" : "Planned",
+            progress: isDone ? "Stopped" : isGoing ? "Going" : "Planned",
             keptExisting: this.existingWasKept,
         };
     }

@@ -127,8 +127,8 @@ async function analyzeOneRepo<FoundRepo>(
         tracking: RepoBeingTracked,
     }): Promise<void> {
     logger.warn("Now analyzing: " + params.foundRepo);
-    const startTime = new Date().getTime(); // jess: move this into the tracking
     const { tracking, workspaceId, foundRepo } = params;
+    tracking.beganAnalysis();
 
     const repoRef = await world.determineRepoRef(foundRepo);
     tracking.setRepoRef(repoRef);
@@ -136,7 +136,7 @@ async function analyzeOneRepo<FoundRepo>(
     // we might choose to skip this one
     if (await existingRecordShouldBeKept(world, repoRef)) {
         // enhancement: record timestamp of kept record
-        tracking.keptExisting(new Date().getTime() - startTime);
+        tracking.keptExisting();
         return;
     }
 
@@ -145,13 +145,13 @@ async function analyzeOneRepo<FoundRepo>(
     try {
         project = await world.howToClone(repoRef, foundRepo);
     } catch (error) {
-        tracking.failed({ whileTryingTo: "clone", error }, new Date().getTime() - startTime);
+        tracking.failed({ whileTryingTo: "clone", error });
         return;
     }
 
     // we might choose to skip this one (is this used anywhere?)
     if (world.projectFilter && !await world.projectFilter(project)) {
-        tracking.skipped("projectFilter returned false", new Date().getTime() - startTime);
+        tracking.skipped("projectFilter returned false");
         return;
     }
 
@@ -160,7 +160,7 @@ async function analyzeOneRepo<FoundRepo>(
     try {
         analysis = await world.analyzer.analyze(project);
     } catch (error) {
-        tracking.failed({ whileTryingTo: "analyze", error }, new Date().getTime() - startTime);
+        tracking.failed({ whileTryingTo: "analyze", error });
         return;
     }
 
@@ -176,9 +176,9 @@ async function analyzeOneRepo<FoundRepo>(
     });
 
     if (persistResult.failed.length === 1) {
-        tracking.failed(persistResult.failed[0], new Date().getTime() - startTime);
+        tracking.failed(persistResult.failed[0]);
     } else if (persistResult.succeeded.length === 1) {
-        tracking.persisted(new Date().getTime() - startTime);
+        tracking.persisted();
     } else {
         throw new Error("Unexpected condition in persistResult: " + JSON.stringify(persistResult));
     }
