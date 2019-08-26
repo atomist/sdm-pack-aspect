@@ -68,9 +68,13 @@ export class AnalysisRun<FoundRepo> {
             workspaceId: string;
             description: string;
             maxRepos?: number;
+            poolSize?: number;
         }) {
         if (!this.params.maxRepos) {
             this.params.maxRepos = 1000;
+        }
+        if (!this.params.poolSize) {
+            this.params.poolSize = 40;
         }
     }
 
@@ -87,9 +91,12 @@ export class AnalysisRun<FoundRepo> {
                 foundRepo: pr,
             }));
 
-        // simplest: do them all
-        for (const trackedRepo of trackedRepos) {
-            await analyzeOneRepo(this.world, { ...trackedRepo, workspaceId: this.params.workspaceId });
+        // run poolSize at the same time
+        const chewThroughThese = trackedRepos.slice();
+        while (chewThroughThese.length > 0) {
+            const promises = chewThroughThese.splice(0, this.params.poolSize)
+                .map(trackedRepo => analyzeOneRepo(this.world, { ...trackedRepo, workspaceId: this.params.workspaceId }));
+            await Promise.all(promises);
         }
 
         logger.debug("Computing analytics over all fingerprints...");
@@ -119,7 +126,8 @@ async function analyzeOneRepo<FoundRepo>(
         foundRepo: FoundRepo,
         tracking: RepoBeingTracked,
     }): Promise<void> {
-    const startTime = new Date().getTime();
+    logger.warn("Now analyzing: " + params.foundRepo);
+    const startTime = new Date().getTime(); // jess: move this into the tracking
     const { tracking, workspaceId, foundRepo } = params;
 
     const repoRef = await world.determineRepoRef(foundRepo);
@@ -195,6 +203,7 @@ export class LocalSpider implements Spider {
                 workspaceId: opts.workspaceId,
                 description: "local analysis under " + this.localDirectory,
                 maxRepos: 1000,
+                poolSize: opts.poolSize,
             });
 
         return go.run();
