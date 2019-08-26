@@ -60,8 +60,12 @@ import { TravisScriptsAspect } from "../aspect/travis/travisAspects";
  */
 export const virtualProjectFinder: VirtualProjectFinder = cachingVirtualProjectFinder(
     fileNamesVirtualProjectFinder(
-        "package.json", "pom.xml", "build.gradle", "requirements.txt",
-    ));
+    "package.json",
+    "pom.xml",
+    "build.gradle",
+    "requirements.txt",
+  ),
+);
 
 /**
  * The aspects managed by this SDM.
@@ -97,8 +101,16 @@ export function aspects(): Aspect[] {
         globAspect({ name: "snyk", displayName: undefined, glob: ".snyk" }),
         ChangelogAspect,
         ContributingAspect,
-        globAspect({ name: "azure-pipelines", displayName: "Azure pipeline", glob: "azure-pipelines.yml" }),
-        globAspect({ name: "readme", displayName: "Readme file", glob: "README.md" }),
+    globAspect({
+      name: "azure-pipelines",
+      displayName: "Azure pipeline",
+      glob: "azure-pipelines.yml",
+    }),
+    globAspect({
+      name: "readme",
+      displayName: "Readme file",
+      glob: "README.md",
+    }),
         CsProjectTargetFrameworks,
         SpringBootVersion,
         // allMavenDependenciesAspect,    // This is expensive
