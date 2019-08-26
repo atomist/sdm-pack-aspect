@@ -31,7 +31,8 @@ export function RepoExplorer(props: RepoExplorerProps): React.ReactElement {
         <h3>Scoring by category: <span className="scoreCategoryName">{props.category}</span></h3>;
     return <div>
         <h1>{props.repo.repoRef.owner} / <a href={props.repo.repoRef.url}>{props.repo.repoRef.repo}</a></h1>
-        {props.timestamp.toString()}
+        <p className="analysesProvenanceDetail">Analyzed at: {props.timestamp.toString()}</p>
+        <p className="analysesProvenanceDetail">Analyzed commit: {props.repo.repoRef.sha}</p>
 
         {categoryDescription}
 

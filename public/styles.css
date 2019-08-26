@@ -50,6 +50,11 @@ header .page-title {
     font-family: "American Typewriter", sans-serif;
 }
 
+.analysesProvenanceDetail {
+    font-size: x-small;
+    margin: 0;
+}
+
 /* analysis tracking page */
 
 .typeThisAtCommandLine {

@@ -123,6 +123,7 @@ function exposeRepositoryPage(express: Express,
 
         const allFingerprints = await store.fingerprintsForProject(id);
         const mostRecentTimestampMillis = Math.max(...allFingerprints.map(fp => fp.timestamp.getTime()));
+        const commitSha = allFingerprints.length > 0 ? allFingerprints[0].commitSha : undefined;
         const aspectsAndFingerprints = await projectFingerprints(aspectRegistry,
             allFingerprints);
 
