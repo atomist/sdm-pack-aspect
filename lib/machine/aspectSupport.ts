@@ -21,7 +21,8 @@ import {
 } from "@atomist/automation-client";
 import { ExpressCustomizer } from "@atomist/automation-client/lib/configuration";
 import {
-    ExtensionPack, ExtensionPackMetadata,
+    ExtensionPack,
+    ExtensionPackMetadata,
     metadata,
     PushImpact,
 } from "@atomist/sdm";

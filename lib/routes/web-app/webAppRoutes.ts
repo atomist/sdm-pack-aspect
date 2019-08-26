@@ -19,7 +19,10 @@ import {
     logger,
 } from "@atomist/automation-client";
 import { ExpressCustomizer } from "@atomist/automation-client/lib/configuration";
-import { ExtensionPackMetadata, metadata } from "@atomist/sdm";
+import {
+    ExtensionPackMetadata,
+    metadata,
+} from "@atomist/sdm";
 import {
     ConcreteIdeal,
     FP,
