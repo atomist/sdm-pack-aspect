@@ -36,6 +36,7 @@ import {
     fileNamesVirtualProjectFinder,
     fingerprintSupport,
     PublishFingerprints,
+    RebaseOptions,
     VirtualProjectFinder,
 } from "@atomist/sdm-pack-fingerprints";
 import { ClientFactory } from "../analysis/offline/persist/pgUtils";
@@ -110,6 +111,8 @@ export interface AspectSupportOptions {
      * Delivery goals must have well-known names
      */
     goals?: Partial<Pick<AllGoals, "build" | "pushImpact">>;
+
+    rebase?: RebaseOptions;
 }
 
 /**
@@ -142,6 +145,7 @@ export function aspectSupport(options: AspectSupportOptions): ExtensionPack {
                     sdm.addExtensionPacks(fingerprintSupport({
                         pushImpactGoal: options.goals.pushImpact as PushImpact,
                         aspects: options.aspects,
+                        rebase: options.rebase,
                         publishFingerprints: options.publishFingerprints,
                     }));
                 }
