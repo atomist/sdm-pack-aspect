@@ -18,6 +18,8 @@ interface RepoForReporting {
     keptExisting: boolean;
     progress: RepoProgress;
     millisTaken?: number;
+    errorMessage?: string;
+    stackTrace?: string;
 }
 interface AnalysisForReporting {
     description: string;
@@ -87,11 +89,16 @@ export class RepoBeingTracked {
     public report(): RepoForReporting {
         const isGoing = !!this.analysisStartMillis;
         const isDone = this.existingWasKept || this.successfullyPersisted || this.failureDetails || this.skipReason;
+        const errorFields = !this.failureDetails ? {} : {
+            errorMessage: `Failed while trying to ${this.failureDetails.whileTryingTo}\n${this.failureDetails.message}`,
+            stackTrace: this.failureDetails.error ? this.failureDetails.error.stack : undefined,
+        };
         return {
             ...this.params,
             progress: isDone ? "Stopped" : isGoing ? "Going" : "Planned",
             keptExisting: this.existingWasKept,
             millisTaken: this.millisTaken,
+            ...errorFields,
         };
     }
 

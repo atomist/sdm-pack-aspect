@@ -6,6 +6,8 @@ interface AnalysisTrackingRepo {
     progress: "Planned" | "Going" | "Stopped";
     keptExisting: boolean;
     millisTaken?: number;
+    errorMessage?: string;
+    stackTrace?: string;
 }
 interface AnalysisTrackingAnalysis {
     description: string;
@@ -23,9 +25,26 @@ function displayRepository(repo: AnalysisTrackingRepo & { repoAnalysisId: string
     if (repo.keptExisting) {
         className += " keptExistingAnalysis";
     }
+    if (repo.errorMessage) {
+        className += " failed";
+    }
     const timeTaken = repo.millisTaken ? `Took ${repo.millisTaken / 1000}s` : undefined;
     const gitLink = repo.url ? <a href={repo.url}><img src="/git.png" className="linkToSourceImage"></img></a> : undefined;
-    return <div className={className}><p className="analysisRepoDescription">{repo.description} {gitLink}</p> <span className="timeTakenToAnalyzeRepo">{timeTaken}</span></div>;
+    return <div className={className}>
+        <p className="analysisRepoDescription">{repo.description} {gitLink}</p>
+        <span className="timeTakenToAnalyzeRepo">{timeTaken}</span>
+        {displayFailure(repo)}
+    </div>;
+}
+
+function displayFailure(repo: AnalysisTrackingRepo): React.ReactElement {
+    if (!repo.errorMessage) {
+        return undefined;
+    }
+    return <div className="analyzeRepoError">
+        <p>{repo.errorMessage}</p>
+        <pre>{repo.stackTrace}</pre>
+    </div>;
 }
 
 function listRepositories(title: string, repos: AnalysisTrackingRepo[]): React.ReactElement {
@@ -42,7 +61,7 @@ function displayAnalysis(analysis: AnalysisTrackingAnalysis): React.ReactElement
         <div className="repositoryColumns">
             {listRepositories("Planned", analysis.repos.filter(r => r.progress === "Planned"))}
             {listRepositories("Going", analysis.repos.filter(r => r.progress === "Going"))}
-            {listRepositories("Stopped", analysis.repos.filter(r => r.progress === "Stopped"))}
+            {listRepositories("Finished", analysis.repos.filter(r => r.progress === "Stopped"))}
         </div>
     </div>;
 }

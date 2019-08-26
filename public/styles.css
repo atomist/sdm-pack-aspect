@@ -116,6 +116,12 @@ div.repositoryColumns>div {
     border-color: crimson;
 }
 
+analyzeRepoError {
+    border-color: crimson;
+    border-style: ridge;
+    border-width: 3px;
+}
+
 .timeTakenToAnalyzeRepo {
     font-size: x-small;
 }
