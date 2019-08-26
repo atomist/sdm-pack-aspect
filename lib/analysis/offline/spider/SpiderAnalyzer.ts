@@ -32,7 +32,6 @@ import {
     FP,
     VirtualProjectFinder,
 } from "@atomist/sdm-pack-fingerprints";
-import { Error } from "tslint/lib/error";
 import {
     Analyzed,
 } from "../../../aspect/AspectRegistry";
