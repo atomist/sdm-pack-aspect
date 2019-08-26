@@ -62,6 +62,9 @@ import {
 } from "../api";
 import { exposeOverviewPage } from "./overviewPage";
 import { exposeRepositoryListPage } from "./repositoryListPage";
+import { metadata } from "@atomist/sdm";
+
+const instanceMetadata = metadata();
 
 /**
  * Add the org page route to Atomist SDM Express server.
@@ -71,9 +74,9 @@ export function addWebAppRoutes(
     aspectRegistry: AspectRegistry,
     store: ProjectAnalysisResultStore,
     httpClientFactory: HttpClientFactory): {
-        customizer: ExpressCustomizer,
-        routesToSuggestOnStartup: Array<{ title: string, route: string }>,
-    } {
+    customizer: ExpressCustomizer,
+    routesToSuggestOnStartup: Array<{ title: string, route: string }>,
+} {
     const topLevelRoute = "/overview";
     return {
         routesToSuggestOnStartup: [{ title: "Atomist Visualizations", route: topLevelRoute }],
@@ -135,7 +138,8 @@ function exposeRepositoryPage(express: Express,
                 repo,
                 aspects: _.sortBy(ffd.filter(f => !!f.aspect.displayName), f => f.aspect.displayName),
                 category,
-            }), `${repo.analysis.id.owner} / ${repo.analysis.id.repo}`));
+            }), `${repo.analysis.id.owner} / ${repo.analysis.id.repo}`,
+            instanceMetadata));
     });
 }
 
@@ -149,10 +153,10 @@ function exposeExplorePage(express: Express,
         const dataUrl = `/api/v1/${workspaceId}/explore?tags=${tags}`;
         const readable = describeSelectedTagsToAnimals(tags.split(","));
         return renderDataUrl(workspaceId, {
-            dataUrl,
-            heading: "Explore repositories by tag",
-            title: `Repositories matching ${readable}`,
-        },
+                dataUrl,
+                heading: "Explore repositories by tag",
+                title: `Repositories matching ${readable}`,
+            },
             aspectRegistry, httpClientFactory, req, res);
     });
 }
@@ -197,9 +201,9 @@ function exposeFingerprintReportPage(express: Express,
         const dataUrl = `/api/v1/${workspaceId}/fingerprint/${
             encodeURIComponent(type)}/${
             encodeURIComponent(name)}?byOrg=${
-            req.query.byOrg === "true"}&presence=${req.query.presence === "true"}&progress=${
-            req.query.progress === "true"}&otherLabel=${req.query.otherLabel === "true"}&trim=${
-            req.query.trim === "true"}`;
+        req.query.byOrg === "true"}&presence=${req.query.presence === "true"}&progress=${
+        req.query.progress === "true"}&otherLabel=${req.query.otherLabel === "true"}&trim=${
+        req.query.trim === "true"}`;
         return renderDataUrl(workspaceId, {
             dataUrl,
             title: `Atomist aspect drift`,
@@ -233,11 +237,11 @@ function exposeCustomReportPage(express: Express,
 // TODO fix any
 async function renderDataUrl(workspaceId: string,
                              page: {
-        title: string,
-        heading: string,
-        subheading?: string,
-        dataUrl: string,
-    },
+                                 title: string,
+                                 heading: string,
+                                 subheading?: string,
+                                 dataUrl: string,
+                             },
                              aspectRegistry: AspectRegistry,
                              httpClientFactory: HttpClientFactory,
                              req: any,
@@ -275,6 +279,7 @@ async function renderDataUrl(workspaceId: string,
             fieldsToDisplay,
         }),
         page.title,
+        instanceMetadata,
         [
             "/sunburstScript-bundle.js",
         ]));
@@ -370,8 +375,8 @@ function displayStyleAccordingToIdeal(fingerprint: AugmentedFingerprintForDispla
 export type AugmentedFingerprintForDisplay =
     FP &
     Pick<ProjectFingerprintForDisplay, "displayValue" | "displayName"> & {
-        ideal?: Ideal;
-    };
+    ideal?: Ideal;
+};
 
 export interface AugmentedAspectForDisplay {
     aspect: Aspect;

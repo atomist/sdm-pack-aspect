@@ -41,6 +41,9 @@ import {
     AspectRegistry,
 } from "../../aspect/AspectRegistry";
 import { defaultedToDisplayableFingerprintName } from "../../aspect/DefaultAspectRegistry";
+import { metadata } from "@atomist/sdm";
+
+const instanceMetadata = metadata();
 
 export function exposeOverviewPage(express: Express,
                                    handlers: RequestHandler[],
@@ -85,7 +88,8 @@ export function exposeOverviewPage(express: Express,
                         url: r.repoRef.url,
                     })),
                     virtualProjectCount,
-                }), `Atomist Visualizer (${repos.length} repositories)`));
+                }), `Atomist Visualizer (${repos.length} repositories)`,
+                instanceMetadata));
         } catch (e) {
             logger.error(e.stack);
             res.status(500).send("failure");

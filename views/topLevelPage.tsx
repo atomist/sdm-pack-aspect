@@ -1,13 +1,16 @@
 import * as React from "react";
 import * as ReactDOMServer from "react-dom/server";
+import { ExtensionPackMetadata } from "@atomist/sdm";
 
 export function renderStaticReactNode(body: React.ReactElement,
                                       title: string,
+                                      instanceMetadata: ExtensionPackMetadata,
                                       extraScripts?: string[]): string {
     return ReactDOMServer.renderToStaticMarkup(
         TopLevelPage({
             bodyContent: body,
             pageTitle: title,
+            instanceMetadata,
             extraScripts,
         }));
 }
@@ -19,6 +22,7 @@ function extraScript(src: string): React.ReactElement {
 export function TopLevelPage(props: {
     bodyContent: React.ReactElement,
     pageTitle: string,
+    instanceMetadata: ExtensionPackMetadata,
     extraScripts?: string[],
 }): React.ReactElement {
     return <html>
@@ -36,6 +40,9 @@ export function TopLevelPage(props: {
                     <a href={"/"}><img className="atomist-logo" src="/atomist-logo-small-white.png" /></a>
                     <span className="page-title">
                         {props.pageTitle}
+                    </span>
+                    <span className="instance-info">
+                        {props.instanceMetadata.name}
                     </span>
                 </div>
             </header>

@@ -25,8 +25,11 @@ import {
 import { renderStaticReactNode } from "../../../views/topLevelPage";
 import { ProjectAnalysisResultStore } from "../../analysis/offline/persist/ProjectAnalysisResultStore";
 import { AspectRegistry } from "../../aspect/AspectRegistry";
+import { metadata } from "@atomist/sdm";
 
 export type SortOrder = "name" | "score";
+
+const instanceMetadata = metadata();
 
 /**
  * Takes sortOrder optional parameter to dictate sorting
@@ -69,6 +72,7 @@ export function exposeRepositoryListPage(express: Express,
                 expand: !byOrg,
                 category,
             }),
-            byOrg ? "Repositories by Organization" : "Repositories Ranked"));
+            byOrg ? "Repositories by Organization" : "Repositories Ranked",
+           instanceMetadata));
     });
 }
