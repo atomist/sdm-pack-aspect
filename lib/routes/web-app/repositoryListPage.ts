@@ -14,37 +14,23 @@
  * limitations under the License.
  */
 
-import { metadata } from "@atomist/sdm";
-import {
-    Express,
-    RequestHandler,
-} from "express";
-import {
-    RepoForDisplay,
-    RepoList,
-} from "../../../views/repoList";
+import { RepoForDisplay, RepoList, } from "../../../views/repoList";
 import { renderStaticReactNode } from "../../../views/topLevelPage";
-import { ProjectAnalysisResultStore } from "../../analysis/offline/persist/ProjectAnalysisResultStore";
-import { AspectRegistry } from "../../aspect/AspectRegistry";
+import { WebAppConfig } from "./webAppRoutes";
 
 export type SortOrder = "name" | "score";
-
-const instanceMetadata = metadata();
 
 /**
  * Takes sortOrder optional parameter to dictate sorting
  */
-export function exposeRepositoryListPage(express: Express,
-                                         handlers: RequestHandler[],
-                                         aspectRegistry: AspectRegistry,
-                                         store: ProjectAnalysisResultStore): void {
-    express.get("/repositories", ...handlers, async (req, res) => {
+export function exposeRepositoryListPage(conf: WebAppConfig): void {
+    conf.express.get("/repositories", ...conf.handlers, async (req, res) => {
         const workspaceId = req.query.workspace || req.params.workspace_id || "*";
         const sortOrder: SortOrder = req.query.sortOrder || "score";
         const byOrg = req.query.byOrg !== "false";
         const category = req.query.category || "*";
 
-        const allAnalysisResults = await store.loadInWorkspace(workspaceId, true);
+        const allAnalysisResults = await conf.store.loadInWorkspace(workspaceId, true);
 
         // optional query parameter: owner
         const relevantAnalysisResults = allAnalysisResults.filter(ar => req.query.owner ? ar.analysis.id.owner === req.query.owner : true);
@@ -52,7 +38,7 @@ export function exposeRepositoryListPage(express: Express,
             return res.send(`No matching repos for organization ${req.query.owner}`);
         }
 
-        const relevantRepos = await aspectRegistry.tagAndScoreRepos(workspaceId, relevantAnalysisResults, { category });
+        const relevantRepos = await conf.aspectRegistry.tagAndScoreRepos(workspaceId, relevantAnalysisResults, { category });
         const reposForDisplay: RepoForDisplay[] = relevantRepos
             .map(ar => ({
                 url: ar.repoRef.url,
@@ -62,7 +48,7 @@ export function exposeRepositoryListPage(express: Express,
                 score: ar.weightedScore.weightedScore,
                 showFullPath: !byOrg,
             }));
-        const virtualProjectCount = await store.virtualProjectCount(workspaceId);
+        const virtualProjectCount = await conf.store.virtualProjectCount(workspaceId);
         return res.send(renderStaticReactNode(
             RepoList({
                 repos: reposForDisplay,
@@ -73,6 +59,6 @@ export function exposeRepositoryListPage(express: Express,
                 category,
             }),
             byOrg ? "Repositories by Organization" : "Repositories Ranked",
-           instanceMetadata));
+           conf.instanceMetadata));
     });
 }
