@@ -140,7 +140,7 @@ function displayDashboards(props: OverviewProps): React.ReactElement {
                 <ul>
                     <li>Drift Report</li>
                     <ul>
-                        <li key="code-1"><a href="./drift?percentile=95">Aspects with the
+                        <li key="code-1"><a href="./drift?percentile=98">Aspects with the
                             greatest entropy</a></li>
                         <li key="code-1"><a href="./drift">Entropy for all aspects</a></li>
                     </ul>
