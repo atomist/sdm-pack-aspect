@@ -63,12 +63,13 @@ export interface Tag {
 }
 
 /**
- * Determine zero or one tag in this fingerprint
+ * Determine zero or one tag in this fingerprint.
  */
 export interface Tagger extends Tag {
 
     /**
-     * Test for the relevance of this tag
+     * Test for the relevance of this tag. Invoked on every fingerprint
+     * on each project.
      * @param {FP} fp fingerprint to test
      * @param {RemoteRepoRef} id id of repo to text
      * @param {TagContext} tagContext context of this cohort of repos
@@ -77,7 +78,14 @@ export interface Tagger extends Tag {
     test(fp: FP, id: RemoteRepoRef, tagContext: TagContext): boolean;
 }
 
+/**
+ * Implemented by objects that can create tag tests
+ */
 export interface WorkspaceSpecificTagger {
+
+    /**
+     * The name of the tag that we'll create
+     */
     readonly name: string;
 
     create(workspaceId: string, ar: AspectRegistry): Promise<Tagger>;

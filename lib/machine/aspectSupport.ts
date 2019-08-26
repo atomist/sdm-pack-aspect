@@ -63,10 +63,11 @@ import {
 } from "./machine";
 
 /**
- * Consider directories containing any of these files to be virtual projects
- * @type {VirtualProjectFinder}
+ * Default VirtualProjectFinder, which recognizes Maven, npm,
+ * and Gradle projects and Python projects using requirements.txt.
  */
 export const DefaultVirtualProjectFinder: VirtualProjectFinder =
+    // Consider directories containing any of these files to be virtual projects
     cachingVirtualProjectFinder(
         fileNamesVirtualProjectFinder(
             "package.json",
@@ -80,6 +81,9 @@ export const DefaultScoreWeightings: ScoreWeightings = {
     anchor: 3,
 };
 
+/**
+ * Options to configure the aspect extension pack
+ */
 export interface AspectSupportOptions {
 
     /**
@@ -88,14 +92,40 @@ export interface AspectSupportOptions {
      */
     aspects: Aspect | Aspect[];
 
+    /**
+     * If set, this enables multi-project support by helping aspects work
+     * on virtual projects. For example, a VirtualProjectFinder may establish
+     * that subdirectories with package.json or requirements.txt files are
+     * subprojects, enabling aspects to work on their internal structure
+     * without needing to drill into the entire repository themselves.
+     */
     virtualProjectFinder?: VirtualProjectFinder;
 
-    scorers?: RepositoryScorer | RepositoryScorer[];
-    weightings?: ScoreWeightings;
-
+    /**
+     * Registrations that can tag projects based on fingerprints.
+     */
     taggers?: TaggerDefinition | TaggerDefinition[];
+
+    /**
+     * Special taggers that can see all fingerprints on a project.
+     */
     combinationTaggers?: CombinationTagger | CombinationTagger[];
 
+    /**
+     * Scorers that rank projects based on fingerprint data.
+     */
+    scorers?: RepositoryScorer | RepositoryScorer[];
+
+    /**
+     * Optional weightings for different scorers. The key is scorer name.
+     */
+    weightings?: ScoreWeightings;
+
+    /**
+     * Set this to flag undesirable fingerprints: For example,
+     * a dependency you wish to eliminate from all projects, or
+     * an internally inconsistent fingerprint state.
+     */
     undesirableUsageChecker?: UndesirableUsageChecker;
 
     exposeWeb?: boolean;
@@ -157,10 +187,9 @@ export function aspectSupport(options: AspectSupportOptions): ExtensionPack {
             }
 
             const exposeWeb = options.exposeWeb !== undefined ? options.exposeWeb : isInLocalMode();
-            if (!!exposeWeb) {
+            if (exposeWeb) {
                 const { customizers, routesToSuggestOnStartup } =
                     orgVisualizationEndpoints(sdmConfigClientFactory(cfg), cfg.http.client.factory, options);
-
                 cfg.http.customizers.push(...customizers);
                 routesToSuggestOnStartup.forEach(rtsos => {
                     cfg.logging.banner.contributors.push(suggestRoute(rtsos));

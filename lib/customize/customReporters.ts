@@ -42,7 +42,7 @@ const groupByLoc: AnalyzedGrouper = ar => {
 };
 
 /**
- * Custom reporters against our repo cohort.
+ * Custom reporters against available repositories.
  * Add your own here
  */
 export const CustomReporters: Reporters = {

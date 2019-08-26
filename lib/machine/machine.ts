@@ -32,6 +32,12 @@ import { SpiderAnalyzer } from "../analysis/offline/spider/SpiderAnalyzer";
 import { IdealStore } from "../aspect/IdealStore";
 import { ProblemStore } from "../aspect/ProblemStore";
 
+/**
+ * Create the analyzer used for spidering repos.
+ * @param {Aspect[]} aspects
+ * @param {VirtualProjectFinder} virtualProjectFinder
+ * @return {Analyzer}
+ */
 export function createAnalyzer(aspects: Aspect[], virtualProjectFinder: VirtualProjectFinder): Analyzer {
     const configuredAspects = aspects.map(aspect => makeVirtualProjectAware(aspect, virtualProjectFinder));
     return new SpiderAnalyzer(configuredAspects, virtualProjectFinder);

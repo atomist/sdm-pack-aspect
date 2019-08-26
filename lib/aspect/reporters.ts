@@ -17,6 +17,10 @@
 import { ReportBuilder } from "../tree/TreeBuilder";
 import { Analyzed } from "./AspectRegistry";
 
+/**
+ * Implemented by objects that can report against a cohort of repos,
+ * building a tree.
+ */
 export interface Reporter {
     summary: string;
     description: string;
