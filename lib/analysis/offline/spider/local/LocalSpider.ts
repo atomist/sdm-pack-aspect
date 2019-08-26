@@ -28,17 +28,11 @@ import * as path from "path";
 import { Analyzed } from "../../../../aspect/AspectRegistry";
 import { globalAnalysisTracking, RepoBeingTracked } from "../../../tracking/analysisTracker";
 import {
-    combinePersistResults,
-    emptyPersistResult,
-    PersistResult,
     ProjectAnalysisResultStore,
 } from "../../persist/ProjectAnalysisResultStore";
 import { computeAnalytics } from "../analytics";
 import {
-    analyze,
-    AnalyzeResults,
     existingRecordShouldBeKept,
-    persistRepoInfo,
 } from "../common";
 import { ScmSearchCriteria } from "../ScmSearchCriteria";
 import {
@@ -56,7 +50,7 @@ interface TrackedRepo<FoundRepo> {
 }
 
 export class AnalysisRun<FoundRepo> {
-    opts: any;
+    public opts: any;
 
     constructor(
         private readonly world: {
@@ -93,22 +87,16 @@ export class AnalysisRun<FoundRepo> {
                 foundRepo: pr,
             }));
 
-        const results: SpiderResult[] = [];
-
         // simplest: do them all
         for (const trackedRepo of trackedRepos) {
             const startTime = new Date().getTime();
             trackedRepo.repoRef = await this.world.determineRepoRef(trackedRepo.foundRepo);
+            trackedRepo.tracking.setRepoRef(trackedRepo.repoRef);
 
             // we might choose to skip this one
             if (await existingRecordShouldBeKept(this.world, trackedRepo.repoRef)) {
                 // enhancement: record timestamp of kept record
-                trackedRepo.tracking.keptExisting();
-                results.push({
-                    ...oneSpiderResult,
-                    keptExisting: [trackedRepo.repoRef.url],
-                    millisTaken: new Date().getTime() - startTime,
-                });
+                trackedRepo.tracking.keptExisting(new Date().getTime() - startTime);
                 continue;
             }
 
@@ -117,24 +105,16 @@ export class AnalysisRun<FoundRepo> {
             try {
                 project = await this.world.howToClone(trackedRepo.repoRef, trackedRepo.foundRepo);
             } catch (err) {
-                results.push({
-                    ...oneSpiderResult,
-                    failed: [{
-                        repoUrl: trackedRepo.repoRef.url,
-                        whileTryingTo: "clone",
-                        message: err.message,
-                    }],
-                    millisTaken: new Date().getTime() - startTime,
-                });
+                trackedRepo.tracking.failed({
+                    whileTryingTo: "clone",
+                    error: err,
+                }, new Date().getTime() - startTime);
                 continue;
             }
 
             // we might choose to skip this one (is this used anywhere?)
             if (this.world.projectFilter && !await this.world.projectFilter(project)) {
-                results.push({
-                    ...oneSpiderResult,
-                    millisTaken: new Date().getTime() - startTime,       // does not count as a project
-                });
+                trackedRepo.tracking.skipped("projectFilter returned false", new Date().getTime() - startTime);
                 continue;
             }
 
@@ -143,15 +123,10 @@ export class AnalysisRun<FoundRepo> {
             try {
                 analysis = await this.world.analyzer.analyze(project);
             } catch (err) {
-                results.push({
-                    ...oneSpiderResult,
-                    failed: [{
-                        repoUrl: trackedRepo.repoRef.url,
-                        whileTryingTo: "analyze",
-                        message: err.message,
-                    }],
-                    millisTaken: new Date().getTime() - startTime,
-                });
+                trackedRepo.tracking.failed({
+                    whileTryingTo: "analyze",
+                    error: err,
+                }, new Date().getTime() - startTime);
                 continue;
             }
 
@@ -166,32 +141,30 @@ export class AnalysisRun<FoundRepo> {
                 timestamp: new Date(),
             });
 
-            results.push({
-                repositoriesDetected: 1,
-                failed: [],
-                persistedAnalyses: persistResult.succeeded,
-                keptExisting: [],
-                millisTaken: new Date().getTime() - startTime,
-            });
+            if (persistResult.failed.length === 1) {
+                trackedRepo.tracking.failed(persistResult.failed[0], new Date().getTime() - startTime);
+            } else if (persistResult.succeeded.length === 1) {
+                trackedRepo.tracking.persisted(new Date().getTime() - startTime);
+            } else {
+                throw new Error("Unexpected condition in persistResult: " + JSON.stringify(persistResult));
+            }
         }
 
         logger.debug("Computing analytics over all fingerprints...");
-
         // Question for Rod: should this run intermittently or only at the end?
         // Answer from Rod: intermitently.
 
         await computeAnalytics(this.world.persister, this.params.workspaceId);
-        const finalResult = results.reduce(combineSpiderResults, emptySpiderResult);
+        const finalResult = trackedRepos.map(tr => tr.tracking.spiderResult()).reduce(combineSpiderResults, emptySpiderResult);
         analysisBeingTracked.stop(finalResult);
         return finalResult;
     }
 }
-
 export class LocalSpider implements Spider {
 
     public async spider(criteria: ScmSearchCriteria,
-        analyzer: Analyzer,
-        opts: SpiderOptions): Promise<SpiderResult> {
+                        analyzer: Analyzer,
+                        opts: SpiderOptions): Promise<SpiderResult> {
 
         const go = new AnalysisRun<string>({
             howToFindRepos: () => findRepositoriesUnder(this.localDirectory),
@@ -287,11 +260,11 @@ async function* findRepositoriesUnder(dir: string): AsyncIterable<string> {
 async function repoRefFromLocalRepo(repoDir: string): Promise<RepoRef> {
     const repoId: RepoId = await execPromise("git", ["remote", "get-url", "origin"], { cwd: repoDir })
         .then(execHappened => repoIdFromOriginUrl(execHappened.stdout))
-        .catch(oops => inventRepoId(repoDir));
+        .catch(() => inventRepoId(repoDir));
 
     const sha = await execPromise("git", ["rev-parse", "HEAD"], { cwd: repoDir })
         .then(execHappened => execHappened.stdout.trim())
-        .catch(oops => "unknown");
+        .catch(() => "unknown");
 
     return {
         ...repoId,

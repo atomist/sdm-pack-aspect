@@ -34,9 +34,18 @@ export interface AnalysisTracking {
     report(): AnalysisReport;
 }
 
+export interface FailureDetails {
+    whileTryingTo: string; error?: Error; message?: string;
+}
+
 export class RepoBeingTracked {
 
+    public repoRef: RepoRef | undefined = undefined;
+    public millisTaken: number | undefined;
     public existingWasKept: boolean = false;
+    public successfullyPersisted: boolean = false;
+    public failureDetails: FailureDetails | undefined = undefined;
+    public skipReason: string | undefined;
 
     constructor(private readonly params: {
         description: string;
@@ -45,15 +54,52 @@ export class RepoBeingTracked {
 
     }
 
-    public keptExisting(): void {
+    public setRepoRef(repoRef: RepoRef): void {
+        this.repoRef = repoRef;
+    }
+    public keptExisting(millisTaken: number): void {
+        this.millisTaken = millisTaken;
         this.existingWasKept = true;
     }
 
+    public failed(failureDetails: FailureDetails,
+                  millisTaken: number): void {
+        this.failureDetails = failureDetails;
+        this.millisTaken = millisTaken;
+    }
+
+    public skipped(skipReason: string, millisTaken: number): void {
+        this.skipReason = skipReason || "unspecified reason";
+        this.millisTaken = millisTaken;
+    }
+
+    public persisted(millisTaken: number): void {
+        this.successfullyPersisted = true;
+    }
+
     public report(): RepoForReporting {
+        const isDone = this.existingWasKept || this.successfullyPersisted || this.failureDetails || this.skipReason;
         return {
             ...this.params,
-            progress: this.existingWasKept ? "Stopped" : "Planned",
+            progress: isDone ? "Stopped" : "Planned",
             keptExisting: this.existingWasKept,
+        };
+    }
+
+    public spiderResult(): SpiderResult {
+        if (!this.repoRef) {
+            throw new Error("Can't return a SpiderResult until repoRef is set");
+        }
+        return {
+            repositoriesDetected: 1,
+            failed: this.failureDetails ? [{
+                repoUrl: this.repoRef.url,
+                whileTryingTo: this.failureDetails.whileTryingTo,
+                message: this.failureDetails.error ? this.failureDetails.error.message : this.failureDetails.message,
+            }] : [],
+            keptExisting: this.existingWasKept ? [this.repoRef.url] : [],
+            persistedAnalyses: this.successfullyPersisted ? [this.repoRef.url] : [],
+            millisTaken: this.millisTaken,
         };
     }
 }

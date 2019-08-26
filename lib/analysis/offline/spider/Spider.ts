@@ -53,6 +53,7 @@ export interface SpiderFailure {
     repoUrl: string;
     whileTryingTo: string;
     message: string;
+    error?: Error;
 }
 
 export interface SpiderResult {
