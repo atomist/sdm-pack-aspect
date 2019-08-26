@@ -140,6 +140,10 @@ class FakeProjectAnalysisResultStore implements ProjectAnalysisResultStore {
         return [];
     }
 
+    public async distinctRepoFingerprintKinds(workspaceId: string): Promise<Array<{ owner: string, repo: string, fingerprints: FingerprintKind[], }>> {
+        return [];
+    }
+
     public fingerprintsInWorkspace(): Promise<any> {
         return undefined;
     }

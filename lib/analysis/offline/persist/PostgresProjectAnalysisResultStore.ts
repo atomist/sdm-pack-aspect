@@ -26,13 +26,12 @@ import {
     Ideal,
     isConcreteIdeal,
 } from "@atomist/sdm-pack-fingerprints";
+import * as _ from "lodash";
 import {
     Client,
     ClientBase,
 } from "pg";
-import {
-    Analyzed,
-} from "../../../aspect/AspectRegistry";
+import { Analyzed } from "../../../aspect/AspectRegistry";
 import { IdealStore } from "../../../aspect/IdealStore";
 import { ProblemUsage } from "../../../aspect/ProblemStore";
 import { getCategories } from "../../../customize/categories";
@@ -214,6 +213,23 @@ GROUP BY repo_snapshots.id`;
         return doWithClient(sql, this.clientFactory, async client => {
             const result = await client.query(sql, [workspaceId]);
             return result.rows;
+        }, []);
+    }
+
+    public async distinctRepoFingerprintKinds(workspaceId: string): Promise<Array<{ owner: string, repo: string, fingerprints: FingerprintKind[], }>> {
+        const sql = `SELECT DISTINCT rs.owner, rs.name as repo, f.name, feature_name as type
+  FROM repo_fingerprints rf, repo_snapshots rs, fingerprints f
+  WHERE rf.repo_snapshot_id = rs.id AND rf.fingerprint_id = f.id
+    AND rs.workspace_id ${workspaceId === "*" ? "<>" : "="} $1`;
+        return doWithClient(sql, this.clientFactory, async client => {
+            const result = await client.query(sql, [workspaceId]);
+            return _.map(_.groupBy(result.rows, r => `${r.owner}/${r.repo}`), (v, k) => {
+                return {
+                    owner: k.split("/")[0],
+                    repo: k.split("/")[1],
+                    fingerprints: v,
+                };
+            });
         }, []);
     }
 

@@ -30,6 +30,7 @@ import * as path from "path";
 import * as swaggerUi from "swagger-ui-express";
 import * as yaml from "yamljs";
 import {
+    FingerprintKind,
     FingerprintUsage,
     ProjectAnalysisResultStore,
 } from "../analysis/offline/persist/ProjectAnalysisResultStore";
@@ -123,8 +124,8 @@ function exposeAspectMetadata(express: Express, store: ProjectAnalysisResultStor
     express.get("/api/v1/:workspace_id/aspects", [corsHandler(), ...authHandlers()], async (req, res) => {
         try {
             const workspaceId = req.params.workspace_id || "local";
-            const fingerprintUsage: FingerprintUsage[] = await store.fingerprintUsageForType(workspaceId);
-            const reports = getAspectReports(fingerprintUsage, workspaceId);
+            const fingerprintKinds = await store.distinctRepoFingerprintKinds(workspaceId);
+            const reports = getAspectReports(fingerprintKinds, workspaceId);
             logger.debug("Returning aspect reports for '%s': %j", workspaceId, reports);
             const count = await store.distinctRepoCount(workspaceId);
             const at = await store.latestTimestamp(workspaceId);

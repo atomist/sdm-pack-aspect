@@ -79,6 +79,7 @@ import { branchCount } from "../lib/aspect/git/branchCount";
 import { GitRecency } from "../lib/aspect/git/gitActivity";
 import { AcceptEverythingUndesirableUsageChecker } from "../lib/aspect/ProblemStore";
 import { ExposedSecrets } from "../lib/aspect/secret/exposedSecrets";
+import { registerCategories } from "../lib/customize/categories";
 import {
     aspectSupport,
     DefaultVirtualProjectFinder,
@@ -160,6 +161,11 @@ export const configuration: Configuration = configure<TestGoals>(async sdm => {
 });
 
 function aspects(): Aspect[] {
+    registerCategories(DockerFrom, "Docker");
+    registerCategories(DockerfilePath, "Docker");
+    registerCategories(DockerPorts, "Docker");
+    registerCategories(branchCount, "Git");
+    registerCategories(GitRecency, "Git");
     return [
         DockerFrom,
         DockerfilePath,

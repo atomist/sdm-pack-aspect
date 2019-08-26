@@ -16,10 +16,7 @@
 
 import { RepoRef } from "@atomist/automation-client";
 import { FP } from "@atomist/sdm-pack-fingerprints";
-import {
-    Analyzed,
-    HasFingerprints,
-} from "../../../aspect/AspectRegistry";
+import { Analyzed } from "../../../aspect/AspectRegistry";
 import { PlantedTree } from "../../../tree/sunburst";
 import { ProjectAnalysisResult } from "../../ProjectAnalysisResult";
 import { CohortAnalysis } from "../spider/analytics";
@@ -148,6 +145,11 @@ export interface ProjectAnalysisResultStore {
      */
     distinctFingerprintKinds(workspaceId: string): Promise<FingerprintKind[]>;
 
+    /**
+     * Return distinct fingerprint type/name combinations in this workspace by repo
+     */
+    distinctRepoFingerprintKinds(workspaceId: string): Promise<Array<{ owner: string, repo: string, fingerprints: FingerprintKind[], }>>;
+
     fingerprintUsageForType(workspaceId: string, type?: string): Promise<FingerprintUsage[]>;
 
     /**
@@ -175,4 +177,5 @@ export interface ProjectAnalysisResultStore {
      * @return {Promise<number>}
      */
     averageFingerprintCount(workspaceId?: string): Promise<number>;
+
 }
