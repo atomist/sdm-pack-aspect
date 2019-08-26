@@ -130,25 +130,30 @@ async function* queryByCriteria(token: string, criteria: ScmSearchCriteria): Asy
     for (const q of criteria.githubQueries) {
         logger.debug("Running query " + q + "...");
         const options = octokit.search.repos.endpoint.merge({ q });
-        for await (const response of octokit.paginate.iterator(options)) {
-            retrieved += response.data.length;
-            const newResults = response.data
-                .filter((r: any) => !results.some(existing => existing.full_name === r.full_name));
-            newResults.forEach((r: any) => {
-                r.query = q;
-                r.timestamp = new Date();
-            });
-            for (const newResult of newResults) {
-                yield dropIrrelevantFields(newResult);
+        try {
+            for await (const response of octokit.paginate.iterator(options)) {
+                retrieved += response.data.length;
+                const newResults = response.data
+                    .filter((r: any) => !results.some(existing => existing.full_name === r.full_name));
+                newResults.forEach((r: any) => {
+                    r.query = q;
+                    r.timestamp = new Date();
+                });
+                for (const newResult of newResults) {
+                    yield dropIrrelevantFields(newResult);
+                }
+                logger.debug(`Looked at ${retrieved} repos of max ${criteria.maxRetrieved}...`);
+                if (retrieved > criteria.maxRetrieved) {
+                    break;
+                }
+                if (results.length > criteria.maxReturned) {
+                    results = results.slice(0, criteria.maxReturned);
+                    break;
+                }
             }
-            logger.debug(`Looked at ${retrieved} repos of max ${criteria.maxRetrieved}...`);
-            if (retrieved > criteria.maxRetrieved) {
-                break;
-            }
-            if (results.length > criteria.maxReturned) {
-                results = results.slice(0, criteria.maxReturned);
-                break;
-            }
+        } catch (error) {
+            logger.error("Error querying: ", error);
+            return;
         }
     }
 }
