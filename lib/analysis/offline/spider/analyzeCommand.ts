@@ -29,6 +29,7 @@ import {
 interface AnalyzeCommandParameters {
     workspaceId: string;
     update: boolean;
+    poolSize: number;
 }
 
 const AnalyzeCommandParameterDefinitions: ParametersObject<AnalyzeCommandParameters> = {
@@ -40,6 +41,11 @@ const AnalyzeCommandParameterDefinitions: ParametersObject<AnalyzeCommandParamet
     update: {
         type: "boolean",
         description: "Overwrite existing analyses? (default is no)",
+        required: false,
+    },
+    poolSize: {
+        type: "number",
+        description: "How many analyses to run in parallel",
         required: false,
     },
 };

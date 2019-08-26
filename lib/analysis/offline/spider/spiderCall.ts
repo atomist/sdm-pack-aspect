@@ -61,6 +61,11 @@ export interface SpiderAppOptions {
      * Take care to set this to false if the spider code has been updated
      */
     update?: boolean;
+
+    /**
+     * How many analyses shall we run at once? Default to something reasonable, like 40
+     */
+    poolSize?: number;
 }
 
 /**
@@ -122,7 +127,7 @@ export async function spider(params: SpiderAppOptions,
                 return keep;
             },
             // Controls promise usage in Node
-            poolSize: 40,
+            poolSize: params.poolSize || 40,
             workspaceId,
         });
 }
