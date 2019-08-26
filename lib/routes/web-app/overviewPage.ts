@@ -15,11 +15,11 @@
  */
 
 import { logger } from "@atomist/automation-client";
-import { Aspect, Ideal, idealCoordinates, isConcreteIdeal, supportsEntropy, } from "@atomist/sdm-pack-fingerprints";
+import { Aspect, Ideal, idealCoordinates, isConcreteIdeal, supportsEntropy } from "@atomist/sdm-pack-fingerprints";
 import * as _ from "lodash";
-import { AspectFingerprintsForDisplay, FingerprintForDisplay, Overview, } from "../../../views/overview";
+import { AspectFingerprintsForDisplay, FingerprintForDisplay, Overview } from "../../../views/overview";
 import { renderStaticReactNode } from "../../../views/topLevelPage";
-import { FingerprintUsage, } from "../../analysis/offline/persist/ProjectAnalysisResultStore";
+import { FingerprintUsage } from "../../analysis/offline/persist/ProjectAnalysisResultStore";
 import { defaultedToDisplayableFingerprintName } from "../../aspect/DefaultAspectRegistry";
 import { WebAppConfig } from "./webAppRoutes";
 

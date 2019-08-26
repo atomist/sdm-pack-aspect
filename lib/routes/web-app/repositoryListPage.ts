@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { RepoForDisplay, RepoList, } from "../../../views/repoList";
+import { RepoForDisplay, RepoList } from "../../../views/repoList";
 import { renderStaticReactNode } from "../../../views/topLevelPage";
 import { WebAppConfig } from "./webAppRoutes";
 
