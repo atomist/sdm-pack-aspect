@@ -17,9 +17,7 @@
 import { logger } from "@atomist/automation-client";
 import { ExpressCustomizer } from "@atomist/automation-client/lib/configuration";
 import { isInLocalMode } from "@atomist/sdm-core";
-import {
-    isConcreteIdeal,
-} from "@atomist/sdm-pack-fingerprints";
+import { isConcreteIdeal } from "@atomist/sdm-pack-fingerprints";
 import * as bodyParser from "body-parser";
 import {
     Express,
@@ -32,6 +30,7 @@ import * as path from "path";
 import * as swaggerUi from "swagger-ui-express";
 import * as yaml from "yamljs";
 import {
+    FingerprintKind,
     FingerprintUsage,
     ProjectAnalysisResultStore,
 } from "../analysis/offline/persist/ProjectAnalysisResultStore";
@@ -60,23 +59,19 @@ import {
     bandFor,
 } from "../util/bands";
 import { EntropySizeBands } from "../util/commonBands";
+
+import { Omit } from "../util/omit";
 import {
     authHandlers,
     configureAuth,
     corsHandler,
 } from "./auth";
-import {
-    buildFingerprintTree,
-} from "./buildFingerprintTree";
-import {
-    tagUsageIn,
-} from "./support/tagUtils";
+import { buildFingerprintTree } from "./buildFingerprintTree";
+import { tagUsageIn } from "./support/tagUtils";
 import {
     addRepositoryViewUrl,
     splitByOrg,
 } from "./support/treeMunging";
-
-import { Omit } from "../util/omit";
 
 /**
  * Expose the public API routes, returning JSON.
@@ -129,8 +124,8 @@ function exposeAspectMetadata(express: Express, store: ProjectAnalysisResultStor
     express.get("/api/v1/:workspace_id/aspects", [corsHandler(), ...authHandlers()], async (req, res) => {
         try {
             const workspaceId = req.params.workspace_id || "local";
-            const fingerprintUsage: FingerprintUsage[] = await store.fingerprintUsageForType(workspaceId);
-            const reports = getAspectReports(fingerprintUsage, workspaceId);
+            const fingerprintKinds = await store.distinctRepoFingerprintKinds(workspaceId);
+            const reports = getAspectReports(fingerprintKinds, workspaceId);
             logger.debug("Returning aspect reports for '%s': %j", workspaceId, reports);
             const count = await store.distinctRepoCount(workspaceId);
             const at = await store.latestTimestamp(workspaceId);
@@ -247,38 +242,37 @@ function exposeFingerprintByTypeAndName(express: Express,
 function exposeDrift(express: Express, aspectRegistry: AspectRegistry, store: ProjectAnalysisResultStore): void {
     express.options("/api/v1/:workspace_id/drift", corsHandler());
     express.get("/api/v1/:workspace_id/drift", [corsHandler(), ...authHandlers()], async (req, res) => {
-            try {
-                const type = req.query.type;
-                const band = req.query.band === "true";
-                const percentile: number = req.query.percentile ? parseFloat(req.query.percentile) : 0;
-                logger.info("Entropy query: query.percentile='%s', percentile=%d, type=%s",
-                    req.query.percentile, percentile, type);
+        try {
+            const type = req.query.type;
+            const band = req.query.band === "true";
+            const percentile: number = req.query.percentile ? parseFloat(req.query.percentile) : 0;
+            logger.info("Entropy query: query.percentile='%s', percentile=%d, type=%s",
+                req.query.percentile, percentile, type);
 
-                let driftTree = await store.aspectDriftTree(req.params.workspace_id, percentile, type);
-                fillInAspectNames(aspectRegistry, driftTree.tree);
-                if (!type) {
-                    driftTree = removeAspectsWithoutMeaningfulEntropy(aspectRegistry, driftTree);
-                }
-                if (band) {
-                    driftTree = introduceClassificationLayer(driftTree, {
-                        newLayerMeaning: "entropy band",
-                        newLayerDepth: 1,
-                        descendantClassifier: fp => bandFor(EntropySizeBands, (fp as any).entropy, {
-                            casing: BandCasing.Sentence,
-                            includeNumber: false,
-                        }),
-                    });
-                }
-                // driftTree.tree = flattenSoleFingerprints(driftTree.tree);
-                fillInDriftTreeAspectNames(aspectRegistry, driftTree.tree);
-                return res.json(driftTree);
-            } catch
-                (err) {
-                logger.warn("Error occurred getting drift report: %s %s", err.message, err.stack);
-                res.sendStatus(500);
+            let driftTree = await store.aspectDriftTree(req.params.workspace_id, percentile, type);
+            fillInAspectNames(aspectRegistry, driftTree.tree);
+            if (!type) {
+                driftTree = removeAspectsWithoutMeaningfulEntropy(aspectRegistry, driftTree);
             }
-        },
-    );
+            if (band) {
+                driftTree = introduceClassificationLayer(driftTree, {
+                    newLayerMeaning: "entropy band",
+                    newLayerDepth: 1,
+                    descendantClassifier: fp => bandFor(EntropySizeBands, (fp as any).entropy, {
+                        casing: BandCasing.Sentence,
+                        includeNumber: false,
+                    }),
+                });
+            }
+            // driftTree.tree = flattenSoleFingerprints(driftTree.tree);
+            fillInDriftTreeAspectNames(aspectRegistry, driftTree.tree);
+            return res.json(driftTree);
+        } catch
+            (err) {
+            logger.warn("Error occurred getting drift report: %s %s", err.message, err.stack);
+            res.sendStatus(500);
+        }
+    });
 }
 
 function exposeIdealAndProblemSetting(express: Express, aspectRegistry: AspectRegistry): void {

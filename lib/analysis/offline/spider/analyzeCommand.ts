@@ -163,8 +163,15 @@ export function analyzeGitHubByQueryCommandRegistration(analyzer: Analyzer): Com
     };
 }
 
+import * as path from "path";
+
 function analyzeFromLocal(analyzer: Analyzer): CommandListener<AnalyzeLocalCommandParameters> {
     return async d => {
+        if (!path.isAbsolute(d.parameters.localDirectory)) {
+            await d.addressChannels("Please provide an absolute path. You provided: " + d.parameters.localDirectory);
+            return { code: 1, error: new Error("Please provide an absolute path") };
+        }
+
         const spiderAppOptions: SpiderAppOptions = d.parameters;
         logger.info("analyze local invoked with " + JSON.stringify(spiderAppOptions));
 

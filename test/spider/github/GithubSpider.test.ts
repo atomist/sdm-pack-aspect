@@ -23,6 +23,7 @@ import { TmpDirectoryManager } from "@atomist/automation-client/lib/spi/clone/tm
 import { FP } from "@atomist/sdm-pack-fingerprints";
 import * as assert from "assert";
 import {
+    FingerprintInsertionResult,
     FingerprintKind,
     FingerprintUsage,
     PersistResult,
@@ -79,6 +80,10 @@ class FakeProjectAnalysisResultStore implements ProjectAnalysisResultStore {
         throw new Error("Method not implemented");
     }
 
+    public persistAdditionalFingerprints(): Promise<FingerprintInsertionResult> {
+        return undefined;
+    }
+
     public aspectDriftTree(workspaceId: string, threshold: number, type?: string): Promise<PlantedTree> {
         throw new Error("Method not implemented");
     }
@@ -133,6 +138,10 @@ class FakeProjectAnalysisResultStore implements ProjectAnalysisResultStore {
     }
 
     public async distinctFingerprintKinds(): Promise<FingerprintKind[]> {
+        return [];
+    }
+
+    public async distinctRepoFingerprintKinds(workspaceId: string): Promise<Array<{ owner: string, repo: string, fingerprints: FingerprintKind[], }>> {
         return [];
     }
 

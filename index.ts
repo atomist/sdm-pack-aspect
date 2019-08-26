@@ -18,7 +18,6 @@ export * from "./lib/machine/aspectSupport";
 export * from "./lib/aspect/AspectRegistry";
 export * from "./lib/aspect/IdealStore";
 export * from "./lib/aspect/ProblemStore";
-export * from "./lib/tagger/taggers";
 export * from "./lib/tagger/commonTaggers";
 export * from "./lib/scorer/Score";
 export * from "./lib/scorer/scoring";

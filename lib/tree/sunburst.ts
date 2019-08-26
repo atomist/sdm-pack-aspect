@@ -16,12 +16,15 @@
 
 import { Tag } from "../aspect/AspectRegistry";
 
+/**
+ * Information about the use of tags within a repo
+ */
 export interface TagUsage extends Tag {
     count: number;
 }
 
 /**
- * SunburstTree with metadata about the meaning of each level
+ * SunburstTree with accompanying metadata about the meaning of each level
  */
 export interface PlantedTree {
     tree: SunburstTree;

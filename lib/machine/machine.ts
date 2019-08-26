@@ -18,6 +18,7 @@ import {
     Configuration,
 } from "@atomist/automation-client";
 import {
+    makeVirtualProjectAware,
     VirtualProjectFinder,
 } from "@atomist/sdm-pack-fingerprints";
 import { Aspect } from "@atomist/sdm-pack-fingerprints/lib/machine/Aspect";
@@ -31,8 +32,15 @@ import { SpiderAnalyzer } from "../analysis/offline/spider/SpiderAnalyzer";
 import { IdealStore } from "../aspect/IdealStore";
 import { ProblemStore } from "../aspect/ProblemStore";
 
+/**
+ * Create the analyzer used for spidering repos.
+ * @param {Aspect[]} aspects
+ * @param {VirtualProjectFinder} virtualProjectFinder
+ * @return {Analyzer}
+ */
 export function createAnalyzer(aspects: Aspect[], virtualProjectFinder: VirtualProjectFinder): Analyzer {
-    return new SpiderAnalyzer(aspects, virtualProjectFinder);
+    const configuredAspects = aspects.map(aspect => makeVirtualProjectAware(aspect, virtualProjectFinder));
+    return new SpiderAnalyzer(configuredAspects, virtualProjectFinder);
 }
 
 const PoolHolder: { pool: Pool } = { pool: undefined };

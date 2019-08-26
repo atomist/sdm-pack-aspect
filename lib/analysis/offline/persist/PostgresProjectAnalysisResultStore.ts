@@ -26,13 +26,12 @@ import {
     Ideal,
     isConcreteIdeal,
 } from "@atomist/sdm-pack-fingerprints";
+import * as _ from "lodash";
 import {
     Client,
     ClientBase,
 } from "pg";
-import {
-    Analyzed,
-} from "../../../aspect/AspectRegistry";
+import { Analyzed } from "../../../aspect/AspectRegistry";
 import { IdealStore } from "../../../aspect/IdealStore";
 import { ProblemUsage } from "../../../aspect/ProblemStore";
 import { getCategories } from "../../../customize/categories";
@@ -55,6 +54,7 @@ import {
 import {
     combinePersistResults,
     emptyPersistResult,
+    FingerprintInsertionResult,
     FingerprintKind,
     FingerprintUsage,
     PersistResult,
@@ -218,6 +218,23 @@ GROUP BY repo_snapshots.id`;
         return doWithClient(sql, this.clientFactory, async client => {
             const result = await client.query(sql, [workspaceId]);
             return result.rows;
+        }, []);
+    }
+
+    public async distinctRepoFingerprintKinds(workspaceId: string): Promise<Array<{ owner: string, repo: string, fingerprints: FingerprintKind[] }>> {
+        const sql = `SELECT DISTINCT rs.owner, rs.name as repo, f.name, feature_name as type
+  FROM repo_fingerprints rf, repo_snapshots rs, fingerprints f
+  WHERE rf.repo_snapshot_id = rs.id AND rf.fingerprint_id = f.id
+    AND rs.workspace_id ${workspaceId === "*" ? "<>" : "="} $1`;
+        return doWithClient(sql, this.clientFactory, async client => {
+            const result = await client.query(sql, [workspaceId]);
+            return _.map(_.groupBy(result.rows, r => `${r.owner}/${r.repo}`), (v, k) => {
+                return {
+                    owner: k.split("/")[0],
+                    repo: k.split("/")[1],
+                    fingerprints: v,
+                };
+            });
         }, []);
     }
 
@@ -410,7 +427,7 @@ GROUP by repo_snapshots.id) stats;`;
             await deleteOldSnapshotForRepository(repoRef, client);
 
             // Use this as unique database id
-            const id = repoRef.url.replace("/", "") + "_" + repoRef.sha;
+            const id = snapshotIdFor(repoRef);
             const shaToUse = repoRef.sha;
             const repoSnapshotsInsertSql = `INSERT INTO repo_snapshots (id, workspace_id, provider_id, owner, name, url,
     commit_sha, query, timestamp)
@@ -451,11 +468,20 @@ VALUES ($1, $2, $3, $4, $5, $6, $7, $8, current_timestamp)`;
         }
     }
 
+    public async persistAdditionalFingerprints(analyzed: Analyzed): Promise<FingerprintInsertionResult> {
+        return doWithClient(`Persist additional fingerprints for project at ${analyzed.id.url}`,
+            this.clientFactory,
+            async client => {
+                return this.persistFingerprints(analyzed, snapshotIdFor(analyzed.id), client);
+            }, {
+                insertedCount: 0,
+                failures: analyzed.fingerprints
+                    .map(failedFingerprint => ({ failedFingerprint, error: undefined })),
+            });
+    }
+
     // Persist the fingerprints for this analysis
-    private async persistFingerprints(pa: Analyzed, id: string, client: ClientBase): Promise<{
-        insertedCount: number,
-        failures: Array<{ failedFingerprint: FP; error: Error }>,
-    }> {
+    private async persistFingerprints(pa: Analyzed, id: string, client: ClientBase): Promise<FingerprintInsertionResult> {
         let insertedCount = 0;
         const failures: Array<{ failedFingerprint: FP; error: Error }> = [];
         for (const fp of pa.fingerprints) {
@@ -542,7 +568,7 @@ FROM repo_snapshots rs
     RIGHT JOIN repo_fingerprints rf ON rf.repo_snapshot_id = rs.id
     INNER JOIN fingerprints f ON rf.fingerprint_id = f.id
 WHERE rs.workspace_id ${workspaceId === "*" ? "<>" : "="} $1
-    AND ${type ? "type = $2" : "true"} AND ${name ? "f.name = $3" : "true"}`;
+    AND ${type ? "f.feature_name = $2" : "true"} AND ${name ? "f.name = $3" : "true"}`;
     return doWithClient(sql, clientFactory, async client => {
         const params = [workspaceId];
         if (!!type) {
@@ -633,4 +659,8 @@ function whyDoesPostgresPutANewlineOnSomeFields<T extends { commit_sha?: string,
         commit_sha: row.commit_sha ? row.commit_sha.trim() : undefined,
         id: row.id ? row.id.trim() : undefined,
     };
+}
+
+function snapshotIdFor(repoRef: RepoRef): string {
+    return repoRef.url.replace("/", "") + "_" + repoRef.sha;
 }

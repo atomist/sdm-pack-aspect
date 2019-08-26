@@ -16,6 +16,7 @@
 
 import { RepoRef } from "@atomist/automation-client";
 import { FP } from "@atomist/sdm-pack-fingerprints";
+import { Analyzed } from "../../../aspect/AspectRegistry";
 import { PlantedTree } from "../../../tree/sunburst";
 import { ProjectAnalysisResult } from "../../ProjectAnalysisResult";
 import { CohortAnalysis } from "../spider/analytics";
@@ -23,7 +24,6 @@ import {
     PersistenceResult,
     SpiderFailure,
 } from "../spider/Spider";
-import { ClientFactory } from "./pgUtils";
 
 export interface PersistResult {
     attemptedCount: number;
@@ -70,6 +70,11 @@ export interface TreeQuery {
     byName: boolean;
 
     includeWithout: boolean;
+}
+
+export interface FingerprintInsertionResult {
+    insertedCount: number;
+    failures: Array<{ failedFingerprint: FP; error: Error }>;
 }
 
 /**
@@ -131,9 +136,19 @@ export interface ProjectAnalysisResultStore {
     persist(repos: ProjectAnalysisResult | AsyncIterable<ProjectAnalysisResult> | ProjectAnalysisResult[]): Promise<PersistResult>;
 
     /**
+     * Persist fingerprints for this snapshot id, which must already exist.
+     */
+    persistAdditionalFingerprints(analyzed: Analyzed): Promise<FingerprintInsertionResult>;
+
+    /**
      * Return distinct fingerprint type/name combinations in this workspace
      */
     distinctFingerprintKinds(workspaceId: string): Promise<FingerprintKind[]>;
+
+    /**
+     * Return distinct fingerprint type/name combinations in this workspace by repo
+     */
+    distinctRepoFingerprintKinds(workspaceId: string): Promise<Array<{ owner: string, repo: string, fingerprints: FingerprintKind[] }>>;
 
     fingerprintUsageForType(workspaceId: string, type?: string): Promise<FingerprintUsage[]>;
 
@@ -162,4 +177,5 @@ export interface ProjectAnalysisResultStore {
      * @return {Promise<number>}
      */
     averageFingerprintCount(workspaceId?: string): Promise<number>;
+
 }

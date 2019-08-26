@@ -25,13 +25,18 @@ import {
     metadata,
     PushImpact,
 } from "@atomist/sdm";
-import { isInLocalMode } from "@atomist/sdm-core";
+import {
+    AllGoals,
+    isInLocalMode,
+} from "@atomist/sdm-core";
 import { toArray } from "@atomist/sdm-core/lib/util/misc/array";
 import {
     Aspect,
     cachingVirtualProjectFinder,
     fileNamesVirtualProjectFinder,
     fingerprintSupport,
+    PublishFingerprints,
+    RebaseOptions,
     VirtualProjectFinder,
 } from "@atomist/sdm-pack-fingerprints";
 import { ClientFactory } from "../analysis/offline/persist/pgUtils";
@@ -46,6 +51,7 @@ import {
     TaggerDefinition,
 } from "../aspect/AspectRegistry";
 import { DefaultAspectRegistry } from "../aspect/DefaultAspectRegistry";
+import { isDeliveryAspect } from "../aspect/delivery/DeliveryAspect";
 import { UndesirableUsageChecker } from "../aspect/ProblemStore";
 import { api } from "../routes/api";
 import { addWebAppRoutes } from "../routes/web-app/webAppRoutes";
@@ -57,10 +63,11 @@ import {
 } from "./machine";
 
 /**
- * Consider directories containing any of these files to be virtual projects
- * @type {VirtualProjectFinder}
+ * Default VirtualProjectFinder, which recognizes Maven, npm,
+ * and Gradle projects and Python projects using requirements.txt.
  */
 export const DefaultVirtualProjectFinder: VirtualProjectFinder =
+    // Consider directories containing any of these files to be virtual projects
     cachingVirtualProjectFinder(
         fileNamesVirtualProjectFinder(
             "package.json",
@@ -74,27 +81,82 @@ export const DefaultScoreWeightings: ScoreWeightings = {
     anchor: 3,
 };
 
+/**
+ * Options to configure the aspect extension pack
+ */
 export interface AspectSupportOptions {
-    aspects: Aspect | Aspect[];
-    pushImpactGoal?: PushImpact;
 
+    /**
+     * Aspects that cause this SDM to calculate fingerprints from projects
+     * and delivery events.
+     */
+    aspects: Aspect | Aspect[];
+
+    /**
+     * If set, this enables multi-project support by helping aspects work
+     * on virtual projects. For example, a VirtualProjectFinder may establish
+     * that subdirectories with package.json or requirements.txt files are
+     * subprojects, enabling aspects to work on their internal structure
+     * without needing to drill into the entire repository themselves.
+     */
     virtualProjectFinder?: VirtualProjectFinder;
 
-    scorers?: RepositoryScorer | RepositoryScorer[];
-    weightings?: ScoreWeightings;
-
+    /**
+     * Registrations that can tag projects based on fingerprints.
+     */
     taggers?: TaggerDefinition | TaggerDefinition[];
+
+    /**
+     * Special taggers that can see all fingerprints on a project.
+     */
     combinationTaggers?: CombinationTagger | CombinationTagger[];
 
+    /**
+     * Scorers that rank projects based on fingerprint data.
+     */
+    scorers?: RepositoryScorer | RepositoryScorer[];
+
+    /**
+     * Optional weightings for different scorers. The key is scorer name.
+     */
+    weightings?: ScoreWeightings;
+
+    /**
+     * Set this to flag undesirable fingerprints: For example,
+     * a dependency you wish to eliminate from all projects, or
+     * an internally inconsistent fingerprint state.
+     */
     undesirableUsageChecker?: UndesirableUsageChecker;
+
+    exposeWeb?: boolean;
+
+    /**
+     * Custom fingerprint routing. Used in local mode.
+     * Default behavior is to send fingerprints to Atomist.
+     */
+    publishFingerprints?: PublishFingerprints;
+
+    /**
+     * Delivery goals to attach fingerprint behavior to, if provided.
+     * Delivery goals must have well-known names
+     */
+    goals?: Partial<Pick<AllGoals, "build" | "pushImpact">>;
+
+    rebase?: RebaseOptions;
 }
 
+/**
+ * Return an extension pack to add aspect support with the given aspects to an SDM
+ */
 export function aspectSupport(options: AspectSupportOptions): ExtensionPack {
     return {
         ...metadata(),
         configure: sdm => {
             const cfg = sdm.configuration;
+
             if (isInLocalMode()) {
+                // If we're in local mode, expose analyzer commands and
+                // HTTP endpoints
                 const analyzer = createAnalyzer(
                     toArray(options.aspects),
                     options.virtualProjectFinder || exports.DefaultVirtualProjectFinder);
@@ -102,22 +164,36 @@ export function aspectSupport(options: AspectSupportOptions): ExtensionPack {
                 sdm.addCommand(analyzeGitHubByQueryCommandRegistration(analyzer));
                 sdm.addCommand(analyzeGitHubOrganizationCommandRegistration(analyzer));
                 sdm.addCommand(analyzeLocalCommandRegistration(analyzer));
+            }
 
+            // Add support for calculating aspects on push and computing delivery aspects
+            // This is only possible in local mode if we have a fingerprint publisher,
+            // as we can't send to Atomist (the default)
+            if (!!options.goals && (!isInLocalMode() || !!options.publishFingerprints)) {
+                if (!!options.goals.pushImpact) {
+                    // Add supporting for calculating fingerprints on every push
+                    sdm.addExtensionPacks(fingerprintSupport({
+                        pushImpactGoal: options.goals.pushImpact as PushImpact,
+                        aspects: options.aspects,
+                        rebase: options.rebase,
+                        publishFingerprints: options.publishFingerprints,
+                    }));
+                }
+
+                toArray(options.aspects)
+                    .filter(isDeliveryAspect)
+                    .filter(a => a.canRegister(sdm, options.goals))
+                    .forEach(da => da.register(sdm, options.goals, options.publishFingerprints));
+            }
+
+            const exposeWeb = options.exposeWeb !== undefined ? options.exposeWeb : isInLocalMode();
+            if (exposeWeb) {
                 const { customizers, routesToSuggestOnStartup } =
                     orgVisualizationEndpoints(sdmConfigClientFactory(cfg), cfg.http.client.factory, options);
-
                 cfg.http.customizers.push(...customizers);
                 routesToSuggestOnStartup.forEach(rtsos => {
                     cfg.logging.banner.contributors.push(suggestRoute(rtsos));
                 });
-            } else {
-                if (!!options.pushImpactGoal) {
-                    sdm.addExtensionPacks(fingerprintSupport({
-                        pushImpactGoal: options.pushImpactGoal,
-                        aspects: options.aspects,
-                    }));
-                }
-
             }
         },
     };

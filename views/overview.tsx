@@ -28,7 +28,7 @@ interface UnfoundAspectForDisplay {
  */
 export interface OverviewProps {
     projectsAnalyzed: number;
-    importantAspects: AspectFingerprintsForDisplay[];
+    foundAspects: AspectFingerprintsForDisplay[];
     unfoundAspects: UnfoundAspectForDisplay[];
     repos: RepoForDisplay[];
     virtualProjectCount: number;
@@ -85,22 +85,22 @@ function displayAspect(f: AspectFingerprintsForDisplay, i: number): React.ReactE
     </div>;
 }
 
-function displayUnfoundAspects(mfs: Array<{}>): React.ReactElement {
-    if (mfs.length === 0) {
+function displayUnfoundAspects(unfoundAspects: UnfoundAspectForDisplay[]): React.ReactElement {
+    if (unfoundAspects.length === 0) {
         return <div></div>;
     }
     return <div>
-        <h2>Unseen Aspects</h2>
+        <h2>Unseen Aspects ({unfoundAspects.length})</h2>
         These aspects are understood by this <i>org-visualizer</i> instance but were not found in any project:
         <ul>
-            {mfs.map(displayUnfoundAspect)}
+            {unfoundAspects.map(displayUnfoundAspect)}
         </ul>
     </div>;
 }
 
-function displayUnfoundAspect(mf: { documentationUrl?: string, displayName: string }, i: number): React.ReactElement {
-    const link = !!mf.documentationUrl ?
-        <a href={mf.documentationUrl}>{mf.displayName}</a> : mf.displayName;
+function displayUnfoundAspect(unfoundAspectForDisplay: UnfoundAspectForDisplay, i: number): React.ReactElement {
+    const link = !!unfoundAspectForDisplay.documentationUrl ?
+        <a href={unfoundAspectForDisplay.documentationUrl}>{unfoundAspectForDisplay.displayName}</a> : unfoundAspectForDisplay.displayName;
     return <li className="unfound">
         {link}
     </li>;
@@ -122,10 +122,10 @@ function fingerprintListItem(f: FingerprintForDisplay): React.ReactElement {
 
 export function displayAspects(props: OverviewProps): React.ReactElement {
     return <div>
-        <h2>Aspects</h2>
-        <div className="importantFeatures">
+        <h2>Aspects ({props.foundAspects.length})</h2>
+        <div className="importantAspects">
             <ul>
-                {props.importantAspects.map(displayAspect)}
+                {props.foundAspects.map(displayAspect)}
             </ul>
         </div>
         {displayUnfoundAspects(props.unfoundAspects)}

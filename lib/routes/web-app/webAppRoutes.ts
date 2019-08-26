@@ -19,6 +19,7 @@ import {
     logger,
 } from "@atomist/automation-client";
 import { ExpressCustomizer } from "@atomist/automation-client/lib/configuration";
+import { metadata } from "@atomist/sdm";
 import {
     ConcreteIdeal,
     FP,
@@ -65,6 +66,8 @@ import {
 import { exposeOverviewPage } from "./overviewPage";
 import { exposeRepositoryListPage } from "./repositoryListPage";
 
+const instanceMetadata = metadata();
+
 /**
  * Add the org page route to Atomist SDM Express server.
  * @return {ExpressCustomizer}
@@ -109,9 +112,9 @@ export function addWebAppRoutes(
 }
 
 function exposeRepositoryPage(express: Express,
-    handlers: RequestHandler[],
-    aspectRegistry: AspectRegistry,
-    store: ProjectAnalysisResultStore): void {
+                              handlers: RequestHandler[],
+                              aspectRegistry: AspectRegistry,
+                              store: ProjectAnalysisResultStore): void {
     express.get("/repository", ...handlers, async (req, res) => {
         const workspaceId = req.query.workspaceId || "*";
         const id = req.query.id;
@@ -144,14 +147,15 @@ function exposeRepositoryPage(express: Express,
                 repo,
                 aspects: _.sortBy(ffd.filter(f => !!f.aspect.displayName), f => f.aspect.displayName),
                 category,
-            }), `${repo.analysis.id.owner} / ${repo.analysis.id.repo}`));
+            }), `${repo.analysis.id.owner} / ${repo.analysis.id.repo}`,
+            instanceMetadata));
     });
 }
 
 function exposeExplorePage(express: Express,
-    handlers: RequestHandler[],
-    httpClientFactory: HttpClientFactory,
-    aspectRegistry: AspectRegistry): void {
+                           handlers: RequestHandler[],
+                           httpClientFactory: HttpClientFactory,
+                           aspectRegistry: AspectRegistry): void {
     express.get("/explore", ...handlers, async (req, res) => {
         const tags = req.query.tags || "";
         const workspaceId = req.query.workspaceId || "*";
@@ -167,9 +171,9 @@ function exposeExplorePage(express: Express,
 }
 
 function exposeDriftPage(express: Express,
-    handlers: RequestHandler[],
-    httpClientFactory: HttpClientFactory,
-    aspectRegistry: AspectRegistry): void {
+                         handlers: RequestHandler[],
+                         httpClientFactory: HttpClientFactory,
+                         aspectRegistry: AspectRegistry): void {
     express.get("/drift", ...handlers, async (req, res) => {
         const workspaceId = req.query.workspaceId || "*";
         const percentile = req.query.percentile || 0;
@@ -189,9 +193,9 @@ function exposeDriftPage(express: Express,
 }
 
 function exposeFingerprintReportPage(express: Express,
-    handlers: RequestHandler[],
-    httpClientFactory: HttpClientFactory,
-    aspectRegistry: AspectRegistry): void {
+                                     handlers: RequestHandler[],
+                                     httpClientFactory: HttpClientFactory,
+                                     aspectRegistry: AspectRegistry): void {
     express.get("/fingerprint/:type/:name", ...handlers, async (req, res) => {
         const type = req.params.type;
         const name = req.params.name;
@@ -219,9 +223,9 @@ function exposeFingerprintReportPage(express: Express,
 }
 
 function exposeCustomReportPage(express: Express,
-    handlers: RequestHandler[],
-    httpClientFactory: HttpClientFactory,
-    aspectRegistry: AspectRegistry): void {
+                                handlers: RequestHandler[],
+                                httpClientFactory: HttpClientFactory,
+                                aspectRegistry: AspectRegistry): void {
     express.get("/report/:name", ...handlers, async (req, res) => {
         const name = req.params.name;
         const workspaceId = req.query.workspaceId || "*";
@@ -241,16 +245,16 @@ function exposeCustomReportPage(express: Express,
 
 // TODO fix any
 async function renderDataUrl(workspaceId: string,
-    page: {
+                             page: {
         title: string,
         heading: string,
         subheading?: string,
         dataUrl: string,
     },
-    aspectRegistry: AspectRegistry,
-    httpClientFactory: HttpClientFactory,
-    req: any,
-    res: any): Promise<void> {
+                             aspectRegistry: AspectRegistry,
+                             httpClientFactory: HttpClientFactory,
+                             req: any,
+                             res: any): Promise<void> {
     let tree: TagTree;
     const possibleIdealsForDisplay: PossibleIdealForDisplay[] = [];
 
@@ -284,6 +288,7 @@ async function renderDataUrl(workspaceId: string,
             fieldsToDisplay,
         }),
         page.title,
+        instanceMetadata,
         [
             "/sunburstScript-bundle.js",
         ]));
@@ -325,8 +330,8 @@ function displayIdeal(fingerprint: AugmentedFingerprintForDisplay, aspect: Aspec
 }
 
 async function lookForIdealDisplay(aspectRegistry: AspectRegistry,
-    aspectType: string,
-    fingerprintName: string): Promise<{ displayValue: string } | undefined> {
+                                   aspectType: string,
+                                   fingerprintName: string): Promise<{ displayValue: string } | undefined> {
     if (!aspectType) {
         return undefined;
     }

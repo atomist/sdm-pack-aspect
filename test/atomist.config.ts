@@ -14,12 +14,18 @@
  * limitations under the License.
  */
 
-import { AcceptEverythingUndesirableUsageChecker } from "../lib/aspect/ProblemStore";
-
-process.env.ATOMIST_MODE = "local";
-
 import { Configuration } from "@atomist/automation-client";
-import { configure } from "@atomist/sdm-core";
+import { loadUserConfiguration } from "@atomist/automation-client/lib/configuration";
+import {
+    anySatisfied,
+    onAnyPush,
+    PushImpact,
+} from "@atomist/sdm";
+import {
+    AllGoals,
+    configure,
+} from "@atomist/sdm-core";
+import { Build } from "@atomist/sdm-pack-build";
 import { LeinDeps } from "@atomist/sdm-pack-clojure/lib/fingerprints/clojure";
 import {
     DockerfilePath,
@@ -28,24 +34,35 @@ import {
 } from "@atomist/sdm-pack-docker";
 import {
     Aspect,
-    makeVirtualProjectAware,
+    NpmDeps,
+    VirtualProjectFinder,
 } from "@atomist/sdm-pack-fingerprints";
+import {
+    IsNode,
+    nodeBuilder,
+    npmBuilderOptionsFromFile,
+} from "@atomist/sdm-pack-node";
 import {
     PowerShellLanguage,
     ShellLanguage,
     YamlLanguage,
 } from "@atomist/sdm-pack-sloc/lib/languages";
 import {
+    IsMaven,
+    mavenBuilder,
+    MavenDefaultOptions,
+} from "@atomist/sdm-pack-spring";
+import * as _ from "lodash";
+import { PostgresProjectAnalysisResultStore } from "../lib/analysis/offline/persist/PostgresProjectAnalysisResultStore";
+import {
+    CombinationTagger,
     RepositoryScorer,
     TaggerDefinition,
 } from "../lib/aspect/AspectRegistry";
 import { CodeMetricsAspect } from "../lib/aspect/common/codeMetrics";
 import { CodeOwnership } from "../lib/aspect/common/codeOwnership";
 import { CiAspect } from "../lib/aspect/common/stackAspect";
-import {
-    CodeOfConduct,
-    CodeOfConductType,
-} from "../lib/aspect/community/codeOfConduct";
+import { CodeOfConduct } from "../lib/aspect/community/codeOfConduct";
 import {
     License,
     LicensePresence,
@@ -56,24 +73,70 @@ import {
 } from "../lib/aspect/community/oss";
 import { isFileMatchFingerprint } from "../lib/aspect/compose/fileMatchAspect";
 import { globAspect } from "../lib/aspect/compose/globAspect";
+import { buildTimeAspect } from "../lib/aspect/delivery/BuildAspect";
+import { storeFingerprints } from "../lib/aspect/delivery/storeFingerprintsPublisher";
 import { branchCount } from "../lib/aspect/git/branchCount";
 import { GitRecency } from "../lib/aspect/git/gitActivity";
+import { AcceptEverythingUndesirableUsageChecker } from "../lib/aspect/ProblemStore";
 import { ExposedSecrets } from "../lib/aspect/secret/exposedSecrets";
+import {
+    registerCategories,
+    registerReportDetails,
+} from "../lib/customize/categories";
 import {
     aspectSupport,
     DefaultVirtualProjectFinder,
 } from "../lib/machine/aspectSupport";
+import { sdmConfigClientFactory } from "../lib/machine/machine";
 import * as commonScorers from "../lib/scorer/commonScorers";
-import {
-    combinationTaggers,
-    TaggersParams,
-} from "../lib/tagger/taggers";
+import * as commonTaggers from "../lib/tagger/commonTaggers";
 
-export const configuration: Configuration = configure(async sdm => {
+// Ensure we start up in local mode
+process.env.ATOMIST_MODE = "local";
+
+// Ensure we use this workspace so we can see all fingerprints with the local UI
+process.env.ATOMIST_WORKSPACES = "local";
+
+const virtualProjectFinder: VirtualProjectFinder = DefaultVirtualProjectFinder;
+
+const store = new PostgresProjectAnalysisResultStore(sdmConfigClientFactory(loadUserConfiguration()));
+
+interface TestGoals extends AllGoals {
+    build: Build;
+}
+
+/**
+ * Sample configuration to enable testing
+ * @type {Configuration}
+ */
+export const configuration: Configuration = configure<TestGoals>(async sdm => {
+
+    const goals = await sdm.createGoals(async () => {
+        const build: Build = new Build()
+            .with({
+                ...MavenDefaultOptions,
+                builder: mavenBuilder(),
+            });
+            // .with({
+            //     builder: nodeBuilder(),
+            // });
+
+        const pushImpact = new PushImpact();
+
+        return {
+            // This illustrates a delivery goal
+            build,
+
+            // This illustrates pushImpact
+            pushImpact,
+        };
+    }, []);
 
     sdm.addExtensionPacks(
         aspectSupport({
             aspects: aspects(),
+
+            goals,
 
             scorers: scorers(),
 
@@ -83,11 +146,37 @@ export const configuration: Configuration = configure(async sdm => {
             // Customize this to respond to undesirable usages
             undesirableUsageChecker: AcceptEverythingUndesirableUsageChecker,
 
+            publishFingerprints: storeFingerprints(store),
+            virtualProjectFinder,
         }),
     );
+
+    return {
+        fingerprint: {
+            goals: goals.pushImpact,
+        },
+        build: {
+            test: anySatisfied(IsMaven /*, IsNode */),
+            goals: goals.build,
+        },
+    };
+
 });
 
 function aspects(): Aspect[] {
+    registerCategories(DockerFrom, "Docker");
+    registerReportDetails(DockerFrom, {
+        name: "Docker base images",
+        shortName: "images",
+        unit: "tag",
+        url: "fingerprint/docker-base-image/*?byOrg=true&presence=false&progress=false&otherLabel=false&trim=false",
+        description: "Docker base images in use across all repositories in your workspace, " +
+            "broken out by image label and repositories where used.",
+    });
+    registerCategories(DockerfilePath, "Docker");
+    registerCategories(DockerPorts, "Docker");
+    registerCategories(branchCount, "Git");
+    registerCategories(GitRecency, "Git");
     return [
         DockerFrom,
         DockerfilePath,
@@ -95,13 +184,10 @@ function aspects(): Aspect[] {
         License,
         // Based on license, decide the presence of a license: Not spread
         LicensePresence,
-        // SpringBootStarter,
-        // TypeScriptVersion,
         new CodeOwnership(),
-        // NpmDependencies,
+        NpmDeps,
         CodeOfConduct,
         ExposedSecrets,
-        // TravisScriptsAspect,
         branchCount,
         GitRecency,
         // This is expensive as it requires deeper cloning
@@ -118,14 +204,11 @@ function aspects(): Aspect[] {
         ContributingAspect,
         globAspect({ name: "azure-pipelines", displayName: "Azure pipeline", glob: "azure-pipelines.yml" }),
         globAspect({ name: "readme", displayName: "Readme file", glob: "README.md" }),
-        // CsProjectTargetFrameworks,
-        // SpringBootVersion,
         // allMavenDependenciesAspect,    // This is expensive
-        // DirectMavenDependencies,
-        // PythonDependencies,
-        // K8sSpecs,
         LeinDeps,
-    ].map(aspect => makeVirtualProjectAware(aspect, DefaultVirtualProjectFinder));
+
+        buildTimeAspect(),
+    ];
 }
 
 export function scorers(): RepositoryScorer[] {
@@ -146,6 +229,19 @@ export function scorers(): RepositoryScorer[] {
         commonScorers.requireGlobAspect({ glob: "CHANGELOG.md" }),
         commonScorers.requireGlobAspect({ glob: "CONTRIBUTING.md" }),
     ];
+}
+
+export interface TaggersParams {
+
+    /**
+     * Max number of branches not to call out
+     */
+    maxBranches: number;
+
+    /**
+     * Number of days at which to consider a repo dead
+     */
+    deadDays: number;
 }
 
 export function taggers(opts: Partial<TaggersParams>): TaggerDefinition[] {
@@ -175,5 +271,50 @@ export function taggers(opts: Partial<TaggersParams>): TaggerDefinition[] {
             test: fp => isFileMatchFingerprint(fp) &&
                 fp.name.includes("csproj") && fp.data.matches.length > 0,
         },
+    ];
+}
+
+export interface CombinationTaggersParams {
+
+    /**
+     * Mininum percentage of average aspect count (fraction) to expect to indicate adequate project understanding
+     */
+    minAverageAspectCountFractionToExpect: number;
+
+    /**
+     * Days since the last commit to indicate a hot repo
+     */
+    hotDays: number;
+
+    /**
+     * Number of committers needed to indicate a hot repo
+     */
+    hotContributors: number;
+}
+
+const DefaultCombinationTaggersParams: CombinationTaggersParams = {
+    minAverageAspectCountFractionToExpect: .75,
+    hotDays: 2,
+    hotContributors: 3,
+};
+
+export function combinationTaggers(opts: Partial<CombinationTaggersParams>): CombinationTagger[] {
+    const optsToUse = {
+        ...DefaultCombinationTaggersParams,
+        ...opts,
+    };
+    return [
+        {
+            name: "not understood",
+            description: "You may want to write aspects for these outlier projects",
+            severity: "warn",
+            test: (fps, id, tagContext) => {
+                const aspectCount = _.uniq(fps.map(f => f.type)).length;
+                // There are quite a few aspects that are found on everything, e.g. git
+                // We need to set the threshold count probably
+                return aspectCount < tagContext.averageFingerprintCount * optsToUse.minAverageAspectCountFractionToExpect;
+            },
+        },
+        commonTaggers.gitHot(optsToUse),
     ];
 }

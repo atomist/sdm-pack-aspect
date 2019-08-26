@@ -3,9 +3,13 @@
 
 # @atomist/sdm-pack-aspect
 
-A tool for visualizing technology usage and drift across an organization. 
+This pack turns your [SDM](https://docs.atomist.com/developer/sdm/) into a tool for visualizing technology usage and [drift](https://blog.atomist.com/whats-lurking/) across an organization.
 
 The cloud native era has led to an explosion of repositories, which we lack tools to understand and manage at scale. See Rod Johnson's blog [This Will Surprise You](https://blog.atomist.com/this-will-surprise-you/) for further discussion.
+
+When you create an SDM with this pack, you can run it two ways:
+- locally, on your laptop. Trigger it to analyze code on your laptop or from GitHub, and then see the results in a simple web app at localhost.
+- connected to the Atomist service, triggering automatically, hooking into the Atomist web hook to make results available to your whole team, plus automation that helps you change the results.
 
 An Atomist **aspect** captures a concern in your project, in anything available from git: repository content (code and configuration) and git data such as branch counts and committer activity. Aspects support the following use cases:
 
@@ -13,7 +17,7 @@ An Atomist **aspect** captures a concern in your project, in anything available 
 2. *Convergence* (some aspects): Help drive code changes to achieve consistency on an "ideal" state of an aspect, such as a particularly version of a library.
 3. *Reaction to change* (some aspects): React to changes in aspect usage within a project: for example, to a library upgrade, removing the Spring Boot Security starter or exposing an additional port in a Docker container.
 
-This project focuses on the visualization use case. Visualizations are exposed via d3 sunburst charts and via a REST API returning JSON documents.
+This project focuses on the visualization use case. Visualizations are exposed via sunburst charts and via a REST API returning JSON documents.
 
 There is out of the box
 support for investigating the following aspects of your project:
@@ -27,32 +31,42 @@ support for investigating the following aspects of your project:
 - Common CI tools
 - git activity and branch count
 
-Analysis is extensible using the Atomist `Project` API. Implementing and registering additional aspects will result in additional visualization links after re-analysis and restarting the application.
+Analysis is extensible. Implementing and registering additional aspects will result in additional visualization links after re-analysis and restarting the application.
 
 An example visualization, showing Docker images used across two GitHub organizations:
 
 ![Docker image visualization](images/dockerImageSunburst.png "Docker image drift")
 
-## Running
+## Try it
 
-To visualize your org:
+To try this out, we recommend grabbing the [org-visualizer](https://github.com/atomist/org-visualizer) project. It uses this library, and gives
+you a place to add your own aspects.
 
-1. Clone and build this project
-2. Set up the required PostgreSQL database
-3. Run the `org-visualizer`
-4. Run analysis on your repositories
-5. Hit the web interface at [http://localhost:2866](http://localhost:2866)
-6. If you have more ideas, add code to study more aspects of your projects
+## Use this in your SDM
 
-### Building
+If you already have an Atomist SDM, add analysis & visualization of projects by bringing in this pack.
 
-Please use Node 10+.
+For an example, check [how org-visualizer does it](https://github.com/atomist/org-visualizer/blob/master/index.ts):
 
-First, install with `npm ci`.
+```typescript
+ sdm.addExtensionPacks(
+            aspectSupport({
+                aspects: aspects(),
+                scorers: scorers(),
+                taggers: taggers({}),
+                combinationTaggers: combinationTaggers({}),
+                undesirableUsageChecker: demoUndesirableUsageChecker,
+            }),
+        );
+```
 
-Next, build with `npm run build`
+You can include any number of aspects, scorers, taggers, etc. Many are defined in this pack.
+For descriptions of these concepts, try [developer.md](docs/developer.md)
 
 ### Database setup
+
+In local mode, Atomist aspects are stored in a database. You can either configure your SDM with a `preProcessor: startEmbeddedPostgres`
+or run [Postgres](https://www.postgresql.org/) on your laptop.
 
 #### Creating the Database
 
@@ -89,72 +103,60 @@ Configure the Postgres database details in `client.config.json` in your `~/.atom
 
 If `~/.atomist/client.config.json` does not exist, create it with the above content.
 
-### Other Dependencies
-
-You will need the following installed on your machine for the out of the box aspects to work:
-
-- The `git` binary
-- Java
-  - A JDK (*not* a JRE)
-  - Maven - `mvn` must be on the path. 
-- Node
-- npm
-
- All artifacts referenced in Maven or Node projects must be accessible when the analysis runs.
- You can check this by manually running `mvn` or `npm i` on the relevant projects.
-
-### Analyze your repositories
-
->You can start quickly by loading data from four open source organizations by running the script `load-demo-data.sh`.
-
-The `analyze` command is part of this org-visualizer project.
-It works as at Atomist command, which runs through the `atomist` CLI.
-
-* install the CLI: `npm i -g @atomist/cli`
-* start the org_visualizer (in the org_visualizer project): `atomist start --local`
-
-#### GitHub
-
-To analyze a GitHub organization, run the following command:
-
-`atomist analyze github repositories`
-
-Enter the GitHub owner name (e.g., 'atomist') at the prompt.
-
-When prompted for a query, hit enter to skip.
-
-_To access private repositories, ensure that your GitHub token is available to 
-Node processes via a `GITHUB_TOKEN` environment variable._
-
-#### Local directories
-To analyze local directories, wherever they were cloned from, specify the full path of the parent directory of the repositories, as follows: 
-
-```
-atomist analyze local --l /Users/rodjohnson/atomist/projects/spring-team/
-```
-
-#### General
-
->Run `atomist analyze [local|github]` with `--update true` flag to force updates to existing analyses. Do this if you have updated your analyzer code. (See Extending below.) 
-
-Use the `--cloneUnder [dir]` option to supply a stable directory under which all cloning should be performed.
-Otherwise, temporary files will be used.
-
->If using a stable directory, make sure the directory exists and is writable
-by the `org-visualizer` process. And keep an eye on disk usage, as these directories
-are not transient and will not be deleted automatically.
-
 ### Run the web app
 
 When the server is running with `atomist start --local`, you can see the visualizations.
 
 Go to [http://localhost:2866](http://localhost:2866).
 
+### Analyze your repositories
+
+The `analyze` command is part of this pack.
+It works as at Atomist command, which runs through the `atomist` CLI.
+
+* install the CLI: `npm i -g @atomist/cli`
+* start your SDM: `atomist start --local`
+
+#### GitHub
+
+To analyze repositories in a GitHub organization (or a GitHub user), run the following command:
+
+`atomist analyze github organization`
+
+Enter the GitHub owner name (e.g., 'atomist') at the prompt.
+
+_To access private repositories, ensure that your GitHub token is available to 
+Node processes via a `GITHUB_TOKEN` environment variable._
+
+To narrow the repositories, add `--search [substring-of-interesting-repos]`
+
+You can also analyze repositories across GitHub using `atomist analyze github by query`.
+The query string is one that would work on GitHub.com.
+
+Use the `--cloneUnder [dir]` option to supply a stable directory under which all cloning should be performed.
+Otherwise, temporary files will be used.
+
+>If using a stable directory, make sure the directory exists and is writable
+by the `org-visualizer` process. And keep an eye on disk
+
+#### Local directories
+To analyze local directories, wherever they were cloned from, specify the full path of the parent directory of the repositories, as follows: 
+
+```
+atomist analyze local repositories --localDirectories /Users/rodjohnson/atomist/projects/spring-team/
+```
+
+#### General
+
+>Run `atomist analyze ...` with `--update true` flag to force updates to existing analyses. Do this if you have updated your analyzer code. (See Extending below.)  usage, as these directories
+are not transient and will not be deleted automatically.
+
+
 ## Architecture
 
 There are four architectural layers:
 
-1. **Analysis**. This is enabled by implementing [Aspects](lib/customize/aspects.ts). Aspects know how to take **fingerprints** (extractions of small relevant bits) of the code, compare them, and even update them. Analysis is triggered by `atomist analyze` or, in regular use, by an [Atomist SDM](https://github.com/atomist/sdm).
+1. **Analysis**. This is enabled by implementing Aspects. Aspects know how to take **fingerprints** (extractions of small relevant bits) of the code, compare them, and even update them. Analysis is triggered by `atomist analyze` or, in regular use, by an [Atomist SDM](https://github.com/atomist/sdm).
 2. **Query** functionality.
 3. **API** layer. Once your server is running, see the Swagger API documentation at [http://localhost:2866/api-docs](http://localhost:2866/api-docs)
 4. Simple **UI** using static React and d3 exposing sunburst charts based on the API.

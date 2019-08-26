@@ -83,7 +83,7 @@ function displayWeightedScores(weightedScore: WeightedScore): React.ReactElement
 }
 
 function displayAspects(props: RepoExplorerProps): React.ReactElement {
-    return collapsible("aspects", "Aspects",
+    return collapsible("aspects", `Aspects (${props.aspects.length})`,
         <ul>
             {props.aspects.map(displayAspect)}
         </ul>,

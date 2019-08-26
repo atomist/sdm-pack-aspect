@@ -45,6 +45,9 @@ export async function computeAnalyticsForFingerprintKind(persister: ProjectAnaly
                                                          type: string,
                                                          name: string): Promise<void> {
     const fingerprints = await persister.fingerprintsInWorkspace(workspaceId, false, type, name);
+    if (fingerprints.length === 0) {
+        return;
+    }
     const cohortAnalysis = analyzeCohort(fingerprints);
     await persister.persistAnalytics([{ workspaceId, kind: { type, name }, cohortAnalysis }]);
 }

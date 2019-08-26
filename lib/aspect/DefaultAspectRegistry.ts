@@ -32,7 +32,7 @@ import {
     WorkspaceSpecificTagger,
 } from "./AspectRegistry";
 
-import { RemoteRepoRef, RepoRef } from "@atomist/automation-client";
+import { RepoRef } from "@atomist/automation-client";
 import * as _ from "lodash";
 import { Error } from "tslint/lib/error";
 import { ProjectAnalysisResult } from "../analysis/ProjectAnalysisResult";
@@ -77,8 +77,8 @@ export class DefaultAspectRegistry implements AspectRegistry {
     }
 
     public async tagAndScoreRepos(workspaceId: string,
-        repos: ProjectAnalysisResult[],
-        tsOpts: TagAndScoreOptions): Promise<ScoredRepo[]> {
+                                  repos: ProjectAnalysisResult[],
+                                  tsOpts: TagAndScoreOptions): Promise<ScoredRepo[]> {
         const scored = await showTiming(`Tag and score ${repos.length} repos`,
             async () => scoreRepos(
                 this.scorers,
@@ -108,11 +108,14 @@ export class DefaultAspectRegistry implements AspectRegistry {
         return type ? this.aspects.find(f => f.name === type) : undefined;
     }
 
-    public async undesirableUsageCheckerFor(workspaceId: string): Promise<UndesirableUsageChecker> {
+    public async undesirableUsageCheckerFor(workspaceId: string): Promise<UndesirableUsageChecker | undefined> {
         // TODO going for check functions is inelegant
-        return chainUndesirableUsageCheckers(
-            (await problemStoreBackedUndesirableUsageCheckerFor(this.problemStore, workspaceId)).check,
-            this.opts.undesirableUsageChecker.check);
+        if (this.opts.undesirableUsageChecker) {
+            return chainUndesirableUsageCheckers(
+                (await problemStoreBackedUndesirableUsageCheckerFor(this.problemStore, workspaceId)).check,
+                this.opts.undesirableUsageChecker.check);
+        }
+        return undefined;
     }
 
     get idealStore(): IdealStore {
@@ -128,12 +131,12 @@ export class DefaultAspectRegistry implements AspectRegistry {
     }
 
     private async tagRepos(tagContext: TagContext,
-        repos: ProjectAnalysisResult[]): Promise<TaggedRepo[]> {
+                           repos: ProjectAnalysisResult[]): Promise<TaggedRepo[]> {
         const simpleTaggers = this.taggers.filter(isTagger);
         const workspaceSpecificTaggers = await Promise.all(this.taggers
             .filter(td => !isTagger(td))
             // TODO why is this cast needed?
-            .map(td => (td as WorkspaceSpecificTagger).create(tagContext.workspaceId, this)));
+            .map(td => taggerFrom(td as WorkspaceSpecificTagger, tagContext.workspaceId, this)));
         const taggersToUse = [...simpleTaggers, ...workspaceSpecificTaggers];
         return Promise.all(repos.map(repo => this.tagRepo(tagContext, repo, taggersToUse)));
     }
@@ -183,4 +186,11 @@ function tagsFor(fp: FP, id: RepoRef, tagContext: TagContext, taggers: Tagger[])
 async function tagsIn(fps: FP[], id: RepoRef, tagContext: TagContext, taggersToUse: Tagger[]): Promise<Tag[]> {
     return _.uniqBy(_.flatten(fps.map(fp => tagsFor(fp, id, tagContext, taggersToUse))), tag => tag.name)
         .sort();
+}
+
+async function taggerFrom(wst: WorkspaceSpecificTagger, workspaceId: string, ar: AspectRegistry): Promise<Tagger> {
+    return {
+        ...wst,
+        test: await wst.createTest(workspaceId, ar),
+    };
 }

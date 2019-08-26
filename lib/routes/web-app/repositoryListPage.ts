@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+import { metadata } from "@atomist/sdm";
 import {
     Express,
     RequestHandler,
@@ -28,13 +29,15 @@ import { AspectRegistry } from "../../aspect/AspectRegistry";
 
 export type SortOrder = "name" | "score";
 
+const instanceMetadata = metadata();
+
 /**
  * Takes sortOrder optional parameter to dictate sorting
  */
 export function exposeRepositoryListPage(express: Express,
-    handlers: RequestHandler[],
-    aspectRegistry: AspectRegistry,
-    store: ProjectAnalysisResultStore): void {
+                                         handlers: RequestHandler[],
+                                         aspectRegistry: AspectRegistry,
+                                         store: ProjectAnalysisResultStore): void {
     express.get("/repositories", ...handlers, async (req, res) => {
         const workspaceId = req.query.workspace || req.params.workspace_id || "*";
         const sortOrder: SortOrder = req.query.sortOrder || "score";
@@ -69,6 +72,7 @@ export function exposeRepositoryListPage(express: Express,
                 expand: !byOrg,
                 category,
             }),
-            byOrg ? "Repositories by Organization" : "Repositories Ranked"));
+            byOrg ? "Repositories by Organization" : "Repositories Ranked",
+           instanceMetadata));
     });
 }

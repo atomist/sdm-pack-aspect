@@ -1,6 +1,7 @@
 # Developer Guide
 
-The greatest value of `org-visualizer` is the potential to extend it for your team to help you understand and take control of important aspects of code, configuration and process.
+The greatest value of aspects is the potential to develop and combine them in a unique way
+ that addresses the goals of your organization, helping you understand and take control of important aspects of code, configuration and process.
 
 In keeping with the Atomist philosophy of *do it in code*, extensibility is in TypeScript code.
 

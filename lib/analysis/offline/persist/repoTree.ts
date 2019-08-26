@@ -159,7 +159,7 @@ function driftTreeSql(workspaceId: string, type?: string): string {
             SELECT name, name as fingerprint_name, feature_name as type, variants, count, entropy, variants as size
                 FROM fingerprint_analytics f1
                 WHERE workspace_id ${workspaceId === "*" ? "<>" : "="} $1
-                    AND entropy >
+                    AND entropy >=
                         (SELECT percentile_disc($2) within group (order by entropy)
                             FROM fingerprint_analytics
                             WHERE workspace_id ${workspaceId === "*" ? "<>" : "="} $1)

@@ -62,10 +62,10 @@ export const HasCodeOfConduct: Tagger = {
 };
 
 export const HasChangeLog: Tagger = globRequired({
-        name: "changelog",
-        description: "Repositories should have a changelog",
-        glob: "CHANGELOG.md",
-    });
+    name: "changelog",
+    description: "Repositories should have a changelog",
+    glob: "CHANGELOG.md",
+});
 
 export const HasContributingFile: Tagger = globRequired({
     name: "contributing",
@@ -127,19 +127,19 @@ export function globRequired(opts: { name: string, description: string, glob: st
  * Flag repos with known undesirable usages
  */
 export const isProblematic: WorkspaceSpecificTagger = {
+    description: "Undesirable usage",
+    severity: "error",
     name: "problems",
-    create: async (workspaceId: string, aspectRegistry: AspectRegistry) => {
+    createTest: async (workspaceId: string, aspectRegistry: AspectRegistry) => {
         logger.info("Creating problem tagger for workspace %s", workspaceId);
         const checker = await aspectRegistry.undesirableUsageCheckerFor(workspaceId);
-        return {
-            name: "problems",
-            description: "Undesirable usage",
-            severity: "error",
-            test: fp => {
-               const problem = checker.check(fp, workspaceId);
-               return !!problem;
-            },
-        };
+        if (checker) {
+            return fp => {
+                const problem = checker.check(fp, workspaceId);
+                return !!problem;
+            };
+        }
+        return () => false;
     },
 };
 
@@ -161,7 +161,7 @@ export function gitHot(opts: { name?: string, hotDays: number, hotContributors: 
     };
 }
 
-export function inadequateReadme(opts: { minLength: number}): Tagger {
+export function inadequateReadme(opts: { minLength: number }): Tagger {
     return {
         name: "poor-readme",
         description: "README is adequate",

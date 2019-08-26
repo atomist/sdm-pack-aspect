@@ -63,8 +63,10 @@ export interface Tag {
     severity?: Severity;
 }
 
+export type TagTest = (fp: FP, id: RemoteRepoRef, tagContext: TagContext) => boolean;
+
 /**
- * Determine zero or one tag in this fingerprint
+ * Determine zero or one tag in this fingerprint.
  */
 export interface Tagger extends Tag {
 
@@ -78,10 +80,13 @@ export interface Tagger extends Tag {
     test(fp: FP, id: RepoRef, tagContext: TagContext): boolean;
 }
 
-export interface WorkspaceSpecificTagger {
-    readonly name: string;
+/**
+ * Implemented by objects that can create tag tests. Tag information is
+ * known in advance. Tests are dynamically created.
+ */
+export interface WorkspaceSpecificTagger extends Tag {
 
-    create(workspaceId: string, ar: AspectRegistry): Promise<Tagger>;
+    createTest(workspaceId: string, ar: AspectRegistry): Promise<TagTest>;
 }
 
 /**
@@ -161,6 +166,6 @@ export interface AspectRegistry {
     /**
      * Return an UndesirableUsageChecker for this workspace
      */
-    undesirableUsageCheckerFor(workspaceId: string): Promise<UndesirableUsageChecker>;
+    undesirableUsageCheckerFor(workspaceId: string): Promise<UndesirableUsageChecker | undefined>;
 
 }
