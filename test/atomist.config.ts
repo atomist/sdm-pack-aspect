@@ -79,7 +79,10 @@ import { branchCount } from "../lib/aspect/git/branchCount";
 import { GitRecency } from "../lib/aspect/git/gitActivity";
 import { AcceptEverythingUndesirableUsageChecker } from "../lib/aspect/ProblemStore";
 import { ExposedSecrets } from "../lib/aspect/secret/exposedSecrets";
-import { registerCategories } from "../lib/customize/categories";
+import {
+    registerCategories,
+    registerReportDetails,
+} from "../lib/customize/categories";
 import {
     aspectSupport,
     DefaultVirtualProjectFinder,
@@ -162,6 +165,14 @@ export const configuration: Configuration = configure<TestGoals>(async sdm => {
 
 function aspects(): Aspect[] {
     registerCategories(DockerFrom, "Docker");
+    registerReportDetails(DockerFrom, {
+        name: "Docker base images",
+        shortName: "images",
+        unit: "tag",
+        url: "fingerprint/docker-base-image/*?byOrg=true&presence=false&progress=false&otherLabel=false&trim=false",
+        description: "Docker base images in use across all repositories in your workspace, " +
+            "broken out by image label and repositories where used.",
+    });
     registerCategories(DockerfilePath, "Docker");
     registerCategories(DockerPorts, "Docker");
     registerCategories(branchCount, "Git");

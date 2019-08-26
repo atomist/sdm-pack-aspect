@@ -75,12 +75,13 @@ export function getAspectReports(fus: Array<{ owner: string, repo: string, finge
     const categories = _.uniq(_.flatten(_.values(AspectCategories)));
 
     categories.forEach(k => {
-        const fu = fus.filter(f => _.flatten(f.fingerprints.map(fp => getCategories({ name: fp.type }))).includes(k));
+        const fu = fus.filter(f => _.flatten(f.fingerprints.map(fp => (getCategories({ name: fp.type }) || []))).includes(k));
         if (fu.length > 0) {
+            const allFps = _.uniqBy(_.flatten(fu.map(f => f.fingerprints)).filter(fp => (getCategories({ name: fp.type }) || []).includes(k)), "type");
             reports.push({
                 category: k,
                 count: fu.length,
-                aspects: _.uniqBy(_.flatten(fu.map(f => f.fingerprints)).filter(f => !!AspectReportDetails.some(a => a.type === f.type)).map(f => {
+                aspects: _.uniqBy(allFps.filter(f => !!AspectReportDetails.some(a => a.type === f.type)).map(f => {
                     const rd = AspectReportDetails.find(a => a.type === f.type);
                     return {
                         ...rd,
