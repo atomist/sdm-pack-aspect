@@ -20,7 +20,7 @@ import {
 } from "@atomist/automation-client";
 import * as Octokit from "@octokit/rest";
 import * as _ from "lodash";
-import { AnalysisRun } from "../local/LocalSpider";
+import { AnalysisRun } from "../common";
 import { ScmSearchCriteria } from "../ScmSearchCriteria";
 import {
     Analyzer,
