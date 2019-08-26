@@ -71,7 +71,7 @@ header .page-title {
     background-color: lightgray;
 }
 
-div.repositoryColumns div {
+div.repositoryColumns>div {
     display: inline-block;
     border: 1px dotted blue;
     vertical-align: top;
@@ -82,6 +82,31 @@ div.repositoryColumns div {
 .keptExistingAnalysis {
     color: gray;
     font-style: italic;
+}
+
+.analysisTrackingRepo {
+    margin: 5px;
+    padding: 2px;
+    border-color: burlywood;
+    border-width: 4px;
+    border-style: ridge;
+    background-color: antiquewhite;
+}
+
+.analysisTrackingRepo.Going {
+    border-color: deeppink;
+}
+
+.analysisTrackingRepo.Stopped {
+    border-color: forestgreen;
+}
+
+.analysisTrackingRepo.failed {
+    border-color: crimson;
+}
+
+.timeTakenToAnalyzeRepo {
+    font-size: x-small;
 }
 
 /* "explore" sunburst page */

@@ -95,7 +95,7 @@ export class AnalysisRun<FoundRepo> {
 
         await computeAnalytics(this.world.persister, this.params.workspaceId);
         const finalResult = trackedRepos.map(tr => tr.tracking.spiderResult()).reduce(combineSpiderResults, emptySpiderResult);
-        analysisBeingTracked.stop(finalResult);
+        analysisBeingTracked.stop();
         return finalResult;
     }
 }

@@ -17,6 +17,7 @@ interface RepoForReporting {
     repoKey: string;
     keptExisting: boolean;
     progress: RepoProgress;
+    millisTaken?: number;
 }
 interface AnalysisForReporting {
     description: string;
@@ -89,6 +90,7 @@ export class RepoBeingTracked {
             ...this.params,
             progress: isDone ? "Stopped" : isGoing ? "Going" : "Planned",
             keptExisting: this.existingWasKept,
+            millisTaken: this.millisTaken,
         };
     }
 
@@ -127,7 +129,7 @@ export class AnalysisBeingTracked {
         return newRepo;
     }
 
-    public stop(result: SpiderResult): void {
+    public stop(): void {
         this.me.progress = "Stopped";
     }
 

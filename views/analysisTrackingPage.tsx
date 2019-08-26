@@ -4,6 +4,7 @@ interface AnalysisTrackingRepo {
     description: string;
     progress: "Planned" | "Going" | "Stopped";
     keptExisting: boolean;
+    millisTaken?: number;
 }
 interface AnalysisTrackingAnalysis {
     description: string;
@@ -17,14 +18,18 @@ export interface AnalysisTrackingProps {
 }
 
 function displayRepository(repo: AnalysisTrackingRepo & { repoAnalysisId: string }): React.ReactElement {
-    const className = repo.keptExisting ? "keptExistingAnalysis" : undefined;
-    return <li key={repo.repoAnalysisId} className={className}>{repo.description}</li>;
+    let className = "analysisTrackingRepo " + repo.progress;
+    if (repo.keptExisting) {
+        className += " keptExistingAnalysis";
+    }
+    const timeTaken = repo.millisTaken ? `Took ${repo.millisTaken / 1000}s` : undefined;
+    return <div className={className}><p>{repo.description}</p> <span className="timeTakenToAnalyzeRepo">{timeTaken}</span></div>;
 }
 
 function listRepositories(title: string, repos: AnalysisTrackingRepo[]): React.ReactElement {
-    return <div>{title}<ul>
+    return <div className="repoList">{title}
         {repos.map((r, i) => displayRepository({ ...r, repoAnalysisId: "" + i }))}
-    </ul></div>;
+    </div>;
 }
 
 function displayAnalysis(analysis: AnalysisTrackingAnalysis): React.ReactElement {
