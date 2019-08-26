@@ -74,29 +74,35 @@ export class AnalysisRun<FoundRepo> {
             description: this.params.description,
         });
 
-        const plannedRepos = await takeFromIterator(this.params.maxRepos, this.world.howToFindRepos());
-        const trackedRepos: Array<TrackedRepo<FoundRepo>> =
-            plannedRepos.map(pr => ({
-                tracking: analysisBeingTracked.plan(this.world.describeFoundRepo(pr)),
-                foundRepo: pr,
-            }));
+        try {
 
-        // run poolSize at the same time
-        const chewThroughThese = trackedRepos.slice();
-        while (chewThroughThese.length > 0) {
-            const promises = chewThroughThese.splice(0, this.params.poolSize)
-                .map(trackedRepo => analyzeOneRepo(this.world, { ...trackedRepo, workspaceId: this.params.workspaceId }));
-            await Promise.all(promises);
+            const plannedRepos = await takeFromIterator(this.params.maxRepos, this.world.howToFindRepos());
+            const trackedRepos: Array<TrackedRepo<FoundRepo>> =
+                plannedRepos.map(pr => ({
+                    tracking: analysisBeingTracked.plan(this.world.describeFoundRepo(pr)),
+                    foundRepo: pr,
+                }));
+
+            // run poolSize at the same time
+            const chewThroughThese = trackedRepos.slice();
+            while (chewThroughThese.length > 0) {
+                const promises = chewThroughThese.splice(0, this.params.poolSize)
+                    .map(trackedRepo => analyzeOneRepo(this.world, { ...trackedRepo, workspaceId: this.params.workspaceId }));
+                await Promise.all(promises);
+            }
+
+            logger.debug("Computing analytics over all fingerprints...");
+            // Question for Rod: should this run intermittently or only at the end?
+            // Answer from Rod: intermitently.
+
+            await computeAnalytics(this.world.persister, this.params.workspaceId);
+            const finalResult = trackedRepos.map(tr => tr.tracking.spiderResult()).reduce(combineSpiderResults, emptySpiderResult);
+            analysisBeingTracked.stop();
+            return finalResult;
+        } catch (error) {
+            analysisBeingTracked.failed(error);
+            return emptySpiderResult;
         }
-
-        logger.debug("Computing analytics over all fingerprints...");
-        // Question for Rod: should this run intermittently or only at the end?
-        // Answer from Rod: intermitently.
-
-        await computeAnalytics(this.world.persister, this.params.workspaceId);
-        const finalResult = trackedRepos.map(tr => tr.tracking.spiderResult()).reduce(combineSpiderResults, emptySpiderResult);
-        analysisBeingTracked.stop();
-        return finalResult;
     }
 }
 

@@ -26,6 +26,7 @@ interface AnalysisForReporting {
     analysisKey: string;
     progress: AnalysisProgress;
     repos: RepoForReporting[];
+    error?: Error;
 }
 
 export interface AnalysisReport {
@@ -122,6 +123,8 @@ export class RepoBeingTracked {
 
 // make the interface later
 export class AnalysisBeingTracked {
+    public error?: Error;
+
     private readonly repos: RepoBeingTracked[] = [];
     constructor(public readonly me: AnalysisForTracking) {
     }
@@ -141,9 +144,15 @@ export class AnalysisBeingTracked {
         this.me.progress = "Stopped";
     }
 
+    public failed(error: Error) {
+        this.error = error;
+        this.me.progress = "Stopped";
+    }
+
     public report(): AnalysisForReporting {
         return {
             ...this.me,
+            error: this.error,
             repos: this.repos.map(s => s.report()),
         };
     }

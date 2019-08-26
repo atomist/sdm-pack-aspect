@@ -14,6 +14,7 @@ interface AnalysisTrackingAnalysis {
     analysisKey: string;
     progress: "Going" | "Stopped";
     repos: AnalysisTrackingRepo[];
+    error?: Error;
 }
 
 export interface AnalysisTrackingProps {
@@ -57,12 +58,23 @@ function displayAnalysis(analysis: AnalysisTrackingAnalysis): React.ReactElement
     const analysisStatusClass = analysis.progress === "Going" ? "ongoingAnalysis" : "nongoingAnalysis";
     return <div className={analysisStatusClass}>
         {analysis.description}
+        {displayAnalysisFailure(analysis)}
         <h4>Repositories:</h4>
         <div className="repositoryColumns">
             {listRepositories("Planned", analysis.repos.filter(r => r.progress === "Planned"))}
             {listRepositories("Going", analysis.repos.filter(r => r.progress === "Going"))}
             {listRepositories("Finished", analysis.repos.filter(r => r.progress === "Stopped"))}
         </div>
+    </div>;
+}
+
+function displayAnalysisFailure(analysis: AnalysisTrackingAnalysis): React.ReactElement {
+    if (!analysis.error) {
+        return undefined;
+    }
+    return <div className="analyzeRepoErrors">
+        <p>{analysis.error.message}</p>
+        <pre>{analysis.error.stack}</pre>
     </div>;
 }
 
