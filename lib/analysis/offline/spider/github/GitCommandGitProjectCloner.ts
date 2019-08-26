@@ -16,10 +16,10 @@
 
 import {
     GitCommandGitProject,
+    GitProject,
     LocalProject,
     logger,
     Project,
-    GitProject,
 } from "@atomist/automation-client";
 import { GitHubRepoRef } from "@atomist/automation-client/lib/operations/common/GitHubRepoRef";
 import { DirectoryManager } from "@atomist/automation-client/lib/spi/clone/DirectoryManager";

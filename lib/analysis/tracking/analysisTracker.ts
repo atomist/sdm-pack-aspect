@@ -112,7 +112,7 @@ export class RepoBeingTracked {
 
 // make the interface later
 export class AnalysisBeingTracked {
-    private repos: RepoBeingTracked[] = [];
+    private readonly repos: RepoBeingTracked[] = [];
     constructor(public readonly me: AnalysisForTracking) {
     }
 
@@ -142,7 +142,7 @@ export class AnalysisBeingTracked {
 class AnalysisTracker implements AnalysisTracking {
 
     private counter: number = 1;
-    private analyses: AnalysisBeingTracked[] = [];
+    private readonly analyses: AnalysisBeingTracked[] = [];
 
     // is there an "unpick" ?
     public startAnalysis(params: Pick<AnalysisForTracking, "description">): AnalysisBeingTracked {

@@ -57,9 +57,9 @@ export interface RepoInfo {
  * Find project or subprojects
  */
 export async function analyze(project: Project,
-    analyzer: Analyzer,
+                              analyzer: Analyzer,
     // todo: remove unused parameter
-    criteria: ScmSearchCriteria): Promise<AnalyzeResults> {
+                              criteria: ScmSearchCriteria): Promise<AnalyzeResults> {
     return { projectsDetected: 1, repoInfos: [await analyzeProject(project, analyzer)] };
 }
 
@@ -67,7 +67,7 @@ export async function analyze(project: Project,
  * Analyze a project.
  */
 async function analyzeProject(project: Project,
-    analyzer: Analyzer): Promise<RepoInfo> {
+                              analyzer: Analyzer): Promise<RepoInfo> {
     const analysis = await analyzer.analyze(project);
     return {
         analysis,

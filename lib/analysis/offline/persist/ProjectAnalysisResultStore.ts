@@ -97,8 +97,8 @@ export interface ProjectAnalysisResultStore {
      * @return {Promise<PlantedTree>}
      */
     aspectDriftTree(workspaceId: string,
-        percentile: number,
-        type?: string): Promise<PlantedTree>;
+                    percentile: number,
+                    type?: string): Promise<PlantedTree>;
 
     /**
      * How many repos we've analyzed
@@ -165,9 +165,9 @@ export interface ProjectAnalysisResultStore {
      * @param name fingerprint name (optional)
      */
     fingerprintsInWorkspace(workspaceId: string,
-        distinct: boolean,
-        type?: string,
-        name?: string): Promise<Array<FP & { id: string }>>;
+                            distinct: boolean,
+                            type?: string,
+                            name?: string): Promise<Array<FP & { id: string }>>;
 
     fingerprintsForProject(id: string): Promise<Array<FP & { timestamp: Date, commitSha: string }>>;
 

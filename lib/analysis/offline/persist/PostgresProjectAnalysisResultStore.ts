@@ -398,7 +398,7 @@ GROUP by repo_snapshots.id) stats;`;
     }
 
     private async persistOne(client: ClientBase, analysisResult: ProjectAnalysisResult): Promise<PersistResult> {
-        const repoRef = analysisResult.analysis.id;
+        const repoRef = analysisResult.repoRef;
         if (!repoRef) {
             return {
                 attemptedCount: 1,

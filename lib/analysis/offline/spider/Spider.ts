@@ -111,6 +111,6 @@ export function logTimings(recorder: TimeRecorder): void {
 export interface Spider {
 
     spider(criteria: ScmSearchCriteria,
-        analyzer: Analyzer,
-        opts: SpiderOptions): Promise<SpiderResult>;
+           analyzer: Analyzer,
+           opts: SpiderOptions): Promise<SpiderResult>;
 }

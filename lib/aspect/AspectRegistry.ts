@@ -16,8 +16,8 @@
 
 import {
     RemoteRepoRef,
-    Severity,
     RepoRef,
+    Severity,
 } from "@atomist/automation-client";
 import {
     FP,
@@ -141,8 +141,8 @@ export interface TagAndScoreOptions {
 export interface AspectRegistry {
 
     tagAndScoreRepos(workspaceId: string,
-        repos: ProjectAnalysisResult[],
-        opts: TagAndScoreOptions): Promise<ScoredRepo[]>;
+                     repos: ProjectAnalysisResult[],
+                     opts: TagAndScoreOptions): Promise<ScoredRepo[]>;
 
     availableTags: Tag[];
 

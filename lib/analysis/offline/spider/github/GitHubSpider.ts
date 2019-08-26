@@ -68,14 +68,14 @@ export class GitHubSpider implements Spider {
                 repo: sourceData.name,
                 url: sourceData.url,
             }),
-            describeFoundRepo: sourceData => sourceData.url,
+            describeFoundRepo: sourceData => sourceData.html_url,
             howToClone: async (rr, sourceData) => {
-                // should we set the sha on the repoRef?
-                return this.cloner.clone(sourceData);
+                const p = await this.cloner.clone(sourceData);
+                rr.sha = p.id.sha; // very sneaky. We don't have it sooner. Hopefully this is soon enough.
+                return p;
             },
             analyzer,
             persister: opts.persister,
-
             keepExistingPersisted: opts.keepExistingPersisted,
             projectFilter: criteria.projectTest,
 
@@ -83,83 +83,10 @@ export class GitHubSpider implements Spider {
                 workspaceId: opts.workspaceId,
                 description: "querying GitHub: " + criteria.githubQueries.join(" and "),
                 maxRepos: 1000,
+                poolSize: opts.poolSize || 40,
             });
 
-        let repoCount = 0;
-        const keepExisting: RepoUrl[] = [];
-        const errors: SpiderFailure[] = [];
-        const analyzeAndPersistResults: AnalyzeAndPersistResult[] = [];
-
-        try {
-            const it = this.queryFunction(process.env.GITHUB_TOKEN, criteria);
-            let bucket: Array<Promise<AnalyzeResult & { analyzeResults?: AnalyzeResults, sourceData: GitHubSearchResult }>> = [];
-
-            async function runAllPromisesInBucket(): Promise<void> {
-                const aResults = await Promise.all(bucket);
-                for (const ar of aResults) {
-                    // Avoid hitting the database in parallel to avoid locking
-                    analyzeAndPersistResults.push(await runPersist(criteria, opts, ar));
-                }
-
-                logger.debug("Computing analytics over fingerprints...");
-                // Question for Rod: should this run intermittently or only at the end?
-                await computeAnalytics(opts.persister, opts.workspaceId);
-
-                logTimings(analyzer.timings);
-
-                bucket = [];
-            }
-
-            for await (const sourceData of it) {
-                ++repoCount;
-                const repo = {
-                    owner: sourceData.owner.login,
-                    repo: sourceData.name,
-                    url: sourceData.url,
-                };
-                if (await existingRecordShouldBeKept(opts, repo)) {
-                    keepExisting.push(repo.url);
-                    logger.debug("Found valid record for " + JSON.stringify(repo));
-                } else {
-                    logger.debug("Performing fresh analysis of " + JSON.stringify(repo));
-                    try {
-                        bucket.push(
-                            runAnalysis(this.cloner,
-                                dropIrrelevantFields(sourceData),
-                                criteria,
-                                analyzer));
-                        if (bucket.length >= opts.poolSize) {
-                            // Run all promises together. Effectively promise pooling
-                            await runAllPromisesInBucket();
-                        }
-                    } catch (err) {
-                        errors.push({
-                            repoUrl: sourceData.url,
-                            whileTryingTo: "clone, analyze, and persist", message: err.message,
-                        });
-                        logger.error("Failure analyzing repo at %s: %s", sourceData.url, err.message);
-                    }
-                }
-            }
-            await runAllPromisesInBucket();
-        } catch (e) {
-            logger.error("Error spidering: %s", e.message);
-            throw e;
-        }
-
-        const analyzeResults = _.reduce(analyzeAndPersistResults,
-            combineAnalyzeAndPersistResult,
-            emptyAnalyzeAndPersistResult);
-        return {
-            repositoriesDetected: repoCount,
-            projectsDetected: analyzeResults.projectCount,
-            failed:
-                [...errors,
-                ...analyzeResults.failedToPersist,
-                ...analyzeResults.failedToCloneOrAnalyze],
-            keptExisting: keepExisting,
-            persistedAnalyses: analyzeResults.persisted,
-        };
+        return run.run();
     }
 
     public constructor(

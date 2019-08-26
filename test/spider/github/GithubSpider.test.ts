@@ -15,9 +15,9 @@
  */
 
 import {
+    GitProject,
     InMemoryProject,
     RepoRef,
-    GitProject,
 } from "@atomist/automation-client";
 import { TmpDirectoryManager } from "@atomist/automation-client/lib/spi/clone/tmpDirectoryManager";
 import { FP } from "@atomist/sdm-pack-fingerprints";
