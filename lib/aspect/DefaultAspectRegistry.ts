@@ -132,7 +132,7 @@ export class DefaultAspectRegistry implements AspectRegistry {
         const workspaceSpecificTaggers = await Promise.all(this.taggers
             .filter(td => !isTagger(td))
             // TODO why is this cast needed?
-            .map(td => (td as WorkspaceSpecificTagger).create(tagContext.workspaceId, this)));
+            .map(td => taggerFrom(td as WorkspaceSpecificTagger, tagContext.workspaceId, this)));
         const taggersToUse = [...simpleTaggers, ...workspaceSpecificTaggers];
         return Promise.all(repos.map(repo => this.tagRepo(tagContext, repo, taggersToUse)));
     }
@@ -182,4 +182,11 @@ function tagsFor(fp: FP, id: RemoteRepoRef, tagContext: TagContext, taggers: Tag
 async function tagsIn(fps: FP[], id: RemoteRepoRef, tagContext: TagContext, taggersToUse: Tagger[]): Promise<Tag[]> {
     return _.uniqBy(_.flatten(fps.map(fp => tagsFor(fp, id, tagContext, taggersToUse))), tag => tag.name)
         .sort();
+}
+
+async function taggerFrom(wst: WorkspaceSpecificTagger, workspaceId: string, ar: AspectRegistry): Promise<Tagger> {
+    return {
+        ...wst,
+        test: await wst.createTest(workspaceId, ar),
+    };
 }
