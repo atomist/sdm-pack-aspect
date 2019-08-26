@@ -1,7 +1,7 @@
 import { RepoRef } from "@atomist/automation-client";
 import { SpiderResult } from "../offline/spider/Spider";
 
-interface AnalysisTrackingRepo { description: string; }
+interface AnalysisTrackingRepo { description: string; url?: string; }
 
 type AnalysisProgress = "Going" | "Stopped";
 type RepoProgress = "Planned" | "Going" | "Stopped";
@@ -51,6 +51,7 @@ export class RepoBeingTracked {
 
     constructor(private readonly params: {
         description: string;
+        url?: string;
         repoKey: string;
     }) {
 

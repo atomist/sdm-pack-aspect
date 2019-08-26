@@ -84,9 +84,20 @@ div.repositoryColumns>div {
     font-style: italic;
 }
 
+.linkToSourceImage {
+    width: 1em;
+    height: 1em;
+    border: 1px white outset;
+}
+
+.analysisRepoDescription {
+    margin: 0px;
+}
+
 .analysisTrackingRepo {
     margin: 5px;
     padding: 2px;
+    padding-left: 5px;
     border-color: burlywood;
     border-width: 4px;
     border-style: ridge;

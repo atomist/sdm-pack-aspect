@@ -2,6 +2,7 @@ import * as React from "react";
 
 interface AnalysisTrackingRepo {
     description: string;
+    url?: string;
     progress: "Planned" | "Going" | "Stopped";
     keptExisting: boolean;
     millisTaken?: number;
@@ -23,7 +24,8 @@ function displayRepository(repo: AnalysisTrackingRepo & { repoAnalysisId: string
         className += " keptExistingAnalysis";
     }
     const timeTaken = repo.millisTaken ? `Took ${repo.millisTaken / 1000}s` : undefined;
-    return <div className={className}><p>{repo.description}</p> <span className="timeTakenToAnalyzeRepo">{timeTaken}</span></div>;
+    const gitLink = repo.url ? <a href={repo.url}><img src="/git.png" className="linkToSourceImage"></img></a> : undefined;
+    return <div className={className}><p className="analysisRepoDescription">{repo.description} {gitLink}</p> <span className="timeTakenToAnalyzeRepo">{timeTaken}</span></div>;
 }
 
 function listRepositories(title: string, repos: AnalysisTrackingRepo[]): React.ReactElement {

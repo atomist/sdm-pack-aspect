@@ -44,7 +44,7 @@ export class LocalSpider implements Spider {
         const go = new AnalysisRun<string>({
             howToFindRepos: () => findRepositoriesUnder(this.localDirectory),
             determineRepoRef: repoRefFromLocalRepo,
-            describeFoundRepo: f => f,
+            describeFoundRepo: f => ({ description: f.replace(this.localDirectory, "") }),
             howToClone: (rr, fr) => GitCommandGitProject.fromExistingDirectory(rr, fr) as Promise<GitProject>,
             analyzer,
             persister: opts.persister,

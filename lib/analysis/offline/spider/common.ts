@@ -46,7 +46,7 @@ export class AnalysisRun<FoundRepo> {
         private readonly world: {
             howToFindRepos: () => AsyncIterable<FoundRepo>,
             determineRepoRef: (f: FoundRepo) => Promise<RepoRef>,
-            describeFoundRepo: (f: FoundRepo) => string,
+            describeFoundRepo: (f: FoundRepo) => DescribeRepo,
             howToClone: (rr: RepoRef, fr: FoundRepo) => Promise<GitProject>,
             analyzer: Analyzer;
             persister: ProjectAnalysisResultStore,
@@ -77,7 +77,7 @@ export class AnalysisRun<FoundRepo> {
         const plannedRepos = await takeFromIterator(this.params.maxRepos, this.world.howToFindRepos());
         const trackedRepos: Array<TrackedRepo<FoundRepo>> =
             plannedRepos.map(pr => ({
-                tracking: analysisBeingTracked.plan(({ description: this.world.describeFoundRepo(pr) })),
+                tracking: analysisBeingTracked.plan(this.world.describeFoundRepo(pr)),
                 foundRepo: pr,
             }));
 
@@ -100,11 +100,16 @@ export class AnalysisRun<FoundRepo> {
     }
 }
 
+interface DescribeRepo {
+    description: string;
+    url?: string;
+}
+
 async function analyzeOneRepo<FoundRepo>(
     world: {
         howToFindRepos: () => AsyncIterable<FoundRepo>,
         determineRepoRef: (f: FoundRepo) => Promise<RepoRef>,
-        describeFoundRepo: (f: FoundRepo) => string,
+        describeFoundRepo: (f: FoundRepo) => DescribeRepo,
         howToClone: (rr: RepoRef, fr: FoundRepo) => Promise<GitProject>,
         analyzer: Analyzer;
         persister: ProjectAnalysisResultStore,

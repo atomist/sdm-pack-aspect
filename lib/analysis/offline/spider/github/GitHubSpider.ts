@@ -55,7 +55,7 @@ export class GitHubSpider implements Spider {
                 repo: sourceData.name,
                 url: sourceData.url,
             }),
-            describeFoundRepo: sourceData => sourceData.html_url,
+            describeFoundRepo: sourceData => ({ description: sourceData.owner.login + "/" + sourceData.name, url: sourceData.html_url }),
             howToClone: async (rr, sourceData) => {
                 const p = await this.cloner.clone(sourceData);
                 rr.sha = p.id.sha; // very sneaky. We don't have it sooner. Hopefully this is soon enough.
