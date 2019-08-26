@@ -22,7 +22,10 @@ import {
     RepoRef,
 } from "@atomist/automation-client";
 import { Analyzed } from "../../../aspect/AspectRegistry";
-import { globalAnalysisTracking, RepoBeingTracked } from "../../tracking/analysisTracker";
+import {
+    globalAnalysisTracking,
+    RepoBeingTracked,
+} from "../../tracking/analysisTracker";
 import {
     ProjectAnalysisResultStore,
 } from "../persist/ProjectAnalysisResultStore";

@@ -14,7 +14,10 @@
  * limitations under the License.
  */
 
-import { RemoteRepoRef, RepoRef } from "@atomist/automation-client";
+import {
+    RemoteRepoRef,
+    RepoRef,
+} from "@atomist/automation-client";
 import { Analyzed } from "../aspect/AspectRegistry";
 
 /**
