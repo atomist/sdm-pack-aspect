@@ -148,7 +148,7 @@ export interface ProjectAnalysisResultStore {
     /**
      * Return distinct fingerprint type/name combinations in this workspace by repo
      */
-    distinctRepoFingerprintKinds(workspaceId: string): Promise<Array<{ owner: string, repo: string, fingerprints: FingerprintKind[], }>>;
+    distinctRepoFingerprintKinds(workspaceId: string): Promise<Array<{ owner: string, repo: string, fingerprints: FingerprintKind[] }>>;
 
     fingerprintUsageForType(workspaceId: string, type?: string): Promise<FingerprintUsage[]>;
 

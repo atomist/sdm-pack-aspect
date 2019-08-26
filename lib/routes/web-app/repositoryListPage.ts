@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+import { metadata } from "@atomist/sdm";
 import {
     Express,
     RequestHandler,
@@ -25,7 +26,6 @@ import {
 import { renderStaticReactNode } from "../../../views/topLevelPage";
 import { ProjectAnalysisResultStore } from "../../analysis/offline/persist/ProjectAnalysisResultStore";
 import { AspectRegistry } from "../../aspect/AspectRegistry";
-import { metadata } from "@atomist/sdm";
 
 export type SortOrder = "name" | "score";
 

@@ -67,7 +67,7 @@ export interface AspectReport {
     aspects: ReportDetails[];
 }
 
-export function getAspectReports(fus: Array<{ owner: string, repo: string, fingerprints: FingerprintKind[], }>,
+export function getAspectReports(fus: Array<{ owner: string, repo: string, fingerprints: FingerprintKind[] }>,
                                  workspaceId: string): AspectReport[] {
 
     const reports: AspectReport[] = [];

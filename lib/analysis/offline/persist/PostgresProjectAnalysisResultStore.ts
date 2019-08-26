@@ -216,7 +216,7 @@ GROUP BY repo_snapshots.id`;
         }, []);
     }
 
-    public async distinctRepoFingerprintKinds(workspaceId: string): Promise<Array<{ owner: string, repo: string, fingerprints: FingerprintKind[], }>> {
+    public async distinctRepoFingerprintKinds(workspaceId: string): Promise<Array<{ owner: string, repo: string, fingerprints: FingerprintKind[] }>> {
         const sql = `SELECT DISTINCT rs.owner, rs.name as repo, f.name, feature_name as type
   FROM repo_fingerprints rf, repo_snapshots rs, fingerprints f
   WHERE rf.repo_snapshot_id = rs.id AND rf.fingerprint_id = f.id

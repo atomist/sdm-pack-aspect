@@ -15,6 +15,7 @@
  */
 
 import { logger } from "@atomist/automation-client";
+import { metadata } from "@atomist/sdm";
 import {
     Aspect,
     Ideal,
@@ -41,7 +42,6 @@ import {
     AspectRegistry,
 } from "../../aspect/AspectRegistry";
 import { defaultedToDisplayableFingerprintName } from "../../aspect/DefaultAspectRegistry";
-import { metadata } from "@atomist/sdm";
 
 const instanceMetadata = metadata();
 

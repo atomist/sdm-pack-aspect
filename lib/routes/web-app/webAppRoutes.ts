@@ -19,6 +19,7 @@ import {
     logger,
 } from "@atomist/automation-client";
 import { ExpressCustomizer } from "@atomist/automation-client/lib/configuration";
+import { metadata } from "@atomist/sdm";
 import {
     ConcreteIdeal,
     FP,
@@ -62,7 +63,6 @@ import {
 } from "../api";
 import { exposeOverviewPage } from "./overviewPage";
 import { exposeRepositoryListPage } from "./repositoryListPage";
-import { metadata } from "@atomist/sdm";
 
 const instanceMetadata = metadata();
 

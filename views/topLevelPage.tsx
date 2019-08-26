@@ -1,6 +1,6 @@
+import { ExtensionPackMetadata } from "@atomist/sdm";
 import * as React from "react";
 import * as ReactDOMServer from "react-dom/server";
-import { ExtensionPackMetadata } from "@atomist/sdm";
 
 export function renderStaticReactNode(body: React.ReactElement,
                                       title: string,
