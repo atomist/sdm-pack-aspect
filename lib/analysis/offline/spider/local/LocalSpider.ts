@@ -126,7 +126,7 @@ async function analyzeOneRepo<FoundRepo>(
         foundRepo: FoundRepo,
         tracking: RepoBeingTracked,
     }): Promise<void> {
-    logger.warn("Now analyzing: " + params.foundRepo);
+    logger.info("Now analyzing: " + JSON.stringify(params.foundRepo));
     const { tracking, workspaceId, foundRepo } = params;
     tracking.beganAnalysis();
 
@@ -243,12 +243,6 @@ const emptySpiderResult = {
         [],
     keptExisting: [],
     persistedAnalyses: [],
-};
-
-const oneSpiderResult = {
-    ...emptySpiderResult,
-    repositoriesDetected: 1,
-    projectsDetected: 1,
 };
 
 async function* findRepositoriesUnder(dir: string): AsyncIterable<string> {

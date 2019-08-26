@@ -16,28 +16,15 @@
 
 import {
     GitProject,
-    LocalProject,
     logger,
-    Project,
 } from "@atomist/automation-client";
-import { execPromise } from "@atomist/sdm";
 import * as Octokit from "@octokit/rest";
 import * as _ from "lodash";
-import { PersistResult } from "../../persist/ProjectAnalysisResultStore";
-import { computeAnalytics } from "../analytics";
-import {
-    analyze,
-    AnalyzeResults,
-    existingRecordShouldBeKept,
-    persistRepoInfo,
-} from "../common";
 import { AnalysisRun } from "../local/LocalSpider";
 import { ScmSearchCriteria } from "../ScmSearchCriteria";
 import {
     Analyzer,
-    logTimings,
     PersistenceResult,
-    RepoUrl,
     Spider,
     SpiderFailure,
     SpiderOptions,
@@ -119,130 +106,6 @@ export interface AnalyzeResult {
 export interface AnalyzeAndPersistResult extends AnalyzeResult {
     failedToPersist: SpiderFailure[];
     persisted: PersistenceResult[];
-}
-
-const emptyAnalyzeAndPersistResult: AnalyzeAndPersistResult = {
-    failedToCloneOrAnalyze: [],
-    failedToPersist: [],
-    repoCount: 0,
-    projectCount: 0,
-    persisted: [],
-    millisTaken: 0,
-};
-
-function combineAnalyzeAndPersistResult(one: AnalyzeAndPersistResult, two: AnalyzeAndPersistResult): AnalyzeAndPersistResult {
-    return {
-        failedToCloneOrAnalyze: one.failedToCloneOrAnalyze.concat(two.failedToCloneOrAnalyze),
-        failedToPersist: one.failedToPersist.concat(two.failedToPersist),
-        repoCount: one.repoCount + two.repoCount,
-        projectCount: one.projectCount + two.projectCount,
-        persisted: one.persisted.concat(two.persisted),
-        millisTaken: one.millisTaken + two.millisTaken,
-    };
-}
-
-/**
- * Future for doing the work
- * @return {Promise<void>}
- */
-async function runAnalysis(cloner: Cloner,
-                           sourceData: GitHubSearchResult,
-                           criteria: ScmSearchCriteria,
-                           analyzer: Analyzer): Promise<AnalyzeResult & { analyzeResults?: AnalyzeResults, sourceData: GitHubSearchResult }> {
-    const startTime = new Date().getTime();
-    let project;
-    let clonedIn: number;
-    try {
-        project = await cloner.clone(sourceData);
-        clonedIn = new Date().getTime() - startTime;
-        logger.debug("Successfully cloned %s in %d milliseconds", sourceData.url, clonedIn);
-        if (!project.id.sha) {
-            const sha = await execPromise("git", ["rev-parse", "HEAD"], {
-                cwd: (project as LocalProject).baseDir,
-            });
-            project.id.sha = sha.stdout.trim();
-            logger.debug(`Set sha to ${project.id.sha}`);
-        }
-    } catch (err) {
-        return {
-            failedToCloneOrAnalyze: [{ repoUrl: sourceData.url, whileTryingTo: "clone", message: err.message }],
-            repoCount: 1,
-            projectCount: 0,
-            millisTaken: new Date().getTime() - startTime,
-            sourceData,
-        };
-    }
-    if (criteria.projectTest && !await criteria.projectTest(project)) {
-        logger.debug("Skipping analysis of %s as it doesn't pass projectTest", project.id.url);
-        return {
-            failedToCloneOrAnalyze: [],
-            repoCount: 1,
-            projectCount: 0,
-            millisTaken: new Date().getTime() - startTime,
-            sourceData,
-        };
-    }
-    let analyzeResults: AnalyzeResults;
-    try {
-        analyzeResults = await analyze(project, analyzer, criteria);
-        const millisTaken = new Date().getTime() - startTime;
-        logger.debug("Successfully analyzed %s in %d milliseconds including clone time of %d",
-            sourceData.url, millisTaken, clonedIn);
-        return {
-            failedToCloneOrAnalyze: [],
-            repoCount: 1,
-            projectCount: 0,
-            millisTaken,
-            analyzeResults,
-            sourceData,
-
-        };
-    } catch (err) {
-        logger.error("Could not analyze " + sourceData.url + ": " + err.message, err);
-        return {
-            failedToCloneOrAnalyze: [{ repoUrl: sourceData.url, whileTryingTo: "analyze", message: err.message }],
-            repoCount: 1,
-            projectCount: 0,
-            millisTaken: new Date().getTime() - startTime,
-            sourceData,
-        };
-    }
-}
-
-async function runPersist(criteria: ScmSearchCriteria,
-                          opts: SpiderOptions,
-                          ar: AnalyzeResult & { analyzeResults?: AnalyzeResults, sourceData: GitHubSearchResult }): Promise<AnalyzeAndPersistResult> {
-    const persistResults: PersistResult[] = [];
-
-    logger.debug("Persisting...");
-    if (!ar.analyzeResults) {
-        return {
-            failedToCloneOrAnalyze: ar.failedToCloneOrAnalyze,
-            repoCount: ar.repoCount,
-            projectCount: ar.projectCount,
-            failedToPersist: [],
-            persisted: [],
-            millisTaken: ar.millisTaken,
-        };
-    }
-
-    for (const repoInfo of ar.analyzeResults.repoInfos) {
-        const persistResult = await persistRepoInfo(opts, repoInfo, {
-            sourceData: ar.sourceData,
-            url: ar.sourceData.html_url,
-            timestamp: ar.sourceData.timestamp,
-            query: ar.sourceData.query,
-        });
-        persistResults.push(persistResult);
-    }
-    return {
-        failedToCloneOrAnalyze: ar.failedToCloneOrAnalyze,
-        repoCount: 1,
-        projectCount: 1,
-        failedToPersist: _.flatMap(persistResults, r => r.failed),
-        persisted: _.flatMap(persistResults, p => p.succeeded),
-        millisTaken: ar.millisTaken,
-    };
 }
 
 /**
