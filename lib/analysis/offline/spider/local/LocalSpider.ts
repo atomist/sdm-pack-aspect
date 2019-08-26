@@ -89,65 +89,7 @@ export class AnalysisRun<FoundRepo> {
 
         // simplest: do them all
         for (const trackedRepo of trackedRepos) {
-            const startTime = new Date().getTime();
-            trackedRepo.repoRef = await this.world.determineRepoRef(trackedRepo.foundRepo);
-            trackedRepo.tracking.setRepoRef(trackedRepo.repoRef);
-
-            // we might choose to skip this one
-            if (await existingRecordShouldBeKept(this.world, trackedRepo.repoRef)) {
-                // enhancement: record timestamp of kept record
-                trackedRepo.tracking.keptExisting(new Date().getTime() - startTime);
-                continue;
-            }
-
-            // clone
-            let project: GitProject;
-            try {
-                project = await this.world.howToClone(trackedRepo.repoRef, trackedRepo.foundRepo);
-            } catch (err) {
-                trackedRepo.tracking.failed({
-                    whileTryingTo: "clone",
-                    error: err,
-                }, new Date().getTime() - startTime);
-                continue;
-            }
-
-            // we might choose to skip this one (is this used anywhere?)
-            if (this.world.projectFilter && !await this.world.projectFilter(project)) {
-                trackedRepo.tracking.skipped("projectFilter returned false", new Date().getTime() - startTime);
-                continue;
-            }
-
-            // analyze !
-            let analysis: Analyzed;
-            try {
-                analysis = await this.world.analyzer.analyze(project);
-            } catch (err) {
-                trackedRepo.tracking.failed({
-                    whileTryingTo: "analyze",
-                    error: err,
-                }, new Date().getTime() - startTime);
-                continue;
-            }
-
-            // save :-)
-            const persistResult = await this.world.persister.persist({
-                workspaceId: this.params.workspaceId,
-                repoRef: trackedRepo.repoRef,
-                analysis: {
-                    ...analysis,
-                    id: trackedRepo.repoRef, // necessary?
-                },
-                timestamp: new Date(),
-            });
-
-            if (persistResult.failed.length === 1) {
-                trackedRepo.tracking.failed(persistResult.failed[0], new Date().getTime() - startTime);
-            } else if (persistResult.succeeded.length === 1) {
-                trackedRepo.tracking.persisted(new Date().getTime() - startTime);
-            } else {
-                throw new Error("Unexpected condition in persistResult: " + JSON.stringify(persistResult));
-            }
+            await analyzeOneRepo(this.world, { ...trackedRepo, workspaceId: this.params.workspaceId });
         }
 
         logger.debug("Computing analytics over all fingerprints...");
@@ -158,6 +100,79 @@ export class AnalysisRun<FoundRepo> {
         const finalResult = trackedRepos.map(tr => tr.tracking.spiderResult()).reduce(combineSpiderResults, emptySpiderResult);
         analysisBeingTracked.stop(finalResult);
         return finalResult;
+    }
+}
+
+async function analyzeOneRepo<FoundRepo>(
+    world: {
+        howToFindRepos: () => AsyncIterable<FoundRepo>,
+        determineRepoRef: (f: FoundRepo) => Promise<RepoRef>,
+        describeFoundRepo: (f: FoundRepo) => string,
+        howToClone: (rr: RepoRef, fr: FoundRepo) => Promise<GitProject>,
+        analyzer: Analyzer;
+        persister: ProjectAnalysisResultStore,
+        keepExistingPersisted: ProjectAnalysisResultFilter,
+        projectFilter?: (p: Project) => Promise<boolean>;
+    },
+    params: {
+        workspaceId: string,
+        foundRepo: FoundRepo,
+        tracking: RepoBeingTracked,
+    }): Promise<void> {
+    const startTime = new Date().getTime();
+    const { tracking, workspaceId, foundRepo } = params;
+
+    const repoRef = await world.determineRepoRef(foundRepo);
+    tracking.setRepoRef(repoRef);
+
+    // we might choose to skip this one
+    if (await existingRecordShouldBeKept(world, repoRef)) {
+        // enhancement: record timestamp of kept record
+        tracking.keptExisting(new Date().getTime() - startTime);
+        return;
+    }
+
+    // clone
+    let project: GitProject;
+    try {
+        project = await world.howToClone(repoRef, foundRepo);
+    } catch (error) {
+        tracking.failed({ whileTryingTo: "clone", error }, new Date().getTime() - startTime);
+        return;
+    }
+
+    // we might choose to skip this one (is this used anywhere?)
+    if (world.projectFilter && !await world.projectFilter(project)) {
+        tracking.skipped("projectFilter returned false", new Date().getTime() - startTime);
+        return;
+    }
+
+    // analyze !
+    let analysis: Analyzed;
+    try {
+        analysis = await world.analyzer.analyze(project);
+    } catch (error) {
+        tracking.failed({ whileTryingTo: "analyze", error }, new Date().getTime() - startTime);
+        return;
+    }
+
+    // save :-)
+    const persistResult = await world.persister.persist({
+        workspaceId,
+        repoRef,
+        analysis: {
+            ...analysis,
+            id: repoRef, // necessary?
+        },
+        timestamp: new Date(),
+    });
+
+    if (persistResult.failed.length === 1) {
+        tracking.failed(persistResult.failed[0], new Date().getTime() - startTime);
+    } else if (persistResult.succeeded.length === 1) {
+        tracking.persisted(new Date().getTime() - startTime);
+    } else {
+        throw new Error("Unexpected condition in persistResult: " + JSON.stringify(persistResult));
     }
 }
 export class LocalSpider implements Spider {
