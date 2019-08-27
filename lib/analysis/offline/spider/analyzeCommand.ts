@@ -138,6 +138,7 @@ function analyzeFromGitHubByQuery(analyzer: Analyzer, analysisTracking: Analysis
         const spiderAppOptions: SpiderAppOptions = d.parameters;
         logger.info("analyze github by query invoked with " + JSON.stringify(spiderAppOptions));
 
+        await d.addressChannels("Check the progress of your analysis: http://localhost:" + d.configuration.http.port + "/analysis");
         const result = await spider(spiderAppOptions, analyzer, analysisTracking);
         await d.addressChannels(`Analysis result: `
             + JSON.stringify(result, undefined, 2));
@@ -182,6 +183,7 @@ function analyzeFromLocal(analyzer: Analyzer, analysisTracking: AnalysisTracking
         const spiderAppOptions: SpiderAppOptions = d.parameters;
         logger.info("analyze local invoked with " + JSON.stringify(spiderAppOptions));
 
+        await d.addressChannels("Check the progress of your analysis: http://localhost:" + d.configuration.http.port + "/analysis");
         const result = await spider(spiderAppOptions, analyzer, analysisTracking);
         await d.addressChannels(`Analysis result: `
             + JSON.stringify(result, undefined, 2));

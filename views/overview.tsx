@@ -176,7 +176,7 @@ export function Overview(props: OverviewProps): React.ReactElement {
     if (props.projectsAnalyzed === 0) {
         return <div>
             <h2>No projects analyzed</h2>
-            Use the spider command to analyze some projects.
+            Use the `atomist analyze ...` command to analyze some projects.
             See <a
                 href="https://github.com/atomist-blogs/org-visualizer/blob/master/README.md#analyze-your-repositories">the
             README</a> for details.
