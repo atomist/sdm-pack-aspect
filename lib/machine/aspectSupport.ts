@@ -46,7 +46,10 @@ import {
     analyzeGitHubOrganizationCommandRegistration,
     analyzeLocalCommandRegistration,
 } from "../analysis/offline/spider/analyzeCommand";
-import { AnalysisTracker, AnalysisTracking } from "../analysis/tracking/analysisTracker";
+import {
+    AnalysisTracker,
+    AnalysisTracking,
+} from "../analysis/tracking/analysisTracker";
 import {
     CombinationTagger,
     RepositoryScorer,

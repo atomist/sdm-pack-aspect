@@ -1,4 +1,7 @@
-import { FP, PublishFingerprints } from "@atomist/sdm-pack-fingerprints";
+import {
+    FP,
+    PublishFingerprints,
+} from "@atomist/sdm-pack-fingerprints";
 /*
  * Copyright © 2019 Atomist, Inc.
  *

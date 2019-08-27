@@ -14,7 +14,10 @@
  * limitations under the License.
  */
 
-import { AnalysisTracker, AnalysisTracking } from "./../../../lib/analysis/tracking/analysisTracker";
+import {
+    AnalysisTracker,
+    AnalysisTracking,
+} from "./../../../lib/analysis/tracking/analysisTracker";
 /*
  * Copyright © 2019 Atomist, Inc.
  *

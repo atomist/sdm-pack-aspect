@@ -1,4 +1,7 @@
-import { Express, RequestHandler } from "express";
+import {
+    Express,
+    RequestHandler,
+} from "express";
 
 import { ProjectAnalysisResultStore } from "../../analysis/offline/persist/ProjectAnalysisResultStore";
 
