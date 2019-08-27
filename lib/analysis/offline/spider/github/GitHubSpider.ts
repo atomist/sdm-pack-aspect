@@ -46,9 +46,9 @@ export interface Cloner {
 export class GitHubSpider implements Spider {
 
     public async spider(criteria: ScmSearchCriteria,
-        analyzer: Analyzer,
-        analysisTracking: AnalysisTracking,
-        opts: SpiderOptions): Promise<SpiderResult> {
+                        analyzer: Analyzer,
+                        analysisTracking: AnalysisTracking,
+                        opts: SpiderOptions): Promise<SpiderResult> {
 
         const run = new AnalysisRun<GitHubSearchResult>({
             howToFindRepos: () => this.queryFunction(process.env.GITHUB_TOKEN, criteria),

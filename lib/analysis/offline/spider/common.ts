@@ -23,8 +23,8 @@ import {
 } from "@atomist/automation-client";
 import { Analyzed } from "../../../aspect/AspectRegistry";
 import {
-    RepoBeingTracked,
     AnalysisTracking,
+    RepoBeingTracked,
 } from "../../tracking/analysisTracker";
 import {
     ProjectAnalysisResultStore,

@@ -1,4 +1,4 @@
-import { Express, RequestHandler } from "express-serve-static-core";
+import { Express, RequestHandler } from "express";
 
 import { ProjectAnalysisResultStore } from "../../analysis/offline/persist/ProjectAnalysisResultStore";
 

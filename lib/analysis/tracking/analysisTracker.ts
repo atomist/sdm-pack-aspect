@@ -144,7 +144,7 @@ export class AnalysisBeingTracked {
         this.me.progress = "Stopped";
     }
 
-    public failed(error: Error) {
+    public failed(error: Error): void {
         this.error = error;
         this.me.progress = "Stopped";
     }
@@ -179,7 +179,7 @@ export class AnalysisTracker implements AnalysisTracking {
         return newAnalysis;
     }
 
-    public report() {
+    public report(): AnalysisReport {
         return {
             analyses: this.analyses.map(a => a.report()),
         };

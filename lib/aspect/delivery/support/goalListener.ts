@@ -1,4 +1,4 @@
-import { PublishFingerprints } from "@atomist/sdm-pack-fingerprints";
+import { FP, PublishFingerprints } from "@atomist/sdm-pack-fingerprints";
 /*
  * Copyright © 2019 Atomist, Inc.
  *
@@ -22,9 +22,6 @@ import {
     SdmGoalState,
 } from "@atomist/sdm";
 import { toArray } from "@atomist/sdm-core/lib/util/misc/array";
-import {
-    FP,
-} from "@atomist/sdm-pack-fingerprints";
 
 export type FindFingerprintsFromGoalExecution = (gei: GoalExecutionListenerInvocation) => Promise<FP[] | FP>;
 
