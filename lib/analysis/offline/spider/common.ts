@@ -221,7 +221,6 @@ async function takeFromIterator<T>(max: number, iter: AsyncIterable<T>): Promise
 function combineSpiderResults(r1: SpiderResult, r2: SpiderResult): SpiderResult {
     return {
         repositoriesDetected: r1.repositoriesDetected + r2.repositoriesDetected,
-        projectsDetected: r1.projectsDetected + r2.projectsDetected,
         failed:
             [...r1.failed, ...r2.failed],
         keptExisting: [...r1.keptExisting, ...r2.keptExisting],
@@ -231,7 +230,6 @@ function combineSpiderResults(r1: SpiderResult, r2: SpiderResult): SpiderResult 
 
 const emptySpiderResult = {
     repositoriesDetected: 0,
-    projectsDetected: 0,
     failed:
         [],
     keptExisting: [],

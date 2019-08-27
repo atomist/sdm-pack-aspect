@@ -182,7 +182,7 @@ describe("GithubSpider", () => {
             },
         );
 
-        const result = await subject.spider(undefined, analyzer, new AnalysisTracker(),
+        const result = await subject.spider({} as ScmSearchCriteria, analyzer, new AnalysisTracker(),
             { persister: new FakeProjectAnalysisResultStore() } as any);
 
         assert.deepStrictEqual(result, EmptySpiderResult);
@@ -202,7 +202,6 @@ describe("GithubSpider", () => {
         const result = await subject.spider(criteria, analyzer, new AnalysisTracker(), opts());
         const expected: SpiderResult = {
             repositoriesDetected: 1,
-            projectsDetected: 0,
             failed: [{ repoUrl: "https://home", whileTryingTo: "clone", message: "cannot clone" }],
             persistedAnalyses: [],
             keptExisting: [],
@@ -224,7 +223,6 @@ describe("GithubSpider", () => {
 
         const expected: SpiderResult = {
             repositoriesDetected: 1,
-            projectsDetected: 1,
             failed: [],
             persistedAnalyses: [hardCodedPlace],
             keptExisting: [],

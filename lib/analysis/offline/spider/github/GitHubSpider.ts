@@ -71,7 +71,7 @@ export class GitHubSpider implements Spider {
 
         }, {
                 workspaceId: opts.workspaceId,
-                description: "querying GitHub: " + criteria.githubQueries.join(" and "),
+                description: "querying GitHub: " + (criteria.githubQueries || []).join(" and "),
                 maxRepos: 1000,
                 poolSize: opts.poolSize || 40,
             });
