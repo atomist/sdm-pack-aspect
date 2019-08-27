@@ -15,7 +15,7 @@
  */
 
 import { logger } from "@atomist/automation-client";
-import { PublishFingerprints } from "@atomist/sdm-pack-fingerprints";
+import { PublishFingerprints, PublishFingerprintsFor, RepoIdentification } from "@atomist/sdm-pack-fingerprints";
 import { ProjectAnalysisResultStore } from "../../analysis/offline/persist/ProjectAnalysisResultStore";
 import { computeAnalyticsForFingerprintKind } from "../../analysis/offline/spider/analytics";
 import { ProjectAnalysisResult } from "../../analysis/ProjectAnalysisResult";
@@ -26,31 +26,31 @@ import { Analyzed } from "../AspectRegistry";
  * @param {ProjectAnalysisResultStore} store
  * @return {PublishFingerprints}
  */
-export function storeFingerprints(store: ProjectAnalysisResultStore): PublishFingerprints {
-    return async (i, fingerprints) => {
+export function storeFingerprintsFor(store: ProjectAnalysisResultStore): PublishFingerprintsFor {
+    return async (ctx, repoIdentification, fingerprints, previous) => {
         if (fingerprints.length === 0) {
             return true;
         }
 
         const analysis: Analyzed = {
-            id: i.id,
+            id: repoIdentification as any,
             fingerprints,
         };
         const paResult: ProjectAnalysisResult = {
-            repoRef: i.id,
-            workspaceId: i.context.workspaceId,
+            repoRef: repoIdentification as any,
+            workspaceId: ctx.context.workspaceId,
             timestamp: undefined,
             analysis,
         };
         logger.info("Routing %d fingerprints to local database for workspace %s",
-            fingerprints.length, i.context.workspaceId);
+            fingerprints.length, ctx.context.workspaceId);
         const found = await store.loadByRepoRef(paResult.analysis.id, false);
         if (!!found) {
             const results = await store.persistAdditionalFingerprints(paResult.analysis);
             logger.info("Persisting additional fingerprint results for %s: %j", paResult.analysis.id.url, results);
 
             for (const fp of fingerprints) {
-                await computeAnalyticsForFingerprintKind(store, i.context.workspaceId, fp.type, fp.name);
+                await computeAnalyticsForFingerprintKind(store, ctx.context.workspaceId, fp.type, fp.name);
             }
 
             return results.failures.length === 0;
@@ -59,9 +59,15 @@ export function storeFingerprints(store: ProjectAnalysisResultStore): PublishFin
             logger.info("Persisting snapshot for %s: %j", paResult.analysis.id.url, results);
 
             for (const fp of fingerprints) {
-                await computeAnalyticsForFingerprintKind(store, i.context.workspaceId, fp.type, fp.name);
+                await computeAnalyticsForFingerprintKind(store, ctx.context.workspaceId, fp.type, fp.name);
             }
             return results.failed.length === 0;
         }
+    };
+}
+
+export function storeFingerprints(store: ProjectAnalysisResultStore): PublishFingerprints {
+    return (i, fps, previous) => {
+        return storeFingerprintsFor(store)(i, i.id as RepoIdentification, fps, previous);
     };
 }
