@@ -69,10 +69,10 @@
     "zip-a-folder": "0.0.8"
   },
   "devDependencies": {
-    "@atomist/automation-client": "1.6.3-master.20190821065818",
+    "@atomist/automation-client": "1.6.3-master.20190827162443",
     "@atomist/microgrammar": "^1.2.1",
-    "@atomist/sdm": "1.6.2-master.20190821222758",
-    "@atomist/sdm-core": "1.6.2-master.20190822002319",
+    "@atomist/sdm": "1.6.2-master.20190827182350",
+    "@atomist/sdm-core": "1.6.2-master.20190827182244",
     "@atomist/sdm-local": "^1.1.0",
     "@atomist/sdm-pack-build": "^1.0.5",
     "@atomist/sdm-pack-clojure": "^2.0.0",
