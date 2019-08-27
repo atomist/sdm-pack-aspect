@@ -384,9 +384,7 @@ function fillInAspectNames(aspectRegistry: AspectRegistry, tree: SunburstTree): 
                 if (aspect) {
                     if (aspect.toDisplayableFingerprintName) {
                         n.name = aspect.toDisplayableFingerprintName(n.name);
-                    } else if (aspect.displayName) {
-                        n.name = aspect.displayName;
-                    }
+                    } 
                 }
             }
         }
