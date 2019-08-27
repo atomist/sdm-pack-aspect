@@ -50,6 +50,8 @@ import {
 } from "../../../views/sunburstPage";
 import { renderStaticReactNode } from "../../../views/topLevelPage";
 import { ProjectAnalysisResultStore } from "../../analysis/offline/persist/ProjectAnalysisResultStore";
+import { AnalysisTracking } from "../../analysis/tracking/analysisTracker";
+import { exposeAnalysisTrackingPage } from "../../analysis/tracking/analysisTrackingRoutes";
 import {
     AspectRegistry,
 } from "../../aspect/AspectRegistry";
@@ -66,15 +68,7 @@ import {
 } from "../api";
 import { exposeOverviewPage } from "./overviewPage";
 import { exposeRepositoryListPage } from "./repositoryListPage";
-
-export interface WebAppConfig {
-    express: Express;
-    handlers: RequestHandler[];
-    aspectRegistry: AspectRegistry;
-    store: ProjectAnalysisResultStore;
-    instanceMetadata: ExtensionPackMetadata;
-    httpClientFactory: HttpClientFactory;
-}
+import { WebAppConfig } from "./webAppConfig";
 
 /**
  * Add the org page route to Atomist SDM Express server.
@@ -83,11 +77,12 @@ export interface WebAppConfig {
 export function addWebAppRoutes(
     aspectRegistry: AspectRegistry,
     store: ProjectAnalysisResultStore,
+    analysisTracking: AnalysisTracking,
     httpClientFactory: HttpClientFactory,
     instanceMetadata: ExtensionPackMetadata): {
-    customizer: ExpressCustomizer,
-    routesToSuggestOnStartup: Array<{ title: string, route: string }>,
-} {
+        customizer: ExpressCustomizer,
+        routesToSuggestOnStartup: Array<{ title: string, route: string }>,
+    } {
     const topLevelRoute = "/overview";
     return {
         routesToSuggestOnStartup: [{ title: "Atomist Visualizations", route: topLevelRoute }],
@@ -107,7 +102,7 @@ export function addWebAppRoutes(
                 res.redirect(topLevelRoute);
             });
 
-            const conf: WebAppConfig = { express, handlers, aspectRegistry, store, instanceMetadata, httpClientFactory };
+            const conf: WebAppConfig = { express, handlers, aspectRegistry, store, instanceMetadata, httpClientFactory, analysisTracking };
 
             exposeDriftPage(conf);
             exposeOverviewPage(conf, topLevelRoute);
@@ -116,6 +111,8 @@ export function addWebAppRoutes(
             exposeExplorePage(conf);
             exposeFingerprintReportPage(conf);
             exposeCustomReportPage(conf);
+            exposeAnalysisTrackingPage(conf);
+
         },
     };
 }
@@ -130,8 +127,12 @@ function exposeRepositoryPage(conf: WebAppConfig): void {
             return res.send(`No project at ${JSON.stringify(id)}`);
         }
 
+        const allFingerprints = await conf.store.fingerprintsForProject(id);
+        const mostRecentTimestampMillis = Math.max(...allFingerprints.map(fp =>
+            fp.timestamp.getTime()));
+        const commitSha = allFingerprints.length > 0 ? allFingerprints[0].commitSha : undefined;
         const aspectsAndFingerprints = await projectFingerprints(conf.aspectRegistry,
-            await conf.store.fingerprintsForProject(id));
+            allFingerprints);
 
         // assign style based on ideal
         const ffd: ProjectAspectForDisplay[] = aspectsAndFingerprints.map(aspectAndFingerprints => ({
@@ -149,6 +150,7 @@ function exposeRepositoryPage(conf: WebAppConfig): void {
                 repo,
                 aspects: _.sortBy(ffd.filter(f => !!f.aspect.displayName), f => f.aspect.displayName),
                 category,
+                timestamp: new Date(mostRecentTimestampMillis),
             }), `${repo.analysis.id.owner} / ${repo.analysis.id.repo}`,
             conf.instanceMetadata));
     });
@@ -161,10 +163,10 @@ function exposeExplorePage(conf: WebAppConfig): void {
         const dataUrl = `/api/v1/${workspaceId}/explore?tags=${tags}`;
         const readable = describeSelectedTagsToAnimals(tags.split(","));
         return renderDataUrl(conf.instanceMetadata, workspaceId, {
-                dataUrl,
-                heading: "Explore repositories by tag",
-                title: `Repositories matching ${readable}`,
-            },
+            dataUrl,
+            heading: "Explore repositories by tag",
+            title: `Repositories matching ${readable}`,
+        },
             conf.aspectRegistry, conf.httpClientFactory, req, res);
     });
 }
@@ -178,13 +180,13 @@ function exposeDriftPage(conf: WebAppConfig): void {
             `?percentile=${percentile}` +
             (!!type ? `&type=${type}` : "");
         return renderDataUrl(conf.instanceMetadata, workspaceId, {
-                dataUrl,
-                title: "Drift by aspect",
-                heading: type ?
-                    `Drift across aspect ${type} with entropy above ${percentile}th percentile` :
-                    `Drift across all aspects with entropy above ${percentile}th percentile`,
-                subheading: "Sizing shows degree of entropy",
-            },
+            dataUrl,
+            title: "Drift by aspect",
+            heading: type ?
+                `Drift across aspect ${type} with entropy above ${percentile}th percentile` :
+                `Drift across all aspects with entropy above ${percentile}th percentile`,
+            subheading: "Sizing shows degree of entropy",
+        },
             conf.aspectRegistry, conf.httpClientFactory, req, res);
     });
 }
@@ -204,9 +206,9 @@ function exposeFingerprintReportPage(conf: WebAppConfig): void {
         const dataUrl = `/api/v1/${workspaceId}/fingerprint/${
             encodeURIComponent(type)}/${
             encodeURIComponent(name)}?byOrg=${
-        req.query.byOrg === "true"}&presence=${req.query.presence === "true"}&progress=${
-        req.query.progress === "true"}&otherLabel=${req.query.otherLabel === "true"}&trim=${
-        req.query.trim === "true"}`;
+            req.query.byOrg === "true"}&presence=${req.query.presence === "true"}&progress=${
+            req.query.progress === "true"}&otherLabel=${req.query.otherLabel === "true"}&trim=${
+            req.query.trim === "true"}`;
         return renderDataUrl(conf.instanceMetadata, workspaceId, {
             dataUrl,
             title: `Atomist aspect drift`,
@@ -238,11 +240,11 @@ function exposeCustomReportPage(conf: WebAppConfig): void {
 async function renderDataUrl(instanceMetadata: ExtensionPackMetadata,
                              workspaceId: string,
                              page: {
-                                 title: string,
-                                 heading: string,
-                                 subheading?: string,
-                                 dataUrl: string,
-                             },
+        title: string,
+        heading: string,
+        subheading?: string,
+        dataUrl: string,
+    },
                              aspectRegistry: AspectRegistry,
                              httpClientFactory: HttpClientFactory,
                              req: any,
@@ -376,8 +378,8 @@ function displayStyleAccordingToIdeal(fingerprint: AugmentedFingerprintForDispla
 export type AugmentedFingerprintForDisplay =
     FP &
     Pick<ProjectFingerprintForDisplay, "displayValue" | "displayName"> & {
-    ideal?: Ideal;
-};
+        ideal?: Ideal;
+    };
 
 export interface AugmentedAspectForDisplay {
     aspect: Aspect;

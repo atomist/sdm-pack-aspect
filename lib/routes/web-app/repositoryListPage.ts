@@ -19,7 +19,7 @@ import {
     RepoList,
 } from "../../../views/repoList";
 import { renderStaticReactNode } from "../../../views/topLevelPage";
-import { WebAppConfig } from "./webAppRoutes";
+import { WebAppConfig } from "./webAppConfig";
 
 export type SortOrder = "name" | "score";
 
@@ -62,6 +62,6 @@ export function exposeRepositoryListPage(conf: WebAppConfig): void {
                 category,
             }),
             byOrg ? "Repositories by Organization" : "Repositories Ranked",
-           conf.instanceMetadata));
+            conf.instanceMetadata));
     });
 }

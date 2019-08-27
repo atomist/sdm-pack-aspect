@@ -104,7 +104,7 @@ async function extractify(aspect: Aspect, p: Project, timeRecorder: TimeRecorder
             repo: undefined,
             branch: "master",
         },
-        addressChannels: async () => {},
+        addressChannels: async () => { },
         get filesChanged(): string[] { throw new Error("Unsupported"); },
         get credentials(): ProjectOperationCredentials { throw new Error("Unsupported"); },
         impactedSubProject: p,

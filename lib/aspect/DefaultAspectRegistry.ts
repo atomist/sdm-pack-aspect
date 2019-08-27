@@ -14,17 +14,10 @@
  * limitations under the License.
  */
 
-import { RemoteRepoRef } from "@atomist/automation-client";
 import {
     Aspect,
     FP,
 } from "@atomist/sdm-pack-fingerprints";
-import * as _ from "lodash";
-import { ProjectAnalysisResult } from "../analysis/ProjectAnalysisResult";
-import { TagContext } from "../routes/api";
-import { ScoreWeightings } from "../scorer/Score";
-import { scoreRepos } from "../scorer/scoring";
-import { showTiming } from "../util/showTiming";
 import {
     AspectRegistry,
     CombinationTagger,
@@ -38,6 +31,17 @@ import {
     TaggerDefinition,
     WorkspaceSpecificTagger,
 } from "./AspectRegistry";
+
+import { RepoRef } from "@atomist/automation-client";
+import * as _ from "lodash";
+import { Error } from "tslint/lib/error";
+import { ProjectAnalysisResult } from "../analysis/ProjectAnalysisResult";
+import { TagContext } from "../routes/api";
+import { ScoreWeightings } from "../scorer/Score";
+import {
+    scoreRepos,
+} from "../scorer/scoring";
+import { showTiming } from "../util/showTiming";
 import { IdealStore } from "./IdealStore";
 import {
     chainUndesirableUsageCheckers,
@@ -65,10 +69,10 @@ export class DefaultAspectRegistry implements AspectRegistry {
         return this;
     }
 
-    private combinationTagsFor(fps: FP[], id: RemoteRepoRef, tagContext: TagContext): Tag[] {
+    private combinationTagsFor(fps: FP[], id: RepoRef, tagContext: TagContext): Tag[] {
         return _.uniqBy(this.combinationTaggers
-                .map(tagger => ({ ...tagger, tag: tagger.test(fps, id, tagContext) }))
-                .filter(t => !!t.tag),
+            .map(tagger => ({ ...tagger, tag: tagger.test(fps, id, tagContext) }))
+            .filter(t => !!t.tag),
             tag => tag.name);
     }
 
@@ -172,14 +176,14 @@ export function defaultedToDisplayableFingerprint(aspect?: Aspect): (fpi: FP) =>
     return (aspect && aspect.toDisplayableFingerprint) || (fp => fp && fp.data);
 }
 
-function tagsFor(fp: FP, id: RemoteRepoRef, tagContext: TagContext, taggers: Tagger[]): Tag[] {
-    return _.uniqBy(taggers.filter(t => t !== undefined)
-            .map(tagger => ({ ...tagger, tag: tagger.test(fp, id, tagContext) }))
-            .filter(t => !!t.tag),
+function tagsFor(fp: FP, id: RepoRef, tagContext: TagContext, taggers: Tagger[]): Tag[] {
+    return _.uniqBy(taggers
+        .map(tagger => ({ ...tagger, tag: tagger.test(fp, id, tagContext) }))
+        .filter(t => !!t.tag),
         tag => tag.name);
 }
 
-async function tagsIn(fps: FP[], id: RemoteRepoRef, tagContext: TagContext, taggersToUse: Tagger[]): Promise<Tag[]> {
+async function tagsIn(fps: FP[], id: RepoRef, tagContext: TagContext, taggersToUse: Tagger[]): Promise<Tag[]> {
     return _.uniqBy(_.flatten(fps.map(fp => tagsFor(fp, id, tagContext, taggersToUse))), tag => tag.name)
         .sort();
 }

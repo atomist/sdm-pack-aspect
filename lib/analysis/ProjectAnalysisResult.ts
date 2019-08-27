@@ -14,7 +14,10 @@
  * limitations under the License.
  */
 
-import { RemoteRepoRef } from "@atomist/automation-client";
+import {
+    RemoteRepoRef,
+    RepoRef,
+} from "@atomist/automation-client";
 import { Analyzed } from "../aspect/AspectRegistry";
 
 /**
@@ -28,7 +31,7 @@ export interface ProjectAnalysisResult {
      */
     readonly id?: string;
 
-    readonly repoRef: RemoteRepoRef;
+    readonly repoRef: RepoRef;
 
     readonly workspaceId: string;
 

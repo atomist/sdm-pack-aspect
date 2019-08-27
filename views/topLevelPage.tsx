@@ -1,10 +1,9 @@
-import { ExtensionPackMetadata } from "@atomist/sdm";
 import * as React from "react";
 import * as ReactDOMServer from "react-dom/server";
 
 export function renderStaticReactNode(body: React.ReactElement,
                                       title: string,
-                                      instanceMetadata: ExtensionPackMetadata,
+                                      instanceMetadata: { name: string },
                                       extraScripts?: string[]): string {
     return ReactDOMServer.renderToStaticMarkup(
         TopLevelPage({
@@ -22,7 +21,7 @@ function extraScript(src: string): React.ReactElement {
 export function TopLevelPage(props: {
     bodyContent: React.ReactElement,
     pageTitle: string,
-    instanceMetadata: ExtensionPackMetadata,
+    instanceMetadata: { name: string },
     extraScripts?: string[],
 }): React.ReactElement {
     return <html>

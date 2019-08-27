@@ -15,27 +15,17 @@
  */
 
 import {
-    LocalProject,
+    GitProject,
     logger,
-    Project,
 } from "@atomist/automation-client";
-import { execPromise } from "@atomist/sdm";
 import * as Octokit from "@octokit/rest";
 import * as _ from "lodash";
-import { PersistResult } from "../../persist/ProjectAnalysisResultStore";
-import { computeAnalytics } from "../analytics";
-import {
-    analyze,
-    AnalyzeResults,
-    existingRecordShouldBeKept,
-    persistRepoInfo,
-} from "../common";
+import { AnalysisTracking } from "../../../tracking/analysisTracker";
+import { AnalysisRun } from "../common";
 import { ScmSearchCriteria } from "../ScmSearchCriteria";
 import {
     Analyzer,
-    logTimings,
     PersistenceResult,
-    RepoUrl,
     Spider,
     SpiderFailure,
     SpiderOptions,
@@ -47,7 +37,7 @@ import {
  */
 export interface Cloner {
 
-    clone(sourceData: GitHubSearchResult): Promise<Project>;
+    clone(sourceData: GitHubSearchResult): Promise<GitProject>;
 }
 
 /**
@@ -57,81 +47,36 @@ export class GitHubSpider implements Spider {
 
     public async spider(criteria: ScmSearchCriteria,
                         analyzer: Analyzer,
+                        analysisTracking: AnalysisTracking,
                         opts: SpiderOptions): Promise<SpiderResult> {
-        let repoCount = 0;
-        const keepExisting: RepoUrl[] = [];
-        const errors: SpiderFailure[] = [];
-        const analyzeAndPersistResults: AnalyzeAndPersistResult[] = [];
 
-        try {
-            const it = this.queryFunction(process.env.GITHUB_TOKEN, criteria);
-            let bucket: Array<Promise<AnalyzeResult & { analyzeResults?: AnalyzeResults, sourceData: GitHubSearchResult }>> = [];
+        const run = new AnalysisRun<GitHubSearchResult>({
+            howToFindRepos: () => this.queryFunction(process.env.GITHUB_TOKEN, criteria),
+            determineRepoRef: sourceData => Promise.resolve({
+                owner: sourceData.owner.login,
+                repo: sourceData.name,
+                url: sourceData.url,
+            }),
+            describeFoundRepo: sourceData => ({ description: sourceData.owner.login + "/" + sourceData.name, url: sourceData.html_url }),
+            howToClone: async (rr, sourceData) => {
+                const p = await this.cloner.clone(sourceData);
+                rr.sha = p.id.sha; // very sneaky. We don't have it sooner. Hopefully this is soon enough.
+                return p;
+            },
+            analyzer,
+            analysisTracking,
+            persister: opts.persister,
+            keepExistingPersisted: opts.keepExistingPersisted,
+            projectFilter: criteria.projectTest,
 
-            async function runAllPromisesInBucket(): Promise<void> {
-                const aResults = await Promise.all(bucket);
-                for (const ar of aResults) {
-                    // Avoid hitting the database in parallel to avoid locking
-                    analyzeAndPersistResults.push(await runPersist(criteria, opts, ar));
-                }
+        }, {
+                workspaceId: opts.workspaceId,
+                description: "querying GitHub: " + (criteria.githubQueries || []).join(" and "),
+                maxRepos: 1000,
+                poolSize: opts.poolSize || 40,
+            });
 
-                logger.debug("Computing analytics over fingerprints...");
-                await computeAnalytics(opts.persister, opts.workspaceId);
-
-                logTimings(analyzer.timings);
-
-                bucket = [];
-            }
-
-            for await (const sourceData of it) {
-                ++repoCount;
-                const repo = {
-                    owner: sourceData.owner.login,
-                    repo: sourceData.name,
-                    url: sourceData.url,
-                };
-                if (await existingRecordShouldBeKept(opts, repo)) {
-                    keepExisting.push(repo.url);
-                    logger.debug("Found valid record for " + JSON.stringify(repo));
-                } else {
-                    logger.debug("Performing fresh analysis of " + JSON.stringify(repo));
-                    try {
-                        bucket.push(
-                            runAnalysis(this.cloner,
-                                dropIrrelevantFields(sourceData),
-                                criteria,
-                                analyzer));
-                        if (bucket.length >= opts.poolSize) {
-                            // Run all promises together. Effectively promise pooling
-                            await runAllPromisesInBucket();
-                        }
-                    } catch (err) {
-                        errors.push({
-                            repoUrl: sourceData.url,
-                            whileTryingTo: "clone, analyze, and persist", message: err.message,
-                        });
-                        logger.error("Failure analyzing repo at %s: %s", sourceData.url, err.message);
-                    }
-                }
-            }
-            await runAllPromisesInBucket();
-        } catch (e) {
-            logger.error("Error spidering: %s", e.message);
-            throw e;
-        }
-
-        const analyzeResults = _.reduce(analyzeAndPersistResults,
-            combineAnalyzeAndPersistResult,
-            emptyAnalyzeAndPersistResult);
-        return {
-            repositoriesDetected: repoCount,
-            projectsDetected: analyzeResults.projectCount,
-            failed:
-                [...errors,
-                    ...analyzeResults.failedToPersist,
-                    ...analyzeResults.failedToCloneOrAnalyze],
-            keptExisting: keepExisting,
-            persistedAnalyses: analyzeResults.persisted,
-        };
+        return run.run();
     }
 
     public constructor(
@@ -166,130 +111,6 @@ export interface AnalyzeAndPersistResult extends AnalyzeResult {
     persisted: PersistenceResult[];
 }
 
-const emptyAnalyzeAndPersistResult: AnalyzeAndPersistResult = {
-    failedToCloneOrAnalyze: [],
-    failedToPersist: [],
-    repoCount: 0,
-    projectCount: 0,
-    persisted: [],
-    millisTaken: 0,
-};
-
-function combineAnalyzeAndPersistResult(one: AnalyzeAndPersistResult, two: AnalyzeAndPersistResult): AnalyzeAndPersistResult {
-    return {
-        failedToCloneOrAnalyze: one.failedToCloneOrAnalyze.concat(two.failedToCloneOrAnalyze),
-        failedToPersist: one.failedToPersist.concat(two.failedToPersist),
-        repoCount: one.repoCount + two.repoCount,
-        projectCount: one.projectCount + two.projectCount,
-        persisted: one.persisted.concat(two.persisted),
-        millisTaken: one.millisTaken + two.millisTaken,
-    };
-}
-
-/**
- * Future for doing the work
- * @return {Promise<void>}
- */
-async function runAnalysis(cloner: Cloner,
-                           sourceData: GitHubSearchResult,
-                           criteria: ScmSearchCriteria,
-                           analyzer: Analyzer): Promise<AnalyzeResult & { analyzeResults?: AnalyzeResults, sourceData: GitHubSearchResult }> {
-    const startTime = new Date().getTime();
-    let project;
-    let clonedIn: number;
-    try {
-        project = await cloner.clone(sourceData);
-        clonedIn = new Date().getTime() - startTime;
-        logger.debug("Successfully cloned %s in %d milliseconds", sourceData.url, clonedIn);
-        if (!project.id.sha) {
-            const sha = await execPromise("git", ["rev-parse", "HEAD"], {
-                cwd: (project as LocalProject).baseDir,
-            });
-            project.id.sha = sha.stdout.trim();
-            logger.debug(`Set sha to ${project.id.sha}`);
-        }
-    } catch (err) {
-        return {
-            failedToCloneOrAnalyze: [{ repoUrl: sourceData.url, whileTryingTo: "clone", message: err.message }],
-            repoCount: 1,
-            projectCount: 0,
-            millisTaken: new Date().getTime() - startTime,
-            sourceData,
-        };
-    }
-    if (criteria.projectTest && !await criteria.projectTest(project)) {
-        logger.debug("Skipping analysis of %s as it doesn't pass projectTest", project.id.url);
-        return {
-            failedToCloneOrAnalyze: [],
-            repoCount: 1,
-            projectCount: 0,
-            millisTaken: new Date().getTime() - startTime,
-            sourceData,
-        };
-    }
-    let analyzeResults: AnalyzeResults;
-    try {
-        analyzeResults = await analyze(project, analyzer, criteria);
-        const millisTaken = new Date().getTime() - startTime;
-        logger.debug("Successfully analyzed %s in %d milliseconds including clone time of %d",
-            sourceData.url, millisTaken, clonedIn);
-        return {
-            failedToCloneOrAnalyze: [],
-            repoCount: 1,
-            projectCount: 0,
-            millisTaken,
-            analyzeResults,
-            sourceData,
-
-        };
-    } catch (err) {
-        logger.error("Could not analyze " + sourceData.url + ": " + err.message, err);
-        return {
-            failedToCloneOrAnalyze: [{ repoUrl: sourceData.url, whileTryingTo: "analyze", message: err.message }],
-            repoCount: 1,
-            projectCount: 0,
-            millisTaken: new Date().getTime() - startTime,
-            sourceData,
-        };
-    }
-}
-
-async function runPersist(criteria: ScmSearchCriteria,
-                          opts: SpiderOptions,
-                          ar: AnalyzeResult & { analyzeResults?: AnalyzeResults, sourceData: GitHubSearchResult }): Promise<AnalyzeAndPersistResult> {
-    const persistResults: PersistResult[] = [];
-
-    logger.debug("Persisting...");
-    if (!ar.analyzeResults) {
-        return {
-            failedToCloneOrAnalyze: ar.failedToCloneOrAnalyze,
-            repoCount: ar.repoCount,
-            projectCount: ar.projectCount,
-            failedToPersist: [],
-            persisted: [],
-            millisTaken: ar.millisTaken,
-        };
-    }
-
-    for (const repoInfo of ar.analyzeResults.repoInfos) {
-        const persistResult = await persistRepoInfo(opts, repoInfo, {
-            sourceData: ar.sourceData,
-            url: ar.sourceData.html_url,
-            timestamp: ar.sourceData.timestamp,
-            query: ar.sourceData.query,
-        });
-        persistResults.push(persistResult);
-    }
-    return {
-        failedToCloneOrAnalyze: ar.failedToCloneOrAnalyze,
-        repoCount: 1,
-        projectCount: 1,
-        failedToPersist: _.flatMap(persistResults, r => r.failed),
-        persisted: _.flatMap(persistResults, p => p.succeeded),
-        millisTaken: ar.millisTaken,
-    };
-}
-
 /**
  * Result row in a GitHub search
  */
@@ -312,25 +133,30 @@ async function* queryByCriteria(token: string, criteria: ScmSearchCriteria): Asy
     for (const q of criteria.githubQueries) {
         logger.debug("Running query " + q + "...");
         const options = octokit.search.repos.endpoint.merge({ q });
-        for await (const response of octokit.paginate.iterator(options)) {
-            retrieved += response.data.length;
-            const newResults = response.data
-                .filter((r: any) => !results.some(existing => existing.full_name === r.full_name));
-            newResults.forEach((r: any) => {
-                r.query = q;
-                r.timestamp = new Date();
-            });
-            for (const newResult of newResults) {
-                yield newResult;
+        try {
+            for await (const response of octokit.paginate.iterator(options)) {
+                retrieved += response.data.length;
+                const newResults = response.data
+                    .filter((r: any) => !results.some(existing => existing.full_name === r.full_name));
+                newResults.forEach((r: any) => {
+                    r.query = q;
+                    r.timestamp = new Date();
+                });
+                for (const newResult of newResults) {
+                    yield dropIrrelevantFields(newResult);
+                }
+                logger.debug(`Looked at ${retrieved} repos of max ${criteria.maxRetrieved}...`);
+                if (retrieved > criteria.maxRetrieved) {
+                    break;
+                }
+                if (results.length > criteria.maxReturned) {
+                    results = results.slice(0, criteria.maxReturned);
+                    break;
+                }
             }
-            logger.debug(`Looked at ${retrieved} repos of max ${criteria.maxRetrieved}...`);
-            if (retrieved > criteria.maxRetrieved) {
-                break;
-            }
-            if (results.length > criteria.maxReturned) {
-                results = results.slice(0, criteria.maxReturned);
-                break;
-            }
+        } catch (error) {
+            logger.error("Error querying: ", error);
+            return;
         }
     }
 }

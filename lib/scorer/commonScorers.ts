@@ -64,11 +64,14 @@ export function requireRecentCommit(opts: { days: number }): RepositoryScorer {
         if (!grt) {
             return undefined;
         }
+        if (!grt.data.lastCommitTime) {
+            return undefined;
+        }
         const date = new Date(grt.data.lastCommitTime);
         const days = daysSince(date);
         return {
             name: "recency",
-            score: adjustBy(-days / opts.days),
+            score: adjustBy(-days / (opts.days || 1)),
             reason: `Last commit ${days} days ago`,
         };
     };

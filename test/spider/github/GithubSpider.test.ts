@@ -15,6 +15,27 @@
  */
 
 import {
+    AnalysisTracker,
+    AnalysisTracking,
+} from "./../../../lib/analysis/tracking/analysisTracker";
+/*
+ * Copyright © 2019 Atomist, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+import {
+    GitProject,
     InMemoryProject,
     RepoRef,
 } from "@atomist/automation-client";
@@ -180,7 +201,7 @@ describe("GithubSpider", () => {
             },
         );
 
-        const result = await subject.spider(undefined, analyzer,
+        const result = await subject.spider({} as ScmSearchCriteria, analyzer, new AnalysisTracker(),
             { persister: new FakeProjectAnalysisResultStore() } as any);
 
         assert.deepStrictEqual(result, EmptySpiderResult);
@@ -197,10 +218,9 @@ describe("GithubSpider", () => {
                 yield oneSearchResult;
             });
 
-        const result = await subject.spider(criteria, analyzer, opts());
+        const result = await subject.spider(criteria, analyzer, new AnalysisTracker(), opts());
         const expected: SpiderResult = {
             repositoriesDetected: 1,
-            projectsDetected: 0,
             failed: [{ repoUrl: "https://home", whileTryingTo: "clone", message: "cannot clone" }],
             persistedAnalyses: [],
             keptExisting: [],
@@ -211,18 +231,17 @@ describe("GithubSpider", () => {
     // TODO this is currently hanging, possible because monorepo support doesn't like in memory project
     it.skip("can make and persist an analysis", async () => {
         const subject = new GitHubSpider(
-            { clone: async () => InMemoryProject.of({ path: "README.md", content: "hi there" }) },
+            { clone: async () => InMemoryProject.of({ path: "README.md", content: "hi there" }) as unknown as GitProject },
             async function* (t, q) {
                 yield oneSearchResult;
             },
         );
 
         const myOpts = opts();
-        const result = await subject.spider(criteria, analyzer, myOpts);
+        const result = await subject.spider(criteria, analyzer, new AnalysisTracker(), myOpts);
 
         const expected: SpiderResult = {
             repositoriesDetected: 1,
-            projectsDetected: 1,
             failed: [],
             persistedAnalyses: [hardCodedPlace],
             keptExisting: [],

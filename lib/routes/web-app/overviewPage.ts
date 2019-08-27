@@ -31,7 +31,7 @@ import {
 import { renderStaticReactNode } from "../../../views/topLevelPage";
 import { FingerprintUsage } from "../../analysis/offline/persist/ProjectAnalysisResultStore";
 import { defaultedToDisplayableFingerprintName } from "../../aspect/DefaultAspectRegistry";
-import { WebAppConfig } from "./webAppRoutes";
+import { WebAppConfig } from "./webAppConfig";
 
 export function exposeOverviewPage(conf: WebAppConfig,
                                    topLevelRoute: string): void {

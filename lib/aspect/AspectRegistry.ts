@@ -15,7 +15,7 @@
  */
 
 import {
-    RemoteRepoRef,
+    RepoRef,
     Severity,
 } from "@atomist/automation-client";
 import {
@@ -45,7 +45,7 @@ export interface HasFingerprints {
 /**
  * Result of an analysis. We must always have at least fingerprints and repo identification
  */
-export type Analyzed = HasFingerprints & { id: RemoteRepoRef };
+export type Analyzed = HasFingerprints & { id: RepoRef };
 
 /**
  * Tag based on fingerprint data.
@@ -62,7 +62,7 @@ export interface Tag {
     severity?: Severity;
 }
 
-export type TagTest = (fp: FP, id: RemoteRepoRef, tagContext: TagContext) => boolean;
+export type TagTest = (fp: FP, id: RepoRef, tagContext: TagContext) => boolean;
 
 /**
  * Determine zero or one tag in this fingerprint.
@@ -107,7 +107,7 @@ export interface CombinationTagger extends Tag {
      * @param {TagContext} tagContext context of this cohort of repos
      * @return {boolean}
      */
-    test(fp: FP[], id: RemoteRepoRef, tagContext: TagContext): boolean;
+    test(fp: FP[], id: RepoRef, tagContext: TagContext): boolean;
 }
 
 export type TaggedRepo = ProjectAnalysisResult & { tags: Tag[] };

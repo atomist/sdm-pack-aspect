@@ -16,6 +16,7 @@
 
 import {
     GitCommandGitProject,
+    GitProject,
     logger,
     RepoId,
     RepoRef,
@@ -23,17 +24,9 @@ import {
 import { execPromise } from "@atomist/sdm";
 import * as fs from "fs-extra";
 import * as path from "path";
+import { AnalysisTracking } from "../../../tracking/analysisTracker";
 import {
-    combinePersistResults,
-    emptyPersistResult,
-    PersistResult,
-} from "../../persist/ProjectAnalysisResultStore";
-import { computeAnalytics } from "../analytics";
-import {
-    analyze,
-    AnalyzeResults,
-    existingRecordShouldBeKept,
-    persistRepoInfo,
+    AnalysisRun,
 } from "../common";
 import { ScmSearchCriteria } from "../ScmSearchCriteria";
 import {
@@ -47,103 +40,33 @@ export class LocalSpider implements Spider {
 
     public async spider(criteria: ScmSearchCriteria,
                         analyzer: Analyzer,
-                        opts: SpiderOptions): Promise<SpiderResult> {
-        const repoIterator = findRepositoriesUnder(this.localDirectory);
-        const results: SpiderResult[] = [];
+                        analysisTracking: AnalysisTracking,
+                        opts: SpiderOptions,
+    ): Promise<SpiderResult> {
 
-        for await (const repoDir of repoIterator) {
-            logger.info("Analyzing local repo at %s", repoDir);
-            results.push(await spiderOneLocalRepo(opts, criteria, analyzer, repoDir));
-        }
+        const go = new AnalysisRun<string>({
+            howToFindRepos: () => findRepositoriesUnder(this.localDirectory),
+            determineRepoRef: repoRefFromLocalRepo,
+            describeFoundRepo: f => ({ description: f.replace(this.localDirectory, "") }),
+            howToClone: (rr, fr) => GitCommandGitProject.fromExistingDirectory(rr, fr) as Promise<GitProject>,
+            analyzer,
+            analysisTracking,
+            persister: opts.persister,
 
-        logger.debug("Computing analytics over all fingerprints...");
-        await computeAnalytics(opts.persister, opts.workspaceId);
-        return results.reduce(combineSpiderResults, emptySpiderResult);
+            keepExistingPersisted: opts.keepExistingPersisted,
+            projectFilter: criteria.projectTest,
+        }, {
+                workspaceId: opts.workspaceId,
+                description: "local analysis under " + this.localDirectory,
+                maxRepos: 1000,
+                poolSize: opts.poolSize,
+            });
+
+        return go.run();
     }
 
     constructor(public readonly localDirectory: string) {
     }
-}
-
-function combineSpiderResults(r1: SpiderResult, r2: SpiderResult): SpiderResult {
-    return {
-        repositoriesDetected: r1.repositoriesDetected + r2.repositoriesDetected,
-        projectsDetected: r1.projectsDetected + r2.projectsDetected,
-        failed:
-            [...r1.failed, ...r2.failed],
-        keptExisting: [...r1.keptExisting, ...r2.keptExisting],
-        persistedAnalyses: [...r1.persistedAnalyses, ...r2.persistedAnalyses],
-    };
-}
-
-const emptySpiderResult = {
-    repositoriesDetected: 0,
-    projectsDetected: 0,
-    failed:
-        [],
-    keptExisting: [],
-    persistedAnalyses: [],
-};
-
-const oneSpiderResult = {
-    ...emptySpiderResult,
-    repositoriesDetected: 1,
-    projectsDetected: 1,
-};
-
-async function spiderOneLocalRepo(opts: SpiderOptions,
-                                  criteria: ScmSearchCriteria,
-                                  analyzer: Analyzer,
-                                  repoDir: string): Promise<SpiderResult> {
-    const localRepoRef = await repoRefFromLocalRepo(repoDir);
-
-    if (await existingRecordShouldBeKept(opts, localRepoRef)) {
-        return {
-            ...oneSpiderResult,
-            keptExisting: [localRepoRef.url],
-        };
-    }
-
-    const project = await GitCommandGitProject.fromExistingDirectory(localRepoRef, repoDir);
-    if (criteria.projectTest && !await criteria.projectTest(project)) {
-        return {
-            ...oneSpiderResult,
-            projectsDetected: 0,        // does not count as a project
-        };
-    }
-
-    let analyzeResults: AnalyzeResults;
-    try {
-        analyzeResults = await analyze(project, analyzer, criteria);
-    } catch (err) {
-        return {
-            ...oneSpiderResult,
-            failed: [{
-                repoUrl: localRepoRef.url,
-                whileTryingTo: "analyze",
-                message: err.message,
-            }],
-        };
-    }
-
-    const persistResults: PersistResult[] = [];
-    for (const repoInfo of analyzeResults.repoInfos) {
-        const persistResult = await persistRepoInfo(opts, repoInfo, {
-            sourceData: { localDirectory: repoDir },
-            url: localRepoRef.url,
-            timestamp: new Date(),
-        });
-        persistResults.push(persistResult);
-    }
-    const combinedPersistResult = persistResults.reduce(combinePersistResults, emptyPersistResult);
-
-    return {
-        repositoriesDetected: 1,
-        projectsDetected: analyzeResults.projectsDetected,
-        failed: combinedPersistResult.failed,
-        persistedAnalyses: combinedPersistResult.succeeded,
-        keptExisting: [],
-    };
 }
 
 async function* findRepositoriesUnder(dir: string): AsyncIterable<string> {
@@ -179,11 +102,11 @@ async function* findRepositoriesUnder(dir: string): AsyncIterable<string> {
 async function repoRefFromLocalRepo(repoDir: string): Promise<RepoRef> {
     const repoId: RepoId = await execPromise("git", ["remote", "get-url", "origin"], { cwd: repoDir })
         .then(execHappened => repoIdFromOriginUrl(execHappened.stdout))
-        .catch(oops => inventRepoId(repoDir));
+        .catch(() => inventRepoId(repoDir));
 
     const sha = await execPromise("git", ["rev-parse", "HEAD"], { cwd: repoDir })
-        .then(execHappened => execHappened.stdout)
-        .catch(oops => "unknown");
+        .then(execHappened => execHappened.stdout.trim())
+        .catch(() => "unknown");
 
     return {
         ...repoId,

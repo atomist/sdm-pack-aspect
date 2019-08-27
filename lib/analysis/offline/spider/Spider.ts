@@ -25,6 +25,7 @@ import { SpideredRepo } from "../SpideredRepo";
 import { ScmSearchCriteria } from "./ScmSearchCriteria";
 
 import * as _ from "lodash";
+import { AnalysisTracking } from "../../tracking/analysisTracker";
 
 export type ProjectAnalysisResultFilter = (pa: ProjectAnalysisResult) => Promise<boolean>;
 
@@ -43,11 +44,6 @@ export interface SpiderOptions {
      * Is this record OK or should it be refreshed?
      */
     keepExistingPersisted: ProjectAnalysisResultFilter;
-
-    /**
-     * Invoked after the repo is persisted to perform any additional actions.
-     */
-    onPersisted?: (repo: SpideredRepo) => Promise<void>;
 }
 
 export type RepoUrl = string;
@@ -58,19 +54,19 @@ export interface SpiderFailure {
     repoUrl: string;
     whileTryingTo: string;
     message: string;
+    error?: Error;
 }
 
 export interface SpiderResult {
     repositoriesDetected: number;
-    projectsDetected: number;
     failed: SpiderFailure[];
     keptExisting: RepoUrl[];
     persistedAnalyses: PersistenceResult[];
+    millisTaken?: number;
 }
 
 export const EmptySpiderResult: SpiderResult = {
     repositoriesDetected: 0,
-    projectsDetected: 0,
     failed: [],
     keptExisting: [],
     persistedAnalyses: [],
@@ -115,5 +111,6 @@ export interface Spider {
 
     spider(criteria: ScmSearchCriteria,
            analyzer: Analyzer,
+           analysisTracking: AnalysisTracking,
            opts: SpiderOptions): Promise<SpiderResult>;
 }

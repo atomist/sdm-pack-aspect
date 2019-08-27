@@ -136,9 +136,14 @@ WHERE workspace_id ${workspaceId === "*" ? "<>" : "="} $1
 FROM repo_snapshots
 WHERE workspace_id ${workspaceId !== "*" ? "=" : "<>"} $1
 AND ${additionalWhereClause}`;
-        const reposAndFingerprints = `SELECT repo_snapshots.id, repo_snapshots.owner, repo_snapshots.name, repo_snapshots.url,
-  repo_snapshots.commit_sha, repo_snapshots.timestamp, repo_snapshots.workspace_id,
-  json_agg(json_build_object('path', path, 'id', fingerprint_id)) as fingerprint_refs
+        const reposAndFingerprints = `SELECT repo_snapshots.id,
+        repo_snapshots.owner,
+        repo_snapshots.name,
+        repo_snapshots.url,
+        repo_snapshots.commit_sha,
+        repo_snapshots.timestamp,
+        repo_snapshots.workspace_id,
+        json_agg(json_build_object('path', path, 'id', fingerprint_id)) as fingerprint_refs
 FROM repo_snapshots
     LEFT JOIN repo_fingerprints ON repo_snapshots.id = repo_fingerprints.repo_snapshot_id
 WHERE workspace_id ${workspaceId !== "*" ? "=" : "<>"} $1
@@ -149,7 +154,7 @@ GROUP BY repo_snapshots.id`;
                 // Load all fingerprints in workspace so we can look up
                 const repoSnapshotRows = await client.query(deep ? reposAndFingerprints : reposOnly,
                     [workspaceId, ...additionalParameters]);
-                return repoSnapshotRows.rows.map(row => {
+                return repoSnapshotRows.rows.map(whyDoesPostgresPutANewlineOnSomeFields).map(row => {
                     const repoRef = rowToRepoRef(row);
                     return {
                         id: row.id,
@@ -247,7 +252,7 @@ GROUP BY repo_snapshots.id`;
                 const fid = await this.ensureFingerprintStored(ideal.ideal, client);
                 await client.query(`INSERT INTO ideal_fingerprints (workspace_id, fingerprint_id, authority)
 values ($1, $2, 'local-user')`, [
-                    workspaceId, fid]);
+                        workspaceId, fid]);
             });
         } else {
             throw new Error("Elimination ideals not yet supported");
@@ -349,7 +354,7 @@ WHERE id = $1`;
         return fingerprintsInWorkspace(this.clientFactory, workspaceId, distinct, type, name);
     }
 
-    public async fingerprintsForProject(snapshotId: string): Promise<FP[]> {
+    public async fingerprintsForProject(snapshotId: string): Promise<Array<FP & { timestamp: Date, commitSha: string }>> {
         return fingerprintsForProject(this.clientFactory, snapshotId);
     }
 
@@ -375,7 +380,7 @@ GROUP by repo_snapshots.id) stats;`;
         values ($1, $2, $3, $4, $5, $6)
         ON CONFLICT ON CONSTRAINT fingerprint_analytics_pkey DO UPDATE SET entropy = $4, variants = $5, count = $6`;
                 await client.query(sql, [kind.type, kind.name, workspaceId,
-                    cohortAnalysis.entropy, cohortAnalysis.variants, cohortAnalysis.count]);
+                cohortAnalysis.entropy, cohortAnalysis.variants, cohortAnalysis.count]);
             }
             return true;
         });
@@ -393,7 +398,7 @@ GROUP by repo_snapshots.id) stats;`;
     }
 
     private async persistOne(client: ClientBase, analysisResult: ProjectAnalysisResult): Promise<PersistResult> {
-        const repoRef = analysisResult.analysis.id;
+        const repoRef = analysisResult.repoRef;
         if (!repoRef) {
             return {
                 attemptedCount: 1,
@@ -581,8 +586,8 @@ WHERE rs.workspace_id ${workspaceId === "*" ? "<>" : "="} $1
 }
 
 async function fingerprintsForProject(clientFactory: ClientFactory,
-                                      snapshotId: string): Promise<FP[]> {
-    const sql = `SELECT f.name as fingerprintName, f.feature_name, f.sha, f.data, rf.path
+                                      snapshotId: string): Promise<Array<FP & { timestamp: Date, commitSha: string }>> {
+    const sql = `SELECT f.name as fingerprintName, f.feature_name, f.sha, f.data, rf.path, rs.timestamp, rs.commit_sha
 FROM repo_fingerprints rf, repo_snapshots rs, fingerprints f
 WHERE rs.id = $1 AND rf.repo_snapshot_id = rs.id AND rf.fingerprint_id = f.id
 ORDER BY feature_name, fingerprintName ASC`;
@@ -595,6 +600,8 @@ ORDER BY feature_name, fingerprintName ASC`;
                 sha: row.sha,
                 data: row.data,
                 path: row.path,
+                timestamp: row.timestamp,
+                commitSha: row.commit_sha,
             };
         });
     }, []);
@@ -638,14 +645,22 @@ async function deleteOldSnapshotForRepository(repoRef: RepoRef, client: ClientBa
         [repoRef.url]);
 }
 
-// TODO GitHub only
-function rowToRepoRef(row: { provider_id: string, owner: string, name: string, url: string, sha: string }): RemoteRepoRef {
+function rowToRepoRef(row: { provider_id: string, owner: string, name: string, url: string, sha?: string, commit_sha?: string }): RemoteRepoRef {
     return GitHubRepoRef.from({
         ...row,
+        sha: row.commit_sha,
         repo: row.name,
     });
 }
 
-function snapshotIdFor(repoRef: RemoteRepoRef): string {
+function whyDoesPostgresPutANewlineOnSomeFields<T extends { commit_sha?: string, id?: string }>(row: T): T {
+    return {
+        ...row,
+        commit_sha: row.commit_sha ? row.commit_sha.trim() : undefined,
+        id: row.id ? row.id.trim() : undefined,
+    };
+}
+
+function snapshotIdFor(repoRef: RepoRef): string {
     return repoRef.url.replace("/", "") + "_" + repoRef.sha;
 }
