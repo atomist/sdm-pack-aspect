@@ -214,18 +214,14 @@ function exposeFingerprintByTypeAndName(express: Express,
             });
 
             const ideal = await aspectRegistry.idealStore.loadIdeal(workspaceId, fingerprintType, fingerprintName);
-            logger.error(`>>>>>>>>>>>>>>> 1 ` + JSON.stringify(ideal));
             let target;
             if (isConcreteIdeal(ideal)) {
-                logger.error(`>>>>>>>>>>>>>>> 2 `);
                 const aspect = aspectRegistry.aspectOf(fingerprintType);
                 if (!!aspect && !!aspect.toDisplayableFingerprint) {
-                    logger.error(`>>>>>>>>>>>>>>> 3 ` + aspect.name);
                     target = {
                         ...ideal.ideal,
                         value: aspect.toDisplayableFingerprint(ideal.ideal),
                     };
-                    logger.error(`>>>>>>>>>>>>>>> 4 ` + JSON.stringify(target));
                 }
             }
 
