@@ -25,6 +25,7 @@ import { SpideredRepo } from "../SpideredRepo";
 import { ScmSearchCriteria } from "./ScmSearchCriteria";
 
 import * as _ from "lodash";
+import { AnalysisTracking } from "../../tracking/analysisTracker";
 
 export type ProjectAnalysisResultFilter = (pa: ProjectAnalysisResult) => Promise<boolean>;
 
@@ -112,5 +113,6 @@ export interface Spider {
 
     spider(criteria: ScmSearchCriteria,
            analyzer: Analyzer,
-           opts: SpiderOptions): Promise<SpiderResult>;
+           analysisTracking: AnalysisTracking,
+           opts: SpiderOptions ): Promise<SpiderResult>;
 }

@@ -23,8 +23,8 @@ import {
 } from "@atomist/automation-client";
 import { Analyzed } from "../../../aspect/AspectRegistry";
 import {
-    globalAnalysisTracking,
     RepoBeingTracked,
+    AnalysisTracking,
 } from "../../tracking/analysisTracker";
 import {
     ProjectAnalysisResultStore,
@@ -42,17 +42,22 @@ interface TrackedRepo<FoundRepo> {
     repoRef?: RepoRef;
 }
 
+/**
+ * This class knows how to execute an analysis run,
+ * given some functions that are specific to the source
+ * of the repositories.
+ */
 export class AnalysisRun<FoundRepo> {
-    public opts: any;
 
     constructor(
         private readonly world: {
             howToFindRepos: () => AsyncIterable<FoundRepo>,
             determineRepoRef: (f: FoundRepo) => Promise<RepoRef>,
-            describeFoundRepo: (f: FoundRepo) => DescribeRepo,
+            describeFoundRepo: (f: FoundRepo) => RepoDescription,
             howToClone: (rr: RepoRef, fr: FoundRepo) => Promise<GitProject>,
             analyzer: Analyzer;
             persister: ProjectAnalysisResultStore,
+            analysisTracking: AnalysisTracking,
 
             keepExistingPersisted: ProjectAnalysisResultFilter,
             projectFilter?: (p: Project) => Promise<boolean>;
@@ -73,7 +78,7 @@ export class AnalysisRun<FoundRepo> {
 
     public async run(): Promise<SpiderResult> {
 
-        const analysisBeingTracked = globalAnalysisTracking.startAnalysis({
+        const analysisBeingTracked = this.world.analysisTracking.startAnalysis({
             description: this.params.description,
         });
 
@@ -109,7 +114,7 @@ export class AnalysisRun<FoundRepo> {
     }
 }
 
-interface DescribeRepo {
+interface RepoDescription {
     description: string;
     url?: string;
 }
@@ -118,7 +123,7 @@ async function analyzeOneRepo<FoundRepo>(
     world: {
         howToFindRepos: () => AsyncIterable<FoundRepo>,
         determineRepoRef: (f: FoundRepo) => Promise<RepoRef>,
-        describeFoundRepo: (f: FoundRepo) => DescribeRepo,
+        describeFoundRepo: (f: FoundRepo) => RepoDescription,
         howToClone: (rr: RepoRef, fr: FoundRepo) => Promise<GitProject>,
         analyzer: Analyzer;
         persister: ProjectAnalysisResultStore,

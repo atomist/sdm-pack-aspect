@@ -24,6 +24,7 @@ import {
 import { execPromise } from "@atomist/sdm";
 import * as fs from "fs-extra";
 import * as path from "path";
+import { AnalysisTracking } from "../../../tracking/analysisTracker";
 import {
     AnalysisRun,
 } from "../common";
@@ -39,7 +40,9 @@ export class LocalSpider implements Spider {
 
     public async spider(criteria: ScmSearchCriteria,
                         analyzer: Analyzer,
-                        opts: SpiderOptions): Promise<SpiderResult> {
+                        analysisTracking: AnalysisTracking,
+                        opts: SpiderOptions,
+    ): Promise<SpiderResult> {
 
         const go = new AnalysisRun<string>({
             howToFindRepos: () => findRepositoriesUnder(this.localDirectory),
@@ -47,6 +50,7 @@ export class LocalSpider implements Spider {
             describeFoundRepo: f => ({ description: f.replace(this.localDirectory, "") }),
             howToClone: (rr, fr) => GitCommandGitProject.fromExistingDirectory(rr, fr) as Promise<GitProject>,
             analyzer,
+            analysisTracking,
             persister: opts.persister,
 
             keepExistingPersisted: opts.keepExistingPersisted,

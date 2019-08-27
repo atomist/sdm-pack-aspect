@@ -20,6 +20,7 @@ import {
 } from "@atomist/automation-client";
 import * as Octokit from "@octokit/rest";
 import * as _ from "lodash";
+import { AnalysisTracking } from "../../../tracking/analysisTracker";
 import { AnalysisRun } from "../common";
 import { ScmSearchCriteria } from "../ScmSearchCriteria";
 import {
@@ -45,8 +46,9 @@ export interface Cloner {
 export class GitHubSpider implements Spider {
 
     public async spider(criteria: ScmSearchCriteria,
-                        analyzer: Analyzer,
-                        opts: SpiderOptions): Promise<SpiderResult> {
+        analyzer: Analyzer,
+        analysisTracking: AnalysisTracking,
+        opts: SpiderOptions): Promise<SpiderResult> {
 
         const run = new AnalysisRun<GitHubSearchResult>({
             howToFindRepos: () => this.queryFunction(process.env.GITHUB_TOKEN, criteria),
@@ -62,6 +64,7 @@ export class GitHubSpider implements Spider {
                 return p;
             },
             analyzer,
+            analysisTracking,
             persister: opts.persister,
             keepExistingPersisted: opts.keepExistingPersisted,
             projectFilter: criteria.projectTest,

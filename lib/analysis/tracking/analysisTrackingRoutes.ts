@@ -1,24 +1,17 @@
 
 import { logger } from "@atomist/automation-client";
-import { metadata } from "@atomist/sdm";
-import {
-    Express,
-    RequestHandler,
-} from "express";
 import { AnalysisTrackingPage } from "../../../views/analysisTrackingPage";
 import { renderStaticReactNode } from "../../../views/topLevelPage";
-import { AnalysisTracking } from "./analysisTracker";
+import { WebAppConfig } from "../../routes/web-app/webAppConfig";
 
-export function exposeAnalysisTrackingPage(express: Express,
-                                           handlers: RequestHandler[],
-                                           analysisTracking: AnalysisTracking): void {
-    express.get("/analysis", ...handlers, async (req, res) => {
+export function exposeAnalysisTrackingPage(conf: WebAppConfig): void {
+    conf.express.get("/analysis", ...conf.handlers, async (req, res) => {
         try {
-            const data = analysisTracking.report();
+            const data = conf.analysisTracking.report();
 
             res.send(renderStaticReactNode(
                 AnalysisTrackingPage(data), `Analyzing projects`,
-                metadata()));
+                conf.instanceMetadata));
         } catch (e) {
             logger.error(e.stack);
             res.status(500).send("failure");

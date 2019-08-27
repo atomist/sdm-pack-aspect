@@ -158,7 +158,11 @@ export class AnalysisBeingTracked {
     }
 }
 
-class AnalysisTracker implements AnalysisTracking {
+/**
+ * Track analyses for display of status on a page.
+ * You want exactly one of these in your SDM.
+ */
+export class AnalysisTracker implements AnalysisTracking {
 
     private counter: number = 1;
     private readonly analyses: AnalysisBeingTracked[] = [];
@@ -182,5 +186,3 @@ class AnalysisTracker implements AnalysisTracking {
     }
 
 }
-
-export const globalAnalysisTracking: AnalysisTracking = new AnalysisTracker();

@@ -20,6 +20,7 @@ import { StableDirectoryManager } from "@atomist/automation-client/lib/spi/clone
 import { TmpDirectoryManager } from "@atomist/automation-client/lib/spi/clone/tmpDirectoryManager";
 import * as _ from "lodash";
 import { sdmConfigClientFactory } from "../../../machine/machine";
+import { AnalysisTracking } from "../../tracking/analysisTracker";
 import { PostgresProjectAnalysisResultStore } from "../persist/PostgresProjectAnalysisResultStore";
 import { GitCommandGitProjectCloner } from "./github/GitCommandGitProjectCloner";
 import { GitHubSpider } from "./github/GitHubSpider";
@@ -72,7 +73,8 @@ export interface SpiderAppOptions {
  * Spider a GitHub.com org
  */
 export async function spider(params: SpiderAppOptions,
-                             analyzer: Analyzer): Promise<SpiderResult> {
+                             analyzer: Analyzer,
+                             analysisTracking: AnalysisTracking): Promise<SpiderResult> {
     const { search, workspaceId } = params;
     const org = params.owner;
     const searchInRepoName = search ? ` ${search} in:name` : "";
@@ -113,6 +115,7 @@ export async function spider(params: SpiderAppOptions,
     logger.debug("%s\nOptions: %j\nSpider criteria: %j\n%s\n", sep, params, criteria, sep);
     return spiderYo.spider(criteria,
         analyzer,
+        analysisTracking,
         {
             persister,
             keepExistingPersisted: async existing => {

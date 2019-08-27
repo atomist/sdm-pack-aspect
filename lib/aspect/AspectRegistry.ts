@@ -111,7 +111,7 @@ export interface CombinationTagger extends Tag {
      * @param {TagContext} tagContext context of this cohort of repos
      * @return {boolean}
      */
-    test(fp: FP[], id: RepoRef, tagContext: TagContext): boolean;
+    test: TagTest;
 }
 
 export type TaggedRepo = ProjectAnalysisResult & { tags: Tag[] };

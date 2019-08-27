@@ -66,15 +66,9 @@ import {
 } from "../api";
 import { exposeOverviewPage } from "./overviewPage";
 import { exposeRepositoryListPage } from "./repositoryListPage";
-
-export interface WebAppConfig {
-    express: Express;
-    handlers: RequestHandler[];
-    aspectRegistry: AspectRegistry;
-    store: ProjectAnalysisResultStore;
-    instanceMetadata: ExtensionPackMetadata;
-    httpClientFactory: HttpClientFactory;
-}
+import { exposeAnalysisTrackingPage } from "../../analysis/tracking/analysisTrackingRoutes";
+import { AnalysisTracking } from "../../analysis/tracking/analysisTracker";
+import { WebAppConfig } from "./webAppConfig";
 
 /**
  * Add the org page route to Atomist SDM Express server.
@@ -83,6 +77,7 @@ export interface WebAppConfig {
 export function addWebAppRoutes(
     aspectRegistry: AspectRegistry,
     store: ProjectAnalysisResultStore,
+    analysisTracking: AnalysisTracking,
     httpClientFactory: HttpClientFactory,
     instanceMetadata: ExtensionPackMetadata): {
         customizer: ExpressCustomizer,
@@ -107,7 +102,7 @@ export function addWebAppRoutes(
                 res.redirect(topLevelRoute);
             });
 
-            const conf: WebAppConfig = { express, handlers, aspectRegistry, store, instanceMetadata, httpClientFactory };
+            const conf: WebAppConfig = { express, handlers, aspectRegistry, store, instanceMetadata, httpClientFactory, analysisTracking };
 
             exposeDriftPage(conf);
             exposeOverviewPage(conf, topLevelRoute);
@@ -116,6 +111,8 @@ export function addWebAppRoutes(
             exposeExplorePage(conf);
             exposeFingerprintReportPage(conf);
             exposeCustomReportPage(conf);
+            exposeAnalysisTrackingPage(conf);
+
         },
     };
 }
@@ -241,17 +238,17 @@ function exposeCustomReportPage(conf: WebAppConfig): void {
 
 // TODO fix any
 async function renderDataUrl(instanceMetadata: ExtensionPackMetadata,
-                             workspaceId: string,
-                             page: {
+    workspaceId: string,
+    page: {
         title: string,
         heading: string,
         subheading?: string,
         dataUrl: string,
     },
-                             aspectRegistry: AspectRegistry,
-                             httpClientFactory: HttpClientFactory,
-                             req: any,
-                             res: any): Promise<void> {
+    aspectRegistry: AspectRegistry,
+    httpClientFactory: HttpClientFactory,
+    req: any,
+    res: any): Promise<void> {
     let tree: TagTree;
     const possibleIdealsForDisplay: PossibleIdealForDisplay[] = [];
 
@@ -327,8 +324,8 @@ function displayIdeal(fingerprint: AugmentedFingerprintForDisplay, aspect: Aspec
 }
 
 async function lookForIdealDisplay(aspectRegistry: AspectRegistry,
-                                   aspectType: string,
-                                   fingerprintName: string): Promise<{ displayValue: string } | undefined> {
+    aspectType: string,
+    fingerprintName: string): Promise<{ displayValue: string } | undefined> {
     if (!aspectType) {
         return undefined;
     }

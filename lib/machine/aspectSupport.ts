@@ -46,6 +46,7 @@ import {
     analyzeGitHubOrganizationCommandRegistration,
     analyzeLocalCommandRegistration,
 } from "../analysis/offline/spider/analyzeCommand";
+import { AnalysisTracker, AnalysisTracking } from "../analysis/tracking/analysisTracker";
 import {
     CombinationTagger,
     RepositoryScorer,
@@ -160,6 +161,7 @@ export function aspectSupport(options: AspectSupportOptions): ExtensionPack {
         ...metadata(),
         configure: sdm => {
             const cfg = sdm.configuration;
+            const analysisTracking = new AnalysisTracker();
 
             if (isInLocalMode()) {
                 // If we're in local mode, expose analyzer commands and
@@ -168,9 +170,9 @@ export function aspectSupport(options: AspectSupportOptions): ExtensionPack {
                     toArray(options.aspects),
                     options.virtualProjectFinder || exports.DefaultVirtualProjectFinder);
 
-                sdm.addCommand(analyzeGitHubByQueryCommandRegistration(analyzer));
-                sdm.addCommand(analyzeGitHubOrganizationCommandRegistration(analyzer));
-                sdm.addCommand(analyzeLocalCommandRegistration(analyzer));
+                sdm.addCommand(analyzeGitHubByQueryCommandRegistration(analyzer, analysisTracking));
+                sdm.addCommand(analyzeGitHubOrganizationCommandRegistration(analyzer, analysisTracking));
+                sdm.addCommand(analyzeLocalCommandRegistration(analyzer, analysisTracking));
             }
 
             // Add support for calculating aspects on push and computing delivery aspects
@@ -196,7 +198,8 @@ export function aspectSupport(options: AspectSupportOptions): ExtensionPack {
             const exposeWeb = options.exposeWeb !== undefined ? options.exposeWeb : isInLocalMode();
             if (exposeWeb) {
                 const { customizers, routesToSuggestOnStartup } =
-                    orgVisualizationEndpoints(sdmConfigClientFactory(cfg), cfg.http.client.factory, options);
+                    orgVisualizationEndpoints(sdmConfigClientFactory(cfg), cfg.http.client.factory,
+                        analysisTracking, options);
                 cfg.http.customizers.push(...customizers);
                 routesToSuggestOnStartup.forEach(rtsos => {
                     cfg.logging.banner.contributors.push(suggestRoute(rtsos));
@@ -216,6 +219,7 @@ function suggestRoute({ title, route }: { title: string, route: string }):
 
 function orgVisualizationEndpoints(dbClientFactory: ClientFactory,
                                    httpClientFactory: HttpClientFactory,
+                                   analysisTracking: AnalysisTracking,
                                    options: AspectSupportOptions): {
         routesToSuggestOnStartup: Array<{ title: string, route: string }>,
         customizers: ExpressCustomizer[],
@@ -241,7 +245,7 @@ function orgVisualizationEndpoints(dbClientFactory: ClientFactory,
         };
     }
 
-    const aboutStaticPages = addWebAppRoutes(aspectRegistry, resultStore, httpClientFactory,
+    const aboutStaticPages = addWebAppRoutes(aspectRegistry, resultStore, analysisTracking, httpClientFactory,
         options.instanceMetadata || metadata());
 
     return {

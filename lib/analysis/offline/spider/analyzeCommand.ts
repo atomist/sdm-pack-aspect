@@ -119,54 +119,60 @@ const AnalyzeLocalCommandParametersDefinition: ParametersObject<AnalyzeLocalComm
     },
 };
 
-function analyzeFromGitHubOrganization(analyzer: Analyzer): CommandListener<AnalyzeGitHubOrganizationCommandParameters> {
+function analyzeFromGitHubOrganization(analyzer: Analyzer,
+                                       analysisTracking: AnalysisTracking): CommandListener<AnalyzeGitHubOrganizationCommandParameters> {
     return async d => {
         const spiderAppOptions: SpiderAppOptions = d.parameters;
         logger.info("analyze github org invoked with " + JSON.stringify(spiderAppOptions));
 
         d.addressChannels("Check the progress of your analysis: http://localhost:" + d.configuration.http.port + "/analysis");
-        const result = await spider(spiderAppOptions, analyzer);
+        const result = await spider(spiderAppOptions, analyzer, analysisTracking);
         await d.addressChannels(`Analysis result: `
             + JSON.stringify(result, undefined, 2));
         return { code: 0 };
     };
 }
 
-function analyzeFromGitHubByQuery(analyzer: Analyzer): CommandListener<AnalyzeGitHubByQueryCommandParameters> {
+function analyzeFromGitHubByQuery(analyzer: Analyzer, analysisTracking: AnalysisTracking): CommandListener<AnalyzeGitHubByQueryCommandParameters> {
     return async d => {
         const spiderAppOptions: SpiderAppOptions = d.parameters;
         logger.info("analyze github by query invoked with " + JSON.stringify(spiderAppOptions));
 
-        const result = await spider(spiderAppOptions, analyzer);
+        const result = await spider(spiderAppOptions, analyzer, analysisTracking);
         await d.addressChannels(`Analysis result: `
             + JSON.stringify(result, undefined, 2));
         return { code: 0 };
     };
 }
 
-export function analyzeGitHubOrganizationCommandRegistration(analyzer: Analyzer): CommandHandlerRegistration<AnalyzeGitHubCommandParameters> {
+export function analyzeGitHubOrganizationCommandRegistration(
+    analyzer: Analyzer,
+    analysisTracking: AnalysisTracking): CommandHandlerRegistration<AnalyzeGitHubCommandParameters> {
     return {
         name: "analyzeRepositoriesFromGitHubOrganization",
         intent: ["analyze github organization"],
         description: "analyze repositories from one GitHub organization (or user)",
         parameters: AnalyzeGitHubOrganizationCommandParametersDefinition,
-        listener: analyzeFromGitHubOrganization(analyzer),
+        listener: analyzeFromGitHubOrganization(analyzer, analysisTracking),
     };
 }
 
-export function analyzeGitHubByQueryCommandRegistration(analyzer: Analyzer): CommandHandlerRegistration<AnalyzeGitHubCommandParameters> {
+export function analyzeGitHubByQueryCommandRegistration(
+    analyzer: Analyzer,
+    analysisTracking: AnalysisTracking): CommandHandlerRegistration<AnalyzeGitHubCommandParameters> {
     return {
         name: "analyzeRepositoriesFromGitHubByQuery",
         intent: ["analyze github by query"],
         description: "choose repositories to analyze by GitHub query",
         parameters: AnalyzeGitHubByQueryCommandParametersDefinition,
-        listener: analyzeFromGitHubByQuery(analyzer),
+        listener: analyzeFromGitHubByQuery(analyzer, analysisTracking),
     };
 }
 
 import * as path from "path";
+import { AnalysisTracking } from "../../tracking/analysisTracker";
 
-function analyzeFromLocal(analyzer: Analyzer): CommandListener<AnalyzeLocalCommandParameters> {
+function analyzeFromLocal(analyzer: Analyzer, analysisTracking: AnalysisTracking): CommandListener<AnalyzeLocalCommandParameters> {
     return async d => {
         if (!path.isAbsolute(d.parameters.localDirectory)) {
             await d.addressChannels("Please provide an absolute path. You provided: " + d.parameters.localDirectory);
@@ -176,19 +182,21 @@ function analyzeFromLocal(analyzer: Analyzer): CommandListener<AnalyzeLocalComma
         const spiderAppOptions: SpiderAppOptions = d.parameters;
         logger.info("analyze local invoked with " + JSON.stringify(spiderAppOptions));
 
-        const result = await spider(spiderAppOptions, analyzer);
+        const result = await spider(spiderAppOptions, analyzer, analysisTracking);
         await d.addressChannels(`Analysis result: `
             + JSON.stringify(result, undefined, 2));
         return { code: 0 };
     };
 }
 
-export function analyzeLocalCommandRegistration(analyzer: Analyzer): CommandHandlerRegistration<AnalyzeLocalCommandParameters> {
+export function analyzeLocalCommandRegistration(
+    analyzer: Analyzer,
+    analysisTracking: AnalysisTracking): CommandHandlerRegistration<AnalyzeLocalCommandParameters> {
     return {
         name: "analyzeRepositoriesFromLocalFilesystem",
         intent: ["analyze local repositories"],
         description: "choose repositories to analyze, by parent directory",
         parameters: AnalyzeLocalCommandParametersDefinition,
-        listener: analyzeFromLocal(analyzer),
+        listener: analyzeFromLocal(analyzer, analysisTracking),
     };
 }

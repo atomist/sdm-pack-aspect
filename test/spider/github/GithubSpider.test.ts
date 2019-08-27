@@ -1,3 +1,4 @@
+import { AnalysisTracker, AnalysisTracking } from "./../../../lib/analysis/tracking/analysisTracker";
 /*
  * Copyright © 2019 Atomist, Inc.
  *
@@ -181,7 +182,7 @@ describe("GithubSpider", () => {
             },
         );
 
-        const result = await subject.spider(undefined, analyzer,
+        const result = await subject.spider(undefined, analyzer, new AnalysisTracker(),
             { persister: new FakeProjectAnalysisResultStore() } as any);
 
         assert.deepStrictEqual(result, EmptySpiderResult);
@@ -198,7 +199,7 @@ describe("GithubSpider", () => {
                 yield oneSearchResult;
             });
 
-        const result = await subject.spider(criteria, analyzer, opts());
+        const result = await subject.spider(criteria, analyzer, new AnalysisTracker(), opts());
         const expected: SpiderResult = {
             repositoriesDetected: 1,
             projectsDetected: 0,
@@ -219,7 +220,7 @@ describe("GithubSpider", () => {
         );
 
         const myOpts = opts();
-        const result = await subject.spider(criteria, analyzer, myOpts);
+        const result = await subject.spider(criteria, analyzer, new AnalysisTracker(), myOpts);
 
         const expected: SpiderResult = {
             repositoriesDetected: 1,
