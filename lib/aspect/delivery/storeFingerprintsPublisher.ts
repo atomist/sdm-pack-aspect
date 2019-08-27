@@ -15,7 +15,11 @@
  */
 
 import { logger } from "@atomist/automation-client";
-import { PublishFingerprints, PublishFingerprintsFor, RepoIdentification } from "@atomist/sdm-pack-fingerprints";
+import {
+    PublishFingerprints,
+    PublishFingerprintsFor,
+    RepoIdentification,
+} from "@atomist/sdm-pack-fingerprints";
 import { ProjectAnalysisResultStore } from "../../analysis/offline/persist/ProjectAnalysisResultStore";
 import { computeAnalyticsForFingerprintKind } from "../../analysis/offline/spider/analytics";
 import { ProjectAnalysisResult } from "../../analysis/ProjectAnalysisResult";
