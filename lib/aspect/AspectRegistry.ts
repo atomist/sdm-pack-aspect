@@ -15,7 +15,6 @@
  */
 
 import {
-    RemoteRepoRef,
     RepoRef,
     Severity,
 } from "@atomist/automation-client";
@@ -63,7 +62,7 @@ export interface Tag {
     severity?: Severity;
 }
 
-export type TagTest = (fp: FP, id: RemoteRepoRef, tagContext: TagContext) => boolean;
+export type TagTest = (fp: FP, id: RepoRef, tagContext: TagContext) => boolean;
 
 /**
  * Determine zero or one tag in this fingerprint.
@@ -71,13 +70,10 @@ export type TagTest = (fp: FP, id: RemoteRepoRef, tagContext: TagContext) => boo
 export interface Tagger extends Tag {
 
     /**
-     * Test for the relevance of this tag
-     * @param {FP} fp fingerprint to test
-     * @param {RepoRef} id id of repo to text
-     * @param {TagContext} tagContext context of this cohort of repos
-     * @return {boolean}
+     * Test for the relevance of this tag. Invoked on every fingerprint
+     * on each project.
      */
-    test(fp: FP, id: RepoRef, tagContext: TagContext): boolean;
+    test: TagTest;
 }
 
 /**
@@ -111,7 +107,7 @@ export interface CombinationTagger extends Tag {
      * @param {TagContext} tagContext context of this cohort of repos
      * @return {boolean}
      */
-    test: TagTest;
+    test(fp: FP[], id: RepoRef, tagContext: TagContext): boolean;
 }
 
 export type TaggedRepo = ProjectAnalysisResult & { tags: Tag[] };
