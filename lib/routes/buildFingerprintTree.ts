@@ -186,16 +186,16 @@ async function decorateProblemFingerprints(aspectRegistry: AspectRegistry, pt: P
     // Flag bad fingerprints with a special color
     await visitAsync(pt.tree, async l => {
         if ((l as any).sha) {
-            const problem = usageChecker ? usageChecker.check(l as any, "local") : undefined;
-            if (problem) {
+            const problems = usageChecker ? usageChecker.check(l as any, "local") : undefined;
+            if (problems && problems.length > 0) {
                 (l as any).color = "#810325";
-                (l as any).problem = {
+                (l as any).problems = problems.map(problem => ({
                     // Need to dispense with the fingerprint, which would make this circular
                     description: problem.description,
                     severity: problem.severity,
                     authority: problem.authority,
                     url: problem.url,
-                };
+                }));
             }
         }
         return true;

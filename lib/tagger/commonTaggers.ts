@@ -48,7 +48,7 @@ export const Monorepo: Tagger = {
 };
 
 /**
- * Penalize repositories with exposed secrets.
+ * Tag repositories with exposed secrets.
  */
 export const Vulnerable: Tagger = {
     name: "vulnerable",
@@ -100,6 +100,9 @@ export function dead(opts: { deadDays: number }): Tagger {
     };
 }
 
+/**
+ * Tag repositories that have a single committer, based on GitActives aspect
+ */
 export const SoleCommitter: Tagger = {
     name: "sole-committer",
     description: "Projects with one committer",
@@ -143,8 +146,8 @@ export const isProblematic: WorkspaceSpecificTagger = {
         const checker = await aspectRegistry.undesirableUsageCheckerFor(workspaceId);
         if (checker) {
             return fp => {
-                const problem = checker.check(fp, workspaceId);
-                return !!problem;
+                const problems = checker.check(fp, workspaceId);
+                return problems.length > 0;
             };
         }
         return () => false;

@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+import { toArray } from "@atomist/sdm-core/lib/util/misc/array";
 import { FP } from "@atomist/sdm-pack-fingerprints";
 
 /**
@@ -39,6 +40,9 @@ export interface ProblemUsage {
      */
     readonly url?: string;
 
+    /**
+     * The fingerprint we object to
+     */
     readonly fingerprint: FP;
 }
 
@@ -59,7 +63,7 @@ export interface ProblemStore {
  * Check to see if the given fingerprint is undesirable in the given workspace.
  * Enables code to be used along with fingerprints persisted in ProblemStore.
  */
-export type UndesirableUsageCheck = (fp: FP, workspaceId: string) => ProblemUsage | undefined;
+export type UndesirableUsageCheck = (fp: FP, workspaceId: string) => ProblemUsage[];
 
 /**
  * Type that can flag an issue with a fingerprint.
@@ -77,20 +81,20 @@ export const AcceptEverythingUndesirableUsageChecker: UndesirableUsageChecker = 
 };
 
 /**
- * UndesirableUsageChecker from a list
- * @param {(fp: FP) => Promise<Flag[]>} checkers
- * @return {UndesirableUsageChecker}
+ * Create an UndesirableUsageChecker from a list of problem-finding functions
  */
-export function chainUndesirableUsageCheckers(...checkers: UndesirableUsageCheck[]): UndesirableUsageChecker {
+export function chainUndesirableUsageCheckers(
+    ...checkers: Array<(fp: FP, workspaceId: string) => ProblemUsage | ProblemUsage[] | undefined>): UndesirableUsageChecker {
     return {
         check: (fp, workspaceId) => {
+            const problems: ProblemUsage[] = [];
             for (const f of checkers) {
                 const flagged = f(fp, workspaceId);
                 if (flagged) {
-                    return flagged;
+                    problems.push(...toArray(flagged));
                 }
             }
-            return undefined;
+            return problems;
         },
     };
 }
@@ -106,7 +110,7 @@ export async function problemStoreBackedUndesirableUsageCheckerFor(problemStore:
     const problems: ProblemUsage[] = await problemStore.loadProblems(workspaceId);
     return {
         check: fp => {
-            return problems.find(p => p.fingerprint.sha === fp.sha);
+            return problems.filter(p => p.fingerprint.sha === fp.sha);
         },
     };
 }
