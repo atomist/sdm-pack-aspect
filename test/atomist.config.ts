@@ -53,6 +53,7 @@ import {
     MavenDefaultOptions,
 } from "@atomist/sdm-pack-spring";
 import * as _ from "lodash";
+import { sdmConfigClientFactory } from "../lib/analysis/offline/persist/pgClientFactory";
 import { PostgresProjectAnalysisResultStore } from "../lib/analysis/offline/persist/PostgresProjectAnalysisResultStore";
 import {
     CombinationTagger,
@@ -87,7 +88,6 @@ import {
     aspectSupport,
     DefaultVirtualProjectFinder,
 } from "../lib/machine/aspectSupport";
-import { sdmConfigClientFactory } from "../lib/machine/machine";
 import * as commonScorers from "../lib/scorer/commonScorers";
 import * as commonTaggers from "../lib/tagger/commonTaggers";
 
@@ -117,9 +117,9 @@ export const configuration: Configuration = configure<TestGoals>(async sdm => {
                 ...MavenDefaultOptions,
                 builder: mavenBuilder(),
             });
-            // .with({
-            //     builder: nodeBuilder(),
-            // });
+        // .with({
+        //     builder: nodeBuilder(),
+        // });
 
         const pushImpact = new PushImpact();
 

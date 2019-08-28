@@ -29,6 +29,7 @@ import {
     Overview,
 } from "../../../views/overview";
 import { renderStaticReactNode } from "../../../views/topLevelPage";
+import { ConnectionErrorHeading } from "../../analysis/offline/persist/pgClientFactory";
 import { FingerprintUsage } from "../../analysis/offline/persist/ProjectAnalysisResultStore";
 import { defaultedToDisplayableFingerprintName } from "../../aspect/DefaultAspectRegistry";
 import { WebAppConfig } from "./webAppConfig";
@@ -77,9 +78,20 @@ export function exposeOverviewPage(conf: WebAppConfig,
                 conf.instanceMetadata));
         } catch (e) {
             logger.error(e.stack);
-            res.status(500).send("failure");
+            res.status(500).send(cleverlyExplainError(conf, e));
         }
     });
+}
+
+const ReadmeLink = "https://github.com/atomist/org-visualizer/#database-setup";
+
+function cleverlyExplainError(conf: WebAppConfig, e: Error): string {
+    if (e.message.includes(ConnectionErrorHeading) || e.message.includes("ENOCONNECT")) {
+        return `This page cannot load without a database connection.<br>
+        Please check <a href="${ReadmeLink}">the org-visualizer README</a> for how to set up a database.<p>
+        Error:<br>${e.message}`;
+    }
+    return `Failed to load page. Please check the log output of ${conf.instanceMetadata.name}`;
 }
 
 function idealMatchesFingerprint(id: Ideal, fp: FingerprintUsage): boolean {

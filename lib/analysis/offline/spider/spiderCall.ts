@@ -19,8 +19,8 @@ import { loadUserConfiguration } from "@atomist/automation-client/lib/configurat
 import { StableDirectoryManager } from "@atomist/automation-client/lib/spi/clone/StableDirectoryManager";
 import { TmpDirectoryManager } from "@atomist/automation-client/lib/spi/clone/tmpDirectoryManager";
 import * as _ from "lodash";
-import { sdmConfigClientFactory } from "../../../machine/machine";
 import { AnalysisTracking } from "../../tracking/analysisTracker";
+import { sdmConfigClientFactory } from "../persist/pgClientFactory";
 import { PostgresProjectAnalysisResultStore } from "../persist/PostgresProjectAnalysisResultStore";
 import { GitCommandGitProjectCloner } from "./github/GitCommandGitProjectCloner";
 import { GitHubSpider } from "./github/GitHubSpider";
