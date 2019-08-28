@@ -37,11 +37,11 @@ export function isGlobMatchFingerprint(fp: FP): fp is FP<GlobAspectData> {
 /**
  * Check for presence of a glob
  * undefined to return no fingerprint.
- * Always return something, but may have an empty path.
- * Entropy is disabled by default, but callers can override this
+ * Always extracts a fingerprint, but may have an empty path.
+ * Entropy stat is disabled by default, but callers can override this
  */
 export function globAspect(config: Omit<Aspect, "extract" | "apply"> &
-{ glob: string }): Aspect<GlobAspectData> {
+    { glob: string }): Aspect<GlobAspectData> {
     if (!config.glob) {
         throw new Error("Glob pattern must be supplied");
     }

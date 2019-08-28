@@ -23,7 +23,7 @@ import {
     Aspect,
     FP,
 } from "@atomist/sdm-pack-fingerprints";
-import { AspectMetadata } from "./AspectMetadata";
+import { AspectMetadata } from "./commonTypes";
 
 /**
  * Make this aspect conditional

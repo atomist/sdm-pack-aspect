@@ -20,7 +20,6 @@ import {
 } from "@atomist/automation-client";
 import { execPromise } from "@atomist/sdm";
 import {
-    Aspect,
     fingerprintOf,
 } from "@atomist/sdm-pack-fingerprints";
 import {
@@ -28,14 +27,14 @@ import {
     Default,
 } from "../../util/bands";
 import { SizeBands } from "../../util/commonBands";
+import { CountAspect } from "../compose/commonTypes";
 
 export const BranchCountType = "branch-count";
 
-export interface BranchCountData {
-    count: number;
-}
-
-export const branchCount: Aspect<BranchCountData> = {
+/**
+ * Aspect that counts branches in git
+ */
+export const BranchCount: CountAspect = {
     name: BranchCountType,
     displayName: "Branch count",
     baseOnly: true,

@@ -56,8 +56,9 @@ export class SpiderAnalyzer implements Analyzer {
             // Seed the virtual project finder if we have one
             await this.virtualProjectFinder.findVirtualProjectInfo(p);
         }
-        await extractRegularAspects(p, this.aspects, fingerprints, this.timings);
-        await extractAtomicAspects(p, this.aspects.filter(aspect => !!aspect.consolidate), fingerprints);
+        const pili = fakePushImpactListenerInvocation(p);
+        await runExtracts(p, pili, this.aspects, fingerprints, this.timings);
+        await runConsolidates(p, pili, this.aspects.filter(aspect => !!aspect.consolidate), fingerprints);
 
         return {
             id: p.id as RemoteRepoRef,
@@ -71,55 +72,40 @@ export class SpiderAnalyzer implements Analyzer {
     }
 }
 
-async function extractRegularAspects(p: Project,
-                                     aspects: Aspect[],
-                                     fingerprints: FP[],
-                                     timings: TimeRecorder): Promise<void> {
+async function runExtracts(p: Project,
+                           pili: PushImpactListenerInvocation,
+                           aspects: Aspect[],
+                           fingerprints: FP[],
+                           timings: TimeRecorder): Promise<void> {
     await Promise.all(aspects
-        .map(aspect => extractify(aspect, p, timings)
+        .map(aspect => safeTimedExtract(aspect, p, pili, timings)
             .then(fps =>
                 fingerprints.push(...fps),
             )));
 }
 
-async function extractAtomicAspects(p: Project,
-                                    aspects: Aspect[],
-                                    fingerprints: FP[]): Promise<void> {
+async function runConsolidates(p: Project,
+                               pili: PushImpactListenerInvocation,
+                               aspects: Aspect[],
+                               fingerprints: FP[]): Promise<void> {
     await Promise.all(aspects
-        .map(aspect => extractAtomic(aspect, fingerprints)
+        .map(aspect => safeConsolidate(aspect, fingerprints, p, pili)
             .then(fps =>
                 fingerprints.push(...fps),
             )));
 }
 
-async function extractify(aspect: Aspect, p: Project, timeRecorder: TimeRecorder): Promise<FP[]> {
-    const minimalPushImpactListenerInvocation: PushImpactListenerInvocation = {
-        id: p.id as any,
-        get context(): HandlerContext { throw new Error("Unsupported"); },
-        commit: {
-            sha: p.id.sha,
-        },
-        project: p as GitProject,
-        push: {
-            repo: undefined,
-            branch: "master",
-        },
-        addressChannels: async () => { },
-        get filesChanged(): string[] { throw new Error("Unsupported"); },
-        get credentials(): ProjectOperationCredentials { throw new Error("Unsupported"); },
-        impactedSubProject: p,
-        get preferences(): PreferenceStore { throw new Error("Unsupported"); },
-        configuration: {},
-    };
-
+async function safeTimedExtract(aspect: Aspect,
+                                p: Project,
+                                pili: PushImpactListenerInvocation,
+                                timeRecorder: TimeRecorder): Promise<FP[]> {
     try {
-        const timed = await time(async () => aspect.extract(p, minimalPushImpactListenerInvocation));
+        const timed = await time(async () => aspect.extract(p, pili));
         addTiming(aspect.name, timed.millis, timeRecorder);
         const result = !!timed.result ? toArray(timed.result) : [];
         return result;
     } catch (err) {
-        logger.error("Please check your configuration of aspect %s.\n%s",
-            aspect.name, err);
+        logger.error("Please check your configuration of aspect %s.\n%s", aspect.name, err);
         return [];
     }
 }
@@ -137,13 +123,48 @@ function addTiming(type: string, millis: number, timeRecorder: TimeRecorder): vo
     found.totalMillis += millis;
 }
 
-async function extractAtomic(aspect: Aspect, existingFingerprints: FP[]): Promise<FP[]> {
+async function safeConsolidate(aspect: Aspect,
+                               existingFingerprints: FP[],
+                               p: Project,
+                               pili: PushImpactListenerInvocation): Promise<FP[]> {
     try {
-        const extracted = await aspect.consolidate(existingFingerprints);
+        const extracted = await aspect.consolidate(existingFingerprints, p, pili);
         return !!extracted ? toArray(extracted) : [];
     } catch (err) {
-        logger.error("Please check your configuration of aspect %s.\n%s",
-            aspect.name, err);
+        logger.error("Please check your configuration of aspect %s.\n%s", aspect.name, err);
         return [];
     }
+}
+
+/**
+ * Make a fake push for the last commit to this project
+ */
+function fakePushImpactListenerInvocation(p: Project): PushImpactListenerInvocation {
+    return {
+        id: p.id as any,
+        get context(): HandlerContext {
+            throw new Error("Unsupported");
+        },
+        commit: {
+            sha: p.id.sha,
+        },
+        project: p as GitProject,
+        push: {
+            repo: undefined,
+            branch: "master",
+        },
+        addressChannels: async () => {
+        },
+        get filesChanged(): string[] {
+            throw new Error("Unsupported");
+        },
+        get credentials(): ProjectOperationCredentials {
+            throw new Error("Unsupported");
+        },
+        impactedSubProject: p,
+        get preferences(): PreferenceStore {
+            throw new Error("Unsupported");
+        },
+        configuration: {},
+    };
 }

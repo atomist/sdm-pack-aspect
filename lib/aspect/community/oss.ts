@@ -17,6 +17,9 @@
 import { Aspect } from "@atomist/sdm-pack-fingerprints";
 import { globAspect } from "../compose/globAspect";
 
+/**
+ * Look for the presence of a changelog
+ */
 export const ChangelogAspect: Aspect =
     globAspect({
         name: "changelog",
@@ -24,5 +27,8 @@ export const ChangelogAspect: Aspect =
         glob: "CHANGELOG.md",
     });
 
+/**
+ * Look for presence of a CONTRIBUTING.md file
+ */
 export const ContributingAspect: Aspect =
     globAspect({ name: "contributing", displayName: undefined, glob: "CONTRIBUTING.md" });

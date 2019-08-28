@@ -9,7 +9,7 @@ You can write your own code to comprehend aspects unique to your projects, and a
 
 The following are the key extension points:
 
-- **Aspects**, which extract *fingerprint* data from repositories allowing visualization and (optionally) rolling out updates and on-change workflows.
+- **Aspects**, which extract **fingerprint** data from repositories allowing visualization and (optionally) rolling out updates and on-change workflows.
 - **Taggers**, which provide insights based on fingerprint data extracted by aspects.
 - **Scorers**, which help to rank repositories based on fingerprint data. Scorers enable you to gamify development at scale and reward or penalize good or bad usages.
 - **Custom reporters**, which can use data captured by aspects for wholly custom reports.
@@ -34,7 +34,7 @@ User examples include:
 -  Language usage
 -  SQL statements and database usage
  
-Fingerprints are persisted and are the basis for querying and visualization. Tags and scores are not persisted, bu purely projections to support querying. This distinction is important to consider when choosing between fingerpinting and tagging for something that could be implemented with either.
+Fingerprints are persisted and are the basis for querying and visualization. Tags and scores are not persisted, but are purely projections to support querying. This distinction is important to consider when choosing between fingerpinting and tagging for something that could be implemented with either.
 
 ## Aspects
 
@@ -50,6 +50,16 @@ The following methods are the most important:
 
 ### Understanding the extract method
 The `extract` method extracts zero or more fingerprints from a push to a project. Most `extract` method implementations focus on the state of the project, looking into its files.
+
+The signature is as follows:
+
+```typescript
+export declare type ExtractFingerprint<DATA = any> = 
+	(p: Project, pli: PushImpactListenerInvocation) => Promise<FP<DATA> | Array<FP<DATA>>>;
+```
+
+Most implementations only use the first argument. The second
+argument is used to look at information about the push, such as files changed.
 
 An example, looking for a specific file (`CODE_OF_CONDUCT.md`):
 
@@ -80,6 +90,16 @@ A fingerprint has the following key fields:
 - `name`: Unique to this fingerprint. The same as the type if the aspect emits only one fingerprint.
 - `data`: Data structure containing information core to this fingerprint.
 - `sha`: Unique hash calculated from fingerprint state. Used to determine whether two fingerprints differ. Typically a computation on the stringified form of the `data` proper.
+
+The convenient `fingerprintOf` function simplifies fingerprint creation by using default sha-ing. Thus the code of conduct fingerprint could be simplified as follows:
+
+```typescript
+return fingerprintOf({
+    type: CodeOfConductType,
+    data,
+});
+```
+The `name` need not be specified in the common case where the aspect emits only one type of fingerprint and it's the same as the `type`. Thus the `extract` method of the code of conduct fingerprint could be simplified as follows:
 
 
 #### Optional methods 
@@ -166,20 +186,34 @@ export interface Aspect<DATA = any> {
 The `DATA` type parameter is the type of the `data` property of fingerprints created by this aspect.
 
 ### Enabling updates
-Convergence to ideal
+Fingerprints can not only be extracted from projects: they can be **applied**. This means ensuring that a project reflects a particular state of the relevant fingerprint.
 
-Key method is `apply`.
-
-If you're familiar with Atomist concepts, this is a *code transform*. You use the `Project` API to effect updates and Atomist takes care of rolling out the changes across as many repositories as are needed.
-
-tbd
+The key method on `Aspect` is the optional `apply` method: an Atomist **code transform** that uses the Project API to modify a project to achieve this.
+Atomist takes care of rolling out the changes across as many repositories as are needed.
 
 ### The consolidate method
 
-The optional `consolidate` method works with fingerprints previously extracted by _all_ aspects run on the repository. This means it can establish facts such as "is any CI pipeline set up in tis project," which can only be determined on the basis of the work of multiple other aspects' `extract` methods.
+The optional `consolidate` method works with fingerprints previously extracted by _all_ aspects run on the repository. This means it can establish facts such as "is any CI pipeline set up in tis project," which can only be determined on the basis of the work of multiple other aspects' `extract` methods. For example, this might be implemented as follows:
 
-It is common for aspects using `consolidate` to always return the empty 
+```typescript
+consolidate: async fps => {
+    const found = fps.filter(fp => ["travis", "jenkins", "circle"].includes(fp.type));
+    return found.length > 0 ?
+        fingerprintOf({ type: "ci", data: { tools: found.map(f => f.type)} }) :
+        undefined;
+} 
+
+```
+
+It is common for aspects using `consolidate` to return the empty 
 array from their `extract` method.
+
+Like the `extract` method, `consolidate` can also access the project and push:
+
+```typescript
+consolidate?: (fps: FP[], p: Project, pili: PushImpactListenerInvocation) => Promise<FP<DATA> | Array<FP<DATA>>>;
+
+```
 
 ### Workflows
 Aspects can respond to change in the managed fingerprint.
@@ -278,21 +312,17 @@ export const TypeScriptProjectsMustUseTsLint: RepositoryScorer = async repo => {
 ## Advanced Concepts
 
 ### Typed aspects
-It is good practice to provide a `DATA` type parameter to your aspects. This helps to ensure that your fingerprint generation code makes sense.
+It is good practice to provide a `DATA` type parameter to your aspects. This helps to ensure that your fingerprint extraction and manipulation code makes sense.
 
 ### Aspect granularity
-Keep your aspects fine-grained. An aspect should address a single concern. Some aspects emit many fingerprints from a single repository. For example, the npm dependency aspect emits one fingerprint for every
-npm dependency found in a project.
+Keep your aspects fine-grained. An aspect should address a single concern. Some aspects emit many fingerprints from a single repository. For example, the npm dependency aspect emits one fingerprint for every npm dependency found in a project.
 
-### Aspect compositiion
+### Aspect composition
 Aspects can depend on other aspects in the implementation of their `consolidate` method. All `consolidate` methods will be invoked after all `extract` methods have already run.
 
 ### Constructing fingerprints
 
-Fingerprints may need to be canonicalized.
-tbc
-
-Convenient create method
+Sometimes fingerprint data may need to be canonicalized. For example, consider content in which whitespace is irrelevant. It could be removed before sha-ing data. This will ensure that visualization doesn't indicate drift where there is only cosmetic difference. It also makes on change aspect workflows more meaningful by eliminating false positives.
 
 ### Stats
 Aspects can provide information about their meaning at scale, in their optional `stats` property. For example:
@@ -323,6 +353,28 @@ Avoid retrieving more data than necessary. Some tips:
 When testing aspects locally with `org-visualizer`, check the SDM
 logs for information about the time taken by each aspect. This will
 help to indicate if you have expensive outlier aspects.
+
+>Consider using the `consolidate` method if it's possible to work with data extracted by a previous aspect. This minimizes the number of project reads and can avoid the need to parse files again.
+
+### Parsing project content
+The Atomist Project API has a variety of parsing technologies available, including [microgrammars](https://github.com/atomist/microgrammar). These are useful in extracting and applying fingerprints.
+
+See the `microgrammarMatchAspect` function for an example.
+
+### Banding display names
+
+Sometimes visualization is more understandable if we band numeric returns, enabling them to be grouped in a sunburst. The following code uses the `bandFor` utility function to group branch count fingerprints:
+
+```typescript
+toDisplayableFingerprint: fp => {
+    return bandFor<SizeBands | "excessive">({
+        low: { upTo: 5 },
+        medium: { upTo: 12 },
+        high: { upTo: 12 },
+        excessive: Default,
+    }, fp.data.count, { includeNumber: true });
+},
+```
 
 ### VirtualProjectFinder
 
@@ -357,6 +409,46 @@ export interface VirtualProjectFinder {
 ### Custom Reports
 
 To add custom reports, add to the record type in `lib/customize/customReporters.ts`. Writing a custom report is only necessary for unusual requirements.
+
+## Library functionality
+This project contains useful library functionality in the form of reusable aspects, taggers and scoring.
+
+### Common aspects
+Some useful concrete aspects in this project:
+
+- License: Extract license data
+- CodeOfConduct: Look for code of conduct files
+- ExposedSecrets: Use regular expressions to scan projects for exposed secrets. Parameterized by the `secrets.yml` file in your project.
+- BranchCount: Count branches in git
+- GitRecency: Recency of last commit to default branch
+- gitActiveCommitters: Activity level in Git
+
+### Aspect creation functions
+The following utility functions help create your own aspects:
+
+- globAspect: Check for the presence of files matching a blob.
+- microgrammarMatchAspect: Look for a microgrammar match in files. Useful for picking out project content.
+- fileMatchAspect: Check for presence of a match within the AST of files matching the glob. Integrates with Atomist Project API parsing infrastructure.
+
+See [aspects.ts](https://github.com/atomist/org-visualizer/blob/c076a6d734b51ce4f18830a50c1e4b986a3a0ed6/lib/aspect/aspects.ts#L85) in the `org-visualizer` project for an example use of these and other aspects.
+
+An example of globAspect:
+
+```typescript
+export const ChangelogAspect: Aspect =
+globAspect({
+    name: "changelog",
+    displayName: undefined,
+    glob: "CHANGELOG.md",
+});
+```
+
+### Common taggers
+See the `commonTaggers` file for generally useful taggers.
+
+### Common Scorers
+
+See the `commonScorers` file for common scorers. You can assemble these along with your own scorers to uniquely
 
 
 

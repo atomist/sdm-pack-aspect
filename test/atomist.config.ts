@@ -75,7 +75,7 @@ import { isFileMatchFingerprint } from "../lib/aspect/compose/fileMatchAspect";
 import { globAspect } from "../lib/aspect/compose/globAspect";
 import { buildTimeAspect } from "../lib/aspect/delivery/BuildAspect";
 import { storeFingerprints } from "../lib/aspect/delivery/storeFingerprintsPublisher";
-import { branchCount } from "../lib/aspect/git/branchCount";
+import { BranchCount } from "../lib/aspect/git/branchCount";
 import { GitRecency } from "../lib/aspect/git/gitActivity";
 import { AcceptEverythingUndesirableUsageChecker } from "../lib/aspect/ProblemStore";
 import { ExposedSecrets } from "../lib/aspect/secret/exposedSecrets";
@@ -175,7 +175,7 @@ function aspects(): Aspect[] {
     });
     registerCategories(DockerfilePath, "Docker");
     registerCategories(DockerPorts, "Docker");
-    registerCategories(branchCount, "Git");
+    registerCategories(BranchCount, "Git");
     registerCategories(GitRecency, "Git");
     return [
         DockerFrom,
@@ -188,7 +188,7 @@ function aspects(): Aspect[] {
         NpmDeps,
         CodeOfConduct,
         ExposedSecrets,
-        branchCount,
+        BranchCount,
         GitRecency,
         // This is expensive as it requires deeper cloning
         // gitActiveCommitters(30),

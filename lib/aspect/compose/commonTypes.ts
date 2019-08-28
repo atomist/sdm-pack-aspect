@@ -18,6 +18,16 @@ import { Aspect } from "@atomist/sdm-pack-fingerprints";
 import { Omit } from "../../util/omit";
 
 /**
- * Aspect metadata without extract or consolidate. Used in Aspect consolidation.
+ * Aspect metadata without extract or consolidate. Used in Aspect consolidation
+ * and aspect creation utility functions.
  */
 export type AspectMetadata<DATA = any> = Omit<Aspect<DATA>, "extract" | "consolidate">;
+
+export interface CountData {
+    count: number;
+}
+
+/**
+ * Aspect counting data.
+ */
+export type CountAspect = Aspect<CountData>;

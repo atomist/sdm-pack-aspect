@@ -33,6 +33,7 @@ import {
     SizeBands,
 } from "../../util/commonBands";
 import { showTiming } from "../../util/showTiming";
+import { CountAspect, CountData } from "../compose/commonTypes";
 import { daysSince } from "./dateUtils";
 
 const exec = util.promisify(child_process.exec);
@@ -86,13 +87,9 @@ function committersCommands(commitDepth: number): string[] {
     ];
 }
 
-export interface ActiveCommittersData {
-    count: number;
-}
-
 export const GitActivesType = "git-actives";
 
-function activeCommittersExtractor(commitDepth: number): ExtractFingerprint<ActiveCommittersData> {
+function activeCommittersExtractor(commitDepth: number): ExtractFingerprint<CountData> {
     return async p => {
         const cwd = (p as LocalProject).baseDir;
         const cmds = committersCommands(commitDepth);
@@ -117,13 +114,13 @@ function activeCommittersExtractor(commitDepth: number): ExtractFingerprint<Acti
  * Active committers. This is expensive as it requires cloning the
  * last commitDepth commits
  */
-export function gitActiveCommitters(commitDepth: number): Aspect<ActiveCommittersData> {
+export function gitActiveCommitters(opts: { commitDepth: number}): CountAspect {
     return {
         name: GitActivesType,
         displayName: "Active git committers",
         baseOnly: true,
-        extract: activeCommittersExtractor(commitDepth),
-        toDisplayableFingerprintName: () => `Active git committers to ${commitDepth} commits`,
+        extract: activeCommittersExtractor(opts.commitDepth),
+        toDisplayableFingerprintName: () => `Active git committers to ${opts.commitDepth} commits`,
         toDisplayableFingerprint: fp => {
             return bandFor<SizeBands>({
                 low: { upTo: 4 },

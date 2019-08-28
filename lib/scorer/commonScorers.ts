@@ -225,7 +225,7 @@ export function requireAspectOfType(opts: {
 }): RepositoryScorer {
     return async repo => {
         const found = repo.analysis.fingerprints.find(fp => fp.type === opts.type &&
-            (opts.data ? fp.sha = sha256(JSON.stringify(opts.data)) : true));
+            (opts.data ? fp.sha === sha256(JSON.stringify(opts.data)) : true));
         return {
             name: `${opts.type}-required`,
             category: opts.category,
