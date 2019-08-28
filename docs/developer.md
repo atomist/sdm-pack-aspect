@@ -1,7 +1,7 @@
 # Developer Guide
 
 The greatest value of aspects is the potential to develop and combine them in a unique way
- that addresses the goals of your organization, helping you understand and take control of important aspects of code, configuration and process.
+ to address the goals of your organization, helping you understand and take control of important aspects of code, configuration and process.
 
 In keeping with the Atomist philosophy of *do it in code*, extensibility is in TypeScript code.
 
@@ -22,6 +22,7 @@ The key underlying concept is that of a **fingerprint**: a snapshot of a concern
 - CI pipeline files
 - Exposed secrets
 - Git branching and recency of commit activity
+- Build time
 
 User examples include:
 
@@ -33,15 +34,15 @@ User examples include:
 -  Language usage
 -  SQL statements and database usage
  
-Fingerprints are persisted and are the basis for querying and visualization. Tags are not persisted, but are purely a projection to support querying. This distinction is important to consider when choosing between the two approaches for something that could be implemented with either.
+Fingerprints are persisted and are the basis for querying and visualization. Tags and scores are not persisted, bu purely projections to support querying. This distinction is important to consider when choosing between fingerpinting and tagging for something that could be implemented with either.
 
 ## Aspects
 
 ### Aspect interface
-The following are the methods share by all aspects. Many are optional:
+Many methods on the `Aspect` interface are optional.
 
 ```typescript
-export interface Aspect<FPI extends FP = FP> {
+export interface Aspect<DATA = any> {
 
     /**
      * Displayable name of this aspect. Used only for reporting.
@@ -67,7 +68,14 @@ export interface Aspect<FPI extends FP = FP> {
     /**
      * Function to extract fingerprint(s) from this project
      */
-    extract: ExtractFingerprint<FPI>;
+    extract: ExtractFingerprint<DATA>;
+    
+     /**
+     * Function to create any new fingerprint based on fingerprints
+     * found by extract method. Implementations must observe the path
+     * (if set) in the original fingerprints.
+     */
+    consolidate?: (fps: FP[]) => Promise<FP<DATA> | Array<FP<DATA>>>;
 
     /**
      * Function to apply the given fingerprint instance to a project
@@ -110,14 +118,14 @@ export interface Aspect<FPI extends FP = FP> {
     stats?: AspectStats;
 }
 ```
-
+The `DATA` type parameter is the type of the `data` property of fingerprints created by this aspect.
 
 ### Core aspect methods
 The following methods are usually the most important:
 
-- `name`: An aspect's name be unique in your workspace.
+- `name`: An aspect's name must be unique in your workspace.
 - `displayName`: Human readable name.
-- `extract` (regular aspects): Extract zero or more fingeprints from the current project.
+- `extract` Extract zero or more fingeprints from the current project. Also has access to the current push, allowing it to see what files have changed etc. All fingerprints created by an aspect must have the same `type` property and the same data payload structure, as determined by the `DATA` parameter.
 
 ### The extract method
 tbc
@@ -136,6 +144,13 @@ If you're familiar with Atomist concepts, this is a *code transform*. You use th
 
 tbd
 
+### The consolidate method
+
+The optional `consolidate` method works with fingerprints previously extracted by _all_ aspects run on the repository. This means it can establish facts such as "is any CI pipeline set up in tis project," which can only be determined on the basis of the work of multiple other aspects' `extract` methods.
+
+It is common for aspects using `consolidate` to always return the empty 
+array from their `extract` method.
+
 ### Workflows
 Aspects can respond to change in the managed fingerprint.
 
@@ -145,6 +160,8 @@ tbd
 Taggers work with fingerprints emitted by aspects to provide particular insights. Taggers are simpler to write than aspects.
 
 Taggers do not have access to project data so can be created and updated without the need to re-analyze to update persistent data.
+
+Taggers are comparable to aspects using `consolidate` without `extract`. The difference is in the lack of persistence of tags. This means the loss of a permanent record, but also allows very rapid iteration, simply restarting the SDM after each change.
 
 ### Simple taggers
 
@@ -192,16 +209,7 @@ Taggers have an optional `severity` property for which the legal values are `inf
 
 ## Adding your aspects and taggers
 
-Do this by updating the `aspects` constant defined in the [`aspects.ts`](../lib/customize/aspects.ts) file. Add aspects to the `Aspects` array:
-
-```typescript
-export const Aspects: ManagedAspect[] = [
-    DockerFrom,
-    TypeScriptVersion,
-    //... add your aspects here
-```
-
-Add your simple or combination taggers to the array in the `taggers.ts` file in the same directory.
+Pass aspects, taggers and scorers into the options structure parameter of the `aspectSupport` function that creates the Aspect extension pack to add to an SDM.
 
 ## Scorers
 Implement a `RepositoryScorer` function:
@@ -235,29 +243,41 @@ export const TypeScriptProjectsMustUseTsLint: RepositoryScorer = async repo => {
         reason: hasTsLint ? "TypeScript projects should use tslint" : "TypeScript project using tslint",
     };
 };
-````
+```
 
 ## Advanced Concepts
 
-### Custom Reports
+### Typed aspects
+It is good practice to provide a `DATA` type parameter to your aspects. This helps to ensure that your fingerprint generation code makes sense.
 
-To add custom reports, add to the record type in `lib/customize/customReporters.ts`. Writing a custom type is only necessary for unusual requirements.
+### Aspect granularity
+Keep your aspects fine-grained. An aspect should address a single concern. Some aspects emit many fingerprints from a single repository. For example, the npm dependency aspect emits one fingerprint for every
+npm dependency found in a project.
 
-### Aspect granularity and composition
-Keep your aspects fine-grained. An aspect should address a single concern.
+### Aspect compositiion
+Aspects can depend on other aspects in the implementation of their `consolidate` method. All `consolidate` methods will be invoked after all `extract` methods have already run.
 
-Aspects can depend on other aspects. 
-tbc
-
-### Fingerprints
+### Constructing fingerprints
 
 Fingerprints may need to be canonicalized.
 tbc
 
-### Stats
-stats path
+Convenient create method
 
-tbc
+### Stats
+Aspects can provide information about their meaning at scale, in their optional `stats` property. For example:
+
+```typescript
+stats: {
+    defaultStatStatus: {
+        entropy: false,
+    },
+    basicStatsPath: "lines",
+},
+```
+This indicates that of the stats calculated by default, entropy is not meaningful. For many aspects, entropy is meaningful. For example, we want to understand the drift of library versions. For some, however, like line count in a particular language, entropy is meaningless.
+
+The `basicStatsPath` property, if supplied, specifies a path within the `data` property of the fingerprints created by this aspect that contains a single number that's meaningful to compare. For example, this _would_ make sense with line count. The `basicStatsPath` property may be nested, using `.` notation.
 
 ### Efficiency
 
@@ -269,6 +289,10 @@ Avoid retrieving more data than necessary. Some tips:
 - Use the most specific glob patterns possible
 - When iterating over files and looking at content, exclude binary files using `file.isBinary()`
 - Perform file iteration via generator utility methods in the `Project` API, terminating iteration once you've found what you want.
+
+When testing aspects locally with `org-visualizer`, check the SDM
+logs for information about the time taken by each aspect. This will
+help to indicate if you have expensive outlier aspects.
 
 ### VirtualProjectFinder
 
@@ -286,8 +310,7 @@ const virtualProjectFinder: VirtualProjectFinder = fileNamesVirtualProjectFinder
 
 This identifies Node projects, Maven and Gradle projects and Python projects.
 
-You can add more files to this list, or even implement your own `VirtualProject` finder by implementing the following interface:
-
+You can add more files to this list, or implement your own `VirtualProject` finder by implementing the following interface:
 
 ```typescript
 export interface VirtualProjectFinder {
@@ -301,7 +324,9 @@ export interface VirtualProjectFinder {
 }
 ```
 
+### Custom Reports
 
+To add custom reports, add to the record type in `lib/customize/customReporters.ts`. Writing a custom report is only necessary for unusual requirements.
 
 
 
