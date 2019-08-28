@@ -39,6 +39,51 @@ Fingerprints are persisted and are the basis for querying and visualization. Tag
 ## Aspects
 
 ### Aspect interface
+
+### Core aspect methods
+The `Aspect` interface is central to analysis.
+The following methods are the most important:
+
+- `name`: An aspect's name must be unique in your workspace.
+- `displayName`: Human readable name.
+- `extract` Logic to extract zero or more fingerprints from the current project, using Atomist's `Project` API. Also has access to the current push, allowing it to see what files have changed, who made the push etc. All fingerprints created by an aspect must have the same `type` property and the same data payload structure, as determined by the `DATA` parameter.
+
+### Understanding the extract method
+The `extract` method extracts zero or more fingerprints from a push to a project. Most `extract` method implementations focus on the state of the project, looking into its files.
+
+An example, looking for a specific file (`CODE_OF_CONDUCT.md`):
+
+```typescript
+extract: async p => {
+    const codeOfConductFile = await
+        p.getFile("CODE_OF_CONDUCT.md");
+    if (codeOfConductFile) {
+        const content = await codeOfConductFile.getContent();
+        const data = {
+            title: titleOf(content),
+            content,
+        };
+        return {
+            name: CodeOfConductType,
+            type: CodeOfConductType,
+            data,
+            sha: sha256(JSON.stringify(data)),
+        };
+    }
+    return undefined;
+},
+```
+
+A fingerprint has the following key fields:
+
+- `type`: Corresponds to the type of the aspect emitting it
+- `name`: Unique to this fingerprint. The same as the type if the aspect emits only one fingerprint.
+- `data`: Data structure containing information core to this fingerprint.
+- `sha`: Unique hash calculated from fingerprint state. Used to determine whether two fingerprints differ. Typically a computation on the stringified form of the `data` proper.
+
+
+#### Optional methods 
+
 Many methods on the `Aspect` interface are optional.
 
 ```typescript
@@ -119,21 +164,6 @@ export interface Aspect<DATA = any> {
 }
 ```
 The `DATA` type parameter is the type of the `data` property of fingerprints created by this aspect.
-
-### Core aspect methods
-The following methods are usually the most important:
-
-- `name`: An aspect's name must be unique in your workspace.
-- `displayName`: Human readable name.
-- `extract` Extract zero or more fingeprints from the current project. Also has access to the current push, allowing it to see what files have changed etc. All fingerprints created by an aspect must have the same `type` property and the same data payload structure, as determined by the `DATA` parameter.
-
-### The extract method
-tbc
-
-Fingerprint interface - 
-
-
-Example
 
 ### Enabling updates
 Convergence to ideal
