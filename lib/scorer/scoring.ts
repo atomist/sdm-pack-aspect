@@ -79,6 +79,7 @@ async function scoresFor<T, CONTEXT>(scoreFunctions: Array<(t: T, c: CONTEXT) =>
 }
 
 /**
+ * Adjust a score within FiveStar range.
  * If merits is negative, reduce
  * @param {number} merits
  * @param {FiveStar} startAt

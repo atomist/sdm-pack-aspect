@@ -71,7 +71,7 @@ export function requireRecentCommit(opts: { days: number }): RepositoryScorer {
         const days = daysSince(date);
         return {
             name: "recency",
-            score: adjustBy(-days / (opts.days || 1)),
+            score: adjustBy((1 - days) / (opts.days || 1)),
             reason: `Last commit ${days} days ago`,
         };
     };
@@ -115,6 +115,9 @@ export function limitLinesOfCode(opts: { limit: number }): RepositoryScorer {
     };
 }
 
+/**
+ * Penalize repositories for having too many lines of code in the given language
+ */
 export function limitLinesOfCodeIn(opts: { limit: number, language: Language, freeAmount?: number }): RepositoryScorer {
     return async repo => {
         const cm = repo.analysis.fingerprints.find(fp => fp.type === CodeMetricsType);
@@ -131,6 +134,9 @@ export function limitLinesOfCodeIn(opts: { limit: number, language: Language, fr
     };
 }
 
+/**
+ * Penalize repositories for having an excessive number of git branches
+ */
 export function penalizeForExcessiveBranches(opts: { branchLimit: number }): RepositoryScorer {
     return async repo => {
         const branchCount = repo.analysis.fingerprints.find(f => f.type === BranchCountType);
@@ -147,6 +153,10 @@ export function penalizeForExcessiveBranches(opts: { branchLimit: number }): Rep
     };
 }
 
+/**
+ * Penalize repositories for having more than 1 virtual project,
+ * as identified by a VirtualProjectFinder
+ */
 export const PenalizeMonorepos: RepositoryScorer =
     async repo => {
         const distinctPaths = _.uniq(repo.analysis.fingerprints.map(t => t.path)).length;
@@ -160,7 +170,7 @@ export const PenalizeMonorepos: RepositoryScorer =
     };
 
 /**
- * Penalize repos for warnings and errors.
+ * Penalize repos for warning and error tags.
  * Note that this can produce double counting if we have a scorer for those things.
  * However it can minimize the need to write scorers in a good tagging setup.
  */
@@ -177,6 +187,9 @@ export const PenalizeWarningAndErrorTags: RepositoryScorer = async repo => {
     };
 };
 
+/**
+ * Penalize repositories without a license file
+ */
 export const PenalizeNoLicense: RepositoryScorer =
     async repo => {
         const license = repo.analysis.fingerprints.find(fp => fp.type === LicenseType);
@@ -189,6 +202,9 @@ export const PenalizeNoLicense: RepositoryScorer =
         };
     };
 
+/**
+ * Penalize repositories without a code of conduct file
+ */
 export const PenalizeNoCodeOfConduct: RepositoryScorer =
     requireAspectOfType({
         type: CodeOfConductType,
@@ -197,10 +213,9 @@ export const PenalizeNoCodeOfConduct: RepositoryScorer =
     });
 
 /**
- * Mark down repositories that don't have this type of aspect.
+ * Penalize repositories that don't have this type of aspect.
  * If data is provided, check that the sha matches the default sha-ing of this
  * data payload
- * @return {RepositoryScorer}
  */
 export function requireAspectOfType(opts: {
     type: string,
@@ -221,8 +236,8 @@ export function requireAspectOfType(opts: {
 }
 
 /**
- * Must exactly match the glob pattern
- * @return {RepositoryScorer}
+ * Penalize repositories without matches for the glob pattern.
+ * Depends on globAspect
  */
 export function requireGlobAspect(opts: { glob: string, category?: string }): RepositoryScorer {
     return async repo => {

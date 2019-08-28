@@ -36,6 +36,10 @@ import {
 } from "../aspect/git/gitActivity";
 import { ExposedSecrets } from "../aspect/secret/exposedSecrets";
 
+/**
+ * Tag repositories that contain multiple virtual projects as reported by
+ * a VirtualProjectFinder
+ */
 export const Monorepo: Tagger = {
     name: "monorepo",
     description: "Contains multiple virtual projects",
@@ -43,6 +47,9 @@ export const Monorepo: Tagger = {
     test: fp => !!fp.path && fp.path.length > 0,
 };
 
+/**
+ * Penalize repositories with exposed secrets.
+ */
 export const Vulnerable: Tagger = {
     name: "vulnerable",
     description: "Has exposed secrets", test: fp => fp.type === ExposedSecrets.name,
@@ -124,7 +131,8 @@ export function globRequired(opts: { name: string, description: string, glob: st
 }
 
 /**
- * Flag repos with known undesirable usages
+ * Flag repos with known undesirable usages, according to
+ * the relevant UndesirableUsageChecker
  */
 export const isProblematic: WorkspaceSpecificTagger = {
     description: "Undesirable usage",
