@@ -15,13 +15,13 @@
  */
 
 import { Project } from "@atomist/automation-client";
+import { PushImpactListenerInvocation } from "@atomist/sdm";
 import { toArray } from "@atomist/sdm-core/lib/util/misc/array";
 import {
     Aspect, fingerprintOf,
 } from "@atomist/sdm-pack-fingerprints";
 import * as _ from "lodash";
 import { AspectMetadata } from "./commonTypes";
-import { PushImpactListenerInvocation } from "@atomist/sdm";
 
 /**
  * Knows how to classify projects into a unique String
