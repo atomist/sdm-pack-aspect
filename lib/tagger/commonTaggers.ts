@@ -27,6 +27,7 @@ import {
     hasNoLicense,
     isLicenseFingerprint,
 } from "../aspect/community/license";
+import { isClassificationDataFingerprint } from "../aspect/compose/classificationAspect";
 import { isGlobMatchFingerprint } from "../aspect/compose/globAspect";
 import { BranchCountType } from "../aspect/git/branchCount";
 import { daysSince } from "../aspect/git/dateUtils";
@@ -35,7 +36,6 @@ import {
     GitRecencyType,
 } from "../aspect/git/gitActivity";
 import { ExposedSecrets } from "../aspect/secret/exposedSecrets";
-import { isClassificationDataFingerprint } from "../aspect/compose/classificationAspect";
 
 /**
  * Emit taggers for the given tags from classification fingerprints
