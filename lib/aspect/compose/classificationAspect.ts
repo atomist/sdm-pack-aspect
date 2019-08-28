@@ -54,7 +54,7 @@ export interface ClassificationData {
 
 export function isClassificationDataFingerprint(fp: FP): fp is FP<ClassificationData> {
     const maybe = fp as FP<ClassificationData>;
-    return !!maybe.data.tags && !!maybe.data.reasons;
+    return !!maybe.data && !!maybe.data.tags && !!maybe.data.reasons;
 }
 
 /**
