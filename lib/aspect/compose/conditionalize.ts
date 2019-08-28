@@ -20,7 +20,8 @@ import {
 } from "@atomist/automation-client";
 import { toArray } from "@atomist/sdm-core/lib/util/misc/array";
 import {
-    Aspect, FP,
+    Aspect,
+    FP,
 } from "@atomist/sdm-pack-fingerprints";
 import { AspectMetadata } from "./AspectMetadata";
 

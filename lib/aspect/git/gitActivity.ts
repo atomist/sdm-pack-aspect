@@ -19,7 +19,8 @@ import {
 } from "@atomist/automation-client";
 import {
     Aspect,
-    ExtractFingerprint, fingerprintOf,
+    ExtractFingerprint,
+    fingerprintOf,
 } from "@atomist/sdm-pack-fingerprints";
 import * as child_process from "child_process";
 import * as util from "util";

@@ -20,7 +20,8 @@ import {
 } from "@atomist/automation-client";
 import { execPromise } from "@atomist/sdm";
 import {
-    Aspect, fingerprintOf,
+    Aspect,
+    fingerprintOf,
 } from "@atomist/sdm-pack-fingerprints";
 import {
     bandFor,
