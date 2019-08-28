@@ -157,7 +157,8 @@ export interface AspectSupportOptions {
 }
 
 /**
- * Return an extension pack to add aspect support with the given aspects to an SDM
+ * Return an extension pack to add aspect support with the given aspects to an SDM.
+ * If we're in local mode, expose analyzer commands and HTTP endpoints.
  */
 export function aspectSupport(options: AspectSupportOptions): ExtensionPack {
     return {

@@ -32,12 +32,19 @@ import { logger } from "@atomist/automation-client";
  * limitations under the License.
  */
 
+/**
+ * Score value
+ */
 export type FiveStar = 0 | 1 | 2 | 3 | 4 | 5;
 
+/**
+ * Scores with this category are always included in any score computation
+ */
 export const AlwaysIncludeCategory: "*" = "*";
 
 /**
  * Represents a quality ranking of a particular element of a project.
+ * The numeric score will be from from 1-5, where 1 is very bad and 5 is very good.
  */
 export interface Score {
 
@@ -53,15 +60,22 @@ export interface Score {
      */
     readonly reason?: string;
 
+    /**
+     * Score for this project
+     */
     readonly score: FiveStar;
 
 }
 
 /**
  * Structure representing a score on a particular aspect of a project.
+ * The key is the scorer name
  */
 export type Scores = Record<string, Score>;
 
+/**
+ * Weighting of a particular scorer
+ */
 export type Weighting = 1 | 2 | 3;
 
 export interface Scored {

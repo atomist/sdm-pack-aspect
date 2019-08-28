@@ -55,9 +55,11 @@ export interface AnalyzeGitHubCommandParameters extends AnalyzeCommandParameters
     search?: string;
     cloneUnder?: string;
 }
+
 export interface AnalyzeGitHubOrganizationCommandParameters extends AnalyzeGitHubCommandParameters {
     owner?: string;
 }
+
 export interface AnalyzeGitHubByQueryCommandParameters extends AnalyzeGitHubCommandParameters {
     query?: string;
 }
