@@ -19,7 +19,7 @@ import { PushImpactListenerInvocation } from "@atomist/sdm";
 import { toArray } from "@atomist/sdm-core/lib/util/misc/array";
 import {
     Aspect,
-    fingerprintOf,
+    fingerprintOf, FP,
 } from "@atomist/sdm-pack-fingerprints";
 import * as _ from "lodash";
 import { AspectMetadata } from "./commonTypes";
@@ -49,6 +49,11 @@ export interface ClassificationData {
     tags: string[];
 
     reasons: string[];
+}
+
+export function isClassificationDataFingerprint(fp: FP): fp is FP<ClassificationData> {
+    const maybe = fp as FP<ClassificationData>;
+    return !!maybe.data.tags && !!maybe.data.reasons;
 }
 
 /**

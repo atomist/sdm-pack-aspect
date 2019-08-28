@@ -35,6 +35,20 @@ import {
     GitRecencyType,
 } from "../aspect/git/gitActivity";
 import { ExposedSecrets } from "../aspect/secret/exposedSecrets";
+import { isClassificationDataFingerprint } from "../aspect/compose/classificationAspect";
+
+/**
+ * Emit taggers for the given tags from classification fingerprints
+ * @param {string} tags
+ * @return {Tagger[]}
+ */
+export function tagsFromClassificationFingerprints(...tags: string[]): Tagger[] {
+    return tags.map(name => ({
+        name,
+        description: "From fingerprint",
+        test: fp => isClassificationDataFingerprint(fp) && fp.data.tags.includes(name),
+    }));
+}
 
 /**
  * Tag repositories that contain multiple virtual projects as reported by
