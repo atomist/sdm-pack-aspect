@@ -15,7 +15,12 @@
  */
 
 import { Project } from "@atomist/automation-client";
-import { Aspect, ExtractFingerprint, fingerprintOf, FP } from "@atomist/sdm-pack-fingerprints";
+import {
+    Aspect,
+    ExtractFingerprint,
+    fingerprintOf,
+    FP,
+} from "@atomist/sdm-pack-fingerprints";
 
 export interface CodeOwnershipData {
 

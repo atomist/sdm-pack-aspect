@@ -15,7 +15,10 @@
  */
 
 import { InMemoryProject } from "@atomist/automation-client";
-import { classificationAspect, ClassificationData } from "../../lib/aspect/compose/classificationAspect";
+import {
+    classificationAspect,
+    ClassificationData,
+} from "../../lib/aspect/compose/classificationAspect";
 
 import { FP } from "@atomist/sdm-pack-fingerprints";
 import * as assert from "assert";
