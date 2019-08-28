@@ -64,7 +64,7 @@ import { CodeOwnership } from "../lib/aspect/common/codeOwnership";
 import { CiAspect } from "../lib/aspect/common/stackAspect";
 import { CodeOfConduct } from "../lib/aspect/community/codeOfConduct";
 import {
-    License,
+    license,
     LicensePresence,
 } from "../lib/aspect/community/license";
 import {
@@ -181,7 +181,7 @@ function aspects(): Aspect[] {
         DockerFrom,
         DockerfilePath,
         DockerPorts,
-        License,
+        license(),
         // Based on license, decide the presence of a license: Not spread
         LicensePresence,
         new CodeOwnership(),

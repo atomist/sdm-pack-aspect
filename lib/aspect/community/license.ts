@@ -26,11 +26,14 @@ export function hasNoLicense(ld: LicenseData): boolean {
 }
 
 export function isLicenseFingerprint(fp: FP): fp is FP<LicenseData> {
-    const maybe = fp;
-    return fp.type === LicenseType && !!maybe.data.classification;
+    return fp.type === LicenseType && !!fp.data.classification;
 }
 
 export interface LicenseData {
+
+    /**
+     * Path to the license file
+     */
     path: string;
 
     /**
@@ -38,45 +41,57 @@ export interface LicenseData {
      */
     classification: string;
 
+    /**
+     * License content
+     */
     content?: string;
 }
+
+export type LicenseClassifier = (content: string) => string | undefined;
+
+const defaultClassifier: LicenseClassifier = content => content.trim().split("\n")[0].trim();
 
 /**
  * License aspect. Every repository gets a license fingerprint, which may have unknown
  * as a license.
+ * @param opts provides classifier function, taking the license content and returning
+ * a classificiation
  */
-export const License: Aspect<LicenseData> = {
-    name: LicenseType,
-    displayName: "License",
-    baseOnly: true,
-    extract: async p => {
-        const licenseFile = await firstFileFound(p, "LICENSE", "LICENSE.txt", "license.txt", "LICENSE.md");
-        let classification: string = NoLicense;
-        let content: string;
-        if (!!licenseFile) {
-            content = await licenseFile.getContent();
-            classification = content.trim().split("\n")[0].trim();
-        }
-        const data: LicenseData = { classification, content, path: licenseFile ? licenseFile.path : undefined };
-        return {
-            type: LicenseType,
-            name: LicenseType,
-            data,
-            sha: sha256(JSON.stringify(data)),
-        };
-    },
-    toDisplayableFingerprintName: () => "License",
-    toDisplayableFingerprint: fp => {
-        return fp.data.classification === NoLicense ?
-            "None" :
-            `${fp.data.path}:${fp.data.classification}`;
-    },
-    stats: {
-        defaultStatStatus: {
-            entropy: false,
+export function license(opts: { classifier: LicenseClassifier } =
+                            { classifier: defaultClassifier }): Aspect<LicenseData> {
+    return {
+        name: LicenseType,
+        displayName: "License",
+        baseOnly: true,
+        extract: async p => {
+            const licenseFile = await firstFileFound(p, "LICENSE", "LICENSE.txt", "license.txt", "LICENSE.md");
+            let classification: string = NoLicense;
+            let content: string;
+            if (!!licenseFile) {
+                content = await licenseFile.getContent();
+                classification = opts.classifier(content);
+            }
+            const data: LicenseData = { classification, content, path: licenseFile ? licenseFile.path : undefined };
+            return {
+                type: LicenseType,
+                name: LicenseType,
+                data,
+                sha: sha256(JSON.stringify(data)),
+            };
         },
-    },
-};
+        toDisplayableFingerprintName: () => "License",
+        toDisplayableFingerprint: fp => {
+            return fp.data.classification === NoLicense ?
+                "None" :
+                `${fp.data.path}:${fp.data.classification}`;
+        },
+        stats: {
+            defaultStatStatus: {
+                entropy: false,
+            },
+        },
+    };
+}
 
 export const LicensePresenceType: string = "license-presence";
 

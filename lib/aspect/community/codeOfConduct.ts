@@ -15,7 +15,7 @@
  */
 
 import {
-    Aspect,
+    Aspect, fingerprintOf,
     FP,
     sha256,
 } from "@atomist/sdm-pack-fingerprints";
@@ -36,7 +36,8 @@ export interface CodeOfConductData {
 }
 
 /**
- * Find a code of conduct in a repository if possible
+ * Find a code of conduct in a repository if possible.
+ * Returns no fingerprint if the repository lacks a code of conduct file.
  * @constructor
  */
 export const CodeOfConduct: Aspect<CodeOfConductData> = {
@@ -44,20 +45,17 @@ export const CodeOfConduct: Aspect<CodeOfConductData> = {
     displayName: "Code of conduct",
     baseOnly: true,
     extract: async p => {
-        const codeOfConductFile = await
-            p.getFile("CODE_OF_CONDUCT.md");
+        const codeOfConductFile = await p.getFile("CODE_OF_CONDUCT.md");
         if (codeOfConductFile) {
             const content = await codeOfConductFile.getContent();
             const data = {
-                title: titleOf(content),
+                title: extractTitle(content),
                 content,
             };
-            return {
-                name: CodeOfConductType,
+            return fingerprintOf({
                 type: CodeOfConductType,
                 data,
-                sha: sha256(JSON.stringify(data)),
-            };
+            });
         }
         return undefined;
     },
@@ -74,7 +72,7 @@ const markdownTitleRegex = /^# (.*)\n/;
  * @param {string} mdString
  * @return {string | undefined}
  */
-function titleOf(mdString: string): string | undefined {
+function extractTitle(mdString: string): string | undefined {
     const match = markdownTitleRegex.exec(mdString);
     return (match && match.length === 2) ?
         match[1] :
