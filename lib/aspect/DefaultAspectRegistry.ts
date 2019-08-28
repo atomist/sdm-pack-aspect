@@ -67,24 +67,29 @@ export class DefaultAspectRegistry implements AspectRegistry {
 
     private combinationTagsFor(fps: FP[], id: RepoRef, tagContext: TagContext): Tag[] {
         return _.uniqBy(this.combinationTaggers
-            .map(tagger => ({ ...tagger, tag: tagger.test(fps, id, tagContext) }))
-            .filter(t => !!t.tag),
+                .map(tagger => ({ ...tagger, tag: tagger.test(fps, id, tagContext) }))
+                .filter(t => !!t.tag),
             tag => tag.name);
     }
 
     public async tagAndScoreRepos(workspaceId: string,
                                   repos: ProjectAnalysisResult[],
                                   tsOpts: TagAndScoreOptions): Promise<ScoredRepo[]> {
-        const scored = await showTiming(`Tag and score ${repos.length} repos`,
+        const tagged = await showTiming(
+            `Tag ${repos.length} repos with ${this.taggers.length} taggers`,
+            async () => this.tagRepos({
+                repoCount: repos.length,
+                // TODO fix this
+                averageFingerprintCount: -1,
+                workspaceId,
+                aspectRegistry: this,
+            }, repos));
+
+        const scored = await showTiming(
+            `Score ${repos.length} repos with ${this.scorers.length} scorers`,
             async () => scoreRepos(
                 this.scorers,
-                await this.tagRepos({
-                    repoCount: repos.length,
-                    // TODO fix this
-                    averageFingerprintCount: -1,
-                    workspaceId,
-                    aspectRegistry: this,
-                }, repos),
+                tagged,
                 this.opts.scoreWeightings,
                 tsOpts));
         return scored;
@@ -174,8 +179,8 @@ export function defaultedToDisplayableFingerprint(aspect?: Aspect): (fpi: FP) =>
 
 function tagsFor(fp: FP, id: RepoRef, tagContext: TagContext, taggers: Tagger[]): Tag[] {
     return _.uniqBy(taggers
-        .map(tagger => ({ ...tagger, tag: tagger.test(fp, id, tagContext) }))
-        .filter(t => !!t.tag),
+            .map(tagger => ({ ...tagger, tag: tagger.test(fp, id, tagContext) }))
+            .filter(t => !!t.tag),
         tag => tag.name);
 }
 
