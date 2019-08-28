@@ -15,7 +15,7 @@
  */
 
 import { Project } from "@atomist/automation-client";
-import { Aspect, ExtractFingerprint, fingerprintOf, FP, } from "@atomist/sdm-pack-fingerprints";
+import { Aspect, ExtractFingerprint, fingerprintOf, FP } from "@atomist/sdm-pack-fingerprints";
 
 export interface CodeOwnershipData {
 
@@ -64,5 +64,5 @@ export function codeOwnership(): Aspect<CodeOwnershipData> {
         apply: async (p, tsi) => {
             throw new Error(`Applying code ownership is not yet supported. But it could be.`);
         },
-    }
+    };
 }

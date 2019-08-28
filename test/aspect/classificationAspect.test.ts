@@ -17,8 +17,8 @@
 import { InMemoryProject } from "@atomist/automation-client";
 import { classificationAspect, ClassificationData } from "../../lib/aspect/compose/classificationAspect";
 
-import * as assert from "assert";
 import { FP } from "@atomist/sdm-pack-fingerprints";
+import * as assert from "assert";
 
 // Don't let it remove typecasts
 // tslint:disable
