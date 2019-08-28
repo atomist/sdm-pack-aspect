@@ -40,6 +40,7 @@ import {
     RebaseOptions,
     VirtualProjectFinder,
 } from "@atomist/sdm-pack-fingerprints";
+import { sdmConfigClientFactory } from "../analysis/offline/persist/pgClientFactory";
 import { ClientFactory } from "../analysis/offline/persist/pgUtils";
 import {
     analyzeGitHubByQueryCommandRegistration,
@@ -64,7 +65,6 @@ import { ScoreWeightings } from "../scorer/Score";
 import {
     analysisResultStore,
     createAnalyzer,
-    sdmConfigClientFactory,
 } from "./machine";
 
 /**

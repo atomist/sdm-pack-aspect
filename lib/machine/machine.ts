@@ -43,18 +43,6 @@ export function createAnalyzer(aspects: Aspect[], virtualProjectFinder: VirtualP
     return new SpiderAnalyzer(configuredAspects, virtualProjectFinder);
 }
 
-const PoolHolder: { pool: Pool } = { pool: undefined };
-
-export function sdmConfigClientFactory(config: Configuration): ClientFactory {
-    if (!PoolHolder.pool) {
-        PoolHolder.pool = new Pool({
-            database: "org_viz",
-            ...(_.get(config, "sdm.postgres") || {}),
-        });
-    }
-    return () => PoolHolder.pool.connect();
-}
-
 export function analysisResultStore(factory: ClientFactory): ProjectAnalysisResultStore & IdealStore & ProblemStore {
     return new PostgresProjectAnalysisResultStore(factory);
 }
