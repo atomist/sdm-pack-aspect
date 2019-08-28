@@ -20,8 +20,7 @@ import {
 } from "@atomist/automation-client";
 import { execPromise } from "@atomist/sdm";
 import {
-    Aspect,
-    sha256,
+    Aspect, fingerprintOf,
 } from "@atomist/sdm-pack-fingerprints";
 import {
     bandFor,
@@ -51,12 +50,10 @@ export const branchCount: Aspect<BranchCountData> = {
             .filter(l => !l.includes("origin/HEAD")).length - 1;
         const data = { count };
         logger.debug("Branch count for %s is %d", p.id.url, count);
-        return {
+        return fingerprintOf({
             type: BranchCountType,
-            name: BranchCountType,
             data,
-            sha: sha256(JSON.stringify(data)),
-        };
+        });
     },
     toDisplayableFingerprintName: () => "Branch count",
     toDisplayableFingerprint: fp => {

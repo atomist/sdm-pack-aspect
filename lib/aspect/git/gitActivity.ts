@@ -19,8 +19,7 @@ import {
 } from "@atomist/automation-client";
 import {
     Aspect,
-    ExtractFingerprint,
-    sha256,
+    ExtractFingerprint, fingerprintOf,
 } from "@atomist/sdm-pack-fingerprints";
 import * as child_process from "child_process";
 import * as util from "util";
@@ -53,12 +52,10 @@ const gitRecencyExtractor: ExtractFingerprint<GitRecencyData> =
         }
         const data = { lastCommitTime: new Date(r.stdout.trim()).getTime() };
 
-        return {
+        return fingerprintOf({
             type: GitRecencyType,
-            name: GitRecencyType,
             data,
-            sha: sha256(JSON.stringify(data)),
-        };
+        });
     };
 
 /**
@@ -108,12 +105,10 @@ function activeCommittersExtractor(commitDepth: number): ExtractFingerprint<Acti
         const count = r.stdout.trim().split("\n").length;
         const data = { count };
 
-        return {
+        return fingerprintOf({
             type: GitActivesType,
-            name: GitActivesType,
             data,
-            sha: sha256(JSON.stringify(data)),
-        };
+        });
     };
 }
 

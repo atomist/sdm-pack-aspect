@@ -20,29 +20,30 @@ import {
 } from "@atomist/automation-client";
 import { toArray } from "@atomist/sdm-core/lib/util/misc/array";
 import {
-    Aspect,
+    Aspect, FP,
 } from "@atomist/sdm-pack-fingerprints";
+import { AspectMetadata } from "./AspectMetadata";
 
 /**
  * Make this aspect conditional
  */
-export function conditionalize(aspect: Aspect,
-                               test: (p: Project) => Promise<boolean>,
-                               details: Partial<Aspect> = {}): Aspect {
-    return {
+export function conditionalize<DATA = any>(aspect: Aspect<DATA>,
+                                           test: (p: Project) => Promise<boolean>,
+                                           details: Partial<AspectMetadata> = {}): Aspect<DATA> {
+    const metadata: AspectMetadata = {
         ...aspect,
-        name: details.name || aspect.name,
-        displayName: details.displayName || aspect.displayName,
-        toDisplayableFingerprintName: details.toDisplayableFingerprintName || aspect.toDisplayableFingerprintName,
-        toDisplayableFingerprint: details.toDisplayableFingerprint || aspect.toDisplayableFingerprint,
+        ...details,
+    };
+    return {
+        ...metadata,
         extract: async (p, pli) => {
             const testResult = await test(p);
             if (testResult) {
                 const rawFingerprints = toArray(await aspect.extract(p, pli));
                 return rawFingerprints.map(raw => {
-                    const merged = {
+                    const merged: FP<DATA> = {
                         ...raw,
-                        ...details,
+                        type: metadata.name,
                     };
                     logger.debug("Merged fingerprints=%j", merged);
                     return merged;
