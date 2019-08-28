@@ -18,12 +18,11 @@ import { sha256 } from "@atomist/sdm-pack-fingerprints";
 import { Language } from "@atomist/sdm-pack-sloc/lib/slocReport";
 import * as _ from "lodash";
 import { RepositoryScorer } from "../aspect/AspectRegistry";
-import { CodeMetricsType } from "../aspect/common/codeMetrics";
+import { isCodeMetricsFingerprint } from "../aspect/common/codeMetrics";
 import { CodeOfConductType } from "../aspect/community/codeOfConduct";
 import {
-    hasNoLicense,
-    LicenseType,
-} from "../aspect/community/license";
+    hasNoLicense, isLicenseFingerprint,
+    } from "../aspect/community/license";
 import { isGlobMatchFingerprint } from "../aspect/compose/globAspect";
 import { BranchCountType } from "../aspect/git/branchCount";
 import { daysSince } from "../aspect/git/dateUtils";
@@ -82,7 +81,7 @@ export function requireRecentCommit(opts: { days: number }): RepositoryScorer {
  */
 export function limitLanguages(opts: { limit: number }): RepositoryScorer {
     return async repo => {
-        const cm = repo.analysis.fingerprints.find(fp => fp.type === CodeMetricsType);
+        const cm = repo.analysis.fingerprints.find(isCodeMetricsFingerprint);
         if (!cm) {
             return undefined;
         }
@@ -102,7 +101,7 @@ export function limitLanguages(opts: { limit: number }): RepositoryScorer {
  */
 export function limitLinesOfCode(opts: { limit: number }): RepositoryScorer {
     return async repo => {
-        const cm = repo.analysis.fingerprints.find(fp => fp.type === CodeMetricsType);
+        const cm = repo.analysis.fingerprints.find(isCodeMetricsFingerprint);
         if (!cm) {
             return undefined;
         }
@@ -120,7 +119,7 @@ export function limitLinesOfCode(opts: { limit: number }): RepositoryScorer {
  */
 export function limitLinesOfCodeIn(opts: { limit: number, language: Language, freeAmount?: number }): RepositoryScorer {
     return async repo => {
-        const cm = repo.analysis.fingerprints.find(fp => fp.type === CodeMetricsType);
+        const cm = repo.analysis.fingerprints.find(isCodeMetricsFingerprint);
         if (!cm) {
             return undefined;
         }
@@ -192,7 +191,7 @@ export const PenalizeWarningAndErrorTags: RepositoryScorer = async repo => {
  */
 export const PenalizeNoLicense: RepositoryScorer =
     async repo => {
-        const license = repo.analysis.fingerprints.find(fp => fp.type === LicenseType);
+        const license = repo.analysis.fingerprints.find(isLicenseFingerprint);
         const bad = !license || hasNoLicense(license.data);
         return {
             name: "license",
