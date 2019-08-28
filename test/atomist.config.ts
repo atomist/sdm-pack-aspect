@@ -194,10 +194,7 @@ function aspects(): Aspect[] {
         // gitActiveCommitters(30),
         // This is also expensive
         CodeMetricsAspect,
-        // StackAspect,
-        // CiAspect,
-        // JavaBuild,
-        // Don't show these
+        // Don't show these: set displayName to undefined
         globAspect({ name: "csproject", displayName: undefined, glob: "*.csproj" }),
         globAspect({ name: "snyk", displayName: undefined, glob: ".snyk" }),
         ChangelogAspect,

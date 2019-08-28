@@ -426,6 +426,7 @@ Some useful concrete aspects in this project:
 ### Aspect creation functions
 The following utility functions help create your own aspects:
 
+- classificationAspect: Add zero or more tags to a uniquely named fingerprint, using a number of classification functions
 - globAspect: Check for the presence of files matching a blob.
 - microgrammarMatchAspect: Look for a microgrammar match in files. Useful for picking out project content.
 - fileMatchAspect: Check for presence of a match within the AST of files matching the glob. Integrates with Atomist Project API parsing infrastructure.

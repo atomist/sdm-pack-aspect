@@ -17,10 +17,11 @@
 import { Project } from "@atomist/automation-client";
 import { toArray } from "@atomist/sdm-core/lib/util/misc/array";
 import {
-    Aspect,
-    sha256,
+    Aspect, fingerprintOf,
 } from "@atomist/sdm-pack-fingerprints";
 import * as _ from "lodash";
+import { AspectMetadata } from "./commonTypes";
+import { PushImpactListenerInvocation } from "@atomist/sdm";
 
 /**
  * Knows how to classify projects into a unique String
@@ -40,36 +41,39 @@ export interface Classifier {
     /**
      * Test for whether the given project meets this classification
      */
-    predicate: (p: Project) => Promise<boolean>;
+    test: (p: Project, pili: PushImpactListenerInvocation) => Promise<boolean>;
+}
+
+export interface ClassificationData {
+    tags: string[];
 }
 
 /**
  * Classify the project uniquely or otherwise
  * undefined to return no fingerprint
+ * @param opts: Whether to allow multiple tags and whether to compute a fingerprint in all cases
+ * @param classifiers classifier functions
  */
-export function classificationAspect(id: Pick<Aspect, "name" | "displayName" | "toDisplayableFingerprintName"> & { allowMulti?: boolean },
-                                     ...classifiers: Classifier[]): Aspect {
+export function classificationAspect(opts: AspectMetadata & { allowMulti?: boolean, alwaysFingerprint?: boolean },
+                                     ...classifiers: Classifier[]): Aspect<ClassificationData> {
     return {
-        ...id,
-        extract: async p => {
+        extract: async (p, pili) => {
             const tags: string[] = [];
             for (const classifier of classifiers) {
-                if (await classifier.predicate(p)) {
+                if (await classifier.test(p, pili)) {
                     tags.push(...toArray(classifier.classification));
-                    if (!id.allowMulti) {
+                    if (!opts.allowMulti) {
                         break;
                     }
                 }
             }
-            const data = JSON.stringify(_.uniq(tags).sort());
-            return !!tags ? {
-                name: id.name,
-                type: id.name,
+            const data = { tags: _.uniq(tags).sort() };
+            return (opts.alwaysFingerprint || data.tags.length > 0) ? fingerprintOf({
+                type: opts.name,
                 data,
-                sha: sha256(data),
-            } :
-                undefined;
+            }) : undefined;
         },
-        toDisplayableFingerprint: fp => JSON.parse(fp.data).join() || "unknown",
+        toDisplayableFingerprint: fp => (fp.data.tags && fp.data.tags.join()) || "unknown",
+        ...opts,
     };
 }
