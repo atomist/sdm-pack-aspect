@@ -39,9 +39,7 @@ export async function doWithClient<R>(description: string,
                                       what: (c: PoolClient) => Promise<R>,
                                       defaultResult?: R | ((e: Error) => R)): Promise<R> {
     const startTime = new Date().getTime();
-    process.stderr.write("Creating client factory ...");
     const client = await clientFactory();
-    process.stderr.write("Created client factory ...");
     let result: R;
     try {
         result = await what(client);
