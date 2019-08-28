@@ -21,8 +21,9 @@ import { RepositoryScorer } from "../aspect/AspectRegistry";
 import { isCodeMetricsFingerprint } from "../aspect/common/codeMetrics";
 import { CodeOfConductType } from "../aspect/community/codeOfConduct";
 import {
-    hasNoLicense, isLicenseFingerprint,
-    } from "../aspect/community/license";
+    hasNoLicense,
+    isLicenseFingerprint,
+} from "../aspect/community/license";
 import { isGlobMatchFingerprint } from "../aspect/compose/globAspect";
 import { BranchCountType } from "../aspect/git/branchCount";
 import { daysSince } from "../aspect/git/dateUtils";
