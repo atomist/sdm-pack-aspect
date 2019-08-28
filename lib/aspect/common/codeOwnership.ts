@@ -15,13 +15,7 @@
  */
 
 import { Project } from "@atomist/automation-client";
-import {
-    Aspect,
-    ExtractFingerprint,
-    FP,
-    sha256,
-} from "@atomist/sdm-pack-fingerprints";
-import { ApplyFingerprint } from "@atomist/sdm-pack-fingerprints/lib/machine/Aspect";
+import { Aspect, ExtractFingerprint, fingerprintOf, FP, } from "@atomist/sdm-pack-fingerprints";
 
 export interface CodeOwnershipData {
 
@@ -36,7 +30,7 @@ export interface CodeOwnershipData {
     jiraTeam?: string;
 }
 
-const codeOwnershipFingerprintName = "codeOwnership";
+const CodeOwnershipFingerprintName = "code-ownership";
 
 /*
  * Find a code ownership file if possible
@@ -52,34 +46,23 @@ export const CodeOwnershipExtractor: ExtractFingerprint<CodeOwnershipData> =
                 jiraTeam,
                 content,
             };
-            return {
-                type: codeOwnershipFingerprintName,
-                name: codeOwnershipFingerprintName,
-                abbreviation: "owners",
+            return fingerprintOf({
+                type: CodeOwnershipFingerprintName,
                 data,
-                sha: sha256(JSON.stringify(data)),
-            };
+            });
         }
         return undefined;
     };
 
-export class CodeOwnership implements Aspect<CodeOwnershipData> {
-
-    public readonly displayName: string = "Code Ownership";
-
-    public readonly name: string = "codeOwnership";
-
-    public baseOnly: boolean = true;
-
-    get apply(): ApplyFingerprint<CodeOwnershipData> {
-        return async (p, tsi) => {
+export function codeOwnership(): Aspect<CodeOwnershipData> {
+    return {
+        displayName: "Code Ownership",
+        name: "codeOwnership",
+        baseOnly: true,
+        extract: CodeOwnershipExtractor,
+        toDisplayableFingerprint: (fp: FP) => fp.data,
+        apply: async (p, tsi) => {
             throw new Error(`Applying code ownership is not yet supported. But it could be.`);
-        };
-    }
-
-    public extract: ExtractFingerprint<CodeOwnershipData> = CodeOwnershipExtractor;
-
-    public toDisplayableFingerprint(fp: FP): string {
-        return fp.data;
+        },
     }
 }

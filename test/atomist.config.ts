@@ -61,8 +61,7 @@ import {
     TaggerDefinition,
 } from "../lib/aspect/AspectRegistry";
 import { CodeMetricsAspect } from "../lib/aspect/common/codeMetrics";
-import { CodeOwnership } from "../lib/aspect/common/codeOwnership";
-import { CiAspect } from "../lib/aspect/common/stackAspect";
+import { codeOwnership } from "../lib/aspect/common/codeOwnership";
 import { CodeOfConduct } from "../lib/aspect/community/codeOfConduct";
 import {
     license,
@@ -184,7 +183,7 @@ function aspects(): Aspect[] {
         license(),
         // Based on license, decide the presence of a license: Not spread
         LicensePresence,
-        new CodeOwnership(),
+        codeOwnership(),
         NpmDeps,
         CodeOfConduct,
         ExposedSecrets,
@@ -245,16 +244,6 @@ export function taggers(opts: Partial<TaggersParams>): TaggerDefinition[] {
     return [
         { name: "docker", description: "Docker status", test: fp => fp.type === DockerFrom.name },
         { name: "clojure", description: "Lein dependencies", test: fp => fp.type === LeinDeps.name },
-        {
-            name: "jenkins",
-            description: "Jenkins",
-            test: fp => fp.type === CiAspect.name && fp.data.includes("jenkins"),
-        },
-        {
-            name: "circleci",
-            description: "circleci",
-            test: fp => fp.type === CiAspect.name && fp.data.includes("circle"),
-        },
         {
             name: "azure-pipelines",
             description: "Azure pipelines files",

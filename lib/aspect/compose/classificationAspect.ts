@@ -37,7 +37,7 @@ export interface Classifier {
     /**
      * Classification this instance will return
      */
-    readonly classification: string | string[];
+    readonly tags: string | string[];
 
     /**
      * Test for whether the given project meets this classification
@@ -47,6 +47,8 @@ export interface Classifier {
 
 export interface ClassificationData {
     tags: string[];
+
+    reasons: string[];
 }
 
 /**
@@ -55,20 +57,22 @@ export interface ClassificationData {
  * @param opts: Whether to allow multiple tags and whether to compute a fingerprint in all cases
  * @param classifiers classifier functions
  */
-export function classificationAspect(opts: AspectMetadata & { allowMulti?: boolean, alwaysFingerprint?: boolean },
+export function classificationAspect(opts: AspectMetadata & { stopAtFirst?: boolean, alwaysFingerprint?: boolean },
                                      ...classifiers: Classifier[]): Aspect<ClassificationData> {
     return {
         extract: async (p, pili) => {
             const tags: string[] = [];
+            const reasons: string[] = [];
             for (const classifier of classifiers) {
                 if (await classifier.test(p, pili)) {
-                    tags.push(...toArray(classifier.classification));
-                    if (!opts.allowMulti) {
+                    tags.push(...toArray(classifier.tags));
+                    reasons.push(classifier.reason);
+                    if (opts.stopAtFirst) {
                         break;
                     }
                 }
             }
-            const data = { tags: _.uniq(tags).sort() };
+            const data = { tags: _.uniq(tags).sort(), reasons };
             return (opts.alwaysFingerprint || data.tags.length > 0) ? fingerprintOf({
                 type: opts.name,
                 data,
