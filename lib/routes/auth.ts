@@ -72,10 +72,14 @@ export function authHandlers(): exp.RequestHandler[] {
         }
 
         const workspaceId = req.params.workspace_id || req.query.workspace_id;
-
         if (!workspaceId) {
             next();
         } else {
+            // Creds are missing; just return 401 error here instead of calling the backend
+            if (!creds) {
+                res.sendStatus(401);
+            }
+
             const graphClient = new ApolloGraphClient(
                 configurationValue<Configuration>().endpoints.graphql.replace("/team", ""),
                 {
