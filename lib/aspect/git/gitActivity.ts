@@ -33,7 +33,10 @@ import {
     SizeBands,
 } from "../../util/commonBands";
 import { showTiming } from "../../util/showTiming";
-import { CountAspect, CountData } from "../compose/commonTypes";
+import {
+    CountAspect,
+    CountData,
+} from "../compose/commonTypes";
 import { daysSince } from "./dateUtils";
 
 const exec = util.promisify(child_process.exec);
