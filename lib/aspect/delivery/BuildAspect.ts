@@ -17,7 +17,8 @@
 import { logger } from "@atomist/automation-client";
 import { Build } from "@atomist/sdm-pack-build";
 import {
-    Aspect, fingerprintOf,
+    Aspect,
+    fingerprintOf,
 } from "@atomist/sdm-pack-fingerprints";
 import {
     bandFor,
