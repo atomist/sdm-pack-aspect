@@ -71,6 +71,7 @@ import {
     ChangelogAspect,
     ContributingAspect,
 } from "../lib/aspect/community/oss";
+import { classificationAspect } from "../lib/aspect/compose/classificationAspect";
 import { isFileMatchFingerprint } from "../lib/aspect/compose/fileMatchAspect";
 import { globAspect } from "../lib/aspect/compose/globAspect";
 import { buildTimeAspect } from "../lib/aspect/delivery/BuildAspect";
@@ -89,7 +90,6 @@ import {
 } from "../lib/machine/aspectSupport";
 import * as commonScorers from "../lib/scorer/commonScorers";
 import * as commonTaggers from "../lib/tagger/commonTaggers";
-import { classificationAspect } from "../lib/aspect/compose/classificationAspect";
 
 // Ensure we start up in local mode
 process.env.ATOMIST_MODE = "local";
