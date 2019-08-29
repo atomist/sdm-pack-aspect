@@ -37,7 +37,8 @@ import {
 import { computeAnalyticsForFingerprintKind } from "../analysis/offline/spider/analytics";
 import { ProjectAnalysisResult } from "../analysis/ProjectAnalysisResult";
 import {
-    AspectRegistry, ScoredRepo,
+    AspectRegistry,
+    ScoredRepo,
     Tag,
 } from "../aspect/AspectRegistry";
 import { getAspectReports } from "../customize/categories";

@@ -16,23 +16,55 @@
 
 import { Configuration } from "@atomist/automation-client";
 import { loadUserConfiguration } from "@atomist/automation-client/lib/configuration";
-import { anySatisfied, PushImpact } from "@atomist/sdm";
-import { AllGoals, configure } from "@atomist/sdm-core";
+import {
+    anySatisfied,
+    PushImpact,
+} from "@atomist/sdm";
+import {
+    AllGoals,
+    configure,
+} from "@atomist/sdm-core";
 import { Build } from "@atomist/sdm-pack-build";
 import { LeinDeps } from "@atomist/sdm-pack-clojure/lib/fingerprints/clojure";
-import { DockerfilePath, DockerFrom, DockerPorts } from "@atomist/sdm-pack-docker";
-import { Aspect, NpmDeps, VirtualProjectFinder } from "@atomist/sdm-pack-fingerprints";
-import { PowerShellLanguage, ShellLanguage, YamlLanguage } from "@atomist/sdm-pack-sloc/lib/languages";
-import { IsMaven, mavenBuilder, MavenDefaultOptions } from "@atomist/sdm-pack-spring";
+import {
+    DockerfilePath,
+    DockerFrom,
+    DockerPorts,
+} from "@atomist/sdm-pack-docker";
+import {
+    Aspect,
+    NpmDeps,
+    VirtualProjectFinder,
+} from "@atomist/sdm-pack-fingerprints";
+import {
+    PowerShellLanguage,
+    ShellLanguage,
+    YamlLanguage,
+} from "@atomist/sdm-pack-sloc/lib/languages";
+import {
+    IsMaven,
+    mavenBuilder,
+    MavenDefaultOptions,
+} from "@atomist/sdm-pack-spring";
 import * as _ from "lodash";
 import { sdmConfigClientFactory } from "../lib/analysis/offline/persist/pgClientFactory";
 import { PostgresProjectAnalysisResultStore } from "../lib/analysis/offline/persist/PostgresProjectAnalysisResultStore";
-import { CombinationTagger, RepositoryScorer, TaggerDefinition } from "../lib/aspect/AspectRegistry";
+import {
+    CombinationTagger,
+    RepositoryScorer,
+    TaggerDefinition,
+} from "../lib/aspect/AspectRegistry";
 import { CodeMetricsAspect } from "../lib/aspect/common/codeMetrics";
 import { codeOwnership } from "../lib/aspect/common/codeOwnership";
 import { CodeOfConduct } from "../lib/aspect/community/codeOfConduct";
-import { license, LicensePresence } from "../lib/aspect/community/license";
-import { ChangelogAspect, ContributingAspect } from "../lib/aspect/community/oss";
+import {
+    license,
+    LicensePresence,
+} from "../lib/aspect/community/license";
+import {
+    ChangelogAspect,
+    ContributingAspect,
+} from "../lib/aspect/community/oss";
 import { classificationAspect } from "../lib/aspect/compose/classificationAspect";
 import { isFileMatchFingerprint } from "../lib/aspect/compose/fileMatchAspect";
 import { globAspect } from "../lib/aspect/compose/globAspect";
@@ -42,8 +74,14 @@ import { BranchCount } from "../lib/aspect/git/branchCount";
 import { GitRecency } from "../lib/aspect/git/gitActivity";
 import { AcceptEverythingUndesirableUsageChecker } from "../lib/aspect/ProblemStore";
 import { ExposedSecrets } from "../lib/aspect/secret/exposedSecrets";
-import { registerCategories, registerReportDetails } from "../lib/customize/categories";
-import { aspectSupport, DefaultVirtualProjectFinder } from "../lib/machine/aspectSupport";
+import {
+    registerCategories,
+    registerReportDetails,
+} from "../lib/customize/categories";
+import {
+    aspectSupport,
+    DefaultVirtualProjectFinder,
+} from "../lib/machine/aspectSupport";
 import * as commonScorers from "../lib/scorer/commonScorers";
 import * as commonTaggers from "../lib/tagger/commonTaggers";
 

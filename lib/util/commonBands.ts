@@ -15,7 +15,8 @@
  */
 
 import {
-    BandCasing, bandFor,
+    BandCasing,
+    bandFor,
     Bands,
     Default,
 } from "./bands";

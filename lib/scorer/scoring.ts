@@ -15,7 +15,8 @@
  */
 
 import {
-    RepositoryScorer, RepoToScore,
+    RepositoryScorer,
+    RepoToScore,
     ScoredRepo,
     TagAndScoreOptions,
 } from "../aspect/AspectRegistry";
