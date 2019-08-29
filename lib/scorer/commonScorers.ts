@@ -33,6 +33,7 @@ import {
     FiveStar,
 } from "./Score";
 import { adjustBy } from "./scoring";
+import { isScoredAspectFingerprint } from "../aspect/score/ScoredAspect";
 
 export const CommunityCategory: string = "community";
 
@@ -233,5 +234,26 @@ export function requireGlobAspect(opts: { glob: string, category?: string }): Re
             score: !!found ? 5 : 1,
             reason: !found ? `Should have file for ${opts.glob}` : "Satisfactory",
         };
+    };
+}
+
+/**
+ * Use as an inMemory scorer. Exposes persisted scores.
+ * Useful during development.
+ * @param {string} name
+ * @return {RepositoryScorer}
+ */
+export function exposeFingerprintScore(name: string): RepositoryScorer {
+    return async repo => {
+        const found = repo.analysis.fingerprints
+            .filter(isScoredAspectFingerprint)
+            .find(fp => fp.type === name);
+        return !!found ?
+            {
+                name,
+                score: found.data.weightedScore,
+                reason: JSON.stringify(found.data.weightedScores),
+            } as any :
+            undefined;
     };
 }

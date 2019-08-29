@@ -168,6 +168,15 @@ export interface AspectSupportOptions {
  * If we're in local mode, expose analyzer commands and HTTP endpoints.
  */
 export function aspectSupport(options: AspectSupportOptions): ExtensionPack {
+    const fingerprintScorers = Object.getOwnPropertyNames(options.scorers).map(name =>
+        fingerprintScoringAspect(
+            {
+                name,
+                displayName: name,
+                scorers: toArray(options.scorers[name]) || [],
+            }));
+    const aspects = [...toArray(options.aspects || []), ...fingerprintScorers];
+
     return {
         ...metadata(),
         configure: sdm => {
@@ -178,7 +187,7 @@ export function aspectSupport(options: AspectSupportOptions): ExtensionPack {
                 // If we're in local mode, expose analyzer commands and
                 // HTTP endpoints
                 const analyzer = createAnalyzer(
-                    toArray(options.aspects),
+                    aspects,
                     options.virtualProjectFinder || exports.DefaultVirtualProjectFinder);
 
                 sdm.addCommand(analyzeGitHubByQueryCommandRegistration(analyzer, analysisTracking));
@@ -194,13 +203,13 @@ export function aspectSupport(options: AspectSupportOptions): ExtensionPack {
                     // Add supporting for calculating fingerprints on every push
                     sdm.addExtensionPacks(fingerprintSupport({
                         pushImpactGoal: options.goals.pushImpact as PushImpact,
-                        aspects: options.aspects,
+                        aspects,
                         rebase: options.rebase,
                         publishFingerprints: options.publishFingerprints,
                     }));
                 }
 
-                toArray(options.aspects)
+                aspects
                     .filter(isDeliveryAspect)
                     .filter(a => a.canRegister(sdm, options.goals))
                     .forEach(da => da.register(sdm, options.goals, options.publishFingerprints));
@@ -210,7 +219,7 @@ export function aspectSupport(options: AspectSupportOptions): ExtensionPack {
             if (exposeWeb) {
                 const { customizers, routesToSuggestOnStartup } =
                     orgVisualizationEndpoints(sdmConfigClientFactory(cfg), cfg.http.client.factory,
-                        analysisTracking, options);
+                        analysisTracking, options, aspects);
                 cfg.http.customizers.push(...customizers);
                 routesToSuggestOnStartup.forEach(rtsos => {
                     cfg.logging.banner.contributors.push(suggestRoute(rtsos));
@@ -231,19 +240,12 @@ function suggestRoute({ title, route }: { title: string, route: string }):
 function orgVisualizationEndpoints(dbClientFactory: ClientFactory,
                                    httpClientFactory: HttpClientFactory,
                                    analysisTracking: AnalysisTracking,
-                                   options: AspectSupportOptions): {
+                                   options: AspectSupportOptions,
+                                   aspects: Aspect[]): {
     routesToSuggestOnStartup: Array<{ title: string, route: string }>,
     customizers: ExpressCustomizer[],
 } {
     const resultStore = analysisResultStore(dbClientFactory);
-    const fsas = Object.getOwnPropertyNames(options.scorers).map(name =>
-        fingerprintScoringAspect(
-            {
-                name,
-                displayName: name,
-                scorers: toArray(options.scorers[name]) || [],
-            }));
-    const aspects = [...toArray(options.aspects || []), ...fsas];
     const aspectRegistry = new DefaultAspectRegistry({
         idealStore: resultStore,
         problemStore: resultStore,

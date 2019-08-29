@@ -39,6 +39,11 @@ import { AspectMetadata } from "../compose/commonTypes";
  */
 export type ScoredAspect = Aspect<WeightedScore>;
 
+export function isScoredAspectFingerprint(fp: FP): fp is FP<WeightedScore> {
+    const maybe = fp as FP<WeightedScore>;
+    return !!maybe && !!maybe.data && !!maybe.data.weightedScore;
+}
+
 /**
  * Score the project and the push
  */
