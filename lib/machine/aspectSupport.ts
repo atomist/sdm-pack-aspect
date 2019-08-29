@@ -243,10 +243,11 @@ function orgVisualizationEndpoints(dbClientFactory: ClientFactory,
                 displayName: name,
                 scorers: toArray(options.scorers[name]) || [],
             }));
+    const aspects = [...toArray(options.aspects || []), ...fsas];
     const aspectRegistry = new DefaultAspectRegistry({
         idealStore: resultStore,
         problemStore: resultStore,
-        aspects: [...toArray(options.aspects || []), ...fsas],
+        aspects,
         undesirableUsageChecker: options.undesirableUsageChecker,
         scorers: toArray(options.inMemoryScorers || []),
         scoreWeightings: options.weightings || DefaultScoreWeightings,
