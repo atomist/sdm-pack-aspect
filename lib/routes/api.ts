@@ -16,6 +16,7 @@
 
 import { logger } from "@atomist/automation-client";
 import { ExpressCustomizer } from "@atomist/automation-client/lib/configuration";
+import { isFingerprint } from "@atomist/sdm";
 import { isInLocalMode } from "@atomist/sdm-core";
 import { isConcreteIdeal } from "@atomist/sdm-pack-fingerprint";
 import * as bodyParser from "body-parser";
@@ -263,11 +264,12 @@ function exposeDrift(express: Express, aspectRegistry: AspectRegistry, store: Pr
         try {
             const type = req.query.type;
             const band = req.query.band === "true";
+            const repos = req.query.repos === "true";
             const percentile: number = req.query.percentile ? parseFloat(req.query.percentile) : 0;
             logger.info("Entropy query: query.percentile='%s', percentile=%d, type=%s",
                 req.query.percentile, percentile, type);
 
-            let driftTree = await store.aspectDriftTree(req.params.workspace_id, percentile, type);
+            let driftTree = await store.aspectDriftTree(req.params.workspace_id, percentile, { repos, type });
             fillInAspectNames(aspectRegistry, driftTree.tree);
             if (!type) {
                 driftTree = removeAspectsWithoutMeaningfulEntropy(aspectRegistry, driftTree);
@@ -276,10 +278,16 @@ function exposeDrift(express: Express, aspectRegistry: AspectRegistry, store: Pr
                 driftTree = introduceClassificationLayer(driftTree, {
                     newLayerMeaning: "entropy band",
                     newLayerDepth: 1,
-                    descendantClassifier: fp => bandFor(EntropySizeBands, (fp as any).entropy, {
-                        casing: BandCasing.Sentence,
-                        includeNumber: false,
-                    }),
+                    descendantClassifier: fp => {
+                        if (!!(fp as any).entropy) {
+                            return bandFor(EntropySizeBands, (fp as any).entropy, {
+                                casing: BandCasing.Sentence,
+                                includeNumber: false,
+                            });
+                        } else {
+                            return undefined;
+                        }
+                    },
                 });
             }
             // driftTree.tree = flattenSoleFingerprints(driftTree.tree);
