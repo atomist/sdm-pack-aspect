@@ -251,20 +251,26 @@ export interface TaggersParams {
 
 export function taggers(opts: Partial<TaggersParams>): TaggerDefinition[] {
     return [
-        { name: "docker", description: "Docker status", test: fp => fp.type === DockerFrom.name },
-        { name: "clojure", description: "Lein dependencies", test: fp => fp.type === LeinDeps.name },
+        {
+            name: "docker", description: "Docker status",
+            test: async repo => repo.analysis.fingerprints.some(fp => fp.type === DockerFrom.name),
+        },
+        {
+            name: "clojure", description: "Lein dependencies",
+            test: async repo => repo.analysis.fingerprints.some(fp => fp.type === LeinDeps.name),
+        },
         {
             name: "azure-pipelines",
             description: "Azure pipelines files",
-            test: fp => isFileMatchFingerprint(fp) &&
-                fp.name.includes("azure-pipeline") && fp.data.matches.length > 0,
+            test: async repo => repo.analysis.fingerprints.some(fp => isFileMatchFingerprint(fp) &&
+                fp.name.includes("azure-pipeline") && fp.data.matches.length > 0),
         },
         {
             // TODO allow to use #
             name: "CSharp",
             description: "C# build",
-            test: fp => isFileMatchFingerprint(fp) &&
-                fp.name.includes("csproj") && fp.data.matches.length > 0,
+            test: async repo => repo.analysis.fingerprints.some(fp => isFileMatchFingerprint(fp) &&
+                fp.name.includes("csproj") && fp.data.matches.length > 0),
         },
     ];
 }

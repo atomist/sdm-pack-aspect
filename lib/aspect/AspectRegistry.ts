@@ -62,7 +62,7 @@ export interface Tag {
     severity?: Severity;
 }
 
-export type TagTest = (fp: FP, id: RepoRef, tagContext: TagContext) => boolean;
+export type TagTest = (repoToScore: RepoToScore) => Promise<boolean>;
 
 /**
  * Determine zero or one tag in this fingerprint.
