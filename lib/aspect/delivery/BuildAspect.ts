@@ -17,8 +17,7 @@
 import { logger } from "@atomist/automation-client";
 import { Build } from "@atomist/sdm-pack-build";
 import {
-    Aspect,
-    sha256,
+    Aspect, fingerprintOf,
 } from "@atomist/sdm-pack-fingerprints";
 import {
     bandFor,
@@ -30,13 +29,14 @@ import {
     FindFingerprintsFromGoalExecution,
     goalExecutionFingerprinter,
 } from "./support/goalListener";
+import { AspectMetadata } from "../compose/commonTypes";
 
 export type BuildAspect<DATA = any> = DeliveryAspect<{ build: Build }, DATA>;
 
 /**
  * Create an SDM BuildListener from BuildAspect
  */
-export function buildOutcomeAspect<DATA>(opts: Omit<Aspect, "extract" | "consolidate"> & {
+export function buildOutcomeAspect<DATA>(opts: AspectMetadata<DATA> & {
     fingerprintFinder: FindFingerprintsFromGoalExecution,
 }): BuildAspect<DATA> {
     return {
@@ -76,12 +76,10 @@ export function buildTimeAspect(opts: Omit<Aspect, "name" | "displayName" | "ext
         fingerprintFinder: async gei => {
             const elapsedMillis = Date.now() - gei.goalEvent.ts;
             const data = { elapsedMillis };
-            return {
-                name: BuildTimeType,
+            return fingerprintOf({
                 type: BuildTimeType,
                 data,
-                sha: sha256(JSON.stringify(data)),
-            };
+            });
         },
         toDisplayableFingerprintName: () => "Build time",
         toDisplayableFingerprint: fp => {
