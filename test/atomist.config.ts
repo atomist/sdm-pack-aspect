@@ -89,6 +89,7 @@ import {
 } from "../lib/machine/aspectSupport";
 import * as commonScorers from "../lib/scorer/commonScorers";
 import * as commonTaggers from "../lib/tagger/commonTaggers";
+import { classificationAspect } from "../lib/aspect/compose/classificationAspect";
 
 // Ensure we start up in local mode
 process.env.ATOMIST_MODE = "local";
@@ -170,7 +171,7 @@ function aspects(): Aspect[] {
         unit: "tag",
         url: "fingerprint/docker-base-image/*?byOrg=true&presence=false&progress=false&otherLabel=false&trim=false",
         description: "Docker base images in use across all repositories in your workspace, " +
-            "broken out by image label and repositories where used.",
+        "broken out by image label and repositories where used.",
     });
     registerCategories(DockerfilePath, "Docker");
     registerCategories(DockerPorts, "Docker");
@@ -204,6 +205,15 @@ function aspects(): Aspect[] {
         LeinDeps,
 
         buildTimeAspect(),
+
+        classificationAspect({
+                name: "javaBuild",
+                displayName: "Java build tool",
+                toDisplayableFingerprintName: () => "Java build tool",
+            },
+            { tags: "maven", reason: "has Maven POM", test: async p => p.hasFile("pom.xml") },
+            { tags: "gradle", reason: "has build.gradle", test: async p => p.hasFile("build.gradle") },
+        ),
     ];
 }
 

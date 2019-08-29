@@ -224,7 +224,7 @@ function populateAdditionalData(
         if (data[fieldname] !== undefined) {
             content += `<br />${fieldname}: ${data[fieldname]}`
         }
-    })
+    });
     additionalDataElement.html(content);
 }
 

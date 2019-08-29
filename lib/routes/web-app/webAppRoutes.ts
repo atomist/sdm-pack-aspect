@@ -195,6 +195,7 @@ function exposeFingerprintReportPage(conf: WebAppConfig): void {
     conf.express.get("/fingerprint/:type/:name", ...conf.handlers, async (req, res) => {
         const type = req.params.type;
         const name = req.params.name;
+        const otherLabel = req.query.otherLabel;
         const aspect = conf.aspectRegistry.aspectOf(type);
         if (!aspect) {
             res.status(400).send("No aspect found for type " + type);
@@ -203,12 +204,15 @@ function exposeFingerprintReportPage(conf: WebAppConfig): void {
         const fingerprintDisplayName = defaultedToDisplayableFingerprintName(aspect)(name);
 
         const workspaceId = req.query.workspaceId || "*";
-        const dataUrl = `/api/v1/${workspaceId}/fingerprint/${
+        let dataUrl = `/api/v1/${workspaceId}/fingerprint/${
             encodeURIComponent(type)}/${
             encodeURIComponent(name)}?byOrg=${
-            req.query.byOrg === "true"}&presence=${req.query.presence === "true"}&progress=${
-            req.query.progress === "true"}&otherLabel=${req.query.otherLabel === "true"}&trim=${
+            req.query.byOrg === "true"}&progress=${
+            req.query.progress === "true"}&trim=${
             req.query.trim === "true"}`;
+        if (otherLabel) {
+            dataUrl += `&otherLabel=${otherLabel}`;
+        }
         return renderDataUrl(conf.instanceMetadata, workspaceId, {
             dataUrl,
             title: `Atomist aspect drift`,

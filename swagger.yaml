@@ -148,15 +148,11 @@ paths:
                 - false
               required: false
               default: false
-            - name: presence
+            - name: otherLabel
               in: query
-              description: Show presence. Returns a response for all repos, whether or not the technology is present
+              description: If set, returns a response for all repos, whether or not the technology is present, with the label being shown
               type: string
-              enum:
-                - true
-                - false
               required: false
-              default: false
             - name: trim
               in: query
               description: Trim outer ring (repositories). Only relevant if name=*
