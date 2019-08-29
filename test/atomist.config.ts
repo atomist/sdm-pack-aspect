@@ -83,8 +83,8 @@ import {
     DefaultVirtualProjectFinder,
 } from "../lib/machine/aspectSupport";
 import * as commonScorers from "../lib/scorer/commonScorers";
-import * as commonTaggers from "../lib/tagger/commonTaggers";
 import { exposeFingerprintScore } from "../lib/scorer/commonScorers";
+import * as commonTaggers from "../lib/tagger/commonTaggers";
 
 // Ensure we start up in local mode
 process.env.ATOMIST_MODE = "local";
