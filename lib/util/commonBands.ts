@@ -15,6 +15,7 @@
  */
 
 import {
+    BandCasing, bandFor,
     Bands,
     Default,
 } from "./bands";
@@ -29,3 +30,24 @@ export const EntropySizeBands: Bands<SizeBands | "zero"> = {
     medium: { upTo: 2 },
     high: Default,
 };
+
+export type StarBands = "½" | "⭐" | "⭐½" | "⭐⭐" | "⭐⭐½" | "⭐⭐⭐" | "⭐⭐⭐½"| "⭐⭐⭐⭐" | "⭐⭐⭐⭐½" | "⭐⭐⭐⭐⭐";
+
+const StarCountBands: Bands<StarBands> = {
+    "½": { exactly: .5},
+    "⭐": { exactly: 1 },
+    "⭐½": { exactly: 1.5 },
+    "⭐⭐": { exactly: 2 },
+    "⭐⭐½": { exactly: 2.5 },
+    "⭐⭐⭐": { exactly: 3 },
+    "⭐⭐⭐½": { exactly: 3.5 },
+    "⭐⭐⭐⭐": { exactly: 4 },
+    "⭐⭐⭐⭐½": { exactly: 4.5 },
+    "⭐⭐⭐⭐⭐": Default,
+};
+
+export function starBand(score: number): string {
+    return bandFor(StarCountBands,
+        Math.round(score * 2) / 2,
+        { casing: BandCasing.Sentence, includeNumber: false });
+}

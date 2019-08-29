@@ -110,9 +110,11 @@ export interface CombinationTagger extends Tag {
     test(fp: FP[], id: RepoRef, tagContext: TagContext): boolean;
 }
 
-export type TaggedRepo = ProjectAnalysisResult & { tags: Tag[] };
+export type TaggedRepo = RepoToScore & { tags?: Tag[] };
 
 export type ScoredRepo = TaggedRepo & { weightedScore: WeightedScore };
+
+export type RepoToScore = Pick<ProjectAnalysisResult, "analysis" | "id">;
 
 /**
  * Function that knows how to score a repository. Scoring is based on
@@ -122,7 +124,7 @@ export type ScoredRepo = TaggedRepo & { weightedScore: WeightedScore };
  * @return undefined if this scorer doesn't know how to score this repository.
  * Otherwise return a score.
  */
-export type RepositoryScorer = (repo: TaggedRepo, allRepos: TaggedRepo[]) => Promise<Score | undefined>;
+export type RepositoryScorer = (repo: RepoToScore) => Promise<Score | undefined>;
 
 export interface TagAndScoreOptions {
 

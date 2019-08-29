@@ -16,61 +16,23 @@
 
 import { Configuration } from "@atomist/automation-client";
 import { loadUserConfiguration } from "@atomist/automation-client/lib/configuration";
-import {
-    anySatisfied,
-    onAnyPush,
-    PushImpact,
-} from "@atomist/sdm";
-import {
-    AllGoals,
-    configure,
-} from "@atomist/sdm-core";
+import { anySatisfied, PushImpact } from "@atomist/sdm";
+import { AllGoals, configure } from "@atomist/sdm-core";
 import { Build } from "@atomist/sdm-pack-build";
 import { LeinDeps } from "@atomist/sdm-pack-clojure/lib/fingerprints/clojure";
-import {
-    DockerfilePath,
-    DockerFrom,
-    DockerPorts,
-} from "@atomist/sdm-pack-docker";
-import {
-    Aspect,
-    NpmDeps,
-    VirtualProjectFinder,
-} from "@atomist/sdm-pack-fingerprints";
-import {
-    IsNode,
-    nodeBuilder,
-    npmBuilderOptionsFromFile,
-} from "@atomist/sdm-pack-node";
-import {
-    PowerShellLanguage,
-    ShellLanguage,
-    YamlLanguage,
-} from "@atomist/sdm-pack-sloc/lib/languages";
-import {
-    IsMaven,
-    mavenBuilder,
-    MavenDefaultOptions,
-} from "@atomist/sdm-pack-spring";
+import { DockerfilePath, DockerFrom, DockerPorts } from "@atomist/sdm-pack-docker";
+import { Aspect, NpmDeps, VirtualProjectFinder } from "@atomist/sdm-pack-fingerprints";
+import { PowerShellLanguage, ShellLanguage, YamlLanguage } from "@atomist/sdm-pack-sloc/lib/languages";
+import { IsMaven, mavenBuilder, MavenDefaultOptions } from "@atomist/sdm-pack-spring";
 import * as _ from "lodash";
 import { sdmConfigClientFactory } from "../lib/analysis/offline/persist/pgClientFactory";
 import { PostgresProjectAnalysisResultStore } from "../lib/analysis/offline/persist/PostgresProjectAnalysisResultStore";
-import {
-    CombinationTagger,
-    RepositoryScorer,
-    TaggerDefinition,
-} from "../lib/aspect/AspectRegistry";
+import { CombinationTagger, RepositoryScorer, TaggerDefinition } from "../lib/aspect/AspectRegistry";
 import { CodeMetricsAspect } from "../lib/aspect/common/codeMetrics";
 import { codeOwnership } from "../lib/aspect/common/codeOwnership";
 import { CodeOfConduct } from "../lib/aspect/community/codeOfConduct";
-import {
-    license,
-    LicensePresence,
-} from "../lib/aspect/community/license";
-import {
-    ChangelogAspect,
-    ContributingAspect,
-} from "../lib/aspect/community/oss";
+import { license, LicensePresence } from "../lib/aspect/community/license";
+import { ChangelogAspect, ContributingAspect } from "../lib/aspect/community/oss";
 import { classificationAspect } from "../lib/aspect/compose/classificationAspect";
 import { isFileMatchFingerprint } from "../lib/aspect/compose/fileMatchAspect";
 import { globAspect } from "../lib/aspect/compose/globAspect";
@@ -80,14 +42,8 @@ import { BranchCount } from "../lib/aspect/git/branchCount";
 import { GitRecency } from "../lib/aspect/git/gitActivity";
 import { AcceptEverythingUndesirableUsageChecker } from "../lib/aspect/ProblemStore";
 import { ExposedSecrets } from "../lib/aspect/secret/exposedSecrets";
-import {
-    registerCategories,
-    registerReportDetails,
-} from "../lib/customize/categories";
-import {
-    aspectSupport,
-    DefaultVirtualProjectFinder,
-} from "../lib/machine/aspectSupport";
+import { registerCategories, registerReportDetails } from "../lib/customize/categories";
+import { aspectSupport, DefaultVirtualProjectFinder } from "../lib/machine/aspectSupport";
 import * as commonScorers from "../lib/scorer/commonScorers";
 import * as commonTaggers from "../lib/tagger/commonTaggers";
 
@@ -138,7 +94,9 @@ export const configuration: Configuration = configure<TestGoals>(async sdm => {
 
             goals,
 
-            scorers: scorers(),
+            scorers: {
+                default: scorers(),
+            },
 
             taggers: taggers({}),
             combinationTaggers: combinationTaggers({}),
@@ -201,10 +159,6 @@ function aspects(): Aspect[] {
         ContributingAspect,
         globAspect({ name: "azure-pipelines", displayName: "Azure pipeline", glob: "azure-pipelines.yml" }),
         globAspect({ name: "readme", displayName: "Readme file", glob: "README.md" }),
-        // allMavenDependenciesAspect,    // This is expensive
-        LeinDeps,
-
-        buildTimeAspect(),
 
         classificationAspect({
                 name: "javaBuild",
@@ -214,6 +168,11 @@ function aspects(): Aspect[] {
             { tags: "maven", reason: "has Maven POM", test: async p => p.hasFile("pom.xml") },
             { tags: "gradle", reason: "has build.gradle", test: async p => p.hasFile("build.gradle") },
         ),
+
+        // allMavenDependenciesAspect,    // This is expensive
+        LeinDeps,
+
+        buildTimeAspect(),
     ];
 }
 
@@ -221,7 +180,6 @@ export function scorers(): RepositoryScorer[] {
     return [
         commonScorers.anchorScoreAt(2),
         commonScorers.penalizeForExcessiveBranches({ branchLimit: 5 }),
-        commonScorers.PenalizeWarningAndErrorTags,
         commonScorers.PenalizeMonorepos,
         commonScorers.limitLanguages({ limit: 4 }),
         // Adjust depending on the service granularity you want

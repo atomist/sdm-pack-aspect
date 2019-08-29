@@ -59,6 +59,7 @@ import {
 import { DefaultAspectRegistry } from "../aspect/DefaultAspectRegistry";
 import { isDeliveryAspect } from "../aspect/delivery/DeliveryAspect";
 import { UndesirableUsageChecker } from "../aspect/ProblemStore";
+import { fingerprintScoringAspect } from "../aspect/score/ScoredAspect";
 import { api } from "../routes/api";
 import { addWebAppRoutes } from "../routes/web-app/webAppRoutes";
 import { ScoreWeightings } from "../scorer/Score";
@@ -117,9 +118,15 @@ export interface AspectSupportOptions {
     combinationTaggers?: CombinationTagger | CombinationTagger[];
 
     /**
-     * Scorers that rank projects based on fingerprint data.
+     * Scoring fingerprints. Name to scorers
      */
-    scorers?: RepositoryScorer | RepositoryScorer[];
+    scorers?: Record<string, RepositoryScorer | RepositoryScorer[]>;
+
+    /**
+     * Scorers that are computed in memory. Allows for faster iteration on scoring logic.
+     * May ultimately be promoted to scorers.
+     */
+    inMemoryScorers?: RepositoryScorer | RepositoryScorer[];
 
     /**
      * Optional weightings for different scorers. The key is scorer name.
@@ -225,16 +232,23 @@ function orgVisualizationEndpoints(dbClientFactory: ClientFactory,
                                    httpClientFactory: HttpClientFactory,
                                    analysisTracking: AnalysisTracking,
                                    options: AspectSupportOptions): {
-        routesToSuggestOnStartup: Array<{ title: string, route: string }>,
-        customizers: ExpressCustomizer[],
-    } {
+    routesToSuggestOnStartup: Array<{ title: string, route: string }>,
+    customizers: ExpressCustomizer[],
+} {
     const resultStore = analysisResultStore(dbClientFactory);
+    const fsas = Object.getOwnPropertyNames(options.scorers).map(name =>
+        fingerprintScoringAspect(
+            {
+                name,
+                displayName: name,
+                scorers: toArray(options.scorers[name]) || [],
+            }));
     const aspectRegistry = new DefaultAspectRegistry({
         idealStore: resultStore,
         problemStore: resultStore,
-        aspects: toArray(options.aspects || []),
+        aspects: [...toArray(options.aspects || []), ...fsas],
         undesirableUsageChecker: options.undesirableUsageChecker,
-        scorers: toArray(options.scorers || []),
+        scorers: toArray(options.inMemoryScorers || []),
         scoreWeightings: options.weightings || DefaultScoreWeightings,
     })
         .withTaggers(...toArray(options.taggers || []))
@@ -255,7 +269,7 @@ function orgVisualizationEndpoints(dbClientFactory: ClientFactory,
     return {
         routesToSuggestOnStartup:
             [...aboutStaticPages.routesToSuggestOnStartup,
-            ...aboutTheApi.routesToSuggestOnStartup],
+                ...aboutTheApi.routesToSuggestOnStartup],
         customizers: [aboutStaticPages.customizer, aboutTheApi.customizer],
     };
 }

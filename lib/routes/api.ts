@@ -37,7 +37,7 @@ import {
 import { computeAnalyticsForFingerprintKind } from "../analysis/offline/spider/analytics";
 import { ProjectAnalysisResult } from "../analysis/ProjectAnalysisResult";
 import {
-    AspectRegistry,
+    AspectRegistry, ScoredRepo,
     Tag,
 } from "../aspect/AspectRegistry";
 import { getAspectReports } from "../customize/categories";
@@ -316,10 +316,10 @@ function exposeExplore(express: Express, aspectRegistry: AspectRegistry, store: 
                 children: relevantRepos.map(r => {
                     return {
                         id: r.id,
-                        owner: r.repoRef.owner,
-                        repo: r.repoRef.repo,
-                        name: r.repoRef.repo,
-                        url: r.repoRef.url,
+                        owner: r.analysis.id.owner,
+                        repo: r.analysis.id.repo,
+                        name: r.analysis.id.repo,
+                        url: r.analysis.id.url,
                         size: r.analysis.fingerprints.length,
                         tags: r.tags,
                         weightedScore: r.weightedScore,
@@ -471,8 +471,8 @@ function exposePersistEntropy(express: Express, store: ProjectAnalysisResultStor
     });
 }
 
-function relevant(selectedTag: string, repo: ProjectAnalysisResult & { tags: Tag[] }): boolean {
-    const repoTags = repo.tags.map(tag => tag.name);
+function relevant(selectedTag: string, repo: ScoredRepo): boolean {
+    const repoTags = (repo.tags || []).map(tag => tag.name);
     return selectedTag.startsWith("!") ? !repoTags.includes(selectedTag.substr(1)) : repoTags.includes(selectedTag);
 }
 

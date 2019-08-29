@@ -170,24 +170,6 @@ export const PenalizeMonorepos: RepositoryScorer =
     };
 
 /**
- * Penalize repos for warning and error tags.
- * Note that this can produce double counting if we have a scorer for those things.
- * However it can minimize the need to write scorers in a good tagging setup.
- */
-export const PenalizeWarningAndErrorTags: RepositoryScorer = async repo => {
-    const err = repo.tags.filter(t => t.severity === "error");
-    const warn = repo.tags.filter(t => t.severity === "warn");
-    const score = adjustBy(-3 * err.length - 2 * warn.length);
-    return {
-        name: "sev-count",
-        score,
-        reason: err.length + warn.length === 0 ?
-            "No errors or warnings" :
-            `Errors: [${err.map(e => e.name).join(",")}], warnings: [${warn.map(w => w.name).join(",")}]`,
-    };
-};
-
-/**
  * Penalize repositories without a license file
  */
 export const PenalizeNoLicense: RepositoryScorer =
