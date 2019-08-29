@@ -24,12 +24,12 @@ import {
     Default,
 } from "../../util/bands";
 import { Omit } from "../../util/omit";
+import { AspectMetadata } from "../compose/commonTypes";
 import { DeliveryAspect } from "./DeliveryAspect";
 import {
     FindFingerprintsFromGoalExecution,
     goalExecutionFingerprinter,
 } from "./support/goalListener";
-import { AspectMetadata } from "../compose/commonTypes";
 
 export type BuildAspect<DATA = any> = DeliveryAspect<{ build: Build }, DATA>;
 
