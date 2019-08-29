@@ -194,15 +194,13 @@ function exposeFingerprintByTypeAndName(express: Express,
         const fingerprintType = req.params.type;
         const fingerprintName = req.params.name;
         const byName = req.params.name !== "*";
-        const showPresence = req.query.presence === "true";
         const showProgress = req.query.progress === "true";
         const trim = req.query.trim === "true";
         const byOrg = req.query.byOrg === "true";
-        const otherLabel = req.query.otherLabel === "true";
+        const otherLabel = req.query.otherLabel;
 
         try {
             const pt = await buildFingerprintTree({ aspectRegistry, store }, {
-                showPresence,
                 otherLabel,
                 showProgress,
                 byOrg,

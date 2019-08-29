@@ -69,7 +69,11 @@ export interface TreeQuery {
      */
     byName: boolean;
 
-    includeWithout: boolean;
+    /**
+     * If this is supplied, query for results even without fingerprints from this aspect
+     * and use this as the name
+     */
+    otherLabel?: string;
 }
 
 export interface FingerprintInsertionResult {

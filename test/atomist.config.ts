@@ -71,6 +71,7 @@ import {
     ChangelogAspect,
     ContributingAspect,
 } from "../lib/aspect/community/oss";
+import { classificationAspect } from "../lib/aspect/compose/classificationAspect";
 import { isFileMatchFingerprint } from "../lib/aspect/compose/fileMatchAspect";
 import { globAspect } from "../lib/aspect/compose/globAspect";
 import { buildTimeAspect } from "../lib/aspect/delivery/BuildAspect";
@@ -170,7 +171,7 @@ function aspects(): Aspect[] {
         unit: "tag",
         url: "fingerprint/docker-base-image/*?byOrg=true&presence=false&progress=false&otherLabel=false&trim=false",
         description: "Docker base images in use across all repositories in your workspace, " +
-            "broken out by image label and repositories where used.",
+        "broken out by image label and repositories where used.",
     });
     registerCategories(DockerfilePath, "Docker");
     registerCategories(DockerPorts, "Docker");
@@ -204,6 +205,15 @@ function aspects(): Aspect[] {
         LeinDeps,
 
         buildTimeAspect(),
+
+        classificationAspect({
+                name: "javaBuild",
+                displayName: "Java build tool",
+                toDisplayableFingerprintName: () => "Java build tool",
+            },
+            { tags: "maven", reason: "has Maven POM", test: async p => p.hasFile("pom.xml") },
+            { tags: "gradle", reason: "has build.gradle", test: async p => p.hasFile("build.gradle") },
+        ),
     ];
 }
 

@@ -27,7 +27,7 @@ import { TreeQuery } from "./ProjectAnalysisResultStore";
  * Return results for non-matching fingerprints
  */
 function nonMatchingRepos(tq: TreeQuery): string {
-    return `SELECT  null as id, $3 as name, null as sha, null as data, $1 as type,
+    return `SELECT  null as id, $4 as name, null as sha, null as data, $1 as type,
             (
            SELECT json_agg(row_to_json(repo))
            FROM (
@@ -63,7 +63,7 @@ SELECT row_to_json(fingerprint_groups) FROM (
                 ) repo
          ) as children FROM fingerprints
          WHERE fingerprints.feature_name = $2 and fingerprints.name ${tq.byName ? "=" : "<>"} $3
-         ${tq.includeWithout ? ("UNION ALL " + nonMatchingRepos(tq)) : ""}
+         ${tq.otherLabel ? ("UNION ALL " + nonMatchingRepos(tq)) : ""}
 ) fp WHERE children is not NULL) as fingerprint_groups
 `;
     logger.debug("Running fingerprintsToRepos SQL\n%s", sql);
@@ -77,8 +77,11 @@ export async function fingerprintsToReposTreeQuery(tq: TreeQuery, clientFactory:
     const sql = fingerprintsToReposQuery(tq);
     const children = await doWithClient(sql, clientFactory, async client => {
         try {
-            const results = await client.query(sql,
-                [tq.workspaceId, tq.aspectName, tq.rootName]);
+            const bindParams = [tq.workspaceId, tq.aspectName, tq.rootName];
+            if (tq.otherLabel) {
+                bindParams.push(tq.otherLabel);
+            }
+            const results = await client.query(sql, bindParams);
             const data = results.rows[0];
             return data.row_to_json.children;
         } catch (err) {

@@ -109,7 +109,7 @@ function displayUnfoundAspect(unfoundAspectForDisplay: UnfoundAspectForDisplay, 
 function fingerprintListItem(f: FingerprintForDisplay): React.ReactElement {
     const displayName = f.displayName || f.name;
     const variantsQueryLink: string = `./fingerprint/${encodeURIComponent(f.type)}/${encodeURIComponent(f.name)}?byOrg=true`;
-    const existsLink: string = `./fingerprint/${f.type}/${f.name}?byOrg=true&presence=true&otherLabel=true`;
+    const existsLink: string = `./fingerprint/${f.type}/${f.name}?byOrg=true&otherLabel=None`;
     const ent = f.entropy ? <span>{`entropy=${f.entropy.toFixed(2)}`}</span> : "";
 
     return <li key={displayName}>
