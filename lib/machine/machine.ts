@@ -15,15 +15,10 @@
  */
 
 import {
-    Configuration,
-} from "@atomist/automation-client";
-import {
     makeVirtualProjectAware,
     VirtualProjectFinder,
 } from "@atomist/sdm-pack-fingerprints";
 import { Aspect } from "@atomist/sdm-pack-fingerprints/lib/machine/Aspect";
-import * as _ from "lodash";
-import { Pool } from "pg";
 import { ClientFactory } from "../analysis/offline/persist/pgUtils";
 import { PostgresProjectAnalysisResultStore } from "../analysis/offline/persist/PostgresProjectAnalysisResultStore";
 import { ProjectAnalysisResultStore } from "../analysis/offline/persist/ProjectAnalysisResultStore";

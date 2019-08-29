@@ -123,6 +123,9 @@ export const SoleCommitter: Tagger = {
     test: fp => fp.type === GitActivesType && fp.data.count === 1,
 };
 
+/**
+ * Tag repos with an excessive branch count, exceeding a given number of branches
+ */
 export function excessiveBranchCount(opts: { maxBranches: number }): Tagger {
     return {
         name: `>${opts.maxBranches} branches`,
@@ -132,6 +135,9 @@ export function excessiveBranchCount(opts: { maxBranches: number }): Tagger {
     };
 }
 
+/**
+ * Tag repos whose line count satisfies the given test
+ */
 export function lineCountTest(opts: { name: string, lineCountTest: (lineCount: number) => boolean }): Tagger {
     return {
         name: opts.name,
@@ -168,6 +174,10 @@ export const isProblematic: WorkspaceSpecificTagger = {
     },
 };
 
+/**
+ * Tag repos with recent activity by a number of contributors.
+ * Depends on git recency and git activity aspects
+ */
 export function gitHot(opts: { name?: string, hotDays: number, hotContributors: number }): CombinationTagger {
     return {
         name: opts.name || "hot",
@@ -186,6 +196,10 @@ export function gitHot(opts: { name?: string, hotDays: number, hotContributors: 
     };
 }
 
+/**
+ * Tag repos with a missing or inadequate readme, as determined
+ * by meeting the given length
+ */
 export function inadequateReadme(opts: { minLength: number }): Tagger {
     return {
         name: "poor-readme",

@@ -25,6 +25,10 @@ const ExposedSecretsType = "exposed-secret";
 
 export type ExposedSecretsData = Pick<ExposedSecret, "secret" | "path" | "description">;
 
+/**
+ * Fingerprints the presence of exposed secrets, detected by
+ * searching code for regular expressions.
+ */
 export const ExposedSecrets: Aspect<ExposedSecretsData> = {
     name: ExposedSecretsType,
     displayName: "Exposed secrets",
