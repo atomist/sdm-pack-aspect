@@ -27,7 +27,6 @@ import { scoreRepos } from "../scorer/scoring";
 import { showTiming } from "../util/showTiming";
 import {
     AspectRegistry,
-    CombinationTagger,
     isTagger,
     RepositoryScorer, RepoToScore,
     ScoredRepo,
@@ -50,26 +49,12 @@ export class DefaultAspectRegistry implements AspectRegistry {
 
     private readonly taggers: TaggerDefinition[] = [];
 
-    private readonly combinationTaggers: CombinationTagger[] = [];
-
     /**
      * Add a tagger that will work on all repositories.
      */
     public withTaggers(...taggers: TaggerDefinition[]): this {
         this.taggers.push(...taggers);
         return this;
-    }
-
-    public withCombinationTaggers(...taggers: CombinationTagger[]): this {
-        this.combinationTaggers.push(...taggers);
-        return this;
-    }
-
-    private combinationTagsFor(fps: FP[], id: RepoRef, tagContext: TagContext): Tag[] {
-        return _.uniqBy(this.combinationTaggers
-                .map(tagger => ({ ...tagger, tag: tagger.test(fps, id, tagContext) }))
-                .filter(t => !!t.tag),
-            tag => tag.name);
     }
 
     public async tagAndScoreRepos(workspaceId: string,
@@ -96,9 +81,7 @@ export class DefaultAspectRegistry implements AspectRegistry {
     }
 
     get availableTags(): Tag[] {
-        return _.uniqBy(
-            [...this.taggers, ...this.combinationTaggers],
-            tag => tag.name);
+        return _.uniqBy(this.taggers, tag => tag.name);
     }
 
     get aspects(): Aspect[] {
@@ -148,8 +131,7 @@ export class DefaultAspectRegistry implements AspectRegistry {
         taggers: Tagger[]): Promise<TaggedRepo> {
         return {
             ...repo,
-            tags: (await tagsFor(repo, tagContext, taggers))
-                .concat(this.combinationTagsFor(repo.analysis.fingerprints, repo.repoRef, tagContext)),
+            tags: await tagsFor(repo, tagContext, taggers),
         };
     }
 
@@ -177,17 +159,14 @@ export function defaultedToDisplayableFingerprint(aspect?: Aspect): (fpi: FP) =>
     return (aspect && aspect.toDisplayableFingerprint) || (fp => fp && fp.data);
 }
 
-function tagsFor(rts: RepoToScore, tagContext: TagContext, taggers: Tagger[]): Tag[] {
-    return _.uniqBy(taggers
-            .map(tagger => ({ ...tagger, tag: tagger.test(rts) }))
-            .filter(t => !!t.tag),
-        tag => tag.name);
+async function tagsFor(rts: RepoToScore, tagContext: TagContext, taggers: Tagger[]): Promise<Tag[]> {
+    const tags = await Promise.all(taggers
+        .map(tagger => tagger.test(rts)
+            .then(yes => ({ ...tagger, tag: yes ? tagger.name : undefined }))),
+    );
+    return _.uniqBy(tags.filter(t => !!t.tag),
+            tag => tag.name);
 }
-
-// async function tagsIn(rtss: RepoToScore[], tagContext: TagContext, taggersToUse: Tagger[]): Promise<Tag[]> {
-//     return _.uniqBy(_.flatten(rtss.map(rts => tagsFor(rts, tagContext, taggersToUse))), tag => tag.name)
-//         .sort();
-// }
 
 async function taggerFrom(wst: WorkspaceSpecificTagger, workspaceId: string, ar: AspectRegistry): Promise<Tagger> {
     return {

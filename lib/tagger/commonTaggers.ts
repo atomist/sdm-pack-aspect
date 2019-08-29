@@ -17,7 +17,6 @@
 import { logger } from "@atomist/automation-client";
 import {
     AspectRegistry,
-    CombinationTagger,
     Tagger,
     WorkspaceSpecificTagger,
 } from "../aspect/AspectRegistry";
@@ -180,13 +179,13 @@ export const isProblematic: WorkspaceSpecificTagger = {
  * Tag repos with recent activity by a number of contributors.
  * Depends on git recency and git activity aspects
  */
-export function gitHot(opts: { name?: string, hotDays: number, hotContributors: number }): CombinationTagger {
+export function gitHot(opts: { name?: string, hotDays: number, hotContributors: number }): Tagger {
     return {
         name: opts.name || "hot",
         description: "How hot is git",
-        test: fps => {
-            const grt = fps.find(fp => fp.type === GitRecencyType);
-            const acc = fps.find(fp => fp.type === GitActivesType);
+        test: async repo => {
+            const grt = repo.analysis.fingerprints.find(fp => fp.type === GitRecencyType);
+            const acc = repo.analysis.fingerprints.find(fp => fp.type === GitActivesType);
             if (!!grt && !!acc) {
                 const days = daysSince(new Date(grt.data));
                 if (days < opts.hotDays && acc.data.count > opts.hotContributors) {

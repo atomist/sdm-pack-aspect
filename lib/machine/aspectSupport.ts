@@ -52,7 +52,6 @@ import {
     AnalysisTracking,
 } from "../analysis/tracking/analysisTracker";
 import {
-    CombinationTagger,
     RepositoryScorer,
     TaggerDefinition,
 } from "../aspect/AspectRegistry";
@@ -111,11 +110,6 @@ export interface AspectSupportOptions {
      * Registrations that can tag projects based on fingerprints.
      */
     taggers?: TaggerDefinition | TaggerDefinition[];
-
-    /**
-     * Special taggers that can see all fingerprints on a project.
-     */
-    combinationTaggers?: CombinationTagger | CombinationTagger[];
 
     /**
      * Scoring fingerprints. Name to scorers
@@ -254,8 +248,7 @@ function orgVisualizationEndpoints(dbClientFactory: ClientFactory,
         scorers: toArray(options.inMemoryScorers || []),
         scoreWeightings: options.weightings || DefaultScoreWeightings,
     })
-        .withTaggers(...toArray(options.taggers || []))
-        .withCombinationTaggers(...toArray(options.combinationTaggers || []));
+        .withTaggers(...toArray(options.taggers || []));
 
     const aboutTheApi = api(resultStore, aspectRegistry);
 

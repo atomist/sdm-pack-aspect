@@ -50,8 +50,7 @@ import * as _ from "lodash";
 import { sdmConfigClientFactory } from "../lib/analysis/offline/persist/pgClientFactory";
 import { PostgresProjectAnalysisResultStore } from "../lib/analysis/offline/persist/PostgresProjectAnalysisResultStore";
 import {
-    CombinationTagger,
-    RepositoryScorer,
+    RepositoryScorer, Tagger,
     TaggerDefinition,
 } from "../lib/aspect/AspectRegistry";
 import { CodeMetricsAspect } from "../lib/aspect/common/codeMetrics";
@@ -83,8 +82,8 @@ import {
     DefaultVirtualProjectFinder,
 } from "../lib/machine/aspectSupport";
 import * as commonScorers from "../lib/scorer/commonScorers";
-import { exposeFingerprintScore } from "../lib/scorer/commonScorers";
 import * as commonTaggers from "../lib/tagger/commonTaggers";
+import { tagsFromClassificationFingerprints } from "../lib/tagger/commonTaggers";
 
 // Ensure we start up in local mode
 process.env.ATOMIST_MODE = "local";
@@ -137,10 +136,9 @@ export const configuration: Configuration = configure<TestGoals>(async sdm => {
                 all: scorers(),
             },
 
-            inMemoryScorers: exposeFingerprintScore("all"),
+            inMemoryScorers: commonScorers.exposeFingerprintScore("all"),
 
-            taggers: taggers({}),
-            combinationTaggers: combinationTaggers({}),
+            taggers: taggers({}).concat(combinationTaggers({})),
 
             // Customize this to respond to undesirable usages
             undesirableUsageChecker: AcceptEverythingUndesirableUsageChecker,
@@ -272,6 +270,8 @@ export function taggers(opts: Partial<TaggersParams>): TaggerDefinition[] {
             test: async repo => repo.analysis.fingerprints.some(fp => isFileMatchFingerprint(fp) &&
                 fp.name.includes("csproj") && fp.data.matches.length > 0),
         },
+
+        ...tagsFromClassificationFingerprints("maven", "gradle"),
     ];
 }
 
@@ -299,23 +299,12 @@ const DefaultCombinationTaggersParams: CombinationTaggersParams = {
     hotContributors: 3,
 };
 
-export function combinationTaggers(opts: Partial<CombinationTaggersParams>): CombinationTagger[] {
+export function combinationTaggers(opts: Partial<CombinationTaggersParams>): Tagger[] {
     const optsToUse = {
         ...DefaultCombinationTaggersParams,
         ...opts,
     };
     return [
-        {
-            name: "not understood",
-            description: "You may want to write aspects for these outlier projects",
-            severity: "warn",
-            test: (fps, id, tagContext) => {
-                const aspectCount = _.uniq(fps.map(f => f.type)).length;
-                // There are quite a few aspects that are found on everything, e.g. git
-                // We need to set the threshold count probably
-                return aspectCount < tagContext.averageFingerprintCount * optsToUse.minAverageAspectCountFractionToExpect;
-            },
-        },
         commonTaggers.gitHot(optsToUse),
     ];
 }

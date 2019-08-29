@@ -23,7 +23,6 @@ import {
 } from "@atomist/sdm-pack-fingerprints";
 import { Aspect } from "@atomist/sdm-pack-fingerprints/lib/machine/Aspect";
 import { ProjectAnalysisResult } from "../analysis/ProjectAnalysisResult";
-import { TagContext } from "../routes/api";
 import {
     Score,
     WeightedScore,
@@ -93,21 +92,6 @@ export type TaggerDefinition = Tagger | WorkspaceSpecificTagger;
 export function isTagger(t: TaggerDefinition): t is Tagger {
     const maybe = t as Tagger;
     return !!maybe.test;
-}
-
-/**
- * Determine zero or one tag from this set of fingerprints
- */
-export interface CombinationTagger extends Tag {
-
-    /**
-     * Test for the relevance of this tag given all fingerprints on this repository
-     * @param {FP} fp fingerprint to test
-     * @param {RemoteRepoRef} id id of repo to text
-     * @param {TagContext} tagContext context of this cohort of repos
-     * @return {boolean}
-     */
-    test(fp: FP[], id: RepoRef, tagContext: TagContext): boolean;
 }
 
 export type TaggedRepo = RepoToScore & { tags?: Tag[] };
