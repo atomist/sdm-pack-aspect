@@ -104,7 +104,7 @@ class FakeProjectAnalysisResultStore implements ProjectAnalysisResultStore {
         return undefined;
     }
 
-    public aspectDriftTree(workspaceId: string, threshold: number, type?: string): Promise<PlantedTree> {
+    public aspectDriftTree(workspaceId: string, threshold: number, options?: { repos?: boolean, type?: string }): Promise<PlantedTree> {
         throw new Error("Method not implemented");
     }
 

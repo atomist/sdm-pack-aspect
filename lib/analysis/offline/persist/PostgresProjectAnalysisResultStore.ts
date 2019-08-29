@@ -77,9 +77,9 @@ export class PostgresProjectAnalysisResultStore implements ProjectAnalysisResult
 
     public aspectDriftTree(workspaceId: string,
                            percentile: number,
-                           type?: string): Promise<PlantedTree> {
-        return type ?
-            driftTreeForSingleAspect(workspaceId, type, percentile, this.clientFactory) :
+                           options?: { repos?: boolean, type?: string }): Promise<PlantedTree> {
+        return !!options && !!options.type ?
+            driftTreeForSingleAspect(workspaceId, percentile, options, this.clientFactory) :
             driftTreeForAllAspects(workspaceId, percentile, this.clientFactory);
     }
 
