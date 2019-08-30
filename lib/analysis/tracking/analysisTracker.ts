@@ -33,6 +33,7 @@ interface RepoForReporting {
     repoKey: string;
     keptExisting: boolean;
     progress: RepoProgress;
+    aspects: AspectForReporting[];
     millisTaken?: number;
     errorMessage?: string;
     stackTrace?: string;
@@ -67,7 +68,7 @@ export interface AspectForReporting {
     stage: WayToGetFingerprintsFromAnAspect;
     millisTaken?: number;
     error?: Error;
-    fingerprintsFound?: number;
+    fingerprintsFound: number;
 }
 
 /**
@@ -97,7 +98,7 @@ export class AspectBeingTracked {
             aspectName: this.params.aspectName,
             stage: this.params.aboutToRun,
             millisTaken: this.completedAt ? this.completedAt.getTime() - this.startedAt.getTime() : undefined,
-            fingerprintsFound: this.fingerprintsFound,
+            fingerprintsFound: this.fingerprintsFound || 0,
             error: this.failedWith,
         };
     }
@@ -116,6 +117,8 @@ export class RepoBeingTracked {
     public failureDetails: FailureDetails | undefined = undefined;
     public skipReason: string | undefined;
     private analysisStartMillis: number | undefined;
+
+    private readonly aspects: AspectBeingTracked[] = [];
 
     constructor(private readonly params: {
         description: string;
@@ -138,8 +141,10 @@ export class RepoBeingTracked {
         this.existingWasKept = true;
     }
 
-    public plan(aspect: AnalysisTrackingAspect, aboutToRun: WayToGetFingerprintsFromAnAspect) {
-        return new AspectBeingTracked({ aspectName: aspect.name, aboutToRun });
+    public plan(aspect: AnalysisTrackingAspect, aboutToRun: WayToGetFingerprintsFromAnAspect): AspectBeingTracked {
+        const newAspect = new AspectBeingTracked({ aspectName: aspect.name, aboutToRun });
+        this.aspects.push(newAspect);
+        return newAspect;
     }
 
     public failed(failureDetails: FailureDetails): void {
@@ -170,6 +175,7 @@ export class RepoBeingTracked {
             keptExisting: this.existingWasKept,
             millisTaken: this.millisTaken,
             snapshotId: this.persistedSnapshotId,
+            aspects: this.aspects.map(a => a.report()),
             ...errorFields,
         };
     }

@@ -139,6 +139,13 @@ div.repositoryColumns>div {
     padding-left: 4px;
 }
 
+.failedAspect {
+    border-color: grey;
+    border-style: ridge;
+    border-width: 3px;
+    padding-left: 4px;
+}
+
 .timeTakenToAnalyzeRepo {
     font-size: x-small;
 }
