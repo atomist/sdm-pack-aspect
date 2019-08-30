@@ -36,7 +36,10 @@ import {
     Analyzed,
 } from "../../../aspect/AspectRegistry";
 import { time } from "../../../util/showTiming";
-import { AspectBeingTracked, RepoBeingTracked } from "../../tracking/analysisTracker";
+import {
+    AspectBeingTracked,
+    RepoBeingTracked,
+} from "../../tracking/analysisTracker";
 import {
     Analyzer,
     TimeRecorder,
