@@ -14,7 +14,10 @@
  * limitations under the License.
  */
 
-import { Aspect, fingerprintOf } from "@atomist/sdm-pack-fingerprints";
+import {
+    Aspect,
+    fingerprintOf,
+} from "@atomist/sdm-pack-fingerprints";
 import { ContentClassifier } from "./ContentClassifier";
 
 export const CodeOfConductType = "code-of-conduct";
