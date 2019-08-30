@@ -167,7 +167,7 @@ async function analyzeOneRepo<FoundRepo>(
     // analyze !
     let analysis: Analyzed;
     try {
-        analysis = await world.analyzer.analyze(project);
+        analysis = await world.analyzer.analyze(project, tracking);
     } catch (error) {
         tracking.failed({ whileTryingTo: "analyze", error });
         return;

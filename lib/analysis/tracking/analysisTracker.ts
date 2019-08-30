@@ -60,6 +60,53 @@ export interface FailureDetails {
     whileTryingTo: string; error?: Error; message?: string;
 }
 
+type WayToGetFingerprintsFromAnAspect = "extract" | "consolidate";
+
+export interface AspectForReporting {
+    aspectName: string;
+    stage: WayToGetFingerprintsFromAnAspect;
+    millisTaken?: number;
+    error?: Error;
+    fingerprintsFound?: number;
+}
+
+/**
+ * Track the calculation of fingerprints from one aspect on one repo snapshot
+ */
+export class AspectBeingTracked {
+    public readonly startedAt: Date;
+    public completedAt: Date | undefined;
+    public fingerprintsFound: number | undefined;
+    public failedWith: Error | undefined;
+    constructor(private readonly params: { aspectName: string, aboutToRun: WayToGetFingerprintsFromAnAspect }) {
+        this.startedAt = new Date();
+    }
+
+    public completed(fingerprintsFound: number): void {
+        this.fingerprintsFound = fingerprintsFound;
+        this.completedAt = new Date();
+    }
+
+    public failed(err: Error): void {
+        this.failedWith = err;
+        this.completedAt = new Date();
+    }
+
+    public report(): AspectForReporting {
+        return {
+            aspectName: this.params.aspectName,
+            stage: this.params.aboutToRun,
+            millisTaken: this.completedAt ? this.completedAt.getTime() - this.startedAt.getTime() : undefined,
+            fingerprintsFound: this.fingerprintsFound,
+            error: this.failedWith,
+        };
+    }
+}
+
+export interface AnalysisTrackingAspect {
+    name: string;
+}
+
 export class RepoBeingTracked {
 
     public repoRef: RepoRef | undefined = undefined;
@@ -85,9 +132,14 @@ export class RepoBeingTracked {
     public setRepoRef(repoRef: RepoRef): void {
         this.repoRef = repoRef;
     }
+
     public keptExisting(): void {
         this.millisTaken = new Date().getTime() - this.analysisStartMillis;
         this.existingWasKept = true;
+    }
+
+    public plan(aspect: AnalysisTrackingAspect, aboutToRun: WayToGetFingerprintsFromAnAspect) {
+        return new AspectBeingTracked({ aspectName: aspect.name, aboutToRun });
     }
 
     public failed(failureDetails: FailureDetails): void {
