@@ -175,7 +175,7 @@ export interface AspectSupportOptions {
  * If we're in local mode, expose analyzer commands and HTTP endpoints.
  */
 export function aspectSupport(options: AspectSupportOptions): ExtensionPack {
-    const fingerprintScorers = Object.getOwnPropertyNames(options.scorers).map(name =>
+    const fingerprintScorers = Object.getOwnPropertyNames(options.scorers || {}).map(name =>
         fingerprintScoringAspect(
             {
                 name,
