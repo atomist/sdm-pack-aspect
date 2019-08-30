@@ -95,7 +95,7 @@ export const LicensePresenceType: string = "license-presence";
 export const LicensePresence: Aspect<{ present: boolean }> = {
     name: LicensePresenceType,
     displayName: "License presence",
-    extract: async () => { throw new Error("I hate you"); },
+    extract: async () => [],
     consolidate: async fps => {
         const lfp = fps.find(isLicenseFingerprint);
         const present = !!lfp && !hasNoLicense(lfp.data);
