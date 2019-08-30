@@ -40,6 +40,7 @@ import {
     RebaseOptions,
     VirtualProjectFinder,
 } from "@atomist/sdm-pack-fingerprints";
+import { AspectsFactory } from "@atomist/sdm-pack-fingerprints/lib/machine/fingerprintSupport";
 import { sdmConfigClientFactory } from "../analysis/offline/persist/pgClientFactory";
 import { ClientFactory } from "../analysis/offline/persist/pgUtils";
 import {
@@ -98,6 +99,11 @@ export interface AspectSupportOptions {
     aspects: Aspect | Aspect[];
 
     /**
+     * Dynamically add aspects based on current push
+     */
+    aspectsFactory?: AspectsFactory;
+
+    /**
      * If set, this enables multi-project support by helping aspects work
      * on virtual projects. For example, a VirtualProjectFinder may establish
      * that subdirectories with package.json or requirements.txt files are
@@ -134,8 +140,6 @@ export interface AspectSupportOptions {
      */
     undesirableUsageChecker?: UndesirableUsageChecker;
 
-    exposeWeb?: boolean;
-
     /**
      * Custom fingerprint routing. Used in local mode.
      * Default behavior is to send fingerprints to Atomist.
@@ -148,13 +152,22 @@ export interface AspectSupportOptions {
      */
     goals?: Partial<Pick<AllGoals, "build" | "pushImpact">>;
 
-    rebase?: RebaseOptions;
-
     /**
      * If this is provided, it can distinguish the UI instance.
      * Helps distinguish different SDMs during development.
      */
     instanceMetadata?: ExtensionPackMetadata;
+
+    /**
+     * Optionally configure the rebase options for Code Transforms
+     */
+    rebase?: RebaseOptions;
+
+    /**
+     * Optionally expose web endpoints
+     * Defaults to true in local mode
+     */
+    exposeWeb?: boolean;
 }
 
 /**
@@ -198,6 +211,7 @@ export function aspectSupport(options: AspectSupportOptions): ExtensionPack {
                     sdm.addExtensionPacks(fingerprintSupport({
                         pushImpactGoal: options.goals.pushImpact as PushImpact,
                         aspects,
+                        aspectsFactory: options.aspectsFactory,
                         rebase: options.rebase,
                         publishFingerprints: options.publishFingerprints,
                     }));
