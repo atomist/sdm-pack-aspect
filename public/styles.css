@@ -19,6 +19,11 @@ header {
     border-bottom: 3px solid rgb(186, 216, 95);
 }
 
+footer {
+    margin: 10px;
+    text-align: right;
+}
+
 header .atomist-logo {
     width: 100px;
 }
