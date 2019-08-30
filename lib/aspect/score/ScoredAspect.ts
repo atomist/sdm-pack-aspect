@@ -174,7 +174,9 @@ export async function pushScoresFor(pushScorers: Array<PushScorer | ProjectScore
     return scores;
 }
 
-export function emitScoringAspects(name: string, scorers: AspectCompatibleScorer[], scoreWeightings: ScoreWeightings): ScoredAspect[] {
+export function emitScoringAspects(name: string,
+                                   scorers: AspectCompatibleScorer[],
+                                   scoreWeightings: ScoreWeightings): ScoredAspect[] {
     const fScorers = scorers.filter(isRepositoryScorer);
     const pScorers = scorers.filter(s => !isRepositoryScorer(s)) as any;
     const psa = pushScoringAspect(
@@ -182,12 +184,14 @@ export function emitScoringAspects(name: string, scorers: AspectCompatibleScorer
             name: name + "_push",
             displayName: name,
             scorers: pScorers,
+            scoreWeightings,
         });
     const fsa = fingerprintScoringAspect(
         {
             name,
             displayName: name,
             scorers: fScorers,
+            scoreWeightings,
         });
     return [fsa, psa];
 }
