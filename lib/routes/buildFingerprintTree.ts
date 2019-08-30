@@ -166,6 +166,8 @@ function resolveAspectNames(aspectRegistry: AspectRegistry, t: SunburstTree): vo
             const aspect = aspectRegistry.aspectOf(fp.type);
             if (aspect) {
                 fp.name = aspect.toDisplayableFingerprint ? aspect.toDisplayableFingerprint(fp) : fp.data;
+            } else if (!!fp.data && !!fp.data.displayValue) { // CD This isn't great but ok until we have formal contract
+                fp.name = fp.data.displayValue;
             }
         }
         return true;
