@@ -83,26 +83,6 @@ export interface Scored {
 }
 
 /**
- * Score the given object in the given context
- * @param scoreFunctions scoring functions. Undefined returns will be ignored
- * @param {T} toScore what to score
- * @param {CONTEXT} context
- * @return {Promise<Scores>}
- */
-export async function scoresFor<T, CONTEXT>(scoreFunctions: Array<(t: T, c: CONTEXT) => Promise<Score | undefined>>,
-                                            toScore: T,
-                                            context: CONTEXT): Promise<Scores> {
-    const scores: Scores = {};
-    for (const scorer of scoreFunctions) {
-        const score = await scorer(toScore, context);
-        if (score) {
-            scores[score.name] = score;
-        }
-    }
-    return scores;
-}
-
-/**
  * Weighting to apply to this name score. Default is 1.
  * Other values can be used to increase the weighting.
  */

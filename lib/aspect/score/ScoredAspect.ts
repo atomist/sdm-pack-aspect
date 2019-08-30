@@ -19,16 +19,15 @@ import { PushImpactListenerInvocation } from "@atomist/sdm";
 import { Project } from "@atomist/automation-client";
 import { Aspect, FP, sha256 } from "@atomist/sdm-pack-fingerprints";
 import {
-    Score,
     Scored,
     Scores,
-    scoresFor,
     ScoreWeightings,
     weightedCompositeScore,
     WeightedScore,
 } from "../../scorer/Score";
 import { starBand } from "../../util/commonBands";
 import {
+    BaseScorer, BaseScorerReturn,
     RepositoryScorer,
     RepoToScore,
 } from "../AspectRegistry";
@@ -47,7 +46,9 @@ export function isScoredAspectFingerprint(fp: FP): fp is FP<WeightedScore> {
 /**
  * Score the project and the push
  */
-export type PushScorer = (pili: PushImpactListenerInvocation) => Promise<Score>;
+export interface PushScorer extends BaseScorer {
+    scorePush: (pili: PushImpactListenerInvocation) => Promise<BaseScorerReturn>;
+}
 
 /**
  * Default properties to configure ScoredAspect
@@ -65,7 +66,15 @@ const ScoredAspectDefaults: Pick<ScoredAspect, "stats" | "toDisplayableFingerpri
 /**
  * Scorer that works with project content
  */
-export type ProjectScorer = (p: Project) => Promise<Score | undefined>;
+export interface ProjectScorer extends BaseScorer {
+
+    scoreProject: (p: Project) => Promise<BaseScorerReturn>;
+}
+
+export function isPushScorer(scorer: BaseScorer): scorer is PushScorer {
+    const maybe = scorer as PushScorer;
+    return !!maybe.scorePush;
+}
 
 /**
  * Score this aspect based on projects, from low to high.
@@ -77,8 +86,8 @@ export function projectScoringAspect(
         scoreWeightings?: ScoreWeightings,
     } & AspectMetadata): ScoredAspect {
     return {
-        extract: async p => {
-            const scores: Scores = await scoresFor(opts.scorers, p, {});
+        extract: async (p, pili) => {
+            const scores: Scores = await  pushScoresFor(opts.scorers, pili);
             const scored: Scored = { scores };
             const weightedScore = weightedCompositeScore(scored, opts.scoreWeightings);
             return toFingerprint(opts.name, weightedScore);
@@ -120,7 +129,7 @@ export function pushScoringAspect(
     } & AspectMetadata): ScoredAspect {
     return {
         extract: async (p, pili) => {
-            const scores: Scores = await scoresFor(opts.scorers, pili, p);
+            const scores: Scores = await pushScoresFor(opts.scorers, pili);
             const scored: Scored = { scores };
             const weightedScore = weightedCompositeScore(scored, opts.scoreWeightings);
             return toFingerprint(opts.name, weightedScore);
@@ -144,6 +153,25 @@ export async function fingerprintScoresFor(repositoryScorers: RepositoryScorer[]
     const scores: Scores = {};
     for (const scorer of repositoryScorers) {
         const sr = await scorer.scoreFingerprints(toScore);
+        if (sr) {
+            const score = {
+                ...sr,
+                name: scorer.name,
+                category: scorer.category,
+            };
+            scores[score.name] = score;
+        }
+    }
+    return scores;
+}
+
+export async function pushScoresFor(pushScorers: Array<PushScorer | ProjectScorer>,
+                                    toScore: PushImpactListenerInvocation): Promise<Scores> {
+    const scores: Scores = {};
+    for (const scorer of pushScorers) {
+        const sr = isPushScorer(scorer) ?
+            await scorer.scorePush(toScore) :
+            await scorer.scoreProject(toScore.project);
         if (sr) {
             const score = {
                 ...sr,

@@ -107,6 +107,8 @@ export interface BaseScorer {
     readonly category?: string;
 }
 
+export type BaseScorerReturn = Omit<Score, "name" | "category"> | undefined;
+
 /**
  * Function that knows how to score a repository. Scoring is based on
  * fingerprints that have previously been extracted by aspects.
@@ -117,7 +119,7 @@ export interface BaseScorer {
  */
 export interface RepositoryScorer extends BaseScorer {
 
-    scoreFingerprints: (r: RepoToScore) => Promise<Omit<Score, "name"> | undefined>;
+    scoreFingerprints: (r: RepoToScore) => Promise<BaseScorerReturn>;
 
 }
 
