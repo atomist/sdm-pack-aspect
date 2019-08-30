@@ -52,13 +52,14 @@ import {
     AnalysisTracking,
 } from "../analysis/tracking/analysisTracker";
 import {
+    BaseScorer,
     RepositoryScorer,
     TaggerDefinition,
 } from "../aspect/AspectRegistry";
 import { DefaultAspectRegistry } from "../aspect/DefaultAspectRegistry";
 import { isDeliveryAspect } from "../aspect/delivery/DeliveryAspect";
 import { UndesirableUsageChecker } from "../aspect/ProblemStore";
-import { fingerprintScoringAspect } from "../aspect/score/ScoredAspect";
+import { emitScoringAspects, ScoredAspect } from "../aspect/score/ScoredAspect";
 import { api } from "../routes/api";
 import { addWebAppRoutes } from "../routes/web-app/webAppRoutes";
 import { ScoreWeightings } from "../scorer/Score";
@@ -66,6 +67,8 @@ import {
     analysisResultStore,
     createAnalyzer,
 } from "./machine";
+
+import * as _ from "lodash";
 
 /**
  * Default VirtualProjectFinder, which recognizes Maven, npm,
@@ -114,7 +117,7 @@ export interface AspectSupportOptions {
     /**
      * Scoring fingerprints. Name to scorers
      */
-    scorers?: Record<string, RepositoryScorer | RepositoryScorer[]>;
+    scorers?: Record<string, BaseScorer | BaseScorer[]>;
 
     /**
      * Scorers that are computed in memory. Allows for faster iteration on scoring logic.
@@ -162,14 +165,10 @@ export interface AspectSupportOptions {
  * If we're in local mode, expose analyzer commands and HTTP endpoints.
  */
 export function aspectSupport(options: AspectSupportOptions): ExtensionPack {
-    const fingerprintScorers = Object.getOwnPropertyNames(options.scorers).map(name =>
-        fingerprintScoringAspect(
-            {
-                name,
-                displayName: name,
-                scorers: toArray(options.scorers[name]) || [],
-            }));
-    const aspects = [...toArray(options.aspects || []), ...fingerprintScorers];
+    const scoringAspects: ScoredAspect[] = _.flatten(Object.getOwnPropertyNames(options.scorers)
+        .map(name =>
+            emitScoringAspects(name, toArray(options.scorers[name] || []), options.weightings)));
+    const aspects = [...toArray(options.aspects || []), ...scoringAspects];
 
     return {
         ...metadata(),
