@@ -115,7 +115,7 @@ export class DefaultAspectRegistry implements AspectRegistry, AspectReportDetail
                         enabled: ["true"],
                     },
                 });
-            const aspectRegistration = _.get(aspectRegistrations, "AspectRegistration[0]") as AspectRegistrations.AspectRegistration;
+            const aspectRegistration = _.get(aspectRegistrations, "AspectRegistration[0]");
             if (!!aspectRegistration) {
                 return aspectRegistration;
             }
