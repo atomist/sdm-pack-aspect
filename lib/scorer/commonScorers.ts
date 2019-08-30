@@ -63,7 +63,7 @@ export function anchorScoreAt(score: FiveStar): RepositoryScorer {
  * that will cost 1 star.
  */
 export function requireRecentCommit(opts: { days: number }): RepositoryScorer {
-    const scoreFingerprints =  async repo => {
+    const scoreFingerprints = async repo => {
         const grt = repo.analysis.fingerprints.find(fp => fp.type === GitRecencyType);
         if (!grt) {
             return undefined;
@@ -133,7 +133,7 @@ export function limitLinesOfCode(opts: { limit: number }): RepositoryScorer {
  * Penalize repositories for having too many lines of code in the given language
  */
 export function limitLinesOfCodeIn(opts: { limit: number, language: Language, freeAmount?: number }): RepositoryScorer {
-    const scoreFingerprints =  async repo => {
+    const scoreFingerprints = async repo => {
         const cm = repo.analysis.fingerprints.find(isCodeMetricsFingerprint);
         if (!cm) {
             return undefined;
@@ -155,7 +155,7 @@ export function limitLinesOfCodeIn(opts: { limit: number, language: Language, fr
  * Penalize repositories for having an excessive number of git branches
  */
 export function penalizeForExcessiveBranches(opts: { branchLimit: number }): RepositoryScorer {
-    const scoreFingerprints =  async repo => {
+    const scoreFingerprints = async repo => {
         const branchCount = repo.analysis.fingerprints.find(f => f.type === BranchCountType);
         if (!branchCount) {
             return undefined;
@@ -228,7 +228,7 @@ export function requireAspectOfType(opts: {
     data?: any,
     category?: string,
 }): RepositoryScorer {
-    const scoreFingerprints =  async repo => {
+    const scoreFingerprints = async repo => {
         const found = repo.analysis.fingerprints.find(fp => fp.type === opts.type &&
             (opts.data ? fp.sha === sha256(JSON.stringify(opts.data)) : true));
         const score: FiveStar = !!found ? 5 : 1;
@@ -249,7 +249,7 @@ export function requireAspectOfType(opts: {
  * Depends on globAspect
  */
 export function requireGlobAspect(opts: { glob: string, category?: string }): RepositoryScorer {
-    const scoreFingerprints =  async repo => {
+    const scoreFingerprints = async repo => {
         const globs = repo.analysis.fingerprints.filter(isGlobMatchFingerprint);
         const found = globs
             .filter(gf => gf.data.glob === opts.glob)
@@ -274,19 +274,18 @@ export function requireGlobAspect(opts: { glob: string, category?: string }): Re
  * @return {RepositoryScorer}
  */
 export function exposeFingerprintScore(name: string): RepositoryScorer {
-    const scoreFingerprints =  async repo => {
-        const found = repo.analysis.fingerprints
-            .filter(isScoredAspectFingerprint)
-            .find(fp => fp.type === name);
-        return !!found ?
-            {
-                score: found.data.weightedScore,
-                reason: JSON.stringify(found.data.weightedScores),
-            } as any :
-            undefined;
-    };
     return {
         name,
-        scoreFingerprints,
+        scoreFingerprints: async repo => {
+            const found = repo.analysis.fingerprints
+                .filter(isScoredAspectFingerprint)
+                .find(fp => fp.type === name);
+            return !!found ?
+                {
+                    score: found.data.weightedScore,
+                    reason: JSON.stringify(found.data.weightedScores),
+                } as any :
+                undefined;
+        },
     };
 }

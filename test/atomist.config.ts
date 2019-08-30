@@ -111,9 +111,6 @@ export const configuration: Configuration = configure<TestGoals>(async sdm => {
                 ...MavenDefaultOptions,
                 builder: mavenBuilder(),
             });
-        // .with({
-        //     builder: nodeBuilder(),
-        // });
 
         const pushImpact = new PushImpact();
 

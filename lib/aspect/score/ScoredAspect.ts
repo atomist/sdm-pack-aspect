@@ -105,14 +105,18 @@ function scoringAspect(
     const repositoryScorers = opts.scorers.filter(isRepositoryScorer);
     return {
         extract: async (p, pili) => {
-            const scores: Scores = await pushAndProjectScoresFor(pushScorers, pili);
-            const scored: Scored = { scores };
-            const weightedScore = weightedCompositeScore(scored, opts.scoreWeightings);
-            return toFingerprint(opts.name, weightedScore);
+            // Just save these scores. They'll go into consolidate
+            const scores = await pushAndProjectScoresFor(pushScorers, pili);
+            (pili as any).scores = scores;
+            return [];
         },
-        consolidate: async (fingerprints, p) => {
+        consolidate: async (fingerprints, p, pili) => {
             const repoToScore: RepoToScore = { analysis: { id: p.id, fingerprints } };
-            const scores: Scores = await fingerprintScoresFor(repositoryScorers, repoToScore);
+            const additionalScores = await fingerprintScoresFor(repositoryScorers, repoToScore);
+            const scores = {
+                ...additionalScores,
+                ...(pili as any).scores,
+            };
             const scored: Scored = { scores };
             const weightedScore = weightedCompositeScore(scored, opts.scoreWeightings);
             return toFingerprint(opts.name, weightedScore);
@@ -174,7 +178,7 @@ export function emitScoringAspect(name: string,
         scoringAspect(
             {
                 name,
-                displayName: name,
+                displayName: `Scores for ${name}`,
                 scorers,
                 scoreWeightings,
             }) :
