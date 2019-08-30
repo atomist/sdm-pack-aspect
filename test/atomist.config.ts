@@ -18,7 +18,6 @@ import { Configuration } from "@atomist/automation-client";
 import { loadUserConfiguration } from "@atomist/automation-client/lib/configuration";
 import {
     anySatisfied,
-    onAnyPush,
     PushImpact,
 } from "@atomist/sdm";
 import {
@@ -38,11 +37,6 @@ import {
     VirtualProjectFinder,
 } from "@atomist/sdm-pack-fingerprints";
 import {
-    IsNode,
-    nodeBuilder,
-    npmBuilderOptionsFromFile,
-} from "@atomist/sdm-pack-node";
-import {
     PowerShellLanguage,
     ShellLanguage,
     YamlLanguage,
@@ -56,8 +50,8 @@ import * as _ from "lodash";
 import { sdmConfigClientFactory } from "../lib/analysis/offline/persist/pgClientFactory";
 import { PostgresProjectAnalysisResultStore } from "../lib/analysis/offline/persist/PostgresProjectAnalysisResultStore";
 import {
-    CombinationTagger,
     RepositoryScorer,
+    Tagger,
     TaggerDefinition,
 } from "../lib/aspect/AspectRegistry";
 import { CodeMetricsAspect } from "../lib/aspect/common/codeMetrics";
@@ -90,6 +84,7 @@ import {
 } from "../lib/machine/aspectSupport";
 import * as commonScorers from "../lib/scorer/commonScorers";
 import * as commonTaggers from "../lib/tagger/commonTaggers";
+import { tagsFromClassificationFingerprints } from "../lib/tagger/commonTaggers";
 
 // Ensure we start up in local mode
 process.env.ATOMIST_MODE = "local";
@@ -138,10 +133,13 @@ export const configuration: Configuration = configure<TestGoals>(async sdm => {
 
             goals,
 
-            scorers: scorers(),
+            scorers: {
+                all: scorers(),
+            },
 
-            taggers: taggers({}),
-            combinationTaggers: combinationTaggers({}),
+            inMemoryScorers: commonScorers.exposeFingerprintScore("all"),
+
+            taggers: taggers({}).concat(combinationTaggers({})),
 
             // Customize this to respond to undesirable usages
             undesirableUsageChecker: AcceptEverythingUndesirableUsageChecker,
@@ -201,10 +199,6 @@ function aspects(): Aspect[] {
         ContributingAspect,
         globAspect({ name: "azure-pipelines", displayName: "Azure pipeline", glob: "azure-pipelines.yml" }),
         globAspect({ name: "readme", displayName: "Readme file", glob: "README.md" }),
-        // allMavenDependenciesAspect,    // This is expensive
-        LeinDeps,
-
-        buildTimeAspect(),
 
         classificationAspect({
                 name: "javaBuild",
@@ -214,6 +208,11 @@ function aspects(): Aspect[] {
             { tags: "maven", reason: "has Maven POM", test: async p => p.hasFile("pom.xml") },
             { tags: "gradle", reason: "has build.gradle", test: async p => p.hasFile("build.gradle") },
         ),
+
+        // allMavenDependenciesAspect,    // This is expensive
+        LeinDeps,
+
+        buildTimeAspect(),
     ];
 }
 
@@ -221,7 +220,6 @@ export function scorers(): RepositoryScorer[] {
     return [
         commonScorers.anchorScoreAt(2),
         commonScorers.penalizeForExcessiveBranches({ branchLimit: 5 }),
-        commonScorers.PenalizeWarningAndErrorTags,
         commonScorers.PenalizeMonorepos,
         commonScorers.limitLanguages({ limit: 4 }),
         // Adjust depending on the service granularity you want
@@ -252,21 +250,29 @@ export interface TaggersParams {
 
 export function taggers(opts: Partial<TaggersParams>): TaggerDefinition[] {
     return [
-        { name: "docker", description: "Docker status", test: fp => fp.type === DockerFrom.name },
-        { name: "clojure", description: "Lein dependencies", test: fp => fp.type === LeinDeps.name },
+        {
+            name: "docker", description: "Docker status",
+            test: async repo => repo.analysis.fingerprints.some(fp => fp.type === DockerFrom.name),
+        },
+        {
+            name: "clojure", description: "Lein dependencies",
+            test: async repo => repo.analysis.fingerprints.some(fp => fp.type === LeinDeps.name),
+        },
         {
             name: "azure-pipelines",
             description: "Azure pipelines files",
-            test: fp => isFileMatchFingerprint(fp) &&
-                fp.name.includes("azure-pipeline") && fp.data.matches.length > 0,
+            test: async repo => repo.analysis.fingerprints.some(fp => isFileMatchFingerprint(fp) &&
+                fp.name.includes("azure-pipeline") && fp.data.matches.length > 0),
         },
         {
             // TODO allow to use #
             name: "CSharp",
             description: "C# build",
-            test: fp => isFileMatchFingerprint(fp) &&
-                fp.name.includes("csproj") && fp.data.matches.length > 0,
+            test: async repo => repo.analysis.fingerprints.some(fp => isFileMatchFingerprint(fp) &&
+                fp.name.includes("csproj") && fp.data.matches.length > 0),
         },
+
+        ...tagsFromClassificationFingerprints("maven", "gradle"),
     ];
 }
 
@@ -294,23 +300,12 @@ const DefaultCombinationTaggersParams: CombinationTaggersParams = {
     hotContributors: 3,
 };
 
-export function combinationTaggers(opts: Partial<CombinationTaggersParams>): CombinationTagger[] {
+export function combinationTaggers(opts: Partial<CombinationTaggersParams>): Tagger[] {
     const optsToUse = {
         ...DefaultCombinationTaggersParams,
         ...opts,
     };
     return [
-        {
-            name: "not understood",
-            description: "You may want to write aspects for these outlier projects",
-            severity: "warn",
-            test: (fps, id, tagContext) => {
-                const aspectCount = _.uniq(fps.map(f => f.type)).length;
-                // There are quite a few aspects that are found on everything, e.g. git
-                // We need to set the threshold count probably
-                return aspectCount < tagContext.averageFingerprintCount * optsToUse.minAverageAspectCountFractionToExpect;
-            },
-        },
         commonTaggers.gitHot(optsToUse),
     ];
 }

@@ -28,6 +28,7 @@ import { isGlobMatchFingerprint } from "../aspect/compose/globAspect";
 import { BranchCountType } from "../aspect/git/branchCount";
 import { daysSince } from "../aspect/git/dateUtils";
 import { GitRecencyType } from "../aspect/git/gitActivity";
+import { isScoredAspectFingerprint } from "../aspect/score/ScoredAspect";
 import {
     AlwaysIncludeCategory,
     FiveStar,
@@ -170,24 +171,6 @@ export const PenalizeMonorepos: RepositoryScorer =
     };
 
 /**
- * Penalize repos for warning and error tags.
- * Note that this can produce double counting if we have a scorer for those things.
- * However it can minimize the need to write scorers in a good tagging setup.
- */
-export const PenalizeWarningAndErrorTags: RepositoryScorer = async repo => {
-    const err = repo.tags.filter(t => t.severity === "error");
-    const warn = repo.tags.filter(t => t.severity === "warn");
-    const score = adjustBy(-3 * err.length - 2 * warn.length);
-    return {
-        name: "sev-count",
-        score,
-        reason: err.length + warn.length === 0 ?
-            "No errors or warnings" :
-            `Errors: [${err.map(e => e.name).join(",")}], warnings: [${warn.map(w => w.name).join(",")}]`,
-    };
-};
-
-/**
  * Penalize repositories without a license file
  */
 export const PenalizeNoLicense: RepositoryScorer =
@@ -251,5 +234,26 @@ export function requireGlobAspect(opts: { glob: string, category?: string }): Re
             score: !!found ? 5 : 1,
             reason: !found ? `Should have file for ${opts.glob}` : "Satisfactory",
         };
+    };
+}
+
+/**
+ * Use as an inMemory scorer. Exposes persisted scores.
+ * Useful during development.
+ * @param {string} name
+ * @return {RepositoryScorer}
+ */
+export function exposeFingerprintScore(name: string): RepositoryScorer {
+    return async repo => {
+        const found = repo.analysis.fingerprints
+            .filter(isScoredAspectFingerprint)
+            .find(fp => fp.type === name);
+        return !!found ?
+            {
+                name,
+                score: found.data.weightedScore,
+                reason: JSON.stringify(found.data.weightedScores),
+            } as any :
+            undefined;
     };
 }
