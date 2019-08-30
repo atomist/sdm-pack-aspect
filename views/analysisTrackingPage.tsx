@@ -9,6 +9,13 @@ interface AnalysisTrackingRepo {
     errorMessage?: string;
     stackTrace?: string;
     snapshotId?: string;
+    aspects: AnalysisTrackingAspect[];
+}
+
+interface AnalysisTrackingAspect {
+    aspectName: string;
+    fingerprintsFound: number;
+    error?: Error;
 }
 interface AnalysisTrackingAnalysis {
     description: string;
@@ -36,14 +43,32 @@ function displayRepository(repo: AnalysisTrackingRepo & { repoAnalysisId: string
     const insightsLink = repo.snapshotId ? <a href={"/repository?id=" + repo.snapshotId}>
         <img src="/hexagonal-fruit-of-power.png" className="linkToInsightsImage"></img>
     </a> : undefined;
+    const aspectSummary = repo.progress === "Planned" ? undefined : summarizeAspects(repo.aspects);
     return <div className={className}>
         <p className="analysisRepoDescription">{repo.description} {gitLink} {insightsLink} </p>
         <span className="timeTakenToAnalyzeRepo">{timeTaken}</span>
         {displayFailure(repo)}
+        {aspectSummary}
     </div>;
 }
 
-function displayFailure(repo: AnalysisTrackingRepo): React.ReactElement {
+function summarizeAspects(aspects: AnalysisTrackingAspect[]): React.ReactElement {
+    const fingerprintTotal = aspects.map(a => a.fingerprintsFound).filter(f => !!f).reduce((a, b) => a + b, 0);
+    const errors = aspects.filter(a => !!a.error);
+    const errorDisplays = errors.length > 0 ? <div>{errors.map(displayAspectError)}</div> : undefined;
+    return <div>
+        {aspects.length} aspects => {fingerprintTotal} fingerprints
+        {errorDisplays}
+    </div>;
+}
+
+function displayAspectError(ae: { error?: Error, aspectName: string }): React.ReactElement {
+    return <div className="failedAspect">
+        {ae.aspectName}
+        {displayFailure({ errorMessage: ae.error.message, stackTrace: ae.error.stack })}
+    </div>;
+}
+function displayFailure(repo: { errorMessage?: string, stackTrace?: string }): React.ReactElement {
     if (!repo.errorMessage) {
         return undefined;
     }
