@@ -28,7 +28,10 @@ import {
     WeightedScore,
 } from "../../scorer/Score";
 import { starBand } from "../../util/commonBands";
-import { RepositoryScorer, RepoToScore } from "../AspectRegistry";
+import {
+    RepositoryScorer,
+    RepoToScore,
+} from "../AspectRegistry";
 import { AspectMetadata } from "../compose/commonTypes";
 
 /**

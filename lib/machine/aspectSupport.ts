@@ -58,7 +58,11 @@ import {
 import { DefaultAspectRegistry } from "../aspect/DefaultAspectRegistry";
 import { isDeliveryAspect } from "../aspect/delivery/DeliveryAspect";
 import { UndesirableUsageChecker } from "../aspect/ProblemStore";
-import { AspectCompatibleScorer, emitScoringAspects, ScoredAspect } from "../aspect/score/ScoredAspect";
+import {
+    AspectCompatibleScorer,
+    emitScoringAspects,
+    ScoredAspect,
+} from "../aspect/score/ScoredAspect";
 import { api } from "../routes/api";
 import { addWebAppRoutes } from "../routes/web-app/webAppRoutes";
 import { ScoreWeightings } from "../scorer/Score";

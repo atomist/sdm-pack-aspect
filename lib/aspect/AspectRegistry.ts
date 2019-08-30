@@ -25,7 +25,9 @@ import { Aspect } from "@atomist/sdm-pack-fingerprints/lib/machine/Aspect";
 import { ProjectAnalysisResult } from "../analysis/ProjectAnalysisResult";
 import { CommunityCategory } from "../scorer/commonScorers";
 import {
-    Score, Scorer, ScorerReturn,
+    Score,
+    Scorer,
+    ScorerReturn,
     WeightedScore,
 } from "../scorer/Score";
 import { Omit } from "../util/omit";
