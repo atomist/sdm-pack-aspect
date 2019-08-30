@@ -25,7 +25,10 @@ import { SpideredRepo } from "../SpideredRepo";
 import { ScmSearchCriteria } from "./ScmSearchCriteria";
 
 import * as _ from "lodash";
-import { AnalysisTracking, RepoBeingTracked } from "../../tracking/analysisTracker";
+import {
+    AnalysisTracking,
+    RepoBeingTracked,
+} from "../../tracking/analysisTracker";
 
 export type ProjectAnalysisResultFilter = (pa: ProjectAnalysisResult) => Promise<boolean>;
 
