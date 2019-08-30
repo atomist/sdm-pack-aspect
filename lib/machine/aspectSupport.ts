@@ -52,14 +52,13 @@ import {
     AnalysisTracking,
 } from "../analysis/tracking/analysisTracker";
 import {
-    BaseScorer,
     RepositoryScorer,
     TaggerDefinition,
 } from "../aspect/AspectRegistry";
 import { DefaultAspectRegistry } from "../aspect/DefaultAspectRegistry";
 import { isDeliveryAspect } from "../aspect/delivery/DeliveryAspect";
 import { UndesirableUsageChecker } from "../aspect/ProblemStore";
-import { emitScoringAspects, ScoredAspect } from "../aspect/score/ScoredAspect";
+import { AspectCompatibleScorer, emitScoringAspects, ScoredAspect } from "../aspect/score/ScoredAspect";
 import { api } from "../routes/api";
 import { addWebAppRoutes } from "../routes/web-app/webAppRoutes";
 import { ScoreWeightings } from "../scorer/Score";
@@ -117,7 +116,7 @@ export interface AspectSupportOptions {
     /**
      * Scoring fingerprints. Name to scorers
      */
-    scorers?: Record<string, BaseScorer | BaseScorer[]>;
+    scorers?: Record<string, AspectCompatibleScorer | AspectCompatibleScorer[]>;
 
     /**
      * Scorers that are computed in memory. Allows for faster iteration on scoring logic.

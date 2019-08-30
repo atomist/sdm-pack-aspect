@@ -20,19 +20,16 @@ import { Project } from "@atomist/automation-client";
 import { Aspect, FP, sha256 } from "@atomist/sdm-pack-fingerprints";
 import {
     Scored,
+    Scorer,
+    ScorerReturn,
     Scores,
     ScoreWeightings,
     weightedCompositeScore,
     WeightedScore,
 } from "../../scorer/Score";
 import { starBand } from "../../util/commonBands";
-import {
-    BaseScorer, BaseScorerReturn, isRepositoryScorer,
-    RepositoryScorer,
-    RepoToScore,
-} from "../AspectRegistry";
+import { RepositoryScorer, RepoToScore, } from "../AspectRegistry";
 import { AspectMetadata } from "../compose/commonTypes";
-import { toArray } from "@atomist/sdm-core/lib/util/misc/array";
 
 /**
  * Aspect that scores pushes or projects
@@ -47,8 +44,8 @@ export function isScoredAspectFingerprint(fp: FP): fp is FP<WeightedScore> {
 /**
  * Score the project and the push
  */
-export interface PushScorer extends BaseScorer {
-    scorePush: (pili: PushImpactListenerInvocation) => Promise<BaseScorerReturn>;
+export interface PushScorer extends Scorer {
+    scorePush: (pili: PushImpactListenerInvocation) => Promise<ScorerReturn>;
 }
 
 /**
@@ -67,12 +64,22 @@ const ScoredAspectDefaults: Pick<ScoredAspect, "stats" | "toDisplayableFingerpri
 /**
  * Scorer that works with project content
  */
-export interface ProjectScorer extends BaseScorer {
+export interface ProjectScorer extends Scorer {
 
-    scoreProject: (p: Project) => Promise<BaseScorerReturn>;
+    scoreProject: (p: Project) => Promise<ScorerReturn>;
 }
 
-export function isPushScorer(scorer: BaseScorer): scorer is PushScorer {
+/**
+ * Scorer that can be used in an aspect
+ */
+export type AspectCompatibleScorer = RepositoryScorer | ProjectScorer | PushScorer;
+
+export function isRepositoryScorer(s: AspectCompatibleScorer): s is RepositoryScorer {
+    const maybe = s as RepositoryScorer;
+    return !!maybe.scoreFingerprints;
+}
+
+export function isPushScorer(scorer: AspectCompatibleScorer): scorer is PushScorer {
     const maybe = scorer as PushScorer;
     return !!maybe.scorePush;
 }
@@ -164,7 +171,7 @@ export async function pushScoresFor(pushScorers: Array<PushScorer | ProjectScore
     return scores;
 }
 
-export function emitScoringAspects(name: string, scorers: BaseScorer[], scoreWeightings: ScoreWeightings): ScoredAspect[] {
+export function emitScoringAspects(name: string, scorers: AspectCompatibleScorer[], scoreWeightings: ScoreWeightings): ScoredAspect[] {
     const fScorers = scorers.filter(isRepositoryScorer);
     const pScorers = scorers.filter(s => !isRepositoryScorer(s)) as any;
     const psa = pushScoringAspect(

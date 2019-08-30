@@ -24,7 +24,7 @@ import {
 import { Aspect } from "@atomist/sdm-pack-fingerprints/lib/machine/Aspect";
 import { ProjectAnalysisResult } from "../analysis/ProjectAnalysisResult";
 import {
-    Score,
+    Score, Scorer, ScorerReturn,
     WeightedScore,
 } from "../scorer/Score";
 import { IdealStore } from "./IdealStore";
@@ -102,13 +102,6 @@ export type ScoredRepo = TaggedRepo & { weightedScore: WeightedScore };
 
 export type RepoToScore = Pick<ProjectAnalysisResult, "analysis" | "id">;
 
-export interface BaseScorer {
-    readonly name: string;
-    readonly category?: string;
-}
-
-export type BaseScorerReturn = Omit<Score, "name" | "category"> | undefined;
-
 /**
  * Function that knows how to score a repository. Scoring is based on
  * fingerprints that have previously been extracted by aspects.
@@ -117,15 +110,10 @@ export type BaseScorerReturn = Omit<Score, "name" | "category"> | undefined;
  * @return undefined if this scorer doesn't know how to score this repository.
  * Otherwise return a score.
  */
-export interface RepositoryScorer extends BaseScorer {
+export interface RepositoryScorer extends Scorer {
 
-    scoreFingerprints: (r: RepoToScore) => Promise<BaseScorerReturn>;
+    scoreFingerprints: (r: RepoToScore) => Promise<ScorerReturn>;
 
-}
-
-export function isRepositoryScorer(s: BaseScorer): s is RepositoryScorer {
-    const maybe = s as RepositoryScorer;
-    return !!maybe.scoreFingerprints;
 }
 
 export interface TagAndScoreOptions {

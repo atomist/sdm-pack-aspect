@@ -15,6 +15,7 @@
  */
 
 import { logger } from "@atomist/automation-client";
+import { Omit } from "../util/omit";
 
 /*
  * Copyright © 2019 Atomist, Inc.
@@ -140,3 +141,24 @@ export function weightedCompositeScore(scored: Scored,
         weightedScores,
     };
 }
+
+/**
+ * Extended by types that can perform scoring
+ */
+export interface Scorer {
+
+    /**
+     * Name of the scorer. Will be included in all scores.
+     */
+    readonly name: string;
+
+    /**
+     * Category to include in scores, if any
+     */
+    readonly category?: string;
+}
+
+/**
+ * Type returned by any scorer
+ */
+export type ScorerReturn = Omit<Score, "name" | "category"> | undefined;
