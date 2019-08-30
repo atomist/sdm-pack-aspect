@@ -25,7 +25,7 @@ import { SpideredRepo } from "../SpideredRepo";
 import { ScmSearchCriteria } from "./ScmSearchCriteria";
 
 import * as _ from "lodash";
-import { AnalysisTracking } from "../../tracking/analysisTracker";
+import { AnalysisTracking, RepoBeingTracked } from "../../tracking/analysisTracker";
 
 export type ProjectAnalysisResultFilter = (pa: ProjectAnalysisResult) => Promise<boolean>;
 
@@ -87,7 +87,7 @@ export type TimeRecorder = Record<string, Timing>;
  */
 export interface Analyzer {
 
-    analyze(p: Project): Promise<Analyzed>;
+    analyze(p: Project, repoTracking: RepoBeingTracked): Promise<Analyzed>;
 
     readonly timings: TimeRecorder;
 }
@@ -110,7 +110,7 @@ export function logTimings(recorder: TimeRecorder): void {
 export interface Spider {
 
     spider(criteria: ScmSearchCriteria,
-           analyzer: Analyzer,
-           analysisTracking: AnalysisTracking,
-           opts: SpiderOptions): Promise<SpiderResult>;
+        analyzer: Analyzer,
+        analysisTracking: AnalysisTracking,
+        opts: SpiderOptions): Promise<SpiderResult>;
 }
