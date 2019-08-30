@@ -32,6 +32,16 @@ export interface AspectReport {
     aspects: ReportDetails[];
 }
 
+async function aspectReportDetailsOf(type: string,
+                                     workspaceId: string,
+                                     details: Record<string, AspectReportDetails>,
+                                     aspectRegistry: AspectReportDetailsRegistry): Promise<AspectReportDetails> {
+    if (!details[type]) {
+        details[type] = await aspectRegistry.reportDetailsOf(type, workspaceId);
+    }
+    return details[type];
+}
+
 export async function getAspectReports(fus: Array<{
                                            owner: string,
                                            repo: string,
@@ -42,10 +52,11 @@ export async function getAspectReports(fus: Array<{
     const aspects = aspectRegistry.aspects;
     const reports: AspectReport[] = [];
     const categories = [];
+    const loadedDetails = {};
 
     for (const fu of fus) {
         for (const f of fu.fingerprints) {
-            const details = await aspectRegistry.reportDetailsOf(f.type, workspaceId);
+            const details = await aspectReportDetailsOf(f.type, workspaceId, loadedDetails, aspectRegistry);
             if (!!details) {
                 f.details = details;
                 categories.push(details.category);
