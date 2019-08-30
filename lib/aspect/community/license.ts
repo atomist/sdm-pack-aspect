@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-import { Aspect, FP, sha256 } from "@atomist/sdm-pack-fingerprints";
+import { Aspect, fingerprintOf, FP, sha256 } from "@atomist/sdm-pack-fingerprints";
 import { firstFileFound } from "../../util/fileUtils";
+import { ContentClassifier } from "./ContentClassifier";
 
 export const NoLicense = "None";
 
@@ -41,15 +42,9 @@ export interface LicenseData {
      */
     classification: string;
 
-    /**
-     * License content
-     */
-    content?: string;
 }
 
-export type LicenseClassifier = (content: string) => string | undefined;
-
-const defaultClassifier: LicenseClassifier = content => content.trim().split("\n")[0].trim();
+const defaultClassifier: ContentClassifier = content => content.trim().split("\n")[0].trim();
 
 /**
  * License aspect. Every repository gets a license fingerprint, which may have unknown
@@ -57,7 +52,7 @@ const defaultClassifier: LicenseClassifier = content => content.trim().split("\n
  * @param opts provides classifier function, taking the license content and returning
  * a classificiation
  */
-export function license(opts: { classifier: LicenseClassifier } =
+export function license(opts: { classifier: ContentClassifier } =
                             { classifier: defaultClassifier }): Aspect<LicenseData> {
     return {
         name: LicenseType,
@@ -71,13 +66,11 @@ export function license(opts: { classifier: LicenseClassifier } =
                 content = await licenseFile.getContent();
                 classification = opts.classifier(content);
             }
-            const data: LicenseData = { classification, content, path: licenseFile ? licenseFile.path : undefined };
-            return {
+            const data: LicenseData = { classification, path: licenseFile ? licenseFile.path : undefined };
+            return fingerprintOf({
                 type: LicenseType,
-                name: LicenseType,
                 data,
-                sha: sha256(JSON.stringify(data)),
-            };
+            });
         },
         toDisplayableFingerprintName: () => "License",
         toDisplayableFingerprint: fp => {

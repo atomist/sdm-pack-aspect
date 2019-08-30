@@ -14,20 +14,12 @@
  * limitations under the License.
  */
 
-import {
-    Aspect, fingerprintOf,
-    FP,
-    sha256,
-} from "@atomist/sdm-pack-fingerprints";
+import { Aspect, fingerprintOf, } from "@atomist/sdm-pack-fingerprints";
+import { ContentClassifier } from "./ContentClassifier";
 
 export const CodeOfConductType = "code-of-conduct";
 
 export interface CodeOfConductData {
-
-    /**
-     * Content of the code of conduct
-     */
-    content: string;
 
     /**
      * Title inferred from the code of conduct, if it was possible to do so
@@ -40,30 +32,33 @@ export interface CodeOfConductData {
  * Returns no fingerprint if the repository lacks a code of conduct file.
  * @constructor
  */
-export const CodeOfConduct: Aspect<CodeOfConductData> = {
-    name: CodeOfConductType,
-    displayName: "Code of conduct",
-    baseOnly: true,
-    extract: async p => {
-        const codeOfConductFile = await p.getFile("CODE_OF_CONDUCT.md");
-        if (codeOfConductFile) {
-            const content = await codeOfConductFile.getContent();
-            const data = {
-                title: extractTitle(content),
-                content,
-            };
-            return fingerprintOf({
-                type: CodeOfConductType,
-                data,
-            });
-        }
-        return undefined;
-    },
-    toDisplayableFingerprintName: () => "Code of conduct",
-    toDisplayableFingerprint: fpi => {
-        return fpi.data.title || "untitled";
-    },
-};
+export function codeOfConduct(opts: { classifier: ContentClassifier } =
+                                  { classifier: extractTitle }): Aspect<CodeOfConductData> {
+    return {
+        name: CodeOfConductType,
+        displayName: "Code of conduct",
+        baseOnly: true,
+        extract: async p => {
+            const codeOfConductFile = await p.getFile("CODE_OF_CONDUCT.md");
+            if (codeOfConductFile) {
+                const content = await codeOfConductFile.getContent();
+                const data = {
+                    title: extractTitle(content),
+                    content,
+                };
+                return fingerprintOf({
+                    type: CodeOfConductType,
+                    data,
+                });
+            }
+            return undefined;
+        },
+        toDisplayableFingerprintName: () => "Code of conduct",
+        toDisplayableFingerprint: fpi => {
+            return fpi.data.title || "untitled";
+        },
+    };
+}
 
 const markdownTitleRegex = /^# (.*)\n/;
 

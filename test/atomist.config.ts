@@ -46,7 +46,6 @@ import {
     mavenBuilder,
     MavenDefaultOptions,
 } from "@atomist/sdm-pack-spring";
-import * as _ from "lodash";
 import { sdmConfigClientFactory } from "../lib/analysis/offline/persist/pgClientFactory";
 import { PostgresProjectAnalysisResultStore } from "../lib/analysis/offline/persist/PostgresProjectAnalysisResultStore";
 import {
@@ -56,7 +55,7 @@ import {
 } from "../lib/aspect/AspectRegistry";
 import { CodeMetricsAspect } from "../lib/aspect/common/codeMetrics";
 import { codeOwnership } from "../lib/aspect/common/codeOwnership";
-import { CodeOfConduct } from "../lib/aspect/community/codeOfConduct";
+import { codeOfConduct } from "../lib/aspect/community/codeOfConduct";
 import {
     license,
     LicensePresence,
@@ -180,7 +179,7 @@ function aspects(): Aspect[] {
         LicensePresence,
         codeOwnership(),
         NpmDeps,
-        CodeOfConduct,
+        codeOfConduct(),
         ExposedSecrets,
         BranchCount,
         GitRecency,
