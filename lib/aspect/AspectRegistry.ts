@@ -23,17 +23,17 @@ import {
 } from "@atomist/sdm-pack-fingerprints";
 import { Aspect } from "@atomist/sdm-pack-fingerprints/lib/machine/Aspect";
 import { ProjectAnalysisResult } from "../analysis/ProjectAnalysisResult";
+import { CommunityCategory } from "../scorer/commonScorers";
 import {
     Score, Scorer, ScorerReturn,
     WeightedScore,
 } from "../scorer/Score";
+import { Omit } from "../util/omit";
 import { IdealStore } from "./IdealStore";
 import {
     ProblemStore,
     UndesirableUsageChecker,
 } from "./ProblemStore";
-import { Omit } from "../util/omit";
-import { CommunityCategory } from "../scorer/commonScorers";
 
 /**
  * Implemented by ProjectAnalysis or any other structure

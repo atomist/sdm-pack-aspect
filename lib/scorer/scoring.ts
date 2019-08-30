@@ -20,6 +20,7 @@ import {
     ScoredRepo,
     TagAndScoreOptions,
 } from "../aspect/AspectRegistry";
+import { fingerprintScoresFor } from "../aspect/score/ScoredAspect";
 import {
     AlwaysIncludeCategory,
     FiveStar,
@@ -28,7 +29,6 @@ import {
     ScoreWeightings,
     weightedCompositeScore,
 } from "./Score";
-import { fingerprintScoresFor } from "../aspect/score/ScoredAspect";
 
 export async function scoreRepos(scorers: RepositoryScorer[],
                                  repos: RepoToScore[],
