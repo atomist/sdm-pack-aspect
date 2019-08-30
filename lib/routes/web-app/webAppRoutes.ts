@@ -151,7 +151,7 @@ function exposeRepositoryPage(conf: WebAppConfig): void {
                 aspects: _.sortBy(ffd.filter(f => !!f.aspect.displayName), f => f.aspect.displayName),
                 category,
                 timestamp: new Date(mostRecentTimestampMillis),
-            }), `${repo.analysis.id.owner} / ${repo.analysis.id.repo}`,
+            }), `Repository Insights`,
             conf.instanceMetadata));
     });
 }

@@ -187,7 +187,7 @@ async function analyzeOneRepo<FoundRepo>(
     if (persistResult.failed.length === 1) {
         tracking.failed(persistResult.failed[0]);
     } else if (persistResult.succeeded.length === 1) {
-        tracking.persisted();
+        tracking.persisted(persistResult.succeeded[0]);
     } else {
         throw new Error("Unexpected condition in persistResult: " + JSON.stringify(persistResult));
     }

@@ -36,6 +36,7 @@ interface RepoForReporting {
     millisTaken?: number;
     errorMessage?: string;
     stackTrace?: string;
+    snapshotId?: string;
 }
 interface AnalysisForReporting {
     description: string;
@@ -43,6 +44,7 @@ interface AnalysisForReporting {
     progress: AnalysisProgress;
     repos: RepoForReporting[];
     error?: Error;
+    completedAt?: Date;
 }
 
 export interface AnalysisReport {
@@ -63,7 +65,7 @@ export class RepoBeingTracked {
     public repoRef: RepoRef | undefined = undefined;
     public millisTaken: number | undefined;
     public existingWasKept: boolean = false;
-    public successfullyPersisted: boolean = false;
+    public persistedSnapshotId: string | undefined;
     public failureDetails: FailureDetails | undefined = undefined;
     public skipReason: string | undefined;
     private analysisStartMillis: number | undefined;
@@ -98,14 +100,14 @@ export class RepoBeingTracked {
         this.millisTaken = this.millisTaken = new Date().getTime() - this.analysisStartMillis;
     }
 
-    public persisted(): void {
-        this.successfullyPersisted = true;
+    public persisted(snapshotId: string): void {
+        this.persistedSnapshotId = snapshotId;
         this.millisTaken = this.millisTaken = new Date().getTime() - this.analysisStartMillis;
     }
 
     public report(): RepoForReporting {
         const isGoing = !!this.analysisStartMillis;
-        const isDone = this.existingWasKept || this.successfullyPersisted || this.failureDetails || this.skipReason;
+        const isDone = this.existingWasKept || this.persistedSnapshotId || this.failureDetails || this.skipReason;
         const errorFields = !this.failureDetails ? {} : {
             errorMessage: `Failed while trying to ${this.failureDetails.whileTryingTo}\n${this.failureDetails.message}`,
             stackTrace: this.failureDetails.error ? this.failureDetails.error.stack : undefined,
@@ -115,6 +117,7 @@ export class RepoBeingTracked {
             progress: isDone ? "Stopped" : isGoing ? "Going" : "Planned",
             keptExisting: this.existingWasKept,
             millisTaken: this.millisTaken,
+            snapshotId: this.persistedSnapshotId,
             ...errorFields,
         };
     }
@@ -131,7 +134,7 @@ export class RepoBeingTracked {
                 message: this.failureDetails.error ? this.failureDetails.error.message : this.failureDetails.message,
             }] : [],
             keptExisting: this.existingWasKept ? [this.repoRef.url] : [],
-            persistedAnalyses: this.successfullyPersisted ? [this.repoRef.url] : [],
+            persistedAnalyses: this.persistedSnapshotId ? [this.repoRef.url] : [],
             millisTaken: this.millisTaken,
         };
     }
@@ -140,6 +143,7 @@ export class RepoBeingTracked {
 // make the interface later
 export class AnalysisBeingTracked {
     public error?: Error;
+    public completedAt: Date | undefined;
 
     private readonly repos: RepoBeingTracked[] = [];
     constructor(public readonly me: AnalysisForTracking) {
@@ -157,6 +161,7 @@ export class AnalysisBeingTracked {
     }
 
     public stop(): void {
+        this.completedAt = new Date();
         this.me.progress = "Stopped";
     }
 
@@ -170,6 +175,7 @@ export class AnalysisBeingTracked {
             ...this.me,
             error: this.error,
             repos: this.repos.map(s => s.report()),
+            completedAt: this.completedAt,
         };
     }
 }

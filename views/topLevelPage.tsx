@@ -40,14 +40,17 @@ export function TopLevelPage(props: {
                     <span className="page-title">
                         {props.pageTitle}
                     </span>
-                    <span className="instance-info">
-                        {props.instanceMetadata.name}
-                    </span>
+
                 </div>
             </header>
             <main>
                 {props.bodyContent}
             </main>
+            <footer>
+                <span className="instance-info">
+                    {props.instanceMetadata.name}
+                </span>
+            </footer>
         </body>
     </html>;
 }

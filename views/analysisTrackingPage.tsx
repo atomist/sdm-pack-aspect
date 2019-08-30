@@ -8,6 +8,7 @@ interface AnalysisTrackingRepo {
     millisTaken?: number;
     errorMessage?: string;
     stackTrace?: string;
+    snapshotId?: string;
 }
 interface AnalysisTrackingAnalysis {
     description: string;
@@ -15,6 +16,7 @@ interface AnalysisTrackingAnalysis {
     progress: "Going" | "Stopped";
     repos: AnalysisTrackingRepo[];
     error?: Error;
+    completedAt?: Date;
 }
 
 export interface AnalysisTrackingProps {
@@ -31,8 +33,11 @@ function displayRepository(repo: AnalysisTrackingRepo & { repoAnalysisId: string
     }
     const timeTaken = repo.millisTaken ? `Took ${repo.millisTaken / 1000}s` : undefined;
     const gitLink = repo.url ? <a href={repo.url}><img src="/git.png" className="linkToSourceImage"></img></a> : undefined;
+    const insightsLink = repo.snapshotId ? <a href={"/repository?id=" + repo.snapshotId}>
+        <img src="/hexagonal-fruit-of-power.png" className="linkToInsightsImage"></img>
+    </a> : undefined;
     return <div className={className}>
-        <p className="analysisRepoDescription">{repo.description} {gitLink}</p>
+        <p className="analysisRepoDescription">{repo.description} {gitLink} {insightsLink} </p>
         <span className="timeTakenToAnalyzeRepo">{timeTaken}</span>
         {displayFailure(repo)}
     </div>;
@@ -56,8 +61,10 @@ function listRepositories(title: string, repos: AnalysisTrackingRepo[]): React.R
 
 function displayAnalysis(analysis: AnalysisTrackingAnalysis): React.ReactElement {
     const analysisStatusClass = analysis.progress === "Going" ? "ongoingAnalysis" : "nongoingAnalysis";
+    const dates = analysis.completedAt ? <p className="analysisDates">Completed at: {analysis.completedAt.toString()}</p> : undefined;
     return <div className={analysisStatusClass}>
         {analysis.description}
+        {dates}
         {displayAnalysisFailure(analysis)}
         <h4>Repositories:</h4>
         <div className="repositoryColumns">
@@ -79,7 +86,20 @@ function displayAnalysisFailure(analysis: AnalysisTrackingAnalysis): React.React
 }
 
 function listAnalyses(analyses: AnalysisTrackingAnalysis[]): React.ReactElement {
-    return <div className="analysisList">{analyses.map(displayAnalysis)}</div>;
+    return <div className="analysisList">{analyses.sort(runningFirst).map(displayAnalysis)}</div>;
+}
+
+function runningFirst(a1: AnalysisTrackingAnalysis, a2: AnalysisTrackingAnalysis): number {
+    if (a1.progress === "Going" && a2.progress === "Stopped") {
+        return -1;
+    }
+    if (a2.progress === "Going" && a1.progress === "Stopped") {
+        return 1;
+    }
+    if (a1.completedAt && a2.completedAt) {
+        return a1.completedAt.getTime() - a2.completedAt.getTime();
+    }
+    return 0;
 }
 
 export function AnalysisTrackingPage(props: AnalysisTrackingProps): React.ReactElement {
