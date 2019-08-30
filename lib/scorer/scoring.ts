@@ -28,6 +28,7 @@ import {
     ScoreWeightings,
     weightedCompositeScore,
 } from "./Score";
+import { fingerprintScoresFor } from "../aspect/score/ScoredAspect";
 
 export async function scoreRepos(scorers: RepositoryScorer[],
                                  repos: RepoToScore[],
@@ -43,7 +44,7 @@ export async function scoreRepo(scorers: RepositoryScorer[],
                                 repo: RepoToScore,
                                 weightings: ScoreWeightings,
                                 opts: TagAndScoreOptions): Promise<ScoredRepo> {
-    const scores = await scoresFor(scorers, repo, undefined);
+    const scores = await fingerprintScoresFor(scorers, repo);
     // Remove scores that don't match our desired category
     for (const key of Object.keys(scores)) {
         const score = scores[key];

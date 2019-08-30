@@ -44,13 +44,16 @@ export const CodeCategory: string = "code";
  * Typically weighted > default x1
  */
 export function anchorScoreAt(score: FiveStar): RepositoryScorer {
-    return async () => {
+    const scoreFingerprints = async () => {
         return {
-            name: "anchor",
-            category: AlwaysIncludeCategory,
             reason: `Weight to ${score} stars to penalize repositories about which we know little`,
             score,
         };
+    };
+    return {
+        name: "anchor",
+        category: AlwaysIncludeCategory,
+        scoreFingerprints,
     };
 }
 
@@ -60,7 +63,7 @@ export function anchorScoreAt(score: FiveStar): RepositoryScorer {
  * that will cost 1 star.
  */
 export function requireRecentCommit(opts: { days: number }): RepositoryScorer {
-    return async repo => {
+    const scoreFingerprints =  async repo => {
         const grt = repo.analysis.fingerprints.find(fp => fp.type === GitRecencyType);
         if (!grt) {
             return undefined;
@@ -71,10 +74,14 @@ export function requireRecentCommit(opts: { days: number }): RepositoryScorer {
         const date = new Date(grt.data.lastCommitTime);
         const days = daysSince(date);
         return {
-            name: "recency",
+
             score: adjustBy((1 - days) / (opts.days || 1)),
             reason: `Last commit ${days} days ago`,
         };
+    };
+    return {
+        name: "recency",
+        scoreFingerprints,
     };
 }
 
@@ -82,16 +89,19 @@ export function requireRecentCommit(opts: { days: number }): RepositoryScorer {
  * Limit languages used in a project
  */
 export function limitLanguages(opts: { limit: number }): RepositoryScorer {
-    return async repo => {
+    const scoreFingerprints = async repo => {
         const cm = repo.analysis.fingerprints.find(isCodeMetricsFingerprint);
         if (!cm) {
             return undefined;
         }
         return {
-            name: "multi-language",
             score: adjustBy(opts.limit - cm.data.languages.length),
             reason: `Found ${cm.data.languages.length} languages: ${cm.data.languages.map(l => l.language.name).join(",")}`,
         };
+    };
+    return {
+        name: "multi-language",
+        scoreFingerprints,
     };
 }
 
@@ -102,17 +112,20 @@ export function limitLanguages(opts: { limit: number }): RepositoryScorer {
  * are we trying to do microservices?
  */
 export function limitLinesOfCode(opts: { limit: number }): RepositoryScorer {
-    return async repo => {
+    const scoreFingerprints = async repo => {
         const cm = repo.analysis.fingerprints.find(isCodeMetricsFingerprint);
         if (!cm) {
             return undefined;
         }
         return {
-            name: "total-loc",
-            category: CodeCategory,
             score: adjustBy(-cm.data.lines / opts.limit),
             reason: `Found ${cm.data.lines} total lines of code`,
         };
+    };
+    return {
+        name: "total-loc",
+        category: CodeCategory,
+        scoreFingerprints,
     };
 }
 
@@ -120,7 +133,7 @@ export function limitLinesOfCode(opts: { limit: number }): RepositoryScorer {
  * Penalize repositories for having too many lines of code in the given language
  */
 export function limitLinesOfCodeIn(opts: { limit: number, language: Language, freeAmount?: number }): RepositoryScorer {
-    return async repo => {
+    const scoreFingerprints =  async repo => {
         const cm = repo.analysis.fingerprints.find(isCodeMetricsFingerprint);
         if (!cm) {
             return undefined;
@@ -128,10 +141,13 @@ export function limitLinesOfCodeIn(opts: { limit: number, language: Language, fr
         const target = cm.data.languages.find(l => l.language.name === opts.language.name);
         const targetLoc = target ? target.total : 0;
         return {
-            name: `limit-${opts.language.name} (${opts.limit})`,
             score: adjustBy(((opts.freeAmount || 0) - targetLoc) / opts.limit),
             reason: `Found ${targetLoc} lines of ${opts.language.name}`,
         };
+    };
+    return {
+        name: `limit-${opts.language.name} (${opts.limit})`,
+        scoreFingerprints,
     };
 }
 
@@ -139,7 +155,7 @@ export function limitLinesOfCodeIn(opts: { limit: number, language: Language, fr
  * Penalize repositories for having an excessive number of git branches
  */
 export function penalizeForExcessiveBranches(opts: { branchLimit: number }): RepositoryScorer {
-    return async repo => {
+    const scoreFingerprints =  async repo => {
         const branchCount = repo.analysis.fingerprints.find(f => f.type === BranchCountType);
         if (!branchCount) {
             return undefined;
@@ -147,10 +163,13 @@ export function penalizeForExcessiveBranches(opts: { branchLimit: number }): Rep
         // You get the first 2 branches for free. After that they start to cost
         const score = adjustBy(-(branchCount.data.count - 2) / opts.branchLimit);
         return branchCount ? {
-            name: BranchCountType,
             score,
             reason: `${branchCount.data.count} branches: Should not have more than ${opts.branchLimit}`,
         } : undefined;
+    };
+    return {
+        name: BranchCountType,
+        scoreFingerprints,
     };
 }
 
@@ -158,32 +177,35 @@ export function penalizeForExcessiveBranches(opts: { branchLimit: number }): Rep
  * Penalize repositories for having more than 1 virtual project,
  * as identified by a VirtualProjectFinder
  */
-export const PenalizeMonorepos: RepositoryScorer =
-    async repo => {
+export const PenalizeMonorepos: RepositoryScorer = {
+    scoreFingerprints: async repo => {
         const distinctPaths = _.uniq(repo.analysis.fingerprints.map(t => t.path)).length;
         return {
-            name: "monorepo",
             score: adjustBy(1 - distinctPaths / 2),
             reason: distinctPaths > 1 ?
                 `${distinctPaths} virtual projects: Prefer one project per repository` :
                 "Single project in repository",
         };
-    };
+
+    },
+    name: "monorepo",
+};
 
 /**
  * Penalize repositories without a license file
  */
-export const PenalizeNoLicense: RepositoryScorer =
-    async repo => {
+export const PenalizeNoLicense: RepositoryScorer = {
+    name: "foo",
+    category: CommunityCategory,
+    scoreFingerprints: async repo => {
         const license = repo.analysis.fingerprints.find(isLicenseFingerprint);
         const bad = !license || hasNoLicense(license.data);
         return {
-            name: "license",
-            category: CommunityCategory,
             score: bad ? 1 : 5,
             reason: bad ? "Repositories should have a license" : "Repository has a license",
         };
-    };
+    },
+};
 
 /**
  * Penalize repositories without a code of conduct file
@@ -206,15 +228,19 @@ export function requireAspectOfType(opts: {
     data?: any,
     category?: string,
 }): RepositoryScorer {
-    return async repo => {
+    const scoreFingerprints =  async repo => {
         const found = repo.analysis.fingerprints.find(fp => fp.type === opts.type &&
             (opts.data ? fp.sha === sha256(JSON.stringify(opts.data)) : true));
+        const score: FiveStar = !!found ? 5 : 1;
         return {
-            name: `${opts.type}-required`,
-            category: opts.category,
-            score: !!found ? 5 : 1,
+            score,
             reason: !found ? opts.reason : "Satisfactory",
         };
+    };
+    return {
+        name: `${opts.type}-required`,
+        category: opts.category,
+        scoreFingerprints,
     };
 }
 
@@ -223,17 +249,21 @@ export function requireAspectOfType(opts: {
  * Depends on globAspect
  */
 export function requireGlobAspect(opts: { glob: string, category?: string }): RepositoryScorer {
-    return async repo => {
+    const scoreFingerprints =  async repo => {
         const globs = repo.analysis.fingerprints.filter(isGlobMatchFingerprint);
         const found = globs
             .filter(gf => gf.data.glob === opts.glob)
             .filter(f => f.data.matches.length > 0);
+        const score: FiveStar = !!found ? 5 : 1;
         return {
-            name: `${opts.glob}-required`,
-            category: opts.category,
-            score: !!found ? 5 : 1,
+            score,
             reason: !found ? `Should have file for ${opts.glob}` : "Satisfactory",
         };
+    };
+    return {
+        name: `${opts.glob}-required`,
+        category: opts.category,
+        scoreFingerprints,
     };
 }
 
@@ -244,16 +274,19 @@ export function requireGlobAspect(opts: { glob: string, category?: string }): Re
  * @return {RepositoryScorer}
  */
 export function exposeFingerprintScore(name: string): RepositoryScorer {
-    return async repo => {
+    const scoreFingerprints =  async repo => {
         const found = repo.analysis.fingerprints
             .filter(isScoredAspectFingerprint)
             .find(fp => fp.type === name);
         return !!found ?
             {
-                name,
                 score: found.data.weightedScore,
                 reason: JSON.stringify(found.data.weightedScores),
             } as any :
             undefined;
+    };
+    return {
+        name,
+        scoreFingerprints,
     };
 }

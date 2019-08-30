@@ -32,6 +32,8 @@ import {
     ProblemStore,
     UndesirableUsageChecker,
 } from "./ProblemStore";
+import { Omit } from "../util/omit";
+import { CommunityCategory } from "../scorer/commonScorers";
 
 /**
  * Implemented by ProjectAnalysis or any other structure
@@ -100,6 +102,11 @@ export type ScoredRepo = TaggedRepo & { weightedScore: WeightedScore };
 
 export type RepoToScore = Pick<ProjectAnalysisResult, "analysis" | "id">;
 
+export interface BaseScorer {
+    readonly name: string;
+    readonly category?: string;
+}
+
 /**
  * Function that knows how to score a repository. Scoring is based on
  * fingerprints that have previously been extracted by aspects.
@@ -108,7 +115,16 @@ export type RepoToScore = Pick<ProjectAnalysisResult, "analysis" | "id">;
  * @return undefined if this scorer doesn't know how to score this repository.
  * Otherwise return a score.
  */
-export type RepositoryScorer = (repo: RepoToScore) => Promise<Score | undefined>;
+export interface RepositoryScorer extends BaseScorer {
+
+    scoreFingerprints: (r: RepoToScore) => Promise<Omit<Score, "name"> | undefined>;
+
+}
+
+export function isRepositoryScorer(s: BaseScorer): s is RepositoryScorer {
+    const maybe = s as RepositoryScorer;
+    return !!maybe.scoreFingerprints;
+}
 
 export interface TagAndScoreOptions {
 

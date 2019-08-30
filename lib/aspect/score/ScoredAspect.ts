@@ -49,6 +49,9 @@ export function isScoredAspectFingerprint(fp: FP): fp is FP<WeightedScore> {
  */
 export type PushScorer = (pili: PushImpactListenerInvocation) => Promise<Score>;
 
+/**
+ * Default properties to configure ScoredAspect
+ */
 const ScoredAspectDefaults: Pick<ScoredAspect, "stats" | "toDisplayableFingerprint"> = {
     stats: {
         defaultStatStatus: {
@@ -59,6 +62,9 @@ const ScoredAspectDefaults: Pick<ScoredAspect, "stats" | "toDisplayableFingerpri
     toDisplayableFingerprint: fp => starBand(fp.data.weightedScore),
 };
 
+/**
+ * Scorer that works with project content
+ */
 export type ProjectScorer = (p: Project) => Promise<Score | undefined>;
 
 /**
@@ -93,7 +99,7 @@ export function fingerprintScoringAspect(opts: {
         extract: async () => [],
         consolidate: async (fingerprints, p) => {
             const repoToScore: RepoToScore = { analysis: { id: p.id, fingerprints } };
-            const scores: Scores = await scoresFor(opts.scorers, repoToScore, {});
+            const scores: Scores = await fingerprintScoresFor(opts.scorers, repoToScore);
             const scored: Scored = { scores };
             const weightedScore = weightedCompositeScore(scored, opts.scoreWeightings);
             return toFingerprint(opts.name, weightedScore);
@@ -104,7 +110,7 @@ export function fingerprintScoringAspect(opts: {
 }
 
 /**
- * Calculate the risk of this compute with the given scorers, which should return a
+ * Calculate the risk of this push with the given scorers, which should return a
  * score from 1 (low) to 5 (high).
  */
 export function pushScoringAspect(
@@ -131,4 +137,21 @@ function toFingerprint(type: string, data: WeightedScore): FP<WeightedScore> {
         data,
         sha: sha256(JSON.stringify(data.weightedScore)),
     };
+}
+
+export async function fingerprintScoresFor(repositoryScorers: RepositoryScorer[],
+                                           toScore: RepoToScore): Promise<Scores> {
+    const scores: Scores = {};
+    for (const scorer of repositoryScorers) {
+        const sr = await scorer.scoreFingerprints(toScore);
+        if (sr) {
+            const score = {
+                ...sr,
+                name: scorer.name,
+                category: scorer.category,
+            };
+            scores[score.name] = score;
+        }
+    }
+    return scores;
 }
