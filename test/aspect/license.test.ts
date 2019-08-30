@@ -25,21 +25,21 @@ describe("license aspect", () => {
         const p = InMemoryProject.of();
         const fp: any = await license().extract(p, undefined);
         assert(!!fp.data);
-        assert.deepStrictEqual(fp.data, { classification: "None", content: undefined, path: undefined });
+        assert.deepStrictEqual(fp.data, { classification: "None", path: undefined });
     });
 
     it("should find Apache license at LICENSE", async () => {
         const p = InMemoryProject.of({ path: "LICENSE", content: asl });
         const fp: any = await license().extract(p, undefined);
         assert(!!fp.data);
-        assert.deepStrictEqual(fp.data, { classification: "Apache License", content: asl, path: "LICENSE" });
+        assert.deepStrictEqual(fp.data, { classification: "Apache License", path: "LICENSE" });
     });
 
     it("should find Apache license at license.txt", async () => {
         const p = InMemoryProject.of({ path: "license.txt", content: asl });
         const fp: any = await license().extract(p, undefined);
         assert(!!fp.data);
-        assert.deepStrictEqual(fp.data, { classification: "Apache License", content: asl, path: "license.txt" });
+        assert.deepStrictEqual(fp.data, { classification: "Apache License", path: "license.txt" });
     });
 
 });
