@@ -54,7 +54,7 @@ export interface PushScorer extends Scorer {
 /**
  * Default properties to configure ScoredAspect
  */
-const ScoredAspectDefaults: Pick<ScoredAspect, "stats" | "toDisplayableFingerprint"> = {
+export const ScoredAspectDefaults: Pick<ScoredAspect, "stats" | "toDisplayableFingerprint"> = {
     stats: {
         defaultStatStatus: {
             entropy: false,
@@ -87,39 +87,32 @@ export function isPushScorer(scorer: AspectCompatibleScorer): scorer is PushScor
     return !!maybe.scorePush;
 }
 
+export function isPushOrProjectScorer(scorer: AspectCompatibleScorer): scorer is (PushScorer | ProjectScorer) {
+    const maybe = scorer as ProjectScorer;
+    return !!maybe.scoreProject || isPushScorer(scorer);
+}
+
 /**
  * Score this aspect based on projects, from low to high.
  * Requires no other fingerprints
  */
-export function pushScoringAspect(
+function scoringAspect(
     opts: {
-        scorers: Array<PushScorer | ProjectScorer>,
+        scorers: Array<AspectCompatibleScorer>,
         scoreWeightings?: ScoreWeightings,
     } & AspectMetadata): ScoredAspect {
+    const pushScorers = opts.scorers.filter(isPushOrProjectScorer);
+    const repositoryScorers = opts.scorers.filter(isRepositoryScorer);
     return {
         extract: async (p, pili) => {
-            const scores: Scores = await pushScoresFor(opts.scorers, pili);
+            const scores: Scores = await pushAndProjectScoresFor(pushScorers, pili);
             const scored: Scored = { scores };
             const weightedScore = weightedCompositeScore(scored, opts.scoreWeightings);
             return toFingerprint(opts.name, weightedScore);
         },
-        ...ScoredAspectDefaults,
-        ...opts,
-    };
-}
-
-/**
- * Score this aspect based on fingerprints, from low to high
- */
-export function fingerprintScoringAspect(opts: {
-    scorers: RepositoryScorer[],
-    scoreWeightings?: ScoreWeightings,
-} & AspectMetadata): ScoredAspect {
-    return {
-        extract: async () => [],
         consolidate: async (fingerprints, p) => {
             const repoToScore: RepoToScore = { analysis: { id: p.id, fingerprints } };
-            const scores: Scores = await fingerprintScoresFor(opts.scorers, repoToScore);
+            const scores: Scores = await fingerprintScoresFor(repositoryScorers, repoToScore);
             const scored: Scored = { scores };
             const weightedScore = weightedCompositeScore(scored, opts.scoreWeightings);
             return toFingerprint(opts.name, weightedScore);
@@ -155,8 +148,8 @@ export async function fingerprintScoresFor(repositoryScorers: RepositoryScorer[]
     return scores;
 }
 
-export async function pushScoresFor(pushScorers: Array<PushScorer | ProjectScorer>,
-                                    toScore: PushImpactListenerInvocation): Promise<Scores> {
+async function pushAndProjectScoresFor(pushScorers: Array<PushScorer | ProjectScorer>,
+                                       toScore: PushImpactListenerInvocation): Promise<Scores> {
     const scores: Scores = {};
     for (const scorer of pushScorers) {
         const sr = isPushScorer(scorer) ?
@@ -174,30 +167,16 @@ export async function pushScoresFor(pushScorers: Array<PushScorer | ProjectScore
     return scores;
 }
 
-export function emitScoringAspects(name: string,
-                                   scorers: AspectCompatibleScorer[],
-                                   scoreWeightings: ScoreWeightings): ScoredAspect[] {
-    const fScorers = scorers.filter(isRepositoryScorer);
-    const pScorers = scorers.filter(s => !isRepositoryScorer(s)) as any;
-    const pushScoreSuffix = fScorers.length > 0 && pScorers.length > 0 ? "_push" : "";
-    const result: ScoredAspect[] = [];
-    if (pScorers.length > 0) {
-        result.push(pushScoringAspect(
-            {
-                name: name + pushScoreSuffix,
-                displayName: name,
-                scorers: pScorers,
-                scoreWeightings,
-            }));
-    }
-    if (fScorers.length > 0) {
-        result.push(fingerprintScoringAspect(
+export function emitScoringAspect(name: string,
+                                  scorers: AspectCompatibleScorer[],
+                                  scoreWeightings: ScoreWeightings): ScoredAspect | undefined {
+    return scorers.length > 0 ?
+        scoringAspect(
             {
                 name,
                 displayName: name,
-                scorers: fScorers,
+                scorers,
                 scoreWeightings,
-            }));
-    }
-    return result;
+            }) :
+        undefined;
 }

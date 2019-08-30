@@ -60,7 +60,7 @@ import { isDeliveryAspect } from "../aspect/delivery/DeliveryAspect";
 import { UndesirableUsageChecker } from "../aspect/ProblemStore";
 import {
     AspectCompatibleScorer,
-    emitScoringAspects,
+    emitScoringAspect,
     ScoredAspect,
 } from "../aspect/score/ScoredAspect";
 import { api } from "../routes/api";
@@ -168,9 +168,10 @@ export interface AspectSupportOptions {
  * If we're in local mode, expose analyzer commands and HTTP endpoints.
  */
 export function aspectSupport(options: AspectSupportOptions): ExtensionPack {
-    const scoringAspects: ScoredAspect[] = _.flatten(Object.getOwnPropertyNames(options.scorers)
-        .map(name =>
-            emitScoringAspects(name, toArray(options.scorers[name] || []), options.weightings)));
+    const scoringAspects: ScoredAspect[] = _.flatten(
+        Object.getOwnPropertyNames(options.scorers)
+            .map(name => emitScoringAspect(name, toArray(options.scorers[name] || []), options.weightings)))
+        .filter(a => !!a);
     const aspects = [...toArray(options.aspects || []), ...scoringAspects];
 
     return {
