@@ -180,6 +180,7 @@ export interface AspectSupportOptions {
  * If we're in local mode, expose analyzer commands and HTTP endpoints.
  */
 export function aspectSupport(options: AspectSupportOptions): ExtensionPack {
+
     const scoringAspects: ScoredAspect[] = _.flatten(Object.getOwnPropertyNames(options.scorers || {})
         .map(name =>
             emitScoringAspects(name, toArray(options.scorers[name] || []), options.weightings)));

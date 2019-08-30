@@ -21,5 +21,5 @@ export interface AspectReportDetailsRegistry {
     /**
      * Find the known AspectReportDetails for the provided aspect
      */
-    reportDetailsOf(type: string | Aspect, workspaceId): Promise<AspectReportDetails | undefined>;
+    reportDetailsOf(type: string | Aspect, workspaceId: string): Promise<AspectReportDetails | undefined>;
 }

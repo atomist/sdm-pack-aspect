@@ -32,7 +32,11 @@ export interface AspectReport {
     aspects: ReportDetails[];
 }
 
-export async function getAspectReports(fus: Array<{ owner: string, repo: string, fingerprints: Array<FingerprintKind & { details: AspectReportDetails }> }>,
+export async function getAspectReports(fus: Array<{
+                                           owner: string,
+                                           repo: string,
+                                           fingerprints: Array<FingerprintKind & { details: AspectReportDetails }>,
+                                       }>,
                                        aspectRegistry: AspectRegistry & AspectReportDetailsRegistry,
                                        workspaceId: string): Promise<AspectReport[]> {
     const aspects = aspectRegistry.aspects;
@@ -41,7 +45,7 @@ export async function getAspectReports(fus: Array<{ owner: string, repo: string,
 
     for (const fu of fus) {
         for (const f of fu.fingerprints) {
-            const details = await aspectRegistry.reportDetailsOf(f.type, aspectRegistry);
+            const details = await aspectRegistry.reportDetailsOf(f.type, workspaceId);
             if (!!details) {
                 f.details = details;
                 categories.push(details.category);
