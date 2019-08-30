@@ -17,7 +17,6 @@
 import {
     BannerSection,
     Configuration,
-    HttpClientFactory,
 } from "@atomist/automation-client";
 import { ExpressCustomizer } from "@atomist/automation-client/lib/configuration";
 import {
@@ -228,7 +227,7 @@ export function aspectSupport(options: AspectSupportOptions): ExtensionPack {
             const exposeWeb = options.exposeWeb !== undefined ? options.exposeWeb : isInLocalMode();
             if (exposeWeb) {
                 const { customizers, routesToSuggestOnStartup } =
-                    orgVisualizationEndpoints(sdmConfigClientFactory(cfg), cfg.http.client.factory,
+                    orgVisualizationEndpoints(sdmConfigClientFactory(cfg), cfg,
                         analysisTracking, options, aspects);
                 cfg.http.customizers.push(...customizers);
                 routesToSuggestOnStartup.forEach(rtsos => {
@@ -248,7 +247,7 @@ function suggestRoute({ title, route }: { title: string, route: string }):
 }
 
 function orgVisualizationEndpoints(dbClientFactory: ClientFactory,
-                                   httpClientFactory: HttpClientFactory,
+                                   configuration: Configuration,
                                    analysisTracking: AnalysisTracking,
                                    options: AspectSupportOptions,
                                    aspects: Aspect[]): {
@@ -263,6 +262,7 @@ function orgVisualizationEndpoints(dbClientFactory: ClientFactory,
         undesirableUsageChecker: options.undesirableUsageChecker,
         scorers: toArray(options.inMemoryScorers || []),
         scoreWeightings: options.weightings || DefaultScoreWeightings,
+        configuration,
     })
         .withTaggers(...toArray(options.taggers || []));
 
@@ -275,7 +275,7 @@ function orgVisualizationEndpoints(dbClientFactory: ClientFactory,
         };
     }
 
-    const aboutStaticPages = addWebAppRoutes(aspectRegistry, resultStore, analysisTracking, httpClientFactory,
+    const aboutStaticPages = addWebAppRoutes(aspectRegistry, resultStore, analysisTracking, configuration.http.client.factory,
         options.instanceMetadata || metadata());
 
     return {

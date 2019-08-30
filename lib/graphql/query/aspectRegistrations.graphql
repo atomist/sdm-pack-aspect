@@ -1,0 +1,14 @@
+query AspectRegistrations($enabled: [String], $name: [String]) {
+    AspectRegistration(enabled: $enabled, name: $name) {
+        name
+        displayName
+        description
+        shortName
+        unit
+        url
+        category
+        endpoint
+        uuid
+        enabled
+    }
+}

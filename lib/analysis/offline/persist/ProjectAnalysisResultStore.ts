@@ -53,7 +53,6 @@ export type FingerprintKind = Pick<FP, "type" | "name">;
 export interface FingerprintUsage extends CohortAnalysis {
     name: string;
     type: string;
-    categories: string[];
 }
 
 export interface TreeQuery {

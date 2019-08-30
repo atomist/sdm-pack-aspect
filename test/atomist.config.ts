@@ -32,7 +32,6 @@ import {
     DockerPorts,
 } from "@atomist/sdm-pack-docker";
 import {
-    Aspect,
     NpmDeps,
     VirtualProjectFinder,
 } from "@atomist/sdm-pack-fingerprints";
@@ -46,7 +45,6 @@ import {
     mavenBuilder,
     MavenDefaultOptions,
 } from "@atomist/sdm-pack-spring";
-import * as _ from "lodash";
 import { sdmConfigClientFactory } from "../lib/analysis/offline/persist/pgClientFactory";
 import { PostgresProjectAnalysisResultStore } from "../lib/analysis/offline/persist/PostgresProjectAnalysisResultStore";
 import {
@@ -54,6 +52,7 @@ import {
     Tagger,
     TaggerDefinition,
 } from "../lib/aspect/AspectRegistry";
+import { AspectWithReportDetails } from "../lib/aspect/AspectReportDetailsRegistry";
 import { CodeMetricsAspect } from "../lib/aspect/common/codeMetrics";
 import { codeOwnership } from "../lib/aspect/common/codeOwnership";
 import { CodeOfConduct } from "../lib/aspect/community/codeOfConduct";
@@ -74,10 +73,6 @@ import { BranchCount } from "../lib/aspect/git/branchCount";
 import { GitRecency } from "../lib/aspect/git/gitActivity";
 import { AcceptEverythingUndesirableUsageChecker } from "../lib/aspect/ProblemStore";
 import { ExposedSecrets } from "../lib/aspect/secret/exposedSecrets";
-import {
-    registerCategories,
-    registerReportDetails,
-} from "../lib/customize/categories";
 import {
     aspectSupport,
     DefaultVirtualProjectFinder,
@@ -160,33 +155,64 @@ export const configuration: Configuration = configure<TestGoals>(async sdm => {
 
 });
 
-function aspects(): Aspect[] {
-    registerCategories(DockerFrom, "Docker");
-    registerReportDetails(DockerFrom, {
-        name: "Docker base images",
-        shortName: "images",
-        unit: "tag",
-        url: "fingerprint/docker-base-image/*?byOrg=true&presence=false&progress=false&otherLabel=false&trim=false",
-        description: "Docker base images in use across all repositories in your workspace, " +
-        "broken out by image label and repositories where used.",
-    });
-    registerCategories(DockerfilePath, "Docker");
-    registerCategories(DockerPorts, "Docker");
-    registerCategories(BranchCount, "Git");
-    registerCategories(GitRecency, "Git");
+function aspects(): AspectWithReportDetails[] {
     return [
-        DockerFrom,
+        {
+            ...DockerFrom,
+            details: {
+                shortName: "images",
+                unit: "tag",
+                category: "Docker",
+                url: "fingerprint/docker-base-image/*?byOrg=true&presence=false&progress=false&otherLabel=false&trim=false",
+                description: "Docker base images in use across all repositories in your workspace, " +
+                    "broken out by image label and repositories where used.",
+            },
+        },
         DockerfilePath,
         DockerPorts,
         license(),
         // Based on license, decide the presence of a license: Not spread
         LicensePresence,
         codeOwnership(),
-        NpmDeps,
+        {
+            ...NpmDeps,
+            details: {
+                shortName: "dependency",
+                unit: "version",
+                category: "Node.js",
+                url: "drift?type=npm-project-deps&band=true&repos=true",
+                description: "Node direct dependencies in use across all repositories in your workspace, " +
+                    "grouped by Drift Level.",
+            },
+        },
         CodeOfConduct,
         ExposedSecrets,
-        BranchCount,
-        GitRecency,
+        {
+            ...BranchCount,
+            details:
+                {
+                    shortName: "branches",
+                    unit: "branch",
+                    category: "Git",
+                    url: `fingerprint/${BranchCount.name}/${BranchCount.name}?byOrg=true&presence=false&progress=false&otherLabel=false&trim=false`,
+                    description: "Number of Git branches across repositories in your workspace, " +
+                        "grouped by Drift Level.",
+                    manage: false,
+                },
+        },
+        {
+            ...GitRecency,
+            details:
+                {
+                    shortName: "recency",
+                    unit: "days",
+                    category: "Git",
+                    url: `fingerprint/${GitRecency.name}/${GitRecency.name}?byOrg=true&presence=false&progress=false&otherLabel=false&trim=false`,
+                    description: "Number of Git branches across repositories in your workspace, " +
+                        "grouped by Drift Level.",
+                    manage: false,
+                },
+        },
         // This is expensive as it requires deeper cloning
         // gitActiveCommitters(30),
         // This is also expensive
