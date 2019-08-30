@@ -43,7 +43,7 @@ function displayRepository(repo: AnalysisTrackingRepo & { repoAnalysisId: string
     const insightsLink = repo.snapshotId ? <a href={"/repository?id=" + repo.snapshotId}>
         <img src="/hexagonal-fruit-of-power.png" className="linkToInsightsImage"></img>
     </a> : undefined;
-    const aspectSummary = repo.progress === "Planned" ? undefined : summarizeAspects(repo.aspects);
+    const aspectSummary = repo.progress === "Planned" || repo.keptExisting ? undefined : summarizeAspects(repo.aspects);
     return <div className={className}>
         <p className="analysisRepoDescription">{repo.description} {gitLink} {insightsLink} </p>
         <span className="timeTakenToAnalyzeRepo">{timeTaken}</span>
@@ -64,8 +64,8 @@ function summarizeAspects(aspects: AnalysisTrackingAspect[]): React.ReactElement
 
 function displayAspectError(ae: { error?: Error, aspectName: string }): React.ReactElement {
     return <div className="failedAspect">
-        {ae.aspectName}
-        {displayFailure({ errorMessage: ae.error.message, stackTrace: ae.error.stack })}
+        <p>{ae.aspectName} failed with: {ae.error.message}</p>
+        <pre>{ae.error.stack}</pre>
     </div>;
 }
 function displayFailure(repo: { errorMessage?: string, stackTrace?: string }): React.ReactElement {
