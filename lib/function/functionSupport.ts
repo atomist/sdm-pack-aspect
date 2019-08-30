@@ -1,8 +1,11 @@
 import { guid } from "@atomist/automation-client";
-import { metadata } from "@atomist/sdm";
+import {
+    ExtensionPack,
+    metadata,
+} from "@atomist/sdm";
 import { Aspect } from "@atomist/sdm-pack-fingerprints";
 
-export function functionSupport(options: { aspect: Aspect }) {
+export function functionSupport(options: { aspect: Aspect }): ExtensionPack {
     return {
         ...metadata(),
         configure: sdm => {

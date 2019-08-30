@@ -23,4 +23,3 @@ export async function configure(cfg: Configuration): Promise<SoftwareDeliveryMac
     configureLogging(clientLoggingConfiguration(mergedConfiguration));
     return mergedConfiguration;
 }
-

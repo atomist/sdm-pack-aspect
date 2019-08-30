@@ -10,8 +10,9 @@ import {
     FP,
 } from "@atomist/sdm-pack-fingerprints";
 import { createFingerprintComputer } from "@atomist/sdm-pack-fingerprints/lib/machine/runner";
+import { AspectRequest } from "./endpoint";
 
-export async function extract(request: { repo: { owner: string, name: string, branch: string, providerId: string, apiUrl: string }, token: string, commit: { sha: string, message: string } }, cfg: SoftwareDeliveryMachineConfiguration): Promise<Array<FP<any>>> {
+export async function extract(request: AspectRequest, cfg: SoftwareDeliveryMachineConfiguration): Promise<Array<FP<any>>> {
     const id = GitHubRepoRef.from({ owner: request.repo.owner, repo: request.repo.name, branch: request.repo.branch });
     const credentials = { token: request.token };
     return cfg.sdm.projectLoader.doWithProject({ id, credentials, readOnly: true }, async p => {
