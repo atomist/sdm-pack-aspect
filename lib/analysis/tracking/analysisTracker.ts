@@ -44,6 +44,7 @@ interface AnalysisForReporting {
     progress: AnalysisProgress;
     repos: RepoForReporting[];
     error?: Error;
+    completedAt?: Date;
 }
 
 export interface AnalysisReport {
@@ -142,6 +143,7 @@ export class RepoBeingTracked {
 // make the interface later
 export class AnalysisBeingTracked {
     public error?: Error;
+    public completedAt: Date | undefined;
 
     private readonly repos: RepoBeingTracked[] = [];
     constructor(public readonly me: AnalysisForTracking) {
@@ -159,6 +161,7 @@ export class AnalysisBeingTracked {
     }
 
     public stop(): void {
+        this.completedAt = new Date();
         this.me.progress = "Stopped";
     }
 
@@ -172,6 +175,7 @@ export class AnalysisBeingTracked {
             ...this.me,
             error: this.error,
             repos: this.repos.map(s => s.report()),
+            completedAt: this.completedAt,
         };
     }
 }
