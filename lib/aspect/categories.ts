@@ -37,7 +37,7 @@ async function aspectReportDetailsOf(type: string,
                                      details: Record<string, AspectReportDetails>,
                                      aspectRegistry: AspectReportDetailsRegistry): Promise<AspectReportDetails> {
     if (!details[type]) {
-        details[type] = await aspectRegistry.reportDetailsOf(type, workspaceId);
+        details[type] = await aspectRegistry.reportDetailsOf(type, workspaceId) || {};
     }
     return details[type];
 }
@@ -57,12 +57,8 @@ export async function getAspectReports(fus: Array<{
     for (const fu of fus) {
         for (const f of fu.fingerprints) {
             const details = await aspectReportDetailsOf(f.type, workspaceId, loadedDetails, aspectRegistry);
-            if (!!details) {
-                f.details = details;
-                categories.push(details.category);
-            } else {
-                f.details = {};
-            }
+            f.details = details;
+            categories.push(details.category);
         }
     }
 
@@ -79,10 +75,13 @@ export async function getAspectReports(fus: Array<{
                 aspects: _.uniqBy(allFps.map(f => {
                     const rd = f.details;
                     return {
-                        name: (aspectRegistry.aspectOf(f.type) || {} as any).displayName,
-                        type: (aspectRegistry.aspectOf(f.type) || {} as any).name,
-                        ...rd,
+                        name: (aspectRegistry.aspectOf(f.type) || {} as any).displayName || (rd as any).displayName,
+                        type: (aspectRegistry.aspectOf(f.type) || {} as any).name || (rd as any).name,
+                        description: rd.description,
+                        shortName: rd.shortName,
+                        unit: rd.unit,
                         url: `/api/v1/${workspaceId}/${rd.url}`,
+                        manage: rd.manage,
                     };
                 }), "url")
                     .sort((r1, r2) => {
