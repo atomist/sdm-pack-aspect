@@ -98,7 +98,7 @@ export function isPushOrProjectScorer(scorer: AspectCompatibleScorer): scorer is
  */
 function scoringAspect(
     opts: {
-        scorers: Array<AspectCompatibleScorer>,
+        scorers: AspectCompatibleScorer[],
         scoreWeightings?: ScoreWeightings,
     } & AspectMetadata): ScoredAspect {
     const pushScorers = opts.scorers.filter(isPushOrProjectScorer);
