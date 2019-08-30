@@ -84,7 +84,6 @@ import {
 } from "../lib/machine/aspectSupport";
 import * as commonScorers from "../lib/scorer/commonScorers";
 import * as commonTaggers from "../lib/tagger/commonTaggers";
-import { tagsFromClassificationFingerprints } from "../lib/tagger/commonTaggers";
 
 // Ensure we start up in local mode
 process.env.ATOMIST_MODE = "local";
@@ -272,7 +271,7 @@ export function taggers(opts: Partial<TaggersParams>): TaggerDefinition[] {
                 fp.name.includes("csproj") && fp.data.matches.length > 0),
         },
 
-        ...tagsFromClassificationFingerprints("maven", "gradle"),
+        ...commonTaggers.tagsFromClassificationFingerprints("maven", "gradle"),
     ];
 }
 
