@@ -28,7 +28,8 @@ import { showTiming } from "../util/showTiming";
 import {
     AspectRegistry,
     isTagger,
-    RepositoryScorer, RepoToScore,
+    RepositoryScorer,
+    RepoToScore,
     ScoredRepo,
     Tag,
     TagAndScoreOptions,
