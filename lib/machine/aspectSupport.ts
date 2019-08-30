@@ -52,13 +52,13 @@ import {
     AnalysisTracking,
 } from "../analysis/tracking/analysisTracker";
 import {
-    CombinationTagger,
     RepositoryScorer,
     TaggerDefinition,
 } from "../aspect/AspectRegistry";
 import { DefaultAspectRegistry } from "../aspect/DefaultAspectRegistry";
 import { isDeliveryAspect } from "../aspect/delivery/DeliveryAspect";
 import { UndesirableUsageChecker } from "../aspect/ProblemStore";
+import { fingerprintScoringAspect } from "../aspect/score/ScoredAspect";
 import { api } from "../routes/api";
 import { addWebAppRoutes } from "../routes/web-app/webAppRoutes";
 import { ScoreWeightings } from "../scorer/Score";
@@ -112,14 +112,15 @@ export interface AspectSupportOptions {
     taggers?: TaggerDefinition | TaggerDefinition[];
 
     /**
-     * Special taggers that can see all fingerprints on a project.
+     * Scoring fingerprints. Name to scorers
      */
-    combinationTaggers?: CombinationTagger | CombinationTagger[];
+    scorers?: Record<string, RepositoryScorer | RepositoryScorer[]>;
 
     /**
-     * Scorers that rank projects based on fingerprint data.
+     * Scorers that are computed in memory. Allows for faster iteration on scoring logic.
+     * May ultimately be promoted to scorers.
      */
-    scorers?: RepositoryScorer | RepositoryScorer[];
+    inMemoryScorers?: RepositoryScorer | RepositoryScorer[];
 
     /**
      * Optional weightings for different scorers. The key is scorer name.
@@ -161,6 +162,15 @@ export interface AspectSupportOptions {
  * If we're in local mode, expose analyzer commands and HTTP endpoints.
  */
 export function aspectSupport(options: AspectSupportOptions): ExtensionPack {
+    const fingerprintScorers = Object.getOwnPropertyNames(options.scorers).map(name =>
+        fingerprintScoringAspect(
+            {
+                name,
+                displayName: name,
+                scorers: toArray(options.scorers[name]) || [],
+            }));
+    const aspects = [...toArray(options.aspects || []), ...fingerprintScorers];
+
     return {
         ...metadata(),
         configure: sdm => {
@@ -171,7 +181,7 @@ export function aspectSupport(options: AspectSupportOptions): ExtensionPack {
                 // If we're in local mode, expose analyzer commands and
                 // HTTP endpoints
                 const analyzer = createAnalyzer(
-                    toArray(options.aspects),
+                    aspects,
                     options.virtualProjectFinder || exports.DefaultVirtualProjectFinder);
 
                 sdm.addCommand(analyzeGitHubByQueryCommandRegistration(analyzer, analysisTracking));
@@ -187,13 +197,13 @@ export function aspectSupport(options: AspectSupportOptions): ExtensionPack {
                     // Add supporting for calculating fingerprints on every push
                     sdm.addExtensionPacks(fingerprintSupport({
                         pushImpactGoal: options.goals.pushImpact as PushImpact,
-                        aspects: options.aspects,
+                        aspects,
                         rebase: options.rebase,
                         publishFingerprints: options.publishFingerprints,
                     }));
                 }
 
-                toArray(options.aspects)
+                aspects
                     .filter(isDeliveryAspect)
                     .filter(a => a.canRegister(sdm, options.goals))
                     .forEach(da => da.register(sdm, options.goals, options.publishFingerprints));
@@ -203,7 +213,7 @@ export function aspectSupport(options: AspectSupportOptions): ExtensionPack {
             if (exposeWeb) {
                 const { customizers, routesToSuggestOnStartup } =
                     orgVisualizationEndpoints(sdmConfigClientFactory(cfg), cfg.http.client.factory,
-                        analysisTracking, options);
+                        analysisTracking, options, aspects);
                 cfg.http.customizers.push(...customizers);
                 routesToSuggestOnStartup.forEach(rtsos => {
                     cfg.logging.banner.contributors.push(suggestRoute(rtsos));
@@ -224,21 +234,21 @@ function suggestRoute({ title, route }: { title: string, route: string }):
 function orgVisualizationEndpoints(dbClientFactory: ClientFactory,
                                    httpClientFactory: HttpClientFactory,
                                    analysisTracking: AnalysisTracking,
-                                   options: AspectSupportOptions): {
-        routesToSuggestOnStartup: Array<{ title: string, route: string }>,
-        customizers: ExpressCustomizer[],
-    } {
+                                   options: AspectSupportOptions,
+                                   aspects: Aspect[]): {
+    routesToSuggestOnStartup: Array<{ title: string, route: string }>,
+    customizers: ExpressCustomizer[],
+} {
     const resultStore = analysisResultStore(dbClientFactory);
     const aspectRegistry = new DefaultAspectRegistry({
         idealStore: resultStore,
         problemStore: resultStore,
-        aspects: toArray(options.aspects || []),
+        aspects,
         undesirableUsageChecker: options.undesirableUsageChecker,
-        scorers: toArray(options.scorers || []),
+        scorers: toArray(options.inMemoryScorers || []),
         scoreWeightings: options.weightings || DefaultScoreWeightings,
     })
-        .withTaggers(...toArray(options.taggers || []))
-        .withCombinationTaggers(...toArray(options.combinationTaggers || []));
+        .withTaggers(...toArray(options.taggers || []));
 
     const aboutTheApi = api(resultStore, aspectRegistry);
 
@@ -255,7 +265,7 @@ function orgVisualizationEndpoints(dbClientFactory: ClientFactory,
     return {
         routesToSuggestOnStartup:
             [...aboutStaticPages.routesToSuggestOnStartup,
-            ...aboutTheApi.routesToSuggestOnStartup],
+                ...aboutTheApi.routesToSuggestOnStartup],
         customizers: [aboutStaticPages.customizer, aboutTheApi.customizer],
     };
 }

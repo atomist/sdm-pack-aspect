@@ -23,7 +23,6 @@ import {
 } from "@atomist/sdm-pack-fingerprints";
 import { Aspect } from "@atomist/sdm-pack-fingerprints/lib/machine/Aspect";
 import { ProjectAnalysisResult } from "../analysis/ProjectAnalysisResult";
-import { TagContext } from "../routes/api";
 import {
     Score,
     WeightedScore,
@@ -62,7 +61,7 @@ export interface Tag {
     severity?: Severity;
 }
 
-export type TagTest = (fp: FP, id: RepoRef, tagContext: TagContext) => boolean;
+export type TagTest = (repoToScore: RepoToScore) => Promise<boolean>;
 
 /**
  * Determine zero or one tag in this fingerprint.
@@ -95,24 +94,11 @@ export function isTagger(t: TaggerDefinition): t is Tagger {
     return !!maybe.test;
 }
 
-/**
- * Determine zero or one tag from this set of fingerprints
- */
-export interface CombinationTagger extends Tag {
-
-    /**
-     * Test for the relevance of this tag given all fingerprints on this repository
-     * @param {FP} fp fingerprint to test
-     * @param {RemoteRepoRef} id id of repo to text
-     * @param {TagContext} tagContext context of this cohort of repos
-     * @return {boolean}
-     */
-    test(fp: FP[], id: RepoRef, tagContext: TagContext): boolean;
-}
-
-export type TaggedRepo = ProjectAnalysisResult & { tags: Tag[] };
+export type TaggedRepo = RepoToScore & { tags?: Tag[] };
 
 export type ScoredRepo = TaggedRepo & { weightedScore: WeightedScore };
+
+export type RepoToScore = Pick<ProjectAnalysisResult, "analysis" | "id">;
 
 /**
  * Function that knows how to score a repository. Scoring is based on
@@ -122,7 +108,7 @@ export type ScoredRepo = TaggedRepo & { weightedScore: WeightedScore };
  * @return undefined if this scorer doesn't know how to score this repository.
  * Otherwise return a score.
  */
-export type RepositoryScorer = (repo: TaggedRepo, allRepos: TaggedRepo[]) => Promise<Score | undefined>;
+export type RepositoryScorer = (repo: RepoToScore) => Promise<Score | undefined>;
 
 export interface TagAndScoreOptions {
 

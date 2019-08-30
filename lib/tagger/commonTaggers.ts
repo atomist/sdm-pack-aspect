@@ -17,7 +17,6 @@
 import { logger } from "@atomist/automation-client";
 import {
     AspectRegistry,
-    CombinationTagger,
     Tagger,
     WorkspaceSpecificTagger,
 } from "../aspect/AspectRegistry";
@@ -46,7 +45,7 @@ export function tagsFromClassificationFingerprints(...tags: string[]): Tagger[] 
     return tags.map(name => ({
         name,
         description: "From fingerprint",
-        test: fp => isClassificationDataFingerprint(fp) && fp.data.tags.includes(name),
+        test: async repo => repo.analysis.fingerprints.some(fp => isClassificationDataFingerprint(fp) && fp.data.tags.includes(name)),
     }));
 }
 
@@ -58,7 +57,7 @@ export const Monorepo: Tagger = {
     name: "monorepo",
     description: "Contains multiple virtual projects",
     severity: "warn",
-    test: fp => !!fp.path && fp.path.length > 0,
+    test: async repo => repo.analysis.fingerprints.some(fp => !!fp.path && fp.path.length > 0),
 };
 
 /**
@@ -66,20 +65,21 @@ export const Monorepo: Tagger = {
  */
 export const Vulnerable: Tagger = {
     name: "vulnerable",
-    description: "Has exposed secrets", test: fp => fp.type === ExposedSecrets.name,
+    description: "Has exposed secrets",
+    test: async repo => repo.analysis.fingerprints.some(fp => fp.type === ExposedSecrets.name),
     severity: "error",
 };
 
 export const HasLicense: Tagger = {
     name: "license",
     description: "Repositories should have a license",
-    test: fp => isLicenseFingerprint(fp) && !hasNoLicense(fp.data),
+    test: async repo => repo.analysis.fingerprints.some(fp => isLicenseFingerprint(fp) && !hasNoLicense(fp.data)),
 };
 
 export const HasCodeOfConduct: Tagger = {
     name: "code-of-conduct",
     description: "Repositories should have a code of conduct",
-    test: fp => fp.type === CodeOfConductType,
+    test: async repo => repo.analysis.fingerprints.some(fp => fp.type === CodeOfConductType),
 };
 
 export const HasChangeLog: Tagger = globRequired({
@@ -104,13 +104,13 @@ export function dead(opts: { deadDays: number }): Tagger {
         name: "dead?",
         description: `No git activity in last ${opts.deadDays} days`,
         severity: "error",
-        test: fp => {
+        test: async repo => repo.analysis.fingerprints.some(fp => {
             if (fp.type === GitRecencyType) {
                 const date = new Date(fp.data);
                 return daysSince(date) > opts.deadDays;
             }
             return false;
-        },
+        }),
     };
 }
 
@@ -120,7 +120,7 @@ export function dead(opts: { deadDays: number }): Tagger {
 export const SoleCommitter: Tagger = {
     name: "sole-committer",
     description: "Projects with one committer",
-    test: fp => fp.type === GitActivesType && fp.data.count === 1,
+    test: async repo => repo.analysis.fingerprints.some(fp => fp.type === GitActivesType && fp.data.count === 1),
 };
 
 /**
@@ -131,7 +131,7 @@ export function excessiveBranchCount(opts: { maxBranches: number }): Tagger {
         name: `>${opts.maxBranches} branches`,
         description: "git branch count",
         severity: "warn",
-        test: fp => fp.type === BranchCountType && fp.data.count > opts.maxBranches,
+        test: async repo => repo.analysis.fingerprints.some(fp => fp.type === BranchCountType && fp.data.count > opts.maxBranches),
     };
 }
 
@@ -142,14 +142,15 @@ export function lineCountTest(opts: { name: string, lineCountTest: (lineCount: n
     return {
         name: opts.name,
         description: "Repo size",
-        test: fp => isCodeMetricsFingerprint(fp) && opts.lineCountTest(fp.data.lines),
+        test: async repo => repo.analysis.fingerprints.some(fp => isCodeMetricsFingerprint(fp) && opts.lineCountTest(fp.data.lines)),
     };
 }
 
 export function globRequired(opts: { name: string, description: string, glob: string }): Tagger {
     return {
         ...opts,
-        test: fp => isGlobMatchFingerprint(fp) && fp.data.glob === opts.glob && fp.data.matches.length > 0,
+        test: async repo => repo.analysis.fingerprints
+            .some(fp => isGlobMatchFingerprint(fp) && fp.data.glob === opts.glob && fp.data.matches.length > 0),
     };
 }
 
@@ -165,12 +166,12 @@ export const isProblematic: WorkspaceSpecificTagger = {
         logger.info("Creating problem tagger for workspace %s", workspaceId);
         const checker = await aspectRegistry.undesirableUsageCheckerFor(workspaceId);
         if (checker) {
-            return fp => {
+            return async repo => repo.analysis.fingerprints.some(fp => {
                 const problems = checker.check(fp, workspaceId);
                 return problems.length > 0;
-            };
+            });
         }
-        return () => false;
+        return async () => false;
     },
 };
 
@@ -178,13 +179,13 @@ export const isProblematic: WorkspaceSpecificTagger = {
  * Tag repos with recent activity by a number of contributors.
  * Depends on git recency and git activity aspects
  */
-export function gitHot(opts: { name?: string, hotDays: number, hotContributors: number }): CombinationTagger {
+export function gitHot(opts: { name?: string, hotDays: number, hotContributors: number }): Tagger {
     return {
         name: opts.name || "hot",
         description: "How hot is git",
-        test: fps => {
-            const grt = fps.find(fp => fp.type === GitRecencyType);
-            const acc = fps.find(fp => fp.type === GitActivesType);
+        test: async repo => {
+            const grt = repo.analysis.fingerprints.find(fp => fp.type === GitRecencyType);
+            const acc = repo.analysis.fingerprints.find(fp => fp.type === GitActivesType);
             if (!!grt && !!acc) {
                 const days = daysSince(new Date(grt.data));
                 if (days < opts.hotDays && acc.data.count > opts.hotContributors) {
@@ -205,7 +206,7 @@ export function inadequateReadme(opts: { minLength: number }): Tagger {
         name: "poor-readme",
         description: "README is adequate",
         severity: "warn",
-        test: fp => isGlobMatchFingerprint(fp) &&
-            fp.data.glob === "README.md" && (fp.data.matches.length === 0 || fp.data.matches[0].size < opts.minLength),
+        test: async repo => repo.analysis.fingerprints.some(fp => isGlobMatchFingerprint(fp) &&
+            fp.data.glob === "README.md" && (fp.data.matches.length === 0 || fp.data.matches[0].size < opts.minLength)),
     };
 }

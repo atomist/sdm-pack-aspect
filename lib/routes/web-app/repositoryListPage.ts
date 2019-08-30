@@ -44,9 +44,9 @@ export function exposeRepositoryListPage(conf: WebAppConfig): void {
         const relevantRepos = await conf.aspectRegistry.tagAndScoreRepos(workspaceId, relevantAnalysisResults, { category });
         const reposForDisplay: RepoForDisplay[] = relevantRepos
             .map(ar => ({
-                url: ar.repoRef.url,
-                repo: ar.repoRef.repo,
-                owner: ar.repoRef.owner,
+                url: ar.analysis.id.url,
+                repo: ar.analysis.id.repo,
+                owner: ar.analysis.id.owner,
                 id: ar.id,
                 score: ar.weightedScore.weightedScore,
                 showFullPath: !byOrg,
