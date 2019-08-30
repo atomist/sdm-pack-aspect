@@ -53,7 +53,7 @@ const defaultClassifier: ContentClassifier = content => content.trim().split("\n
  * a classificiation
  */
 export function license(opts: { classifier: ContentClassifier } =
-                            { classifier: defaultClassifier }): Aspect<LicenseData> {
+    { classifier: defaultClassifier }): Aspect<LicenseData> {
     return {
         name: LicenseType,
         displayName: "License",
@@ -95,7 +95,7 @@ export const LicensePresenceType: string = "license-presence";
 export const LicensePresence: Aspect<{ present: boolean }> = {
     name: LicensePresenceType,
     displayName: "License presence",
-    extract: async () => [],
+    extract: async () => { throw new Error("I hate you"); },
     consolidate: async fps => {
         const lfp = fps.find(isLicenseFingerprint);
         const present = !!lfp && !hasNoLicense(lfp.data);

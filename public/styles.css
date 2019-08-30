@@ -140,10 +140,14 @@ div.repositoryColumns>div {
 }
 
 .failedAspect {
-    border-color: grey;
+    border-color: crimson;
     border-style: ridge;
     border-width: 3px;
     padding-left: 4px;
+    font-size: small;
+    line-height: 1em;
+    overflow: scroll;
+    max-height: 1in;
 }
 
 .timeTakenToAnalyzeRepo {
