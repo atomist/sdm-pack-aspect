@@ -8,6 +8,7 @@ interface AnalysisTrackingRepo {
     millisTaken?: number;
     errorMessage?: string;
     stackTrace?: string;
+    snapshotId?: string;
 }
 interface AnalysisTrackingAnalysis {
     description: string;
@@ -31,8 +32,11 @@ function displayRepository(repo: AnalysisTrackingRepo & { repoAnalysisId: string
     }
     const timeTaken = repo.millisTaken ? `Took ${repo.millisTaken / 1000}s` : undefined;
     const gitLink = repo.url ? <a href={repo.url}><img src="/git.png" className="linkToSourceImage"></img></a> : undefined;
+    const insightsLink = repo.snapshotId ? <a href={"/repository?id=" + repo.snapshotId}>
+        <img src="/hexagonal-fruit-of-power.png" className="linkToInsightsImage"></img>
+    </a> : undefined;
     return <div className={className}>
-        <p className="analysisRepoDescription">{repo.description} {gitLink}</p>
+        <p className="analysisRepoDescription">{repo.description} {gitLink} {insightsLink} </p>
         <span className="timeTakenToAnalyzeRepo">{timeTaken}</span>
         {displayFailure(repo)}
     </div>;

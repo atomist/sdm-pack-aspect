@@ -90,6 +90,12 @@ div.repositoryColumns>div {
     border: 1px white outset;
 }
 
+.linkToInsightsImage {
+    width: 1em;
+    height: 1em;
+    border: 1px white outset;
+}
+
 .analysisRepoDescription {
     margin: 0px;
 }
