@@ -29,8 +29,9 @@ export interface RepoExplorerProps {
 export function RepoExplorer(props: RepoExplorerProps): React.ReactElement {
     const categoryDescription = props.category === "*" ? undefined :
         <h3>Scoring by category: <span className="scoreCategoryName">{props.category}</span></h3>;
+    const insightsImage = <img src="/hexagonal-fruit-of-power.png" className="insightsImage"></img>;
     return <div>
-        <h1>{props.repo.repoRef.owner} / <a href={props.repo.repoRef.url}>{props.repo.repoRef.repo}</a></h1>
+        <h1>{insightsImage} {props.repo.repoRef.owner} / <a href={props.repo.repoRef.url}>{props.repo.repoRef.repo}</a></h1>
         <p className="analysesProvenanceDetail">Analyzed at: {props.timestamp.toString()}</p>
         <p className="analysesProvenanceDetail">Analyzed commit: {props.repo.repoRef.sha}</p>
 
