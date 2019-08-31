@@ -73,8 +73,8 @@ import {
 
 import * as _ from "lodash";
 import { isClassificationAspect, taggerAspect } from "../aspect/compose/classificationAspect";
-import { tagsFromClassificationFingerprints } from "../tagger/commonTaggers";
 import { exposeFingerprintScore } from "../scorer/commonScorers";
+import { tagsFromClassificationFingerprints } from "../tagger/commonTaggers";
 
 /**
  * Default VirtualProjectFinder, which recognizes Maven, npm,
