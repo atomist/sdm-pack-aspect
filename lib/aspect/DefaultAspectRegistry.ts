@@ -103,10 +103,9 @@ export class DefaultAspectRegistry implements AspectRegistry, AspectReportDetail
     public async reportDetailsOf(typeOrAspect: string | Aspect, workspaceId: string): Promise<AspectReportDetails | undefined> {
         const type = typeof typeOrAspect === "string" ? typeOrAspect : typeOrAspect.name;
         const aspect = this.aspectOf(type) as AspectWithReportDetails;
-        if (!!aspect && aspect.details) {
+        if (!!aspect) {
             return aspect.details;
-        }
-        if (!isInLocalMode() && !!_.get(this.opts.configuration, "graphql.client.factory")) {
+        } else if (!isInLocalMode() && !!_.get(this.opts.configuration, "graphql.client.factory")) {
             const aspectRegistrations = await this.opts.configuration.graphql.client.factory.create(workspaceId, this.opts.configuration)
                 .query<AspectRegistrations.Query, AspectRegistrations.Variables>({
                     name: "AspectRegistrations",
