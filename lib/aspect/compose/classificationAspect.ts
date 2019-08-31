@@ -19,8 +19,8 @@ import { PushImpactListenerInvocation } from "@atomist/sdm";
 import { toArray } from "@atomist/sdm-core/lib/util/misc/array";
 import {
     Aspect,
-    fingerprintOf,
     FP,
+    sha256,
 } from "@atomist/sdm-pack-fingerprints";
 import * as _ from "lodash";
 import { AspectMetadata } from "./commonTypes";
@@ -79,10 +79,13 @@ export function classificationAspect(opts: AspectMetadata & { stopAtFirst?: bool
                 }
             }
             const data = { tags: _.uniq(tags).sort(), reasons };
-            return (opts.alwaysFingerprint || data.tags.length > 0) ? fingerprintOf({
+            return (opts.alwaysFingerprint || data.tags.length > 0) ? {
                 type: opts.name,
+                name: opts.name,
                 data,
-            }) : undefined;
+                // We only sha the tags, not the reason
+                sha: sha256(JSON.stringify(data.tags)),
+            } : undefined;
         },
         toDisplayableFingerprint: fp => (fp.data.tags && fp.data.tags.join()) || "unknown",
         ...opts,
