@@ -105,7 +105,7 @@ export type ScoredRepo = TaggedRepo & { weightedScore: WeightedScore };
 export type RepoToScore = Pick<ProjectAnalysisResult, "analysis" | "id">;
 
 /**
- * Function that knows how to score a repository. Scoring is based on
+ * Scoring repository based on
  * fingerprints that have previously been extracted by aspects.
  * @param repo repo we are scoring
  * @param allRepos context of this scoring activity
@@ -114,6 +114,12 @@ export type RepoToScore = Pick<ProjectAnalysisResult, "analysis" | "id">;
  */
 export interface RepositoryScorer extends Scorer {
 
+    /**
+     * Function that knows how to score a repository.
+     * @param repo repo we are scoring
+     * @param allRepos context of this scoring activity
+     * @return undefined if this scorer doesn't know how to score this repository.
+     */
     scoreFingerprints: (r: RepoToScore) => Promise<ScorerReturn>;
 
 }

@@ -1,6 +1,6 @@
 # Developer Guide
 
-The greatest value of aspects is the potential to develop and combine them in a unique way
+The ultimate value of aspects is the potential to develop and combine them in a unique way
  to address the goals of your organization, helping you understand and take control of important aspects of code, configuration and process.
 
 In keeping with the Atomist philosophy of *do it in code*, extensibility is in TypeScript code.
@@ -11,7 +11,7 @@ The following are the key extension points:
 
 - **Aspects**, which extract **fingerprint** data from repositories allowing visualization and (optionally) rolling out updates and on-change workflows.
 - **Taggers**, which provide insights based on fingerprint data extracted by aspects.
-- **Scorers**, which help to rank repositories based on fingerprint data. Scorers enable you to gamify development at scale and reward or penalize good or bad usages.
+- **Scorers**, which help to rank repositories. Scorers enable you to gamify development at scale and reward or penalize good or bad usages.
 - **Custom reporters**, which can use data captured by aspects for wholly custom reports.
 
 The key underlying concept is that of a **fingerprint**: a snapshot of a concern within a project--for example, the version of a particular library. However, fingerprints can encompass much more than merely dependencies. Out of the box examples include:
@@ -34,7 +34,7 @@ User examples include:
 -  Language usage
 -  SQL statements and database usage
  
-Fingerprints are persisted and are the basis for querying and visualization. Tags and scores are not persisted, but are purely projections to support querying. This distinction is important to consider when choosing between fingerpinting and tagging for something that could be implemented with either.
+Fingerprints are persisted and are the basis for querying and visualization.
 
 ## Aspects
 
@@ -229,85 +229,124 @@ Taggers are comparable to aspects using `consolidate` without `extract`. The dif
 
 ### Simple taggers
 
-A tagger is an object with a name, description and test method taking a single fingerprint. Taggers will be invoked for each fingerprint on a project. Taggers are normally created as object literals. For example:
+A tagger is an object with a name, description and test method with access to repo identification and fingerprints. Taggers will be invoked for each fingerprint on a project. Taggers are normally created as object literals. For example:
 
 ```typescript
-{ 
-	name: "docker", 
-	description: "Docker status", 
-	test: fp => fp.type === DockerFrom.name 
+{
+    name: "docker",
+    description: "Docker status",
+    test: async repo => repo.analysis.fingerprints
+    	.some(fp => fp.type === DockerFrom.name),
 }
 
 ```
 This will cause every project that has a fingerprint of type `DockerFrom.name` to be tagged with `docker`.
 
-### "Combination" taggers
-A "combination" tagger is an object with a name, description and test method taking all fingerprints on a particular repository. This enables them to check for the combination of fingerprints.
+Taggers can check for a combination of fingerprints.
 
 For example:
 
 ```typescript
 {
-    name: "hot",
+	name: opts.name || "hot",
     description: "How hot is git",
-    test: fps => {
-        // Find recent repos
-        const grt = fps.find(fp => fp.type === GitRecencyType);
-        const acc = fps.find(fp => fp.type === GitActivesType);
+    test: async repo => {
+        const grt = repo.analysis.fingerprints.find(fp => fp.type === GitRecencyType);
+        const acc = repo.analysis.fingerprints.find(fp => fp.type === GitActivesType);
         if (!!grt && !!acc) {
             const days = daysSince(new Date(grt.data));
-            if (days < 3 && acc.data.count > 2) {
+            if (days < opts.hotDays && acc.data.count > opts.hotContributors) {
                 return true;
             }
         }
         return false;
     },
-}
+};
 ```
-This will cause every project that has a `GitRecency` fingerprint of less than 3 days ago and a `GitActives` fingerprint showing 3 or more active committers to the default branch to be tagged with `hot`.
 
-> Most use cases can be satisfied using simple taggers. Don't use combination taggers without good reason.
+This will cause every project that has a `GitRecency` fingerprint of less than a given number of days ago and a `GitActives` fingerprint showing a required number of active committers to the default branch to be tagged with `hot`.
 
-### Prompting action
 Taggers have an optional `severity` property for which the legal values are `info`, `warn` and `error`. If you set this value to `warn` or `error` the severity will be returned along with the data payload and the UI will prominently render the relevant tag.
+
+## Scorers
+Implement the `RepositoryScorer` interface:
+
+```typescript
+export interface RepositoryScorer {
+
+	  /**
+     * Name of the scorer. Will be included in all scores.
+     */
+    readonly name: string;
+
+    /**
+     * Category to include in scores, if any
+     */
+    readonly category?: string;
+    
+    /**
+     * Function that knows how to score a repository.
+     * @param repo repo we are scoring
+     * @param allRepos context of this scoring activity
+     * @return undefined if this scorer doesn't know how to score this repository.
+     */
+    scoreFingerprints: (r: RepoToScore) => Promise<ScorerReturn>;
+
+}
+export type RepositoryScorer = (repo: TaggedRepo, allRepos: TaggedRepo[]) => Promise<Score | undefined>;
+
+```
+
+> RepositoryScorers work with data extracted by aspects.
+
+An example:
+
+```typescript
+export const TypeScriptProjectsMustUseTsLint: RepositoryScorer = {
+    name: "has-tslint",
+    scoreFingerprints: async repo => {
+        const isTs = repo.analysis.fingerprints.some(fp => fp.type === TypeScriptVersionType);
+        if (!isTs) {
+            return undefined;
+        }
+        const hasTsLint = repo.analysis.fingerprints.some(fp => fp.type === NpmDeps.name && fp.data[0] === "tslint");
+        return {
+            score: hasTsLint ? 5 : 1,
+            reason: hasTsLint ? "TypeScript projects should use tslint" : "TypeScript project using tslint",
+        };
+    },
+};
+```
 
 ## Adding your aspects and taggers
 
 Pass aspects, taggers and scorers into the options structure parameter of the `aspectSupport` function that creates the Aspect extension pack to add to an SDM.
 
-## Scorers
-Implement a `RepositoryScorer` function:
-
 ```typescript
-/**
- * Function that knows how to score a repository.
- * @param repo repo we are scoring
- * @param allRepos context of this scoring activity
- * @return undefined if this scorer doesn't know how to score this repository.
- */
-export type RepositoryScorer = (repo: TaggedRepo, allRepos: TaggedRepo[]) => Promise<Score | undefined>;
+aspectSupport({
+	 // Array of aspects
+    aspects,
+
+    // Record type. Key is scoring name, value a scorer or list
+    // These scorers will run at fingerprint time and persist
+    // their scores
+    scorers: {
+        all: scorers(undesirableUsageChecker),
+        commitRisk: [
+            commonCommitRiskScorers.fileChangeCount({ limitTo: 2 }),
+            commonCommitRiskScorers.pomChanged(),
+        ],
+    },
+
+	 // Scorers that run in memory rather than being persisted in fingerprints
+    inMemoryScorers: commonScorers.exposeFingerprintScore("all"),
+
+	// Array of taggers
+    taggers,
 
 ```
-Normally only the first argument is used.
 
-> Scorers work with data extracted by aspects.
-
-An example:
-
-```typescript
-export const TypeScriptProjectsMustUseTsLint: RepositoryScorer = async repo => {
-    const isTs = repo.analysis.fingerprints.find(fp => fp.type === TypeScriptVersionType);
-    if (!isTs) {
-        return undefined;
-    }
-    const hasTsLint = repo.analysis.fingerprints.find(fp => fp.type === TsLintType);
-    return {
-        name: "has-tslint",
-        score: hasTsLint ? 5 : 1,
-        reason: hasTsLint ? "TypeScript projects should use tslint" : "TypeScript project using tslint",
-    };
-};
-```
+The `inMemoryScorers` field is useful during development. It uses the `RepositoryScorer` interface but enables scorers to be changed between SDM restarts. This is helpful while iterating on scorers. When they mature they can be promoted to the `scorers` field, where their data will be persisted.
 
 ## Advanced Concepts
 
