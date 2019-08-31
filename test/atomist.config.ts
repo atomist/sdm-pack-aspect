@@ -64,7 +64,6 @@ import {
     ChangelogAspect,
     ContributingAspect,
 } from "../lib/aspect/community/oss";
-import { classificationAspect } from "../lib/aspect/compose/classificationAspect";
 import { isFileMatchFingerprint } from "../lib/aspect/compose/fileMatchAspect";
 import { globAspect } from "../lib/aspect/compose/globAspect";
 import { buildTimeAspect } from "../lib/aspect/delivery/BuildAspect";
@@ -83,6 +82,7 @@ import {
 } from "../lib/machine/aspectSupport";
 import * as commonScorers from "../lib/scorer/commonScorers";
 import * as commonTaggers from "../lib/tagger/commonTaggers";
+import { projectClassificationAspect } from "../lib/aspect/compose/classificationAspect";
 
 // Ensure we start up in local mode
 process.env.ATOMIST_MODE = "local";
@@ -195,7 +195,7 @@ function aspects(): Aspect[] {
         globAspect({ name: "azure-pipelines", displayName: "Azure pipeline", glob: "azure-pipelines.yml" }),
         globAspect({ name: "readme", displayName: "Readme file", glob: "README.md" }),
 
-        classificationAspect({
+        projectClassificationAspect({
                 name: "javaBuild",
                 displayName: "Java build tool",
                 toDisplayableFingerprintName: () => "Java build tool",

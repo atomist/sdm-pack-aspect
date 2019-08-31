@@ -63,8 +63,8 @@ export function isClassificationDataFingerprint(fp: FP): fp is FP<Classification
  * @param opts: Whether to allow multiple tags and whether to compute a fingerprint in all cases
  * @param classifiers classifier functions
  */
-export function classificationAspect(opts: AspectMetadata & { stopAtFirst?: boolean, alwaysFingerprint?: boolean },
-                                     ...classifiers: Classifier[]): Aspect<ClassificationData> {
+export function projectClassificationAspect(opts: AspectMetadata & { stopAtFirst?: boolean, alwaysFingerprint?: boolean },
+                                            ...classifiers: Classifier[]): Aspect<ClassificationData> {
     return {
         extract: async (p, pili) => {
             const tags: string[] = [];
