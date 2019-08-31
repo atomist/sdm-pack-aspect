@@ -23,7 +23,10 @@ import {
     sha256,
 } from "@atomist/sdm-pack-fingerprints";
 import * as _ from "lodash";
-import { RepoToScore, Tagger } from "../AspectRegistry";
+import {
+    RepoToScore,
+    Tagger,
+} from "../AspectRegistry";
 import { AspectMetadata } from "./commonTypes";
 
 /**

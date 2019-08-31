@@ -52,7 +52,8 @@ import {
     AnalysisTracking,
 } from "../analysis/tracking/analysisTracker";
 import {
-    RepositoryScorer, Tagger,
+    RepositoryScorer,
+    Tagger,
     TaggerDefinition,
 } from "../aspect/AspectRegistry";
 import { DefaultAspectRegistry } from "../aspect/DefaultAspectRegistry";
@@ -72,7 +73,10 @@ import {
 } from "./machine";
 
 import * as _ from "lodash";
-import { isClassificationAspect, taggerAspect } from "../aspect/compose/classificationAspect";
+import {
+    isClassificationAspect,
+    taggerAspect,
+} from "../aspect/compose/classificationAspect";
 import { exposeFingerprintScore } from "../scorer/commonScorers";
 import { tagsFromClassificationFingerprints } from "../tagger/commonTaggers";
 

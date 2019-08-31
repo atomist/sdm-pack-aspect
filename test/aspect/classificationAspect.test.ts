@@ -16,7 +16,8 @@
 
 import { InMemoryProject } from "@atomist/automation-client";
 import {
-    ClassificationData, projectClassificationAspect,
+    ClassificationData,
+    projectClassificationAspect,
 } from "../../lib/aspect/compose/classificationAspect";
 
 import { FP } from "@atomist/sdm-pack-fingerprints";
