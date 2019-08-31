@@ -154,6 +154,36 @@ div.repositoryColumns>div {
     font-size: x-small;
 }
 
+.envisionSpeed {
+    background-color: gray;
+    color: transparent;
+    white-space: nowrap;
+}
+
+.belowLow {
+    display: inline-block;
+    background-color: gray;
+    white-space: nowrap;
+}
+
+.betweenLowAndHigh {
+    display: inline-block;
+    background-color: purple;
+    white-space: nowrap;
+}
+
+.maxiestMax {
+    text-align: right;
+}
+
+th.runHeader {
+    font-size: small;
+}
+
+td.runTiming {
+    font-size: small;
+}
+
 /* "explore" sunburst page */
 
 .percentageOfProjectWithoutTag {
