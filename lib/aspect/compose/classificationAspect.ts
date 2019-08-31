@@ -24,6 +24,7 @@ import {
 } from "@atomist/sdm-pack-fingerprints";
 import * as _ from "lodash";
 import { AspectMetadata } from "./commonTypes";
+import { RepoToScore, Tagger } from "../AspectRegistry";
 
 /**
  * Knows how to classify projects into a unique String
@@ -79,6 +80,38 @@ export function projectClassificationAspect(opts: AspectMetadata & { stopAtFirst
                 }
             }
             const data = { tags: _.uniq(tags).sort(), reasons };
+            return (opts.alwaysFingerprint || data.tags.length > 0) ? {
+                type: opts.name,
+                name: opts.name,
+                data,
+                // We only sha the tags, not the reason
+                sha: sha256(JSON.stringify(data.tags)),
+            } : undefined;
+        },
+        toDisplayableFingerprint: fp => (fp.data.tags && fp.data.tags.join()) || "unknown",
+        ...opts,
+    };
+}
+
+/**
+ * Allow running taggers as a fingerprint
+ * @param opts: Whether to allow multiple tags and whether to compute a fingerprint in all cases
+ * @param taggers taggerss
+ */
+export function taggerAspect(opts: AspectMetadata & { alwaysFingerprint?: boolean },
+                             ...taggers: Tagger[]): Aspect<ClassificationData> {
+    return {
+        extract: async () => [],
+        consolidate: async (fingerprints, p) => {
+            const rts: RepoToScore = { analysis: { id: p.id, fingerprints } };
+            const data: ClassificationData = { tags: [], reasons: [] };
+            for (const tagger of taggers) {
+                if (await tagger.test(rts)) {
+                    data.tags.push(tagger.name);
+                    data.reasons.push(tagger.description);
+                    break;
+                }
+            }
             return (opts.alwaysFingerprint || data.tags.length > 0) ? {
                 type: opts.name,
                 name: opts.name,
