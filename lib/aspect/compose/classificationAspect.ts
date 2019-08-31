@@ -23,8 +23,8 @@ import {
     sha256,
 } from "@atomist/sdm-pack-fingerprints";
 import * as _ from "lodash";
-import { AspectMetadata } from "./commonTypes";
 import { RepoToScore, Tagger } from "../AspectRegistry";
+import { AspectMetadata } from "./commonTypes";
 
 /**
  * Knows how to classify projects into a unique String
@@ -48,6 +48,7 @@ export interface Classifier {
 }
 
 export interface ClassificationData {
+
     tags: string[];
 
     reasons: string[];
@@ -58,6 +59,13 @@ export function isClassificationDataFingerprint(fp: FP): fp is FP<Classification
     return !!maybe.data && !!maybe.data.tags && !!maybe.data.reasons;
 }
 
+export type ClassificationAspect = Aspect<ClassificationData> & { tags: string[] };
+
+export function isClassificationAspect(a: Aspect): a is ClassificationAspect {
+    const maybe = a as ClassificationAspect;
+    return !!maybe.tags;
+}
+
 /**
  * Classify the project uniquely or otherwise
  * undefined to return no fingerprint
@@ -65,8 +73,9 @@ export function isClassificationDataFingerprint(fp: FP): fp is FP<Classification
  * @param classifiers classifier functions
  */
 export function projectClassificationAspect(opts: AspectMetadata & { stopAtFirst?: boolean, alwaysFingerprint?: boolean },
-                                            ...classifiers: Classifier[]): Aspect<ClassificationData> {
+                                            ...classifiers: Classifier[]): ClassificationAspect {
     return {
+        tags: _.flatten(classifiers.map(c => c.tags)),
         extract: async (p, pili) => {
             const tags: string[] = [];
             const reasons: string[] = [];
@@ -94,13 +103,15 @@ export function projectClassificationAspect(opts: AspectMetadata & { stopAtFirst
 }
 
 /**
- * Allow running taggers as a fingerprint
- * @param opts: Whether to allow multiple tags and whether to compute a fingerprint in all cases
- * @param taggers taggerss
+ * Allow running taggers as a fingerprint.
+ * Executes during consolidate, so very cheap.
+ * @param opts: Whether to compute a fingerprint in all cases
+ * @param taggers taggers to use
  */
 export function taggerAspect(opts: AspectMetadata & { alwaysFingerprint?: boolean },
-                             ...taggers: Tagger[]): Aspect<ClassificationData> {
+                             ...taggers: Tagger[]): ClassificationAspect {
     return {
+        tags: taggers.map(t => t.name),
         extract: async () => [],
         consolidate: async (fingerprints, p) => {
             const rts: RepoToScore = { analysis: { id: p.id, fingerprints } };
@@ -109,7 +120,6 @@ export function taggerAspect(opts: AspectMetadata & { alwaysFingerprint?: boolea
                 if (await tagger.test(rts)) {
                     data.tags.push(tagger.name);
                     data.reasons.push(tagger.description);
-                    break;
                 }
             }
             return (opts.alwaysFingerprint || data.tags.length > 0) ? {

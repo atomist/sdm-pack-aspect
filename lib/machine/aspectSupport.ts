@@ -52,7 +52,7 @@ import {
     AnalysisTracking,
 } from "../analysis/tracking/analysisTracker";
 import {
-    RepositoryScorer,
+    RepositoryScorer, Tagger,
     TaggerDefinition,
 } from "../aspect/AspectRegistry";
 import { DefaultAspectRegistry } from "../aspect/DefaultAspectRegistry";
@@ -72,6 +72,9 @@ import {
 } from "./machine";
 
 import * as _ from "lodash";
+import { isClassificationAspect, taggerAspect } from "../aspect/compose/classificationAspect";
+import { tagsFromClassificationFingerprints } from "../tagger/commonTaggers";
+import { exposeFingerprintScore } from "../scorer/commonScorers";
 
 /**
  * Default VirtualProjectFinder, which recognizes Maven, npm,
@@ -114,8 +117,15 @@ export interface AspectSupportOptions {
 
     /**
      * Registrations that can tag projects based on fingerprints.
+     * Executed as fingerprints
      */
-    taggers?: TaggerDefinition | TaggerDefinition[];
+    taggers?: Tagger | Tagger[];
+
+    /**
+     * Registrations that can tag projects based on fingerprints.
+     * Allows rapid in-memory use.
+     */
+    inMemoryTaggers?: TaggerDefinition | TaggerDefinition[];
 
     /**
      * Scoring fingerprints. Name to scorers
@@ -172,7 +182,11 @@ export function aspectSupport(options: AspectSupportOptions): ExtensionPack {
         Object.getOwnPropertyNames(options.scorers)
             .map(name => emitScoringAspect(name, toArray(options.scorers[name] || []), options.weightings)))
         .filter(a => !!a);
-    const aspects = [...toArray(options.aspects || []), ...scoringAspects];
+    const tagAspect = taggerAspect({
+        name: "tagger",
+        displayName: "tagger",
+    }, ...toArray(options.taggers) || []);
+    const aspects = [...toArray(options.aspects || []), ...scoringAspects, tagAspect];
 
     return {
         ...metadata(),
@@ -243,15 +257,19 @@ function orgVisualizationEndpoints(dbClientFactory: ClientFactory,
     customizers: ExpressCustomizer[],
 } {
     const resultStore = analysisResultStore(dbClientFactory);
+    const fingerprintClassificationNamesFound = _.flatten(aspects.filter(isClassificationAspect).map(ca => ca.tags));
+    const scorerNames = Object.getOwnPropertyNames((options.scorers || {}));
     const aspectRegistry = new DefaultAspectRegistry({
         idealStore: resultStore,
         problemStore: resultStore,
         aspects,
         undesirableUsageChecker: options.undesirableUsageChecker,
-        scorers: toArray(options.inMemoryScorers || []),
+        scorers: toArray(options.inMemoryScorers || []).concat(scorerNames.map(exposeFingerprintScore)),
         scoreWeightings: options.weightings || DefaultScoreWeightings,
     })
-        .withTaggers(...toArray(options.taggers || []));
+        .withTaggers(...toArray(options.inMemoryTaggers || []))
+        // Add in memory taggers for all classification fingerprints
+        .withTaggers(...tagsFromClassificationFingerprints(...fingerprintClassificationNamesFound));
 
     const aboutTheApi = api(resultStore, aspectRegistry);
 

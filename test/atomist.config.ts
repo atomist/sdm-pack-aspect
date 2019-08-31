@@ -51,7 +51,6 @@ import { PostgresProjectAnalysisResultStore } from "../lib/analysis/offline/pers
 import {
     RepositoryScorer,
     Tagger,
-    TaggerDefinition,
 } from "../lib/aspect/AspectRegistry";
 import { CodeMetricsAspect } from "../lib/aspect/common/codeMetrics";
 import { codeOwnership } from "../lib/aspect/common/codeOwnership";
@@ -64,6 +63,7 @@ import {
     ChangelogAspect,
     ContributingAspect,
 } from "../lib/aspect/community/oss";
+import { projectClassificationAspect } from "../lib/aspect/compose/classificationAspect";
 import { isFileMatchFingerprint } from "../lib/aspect/compose/fileMatchAspect";
 import { globAspect } from "../lib/aspect/compose/globAspect";
 import { buildTimeAspect } from "../lib/aspect/delivery/BuildAspect";
@@ -82,7 +82,6 @@ import {
 } from "../lib/machine/aspectSupport";
 import * as commonScorers from "../lib/scorer/commonScorers";
 import * as commonTaggers from "../lib/tagger/commonTaggers";
-import { projectClassificationAspect } from "../lib/aspect/compose/classificationAspect";
 
 // Ensure we start up in local mode
 process.env.ATOMIST_MODE = "local";
@@ -132,9 +131,11 @@ export const configuration: Configuration = configure<TestGoals>(async sdm => {
                 all: scorers(),
             },
 
-            inMemoryScorers: commonScorers.exposeFingerprintScore("all"),
+            // inMemoryScorers: commonScorers.exposeFingerprintScore("all"),
 
-            taggers: taggers({}).concat(combinationTaggers({})),
+            // taggers: taggers({}).concat(combinationTaggers({})),
+
+            inMemoryTaggers: taggers({}),
 
             // Customize this to respond to undesirable usages
             undesirableUsageChecker: AcceptEverythingUndesirableUsageChecker,
@@ -243,7 +244,7 @@ export interface TaggersParams {
     deadDays: number;
 }
 
-export function taggers(opts: Partial<TaggersParams>): TaggerDefinition[] {
+export function taggers(opts: Partial<TaggersParams>): Tagger[] {
     return [
         {
             name: "docker", description: "Docker status",
@@ -266,8 +267,6 @@ export function taggers(opts: Partial<TaggersParams>): TaggerDefinition[] {
             test: async repo => repo.analysis.fingerprints.some(fp => isFileMatchFingerprint(fp) &&
                 fp.name.includes("csproj") && fp.data.matches.length > 0),
         },
-
-        ...commonTaggers.tagsFromClassificationFingerprints("maven", "gradle"),
     ];
 }
 
