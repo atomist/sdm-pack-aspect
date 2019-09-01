@@ -59,7 +59,7 @@ export class SpiderAnalyzer implements Analyzer {
             // Seed the virtual project finder if we have one
             await this.virtualProjectFinder.findVirtualProjectInfo(p);
         }
-        const pili = fakePushImpactListenerInvocation(p);
+        const pili = await fakePushImpactListenerInvocation(p);
         await runExtracts(p, pili, this.aspects, fingerprints, this.timings, repoTracking);
         await runConsolidates(p, pili, this.aspects.filter(aspect => !!aspect.consolidate), fingerprints, repoTracking);
 
@@ -70,17 +70,17 @@ export class SpiderAnalyzer implements Analyzer {
     }
 
     constructor(private readonly aspects: Aspect[],
-                private readonly virtualProjectFinder?: VirtualProjectFinder) {
+        private readonly virtualProjectFinder?: VirtualProjectFinder) {
 
     }
 }
 
 async function runExtracts(p: Project,
-                           pili: PushImpactListenerInvocation,
-                           aspects: Aspect[],
-                           fingerprints: FP[],
-                           timings: TimeRecorder,
-                           repoTracking: RepoBeingTracked): Promise<void> {
+    pili: PushImpactListenerInvocation,
+    aspects: Aspect[],
+    fingerprints: FP[],
+    timings: TimeRecorder,
+    repoTracking: RepoBeingTracked): Promise<void> {
     await Promise.all(aspects
         .map(aspect => safeTimedExtract(aspect, p, pili, timings, repoTracking.plan(aspect, "extract"))
             .then(fps =>
@@ -89,10 +89,10 @@ async function runExtracts(p: Project,
 }
 
 async function runConsolidates(p: Project,
-                               pili: PushImpactListenerInvocation,
-                               aspects: Aspect[],
-                               fingerprints: FP[],
-                               repoTracking: RepoBeingTracked): Promise<void> {
+    pili: PushImpactListenerInvocation,
+    aspects: Aspect[],
+    fingerprints: FP[],
+    repoTracking: RepoBeingTracked): Promise<void> {
     await Promise.all(aspects
         .map(aspect => safeConsolidate(aspect, fingerprints, p, pili, repoTracking.plan(aspect, "consolidate"))
             .then(fps =>
@@ -101,10 +101,10 @@ async function runConsolidates(p: Project,
 }
 
 async function safeTimedExtract(aspect: Aspect,
-                                p: Project,
-                                pili: PushImpactListenerInvocation,
-                                timeRecorder: TimeRecorder,
-                                tracking: AspectBeingTracked): Promise<FP[]> {
+    p: Project,
+    pili: PushImpactListenerInvocation,
+    timeRecorder: TimeRecorder,
+    tracking: AspectBeingTracked): Promise<FP[]> {
     try {
         const timed = await time(async () => aspect.extract(p, pili));
         addTiming(aspect.name, timed.millis, timeRecorder);
@@ -132,10 +132,10 @@ function addTiming(type: string, millis: number, timeRecorder: TimeRecorder): vo
 }
 
 async function safeConsolidate(aspect: Aspect,
-                               existingFingerprints: FP[],
-                               p: Project,
-                               pili: PushImpactListenerInvocation,
-                               tracking: AspectBeingTracked): Promise<FP[]> {
+    existingFingerprints: FP[],
+    p: Project,
+    pili: PushImpactListenerInvocation,
+    tracking: AspectBeingTracked): Promise<FP[]> {
     try {
         const extracted = await aspect.consolidate(existingFingerprints, p, pili);
         const result = !!extracted ? toArray(extracted) : [];
@@ -151,7 +151,7 @@ async function safeConsolidate(aspect: Aspect,
 /**
  * Make a fake push for the last commit to this project
  */
-function fakePushImpactListenerInvocation(p: Project): PushImpactListenerInvocation {
+async function fakePushImpactListenerInvocation(p: Project): Promise<PushImpactListenerInvocation> {
     return {
         id: p.id as any,
         get context(): HandlerContext {
