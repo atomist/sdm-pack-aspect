@@ -24,6 +24,7 @@ import {
     RemoteRepoRef,
 } from "@atomist/automation-client";
 import {
+    execPromise,
     PreferenceStore,
     PushImpactListenerInvocation,
 } from "@atomist/sdm";
@@ -59,7 +60,7 @@ export class SpiderAnalyzer implements Analyzer {
             // Seed the virtual project finder if we have one
             await this.virtualProjectFinder.findVirtualProjectInfo(p);
         }
-        const pili = fakePushImpactListenerInvocation(p);
+        const pili = await fakePushImpactListenerInvocation(p);
         await runExtracts(p, pili, this.aspects, fingerprints, this.timings, repoTracking);
         await runConsolidates(p, pili, this.aspects.filter(aspect => !!aspect.consolidate), fingerprints, repoTracking);
 
@@ -148,10 +149,22 @@ async function safeConsolidate(aspect: Aspect,
     }
 }
 
+async function fetchChangedFiles(project: GitProject): Promise<string[]> {
+    try {
+        const output = await execPromise("git", ["show", `--pretty=format:""`, "--name-only"]);
+        return output.stdout.trim().split("\n");
+    } catch (err) {
+        logger.error("Failure getting changed files: %s", err.message);
+        return [];
+    }
+}
+
 /**
  * Make a fake push for the last commit to this project
  */
-function fakePushImpactListenerInvocation(p: Project): PushImpactListenerInvocation {
+async function fakePushImpactListenerInvocation(p: Project): Promise<PushImpactListenerInvocation> {
+    const project = p as GitProject;
+    const changedFiles = await fetchChangedFiles(project);
     return {
         id: p.id as any,
         get context(): HandlerContext {
@@ -160,7 +173,7 @@ function fakePushImpactListenerInvocation(p: Project): PushImpactListenerInvocat
         commit: {
             sha: p.id.sha,
         },
-        project: p as GitProject,
+        project,
         push: {
             repo: undefined,
             branch: "master",
@@ -168,7 +181,7 @@ function fakePushImpactListenerInvocation(p: Project): PushImpactListenerInvocat
         addressChannels: async () => {
         },
         get filesChanged(): string[] {
-            throw new Error("Unsupported");
+            return changedFiles;
         },
         credentials: { token: process.env.GITHUB_TOKEN },
         impactedSubProject: p,
