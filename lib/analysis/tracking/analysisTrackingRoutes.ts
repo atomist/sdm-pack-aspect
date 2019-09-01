@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 import { logger } from "@atomist/automation-client";
 import * as _ from "lodash";
 import { AnalysisTrackingPage } from "../../../views/analysisTrackingPage";
