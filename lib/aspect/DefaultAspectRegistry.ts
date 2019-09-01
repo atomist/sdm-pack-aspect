@@ -144,10 +144,15 @@ export class DefaultAspectRegistry implements AspectRegistry {
         scorers?: RepositoryScorer[],
         scoreWeightings?: ScoreWeightings,
     }) {
-        opts.aspects.forEach(f => {
-            if (!f) {
+        const aspectNamesSeen: string[] = [];
+        opts.aspects.forEach(a => {
+            if (!a) {
                 throw new Error("A null aspect was passed in");
             }
+            if (aspectNamesSeen.includes(a.name)) {
+                throw new Error(`Misconfiguration: Aspect named '${a.name}' passed in twice`);
+            }
+            aspectNamesSeen.push(a.name);
         });
     }
 }
