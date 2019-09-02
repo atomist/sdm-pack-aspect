@@ -195,7 +195,7 @@ export interface AspectSupportOptions {
 export function aspectSupport(options: AspectSupportOptions): ExtensionPack {
 
     const scoringAspects: ScoredAspect[] = _.flatten(
-        Object.getOwnPropertyNames(options.scorers)
+        Object.getOwnPropertyNames(options.scorers || {})
             .map(name => emitScoringAspect(name, toArray(options.scorers[name] || []), options.weightings)))
         .filter(a => !!a);
     const tagAspect = taggerAspect({
