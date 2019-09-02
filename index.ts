@@ -16,6 +16,7 @@
 
 export * from "./lib/machine/aspectSupport";
 export * from "./lib/aspect/AspectRegistry";
+export * from "./lib/aspect/AspectReportDetailsRegistry";
 export * from "./lib/aspect/IdealStore";
 export * from "./lib/aspect/ProblemStore";
 export * from "./lib/tagger/commonTaggers";
@@ -41,3 +42,10 @@ import * as commonScorers from "./lib/scorer/commonScorers";
 import * as commonTaggers from "./lib/tagger/commonTaggers";
 
 export { commonTaggers, commonScorers };
+
+export {
+    functionSupport,
+} from "./lib/function/functionSupport";
+export {
+    aspectEndpoint,
+} from "./lib/function/endpoint";
