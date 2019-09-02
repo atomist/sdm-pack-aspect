@@ -42,7 +42,6 @@ import {
     Tag,
 } from "../aspect/AspectRegistry";
 import { AspectReportDetailsRegistry } from "../aspect/AspectReportDetailsRegistry";
-import { getAspectReports } from "./categories";
 import { CustomReporters } from "../customize/customReporters";
 import {
     isSunburstTree,
@@ -61,6 +60,7 @@ import {
     bandFor,
 } from "../util/bands";
 import { EntropySizeBands } from "../util/commonBands";
+import { getAspectReports } from "./categories";
 
 import { Omit } from "../util/omit";
 import {
