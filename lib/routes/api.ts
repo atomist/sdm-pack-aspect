@@ -30,16 +30,13 @@ import * as path from "path";
 import * as swaggerUi from "swagger-ui-express";
 import * as yaml from "yamljs";
 import {
-    FingerprintKind,
     FingerprintUsage,
     ProjectAnalysisResultStore,
 } from "../analysis/offline/persist/ProjectAnalysisResultStore";
 import { computeAnalyticsForFingerprintKind } from "../analysis/offline/spider/analytics";
-import { ProjectAnalysisResult } from "../analysis/ProjectAnalysisResult";
 import {
     AspectRegistry,
     ScoredRepo,
-    Tag,
 } from "../aspect/AspectRegistry";
 import { AspectReportDetailsRegistry } from "../aspect/AspectReportDetailsRegistry";
 import { CustomReporters } from "../customize/customReporters";
@@ -60,7 +57,6 @@ import {
     bandFor,
 } from "../util/bands";
 import { EntropySizeBands } from "../util/commonBands";
-import { getAspectReports } from "./categories";
 
 import { Omit } from "../util/omit";
 import {
@@ -69,6 +65,7 @@ import {
     corsHandler,
 } from "./auth";
 import { buildFingerprintTree } from "./buildFingerprintTree";
+import { getAspectReports } from "./categories";
 import { tagUsageIn } from "./support/tagUtils";
 import {
     addRepositoryViewUrl,
@@ -223,6 +220,11 @@ function exposeFingerprintByTypeAndName(express: Express,
                     target = {
                         ...ideal.ideal,
                         value: aspect.toDisplayableFingerprint(ideal.ideal),
+                    };
+                } else if (!!ideal.ideal.data && !!ideal.ideal.data.displayValue) { // CD This isn't great but ok until we have formal contract
+                    target = {
+                        ...ideal.ideal,
+                        value: ideal.ideal.data.displayValue,
                     };
                 }
             }
