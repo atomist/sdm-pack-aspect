@@ -17,7 +17,7 @@
 import { logger } from "@atomist/automation-client";
 import { ExpressCustomizer } from "@atomist/automation-client/lib/configuration";
 import { isInLocalMode } from "@atomist/sdm-core";
-import { isConcreteIdeal } from "@atomist/sdm-pack-fingerprints";
+import { isConcreteIdeal } from "@atomist/sdm-pack-fingerprint";
 import * as bodyParser from "body-parser";
 import {
     Express,

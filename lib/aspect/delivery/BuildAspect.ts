@@ -19,7 +19,7 @@ import { Build } from "@atomist/sdm-pack-build";
 import {
     Aspect,
     fingerprintOf,
-} from "@atomist/sdm-pack-fingerprints";
+} from "@atomist/sdm-pack-fingerprint";
 import {
     bandFor,
     Default,

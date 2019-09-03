@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { Aspect, fingerprintOf, FP, sha256 } from "@atomist/sdm-pack-fingerprints";
+import { Aspect, fingerprintOf, FP, sha256 } from "@atomist/sdm-pack-fingerprint";
 import { firstFileFound } from "../../util/fileUtils";
 import { ContentClassifier } from "./ContentClassifier";
 

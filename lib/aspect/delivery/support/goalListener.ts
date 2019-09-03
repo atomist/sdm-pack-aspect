@@ -17,7 +17,7 @@
 import {
     FP,
     PublishFingerprints,
-} from "@atomist/sdm-pack-fingerprints";
+} from "@atomist/sdm-pack-fingerprint";
 /*
  * Copyright © 2019 Atomist, Inc.
  *

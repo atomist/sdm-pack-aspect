@@ -19,7 +19,7 @@ import {
     PublishFingerprints,
     PublishFingerprintsFor,
     RepoIdentification,
-} from "@atomist/sdm-pack-fingerprints";
+} from "@atomist/sdm-pack-fingerprint";
 import { ProjectAnalysisResultStore } from "../../analysis/offline/persist/ProjectAnalysisResultStore";
 import { computeAnalyticsForFingerprintKind } from "../../analysis/offline/spider/analytics";
 import { ProjectAnalysisResult } from "../../analysis/ProjectAnalysisResult";

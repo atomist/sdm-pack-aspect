@@ -21,7 +21,7 @@ import {
 import { execPromise } from "@atomist/sdm";
 import {
     fingerprintOf,
-} from "@atomist/sdm-pack-fingerprints";
+} from "@atomist/sdm-pack-fingerprint";
 import {
     bandFor,
     Default,

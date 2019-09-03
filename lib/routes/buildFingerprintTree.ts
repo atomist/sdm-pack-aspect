@@ -18,8 +18,8 @@ import {
     ConcreteIdeal,
     FP,
     Ideal,
-} from "@atomist/sdm-pack-fingerprints";
-import { isConcreteIdeal } from "@atomist/sdm-pack-fingerprints/lib/machine/Ideal";
+} from "@atomist/sdm-pack-fingerprint";
+import { isConcreteIdeal } from "@atomist/sdm-pack-fingerprint/lib/machine/Ideal";
 import { AspectRegistry } from "../aspect/AspectRegistry";
 import {
     isSunburstTree,
@@ -35,7 +35,7 @@ import {
     visitAsync,
 } from "../tree/treeUtils";
 
-import { Aspect } from "@atomist/sdm-pack-fingerprints/lib/machine/Aspect";
+import { Aspect } from "@atomist/sdm-pack-fingerprint/lib/machine/Aspect";
 import * as _ from "lodash";
 import { ProjectAnalysisResultStore } from "../analysis/offline/persist/ProjectAnalysisResultStore";
 import {

@@ -38,8 +38,8 @@ import {
     PublishFingerprints,
     RebaseOptions,
     VirtualProjectFinder,
-} from "@atomist/sdm-pack-fingerprints";
-import { AspectsFactory } from "@atomist/sdm-pack-fingerprints/lib/machine/fingerprintSupport";
+} from "@atomist/sdm-pack-fingerprint";
+import { AspectsFactory } from "@atomist/sdm-pack-fingerprint/lib/machine/fingerprintSupport";
 import * as _ from "lodash";
 import { sdmConfigClientFactory } from "../analysis/offline/persist/pgClientFactory";
 import { ClientFactory } from "../analysis/offline/persist/pgUtils";

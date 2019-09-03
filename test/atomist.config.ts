@@ -35,7 +35,7 @@ import {
     Aspect,
     NpmDeps,
     VirtualProjectFinder,
-} from "@atomist/sdm-pack-fingerprints";
+} from "@atomist/sdm-pack-fingerprint";
 import {
     PowerShellLanguage,
     ShellLanguage,

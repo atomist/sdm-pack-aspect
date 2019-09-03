@@ -15,7 +15,7 @@
  */
 
 import { gatherFromFiles } from "@atomist/automation-client/lib/project/util/projectUtils";
-import { Aspect, FP, sha256 } from "@atomist/sdm-pack-fingerprints";
+import { Aspect, FP, sha256 } from "@atomist/sdm-pack-fingerprint";
 import { Omit } from "../../util/omit";
 
 export interface GlobMatch {

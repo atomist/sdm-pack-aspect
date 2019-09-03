@@ -15,7 +15,7 @@
  */
 
 import { toArray } from "@atomist/sdm-core/lib/util/misc/array";
-import { FP } from "@atomist/sdm-pack-fingerprints";
+import { FP } from "@atomist/sdm-pack-fingerprint";
 
 /**
  * Flag for an undesirable usage

@@ -22,7 +22,7 @@ import { toArray } from "@atomist/sdm-core/lib/util/misc/array";
 import {
     Aspect,
     FP,
-} from "@atomist/sdm-pack-fingerprints";
+} from "@atomist/sdm-pack-fingerprint";
 import { AspectMetadata } from "./commonTypes";
 
 /**

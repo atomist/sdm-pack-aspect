@@ -25,7 +25,7 @@ import {
     FP,
     Ideal,
     isConcreteIdeal,
-} from "@atomist/sdm-pack-fingerprints";
+} from "@atomist/sdm-pack-fingerprint";
 import * as _ from "lodash";
 import {
     Client,
