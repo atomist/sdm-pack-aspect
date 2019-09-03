@@ -15,11 +15,12 @@
  */
 
 import {
+    Configuration,
+    configurationValue,
     GitProject,
     HandlerContext,
     logger,
     Project,
-    ProjectOperationCredentials,
     RemoteRepoRef,
 } from "@atomist/automation-client";
 import {
@@ -32,9 +33,7 @@ import {
     FP,
     VirtualProjectFinder,
 } from "@atomist/sdm-pack-fingerprint";
-import {
-    Analyzed,
-} from "../../../aspect/AspectRegistry";
+import { Analyzed } from "../../../aspect/AspectRegistry";
 import { time } from "../../../util/showTiming";
 import {
     Analyzer,
@@ -158,13 +157,11 @@ function fakePushImpactListenerInvocation(p: Project): PushImpactListenerInvocat
         get filesChanged(): string[] {
             throw new Error("Unsupported");
         },
-        get credentials(): ProjectOperationCredentials {
-            throw new Error("Unsupported");
-        },
+        credentials: { token: process.env.GITHUB_TOKEN },
         impactedSubProject: p,
         get preferences(): PreferenceStore {
             throw new Error("Unsupported");
         },
-        configuration: {},
+        configuration: configurationValue<Configuration>("", {}),
     };
 }
