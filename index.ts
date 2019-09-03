@@ -42,10 +42,3 @@ import * as commonScorers from "./lib/scorer/commonScorers";
 import * as commonTaggers from "./lib/tagger/commonTaggers";
 
 export { commonTaggers, commonScorers };
-
-export {
-    functionSupport,
-} from "./lib/function/functionSupport";
-export {
-    aspectEndpoint,
-} from "./lib/function/endpoint";
