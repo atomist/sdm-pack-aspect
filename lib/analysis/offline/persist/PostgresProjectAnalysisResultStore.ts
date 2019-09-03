@@ -25,7 +25,7 @@ import {
     FP,
     Ideal,
     isConcreteIdeal,
-} from "@atomist/sdm-pack-fingerprints";
+} from "@atomist/sdm-pack-fingerprint";
 import * as _ from "lodash";
 import {
     Client,
@@ -34,7 +34,6 @@ import {
 import { Analyzed } from "../../../aspect/AspectRegistry";
 import { IdealStore } from "../../../aspect/IdealStore";
 import { ProblemUsage } from "../../../aspect/ProblemStore";
-import { getCategories } from "../../../customize/categories";
 import { PlantedTree } from "../../../tree/sunburst";
 import {
     BandCasing,
@@ -628,7 +627,7 @@ ORDER BY entropy DESC`;
             compliance: +r.compliance,
             entropy_band: bandFor(EntropySizeBands, +r.entropy, { casing: BandCasing.Sentence, includeNumber: false }),
             // This is really confusing but the Aspect.name is feature_name alias type in the db
-            categories: getCategories({ name: r.type }),
+            // categories: getCategories({ name: r.type }),
         }));
     }, []);
 }

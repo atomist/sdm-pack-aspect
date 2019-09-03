@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { Aspect } from "@atomist/sdm-pack-fingerprints";
+import { Aspect } from "@atomist/sdm-pack-fingerprint";
 import { globAspect } from "../compose/globAspect";
 
 /**

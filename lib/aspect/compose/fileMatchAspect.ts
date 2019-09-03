@@ -18,7 +18,7 @@ import {
     FileParser,
 } from "@atomist/automation-client";
 import { fileHitIterator } from "@atomist/automation-client/lib/tree/ast/astUtils";
-import { Aspect, FP, sha256 } from "@atomist/sdm-pack-fingerprints";
+import { Aspect, FP, sha256 } from "@atomist/sdm-pack-fingerprint";
 import { Omit } from "../../util/omit";
 
 export interface FileMatch {

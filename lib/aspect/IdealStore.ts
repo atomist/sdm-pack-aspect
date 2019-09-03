@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { Ideal } from "@atomist/sdm-pack-fingerprints";
+import { Ideal } from "@atomist/sdm-pack-fingerprint";
 
 /**
  * Function that can return the desired ideal, if any, for a given fingerprint name.

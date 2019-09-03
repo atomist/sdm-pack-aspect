@@ -22,7 +22,7 @@ import {
 import * as assert from "assert";
 
 import { microgrammar } from "@atomist/microgrammar";
-import { FP } from "@atomist/sdm-pack-fingerprints";
+import { FP } from "@atomist/sdm-pack-fingerprint";
 import { microgrammarMatchAspect } from "../../lib/aspect/compose/microgrammarMatchAspect";
 
 // tslint:disable

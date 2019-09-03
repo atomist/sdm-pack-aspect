@@ -18,19 +18,14 @@ import {
     RepoRef,
     Severity,
 } from "@atomist/automation-client";
-import {
-    FP,
-} from "@atomist/sdm-pack-fingerprints";
-import { Aspect } from "@atomist/sdm-pack-fingerprints/lib/machine/Aspect";
+import { FP } from "@atomist/sdm-pack-fingerprint";
+import { Aspect } from "@atomist/sdm-pack-fingerprint/lib/machine/Aspect";
 import { ProjectAnalysisResult } from "../analysis/ProjectAnalysisResult";
-import { CommunityCategory } from "../scorer/commonScorers";
 import {
-    Score,
     Scorer,
     ScorerReturn,
     WeightedScore,
 } from "../scorer/Score";
-import { Omit } from "../util/omit";
 import { IdealStore } from "./IdealStore";
 import {
     ProblemStore,

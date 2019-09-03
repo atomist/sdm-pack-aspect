@@ -40,7 +40,7 @@ import {
     RepoRef,
 } from "@atomist/automation-client";
 import { TmpDirectoryManager } from "@atomist/automation-client/lib/spi/clone/tmpDirectoryManager";
-import { FP } from "@atomist/sdm-pack-fingerprints";
+import { FP } from "@atomist/sdm-pack-fingerprint";
 import * as assert from "assert";
 import {
     FingerprintInsertionResult,

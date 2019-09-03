@@ -17,7 +17,7 @@
 import {
     Aspect,
     filesAspect,
-} from "@atomist/sdm-pack-fingerprints";
+} from "@atomist/sdm-pack-fingerprint";
 import { conditionalize } from "../compose/conditionalize";
 
 export const NodeGitIgnore: Aspect =

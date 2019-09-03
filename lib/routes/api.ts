@@ -17,7 +17,7 @@
 import { logger } from "@atomist/automation-client";
 import { ExpressCustomizer } from "@atomist/automation-client/lib/configuration";
 import { isInLocalMode } from "@atomist/sdm-core";
-import { isConcreteIdeal } from "@atomist/sdm-pack-fingerprints";
+import { isConcreteIdeal } from "@atomist/sdm-pack-fingerprint";
 import * as bodyParser from "body-parser";
 import {
     Express,
@@ -41,7 +41,7 @@ import {
     ScoredRepo,
     Tag,
 } from "../aspect/AspectRegistry";
-import { getAspectReports } from "../customize/categories";
+import { AspectReportDetailsRegistry } from "../aspect/AspectReportDetailsRegistry";
 import { CustomReporters } from "../customize/customReporters";
 import {
     isSunburstTree,
@@ -60,6 +60,7 @@ import {
     bandFor,
 } from "../util/bands";
 import { EntropySizeBands } from "../util/commonBands";
+import { getAspectReports } from "./categories";
 
 import { Omit } from "../util/omit";
 import {
@@ -79,7 +80,7 @@ import {
  * Also expose Swagger API documentation.
  */
 export function api(projectAnalysisResultStore: ProjectAnalysisResultStore,
-                    aspectRegistry: AspectRegistry): {
+                    aspectRegistry: AspectRegistry & AspectReportDetailsRegistry): {
     customizer: ExpressCustomizer,
     routesToSuggestOnStartup: Array<{ title: string, route: string }>,
 } {
@@ -101,7 +102,7 @@ export function api(projectAnalysisResultStore: ProjectAnalysisResultStore,
             configureAuth(express);
 
             exposeIdealAndProblemSetting(express, aspectRegistry);
-            exposeAspectMetadata(express, projectAnalysisResultStore);
+            exposeAspectMetadata(express, projectAnalysisResultStore, aspectRegistry);
             exposeListFingerprints(express, projectAnalysisResultStore);
             exposeFingerprintByType(express, aspectRegistry, projectAnalysisResultStore);
             exposeExplore(express, aspectRegistry, projectAnalysisResultStore);
@@ -119,14 +120,16 @@ function exposeSwaggerDoc(express: Express, docRoute: string): void {
     express.use(docRoute, swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 }
 
-function exposeAspectMetadata(express: Express, store: ProjectAnalysisResultStore): void {
+function exposeAspectMetadata(express: Express,
+                              store: ProjectAnalysisResultStore,
+                              aspectRegistry: AspectRegistry & AspectReportDetailsRegistry): void {
     // Return the aspects metadata
     express.options("/api/v1/:workspace_id/aspects", corsHandler());
     express.get("/api/v1/:workspace_id/aspects", [corsHandler(), ...authHandlers()], async (req, res) => {
         try {
             const workspaceId = req.params.workspace_id || "local";
             const fingerprintKinds = await store.distinctRepoFingerprintKinds(workspaceId);
-            const reports = getAspectReports(fingerprintKinds, workspaceId);
+            const reports = await getAspectReports(fingerprintKinds as any, aspectRegistry, workspaceId);
             logger.debug("Returning aspect reports for '%s': %j", workspaceId, reports);
             const count = await store.distinctRepoCount(workspaceId);
             const at = await store.latestTimestamp(workspaceId);

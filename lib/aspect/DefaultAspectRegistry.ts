@@ -14,16 +14,18 @@
  * limitations under the License.
  */
 
-import { RepoRef } from "@atomist/automation-client";
+import { Configuration } from "@atomist/automation-client";
+import { isInLocalMode } from "@atomist/sdm-core";
 import {
     Aspect,
     FP,
-} from "@atomist/sdm-pack-fingerprints";
+} from "@atomist/sdm-pack-fingerprint";
 import * as _ from "lodash";
 import { ProjectAnalysisResult } from "../analysis/ProjectAnalysisResult";
 import { TagContext } from "../routes/api";
 import { ScoreWeightings } from "../scorer/Score";
 import { scoreRepos } from "../scorer/scoring";
+import { AspectRegistrations } from "../typings/types";
 import { showTiming } from "../util/showTiming";
 import {
     AspectRegistry,
@@ -38,6 +40,11 @@ import {
     TaggerDefinition,
     WorkspaceSpecificTagger,
 } from "./AspectRegistry";
+import {
+    AspectReportDetails,
+    AspectReportDetailsRegistry,
+    AspectWithReportDetails,
+} from "./AspectReportDetailsRegistry";
 import { IdealStore } from "./IdealStore";
 import {
     chainUndesirableUsageCheckers,
@@ -46,7 +53,7 @@ import {
     UndesirableUsageChecker,
 } from "./ProblemStore";
 
-export class DefaultAspectRegistry implements AspectRegistry {
+export class DefaultAspectRegistry implements AspectRegistry, AspectReportDetailsRegistry {
 
     private readonly taggers: TaggerDefinition[] = [];
 
@@ -91,6 +98,29 @@ export class DefaultAspectRegistry implements AspectRegistry {
 
     public aspectOf(type: string): Aspect | undefined {
         return type ? this.aspects.find(f => f.name === type) : undefined;
+    }
+
+    public async reportDetailsOf(typeOrAspect: string | Aspect, workspaceId: string): Promise<AspectReportDetails | undefined> {
+        const type = typeof typeOrAspect === "string" ? typeOrAspect : typeOrAspect.name;
+        const aspect = this.aspectOf(type) as AspectWithReportDetails;
+        if (!!aspect) {
+            return aspect.details;
+        }
+        if (!isInLocalMode() && !!_.get(this.opts.configuration, "graphql.client.factory")) {
+            const aspectRegistrations = await this.opts.configuration.graphql.client.factory.create(workspaceId, this.opts.configuration)
+                .query<AspectRegistrations.Query, AspectRegistrations.Variables>({
+                    name: "AspectRegistrations",
+                    variables: {
+                        name: [type],
+                        enabled: ["true"],
+                    },
+                });
+            const aspectRegistration = _.get(aspectRegistrations, "AspectRegistration[0]");
+            if (!!aspectRegistration) {
+                return aspectRegistration;
+            }
+        }
+        return undefined;
     }
 
     public async undesirableUsageCheckerFor(workspaceId: string): Promise<UndesirableUsageChecker | undefined> {
@@ -139,20 +169,16 @@ export class DefaultAspectRegistry implements AspectRegistry {
     constructor(private readonly opts: {
         idealStore: IdealStore,
         problemStore: ProblemStore,
-        aspects: Aspect[],
+        aspects: AspectWithReportDetails[],
         undesirableUsageChecker: UndesirableUsageChecker,
         scorers?: RepositoryScorer[],
         scoreWeightings?: ScoreWeightings,
+        configuration?: Configuration,
     }) {
-        const aspectNamesSeen: string[] = [];
-        opts.aspects.forEach(a => {
-            if (!a) {
+        opts.aspects.forEach(f => {
+            if (!f) {
                 throw new Error("A null aspect was passed in");
             }
-            if (aspectNamesSeen.includes(a.name)) {
-                throw new Error(`Misconfiguration: Aspect named '${a.name}' passed in twice`);
-            }
-            aspectNamesSeen.push(a.name);
         });
     }
 }
@@ -171,7 +197,7 @@ async function tagsFor(rts: RepoToScore, tagContext: TagContext, taggers: Tagger
             .then(yes => ({ ...tagger, tag: yes ? tagger.name : undefined }))),
     );
     return _.uniqBy(tags.filter(t => !!t.tag),
-            tag => tag.name);
+        tag => tag.name);
 }
 
 async function taggerFrom(wst: WorkspaceSpecificTagger, workspaceId: string, ar: AspectRegistry): Promise<Tagger> {

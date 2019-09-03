@@ -31,7 +31,7 @@ import {
     Aspect,
     FP,
     VirtualProjectFinder,
-} from "@atomist/sdm-pack-fingerprints";
+} from "@atomist/sdm-pack-fingerprint";
 import {
     Analyzed,
 } from "../../../aspect/AspectRegistry";

@@ -15,7 +15,7 @@
  */
 
 import { RepoRef } from "@atomist/automation-client";
-import { FP } from "@atomist/sdm-pack-fingerprints";
+import { FP } from "@atomist/sdm-pack-fingerprint";
 import { Analyzed } from "../../../aspect/AspectRegistry";
 import { PlantedTree } from "../../../tree/sunburst";
 import { ProjectAnalysisResult } from "../../ProjectAnalysisResult";
@@ -53,7 +53,6 @@ export type FingerprintKind = Pick<FP, "type" | "name">;
 export interface FingerprintUsage extends CohortAnalysis {
     name: string;
     type: string;
-    categories: string[];
 }
 
 export interface TreeQuery {

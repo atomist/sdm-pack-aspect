@@ -35,7 +35,7 @@ import {
     Aspect,
     NpmDeps,
     VirtualProjectFinder,
-} from "@atomist/sdm-pack-fingerprints";
+} from "@atomist/sdm-pack-fingerprint";
 import {
     PowerShellLanguage,
     ShellLanguage,
@@ -52,6 +52,7 @@ import {
     RepositoryScorer,
     Tagger,
 } from "../lib/aspect/AspectRegistry";
+import { enrich } from "../lib/aspect/AspectReportDetailsRegistry";
 import { CodeMetricsAspect } from "../lib/aspect/common/codeMetrics";
 import { codeOwnership } from "../lib/aspect/common/codeOwnership";
 import { codeOfConduct } from "../lib/aspect/community/codeOfConduct";
@@ -72,10 +73,6 @@ import { BranchCount } from "../lib/aspect/git/branchCount";
 import { GitRecency } from "../lib/aspect/git/gitActivity";
 import { AcceptEverythingUndesirableUsageChecker } from "../lib/aspect/ProblemStore";
 import { ExposedSecrets } from "../lib/aspect/secret/exposedSecrets";
-import {
-    registerCategories,
-    registerReportDetails,
-} from "../lib/customize/categories";
 import {
     aspectSupport,
     DefaultVirtualProjectFinder,
@@ -158,23 +155,25 @@ export const configuration: Configuration = configure<TestGoals>(async sdm => {
 });
 
 function aspects(): Aspect[] {
-    registerCategories(DockerFrom, "Docker");
-    registerReportDetails(DockerFrom, {
-        name: "Docker base images",
-        shortName: "images",
-        unit: "tag",
-        url: "fingerprint/docker-base-image/*?byOrg=true&presence=false&progress=false&otherLabel=false&trim=false",
-        description: "Docker base images in use across all repositories in your workspace, " +
-        "broken out by image label and repositories where used.",
-    });
-    registerCategories(DockerfilePath, "Docker");
-    registerCategories(DockerPorts, "Docker");
-    registerCategories(BranchCount, "Git");
-    registerCategories(GitRecency, "Git");
     return [
-        DockerFrom,
+        enrich(DockerFrom, {
+            shortName: "images",
+            category: "Docker",
+            unit: "tag",
+            url: "fingerprint/docker-base-image/*?byOrg=true&trim=false",
+            description: "Docker base images in use across all repositories in your workspace, " +
+                "broken out by image label and repositories where used.",
+        }),
         DockerfilePath,
-        DockerPorts,
+        enrich(DockerPorts, {
+            shortName: "ports",
+            category: "Docker",
+            unit: "port",
+            url: "fingerprint/docker-ports/docker-ports?byOrg=true&trim=false",
+            description: "Ports exposed in Docker configuration in use  across all repositories in your workspace, " +
+                "broken out by port number and repositories where used.",
+            manage: false,
+        }),
         license(),
         // Based on license, decide the presence of a license: Not spread
         LicensePresence,
@@ -182,7 +181,15 @@ function aspects(): Aspect[] {
         NpmDeps,
         codeOfConduct(),
         ExposedSecrets,
-        BranchCount,
+        enrich(BranchCount, {
+            shortName: "branches",
+            category: "Git",
+            unit: "branch",
+            url: `fingerprint/${BranchCount.name}/${BranchCount.name}?byOrg=true&trim=false`,
+            description: "Number of Git branches across repositories in your workspace, " +
+                "grouped by Drift Level.",
+            manage: false,
+        }),
         GitRecency,
         // This is expensive as it requires deeper cloning
         // gitActiveCommitters(30),

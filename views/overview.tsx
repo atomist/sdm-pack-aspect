@@ -1,4 +1,4 @@
-import { Aspect } from "@atomist/sdm-pack-fingerprints";
+import { Aspect } from "@atomist/sdm-pack-fingerprint";
 import * as React from "react";
 import { FingerprintUsage } from "../lib/analysis/offline/persist/ProjectAnalysisResultStore";
 import { CohortAnalysis } from "../lib/analysis/offline/spider/analytics";

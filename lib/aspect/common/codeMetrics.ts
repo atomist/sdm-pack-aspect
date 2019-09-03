@@ -15,7 +15,7 @@
  */
 
 import { Project } from "@atomist/automation-client";
-import { Aspect, FP, sha256 } from "@atomist/sdm-pack-fingerprints";
+import { Aspect, FP, sha256 } from "@atomist/sdm-pack-fingerprint";
 import {
     calculateCodeMetrics,
     CodeMetrics,

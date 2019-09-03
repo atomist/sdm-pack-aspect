@@ -20,7 +20,7 @@ import {
     ExtractFingerprint,
     fingerprintOf,
     FP,
-} from "@atomist/sdm-pack-fingerprints";
+} from "@atomist/sdm-pack-fingerprint";
 
 export interface CodeOwnershipData {
 

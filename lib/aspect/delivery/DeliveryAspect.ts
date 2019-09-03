@@ -23,7 +23,7 @@ import {
     Aspect,
     FP,
     PublishFingerprints,
-} from "@atomist/sdm-pack-fingerprints";
+} from "@atomist/sdm-pack-fingerprint";
 
 /**
  * Aspect that can register to extract fingerprints from Atomist events

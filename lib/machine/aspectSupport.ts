@@ -17,7 +17,6 @@
 import {
     BannerSection,
     Configuration,
-    HttpClientFactory,
 } from "@atomist/automation-client";
 import { ExpressCustomizer } from "@atomist/automation-client/lib/configuration";
 import {
@@ -39,7 +38,9 @@ import {
     PublishFingerprints,
     RebaseOptions,
     VirtualProjectFinder,
-} from "@atomist/sdm-pack-fingerprints";
+} from "@atomist/sdm-pack-fingerprint";
+import { AspectsFactory } from "@atomist/sdm-pack-fingerprint/lib/machine/fingerprintSupport";
+import * as _ from "lodash";
 import { sdmConfigClientFactory } from "../analysis/offline/persist/pgClientFactory";
 import { ClientFactory } from "../analysis/offline/persist/pgUtils";
 import {
@@ -56,6 +57,10 @@ import {
     Tagger,
     TaggerDefinition,
 } from "../aspect/AspectRegistry";
+import {
+    isClassificationAspect,
+    taggerAspect,
+} from "../aspect/compose/classificationAspect";
 import { DefaultAspectRegistry } from "../aspect/DefaultAspectRegistry";
 import { isDeliveryAspect } from "../aspect/delivery/DeliveryAspect";
 import { UndesirableUsageChecker } from "../aspect/ProblemStore";
@@ -66,19 +71,13 @@ import {
 } from "../aspect/score/ScoredAspect";
 import { api } from "../routes/api";
 import { addWebAppRoutes } from "../routes/web-app/webAppRoutes";
+import { exposeFingerprintScore } from "../scorer/commonScorers";
 import { ScoreWeightings } from "../scorer/Score";
+import { tagsFromClassificationFingerprints } from "../tagger/commonTaggers";
 import {
     analysisResultStore,
     createAnalyzer,
 } from "./machine";
-
-import * as _ from "lodash";
-import {
-    isClassificationAspect,
-    taggerAspect,
-} from "../aspect/compose/classificationAspect";
-import { exposeFingerprintScore } from "../scorer/commonScorers";
-import { tagsFromClassificationFingerprints } from "../tagger/commonTaggers";
 
 /**
  * Default VirtualProjectFinder, which recognizes Maven, npm,
@@ -109,6 +108,11 @@ export interface AspectSupportOptions {
      * and delivery events.
      */
     aspects: Aspect | Aspect[];
+
+    /**
+     * Dynamically add aspects based on current push
+     */
+    aspectsFactory?: AspectsFactory;
 
     /**
      * If set, this enables multi-project support by helping aspects work
@@ -154,8 +158,6 @@ export interface AspectSupportOptions {
      */
     undesirableUsageChecker?: UndesirableUsageChecker;
 
-    exposeWeb?: boolean;
-
     /**
      * Custom fingerprint routing. Used in local mode.
      * Default behavior is to send fingerprints to Atomist.
@@ -168,13 +170,22 @@ export interface AspectSupportOptions {
      */
     goals?: Partial<Pick<AllGoals, "build" | "pushImpact">>;
 
-    rebase?: RebaseOptions;
-
     /**
      * If this is provided, it can distinguish the UI instance.
      * Helps distinguish different SDMs during development.
      */
     instanceMetadata?: ExtensionPackMetadata;
+
+    /**
+     * Optionally configure the rebase options for Code Transforms
+     */
+    rebase?: RebaseOptions;
+
+    /**
+     * Optionally expose web endpoints
+     * Defaults to true in local mode
+     */
+    exposeWeb?: boolean;
 }
 
 /**
@@ -182,8 +193,9 @@ export interface AspectSupportOptions {
  * If we're in local mode, expose analyzer commands and HTTP endpoints.
  */
 export function aspectSupport(options: AspectSupportOptions): ExtensionPack {
+
     const scoringAspects: ScoredAspect[] = _.flatten(
-        Object.getOwnPropertyNames(options.scorers)
+        Object.getOwnPropertyNames(options.scorers || {})
             .map(name => emitScoringAspect(name, toArray(options.scorers[name] || []), options.weightings)))
         .filter(a => !!a);
     const tagAspect = taggerAspect({
@@ -219,6 +231,7 @@ export function aspectSupport(options: AspectSupportOptions): ExtensionPack {
                     sdm.addExtensionPacks(fingerprintSupport({
                         pushImpactGoal: options.goals.pushImpact as PushImpact,
                         aspects,
+                        aspectsFactory: options.aspectsFactory,
                         rebase: options.rebase,
                         publishFingerprints: options.publishFingerprints,
                     }));
@@ -233,7 +246,7 @@ export function aspectSupport(options: AspectSupportOptions): ExtensionPack {
             const exposeWeb = options.exposeWeb !== undefined ? options.exposeWeb : isInLocalMode();
             if (exposeWeb) {
                 const { customizers, routesToSuggestOnStartup } =
-                    orgVisualizationEndpoints(sdmConfigClientFactory(cfg), cfg.http.client.factory,
+                    orgVisualizationEndpoints(sdmConfigClientFactory(cfg), cfg,
                         analysisTracking, options, aspects);
                 cfg.http.customizers.push(...customizers);
                 routesToSuggestOnStartup.forEach(rtsos => {
@@ -253,7 +266,7 @@ function suggestRoute({ title, route }: { title: string, route: string }):
 }
 
 function orgVisualizationEndpoints(dbClientFactory: ClientFactory,
-                                   httpClientFactory: HttpClientFactory,
+                                   configuration: Configuration,
                                    analysisTracking: AnalysisTracking,
                                    options: AspectSupportOptions,
                                    aspects: Aspect[]): {
@@ -270,6 +283,7 @@ function orgVisualizationEndpoints(dbClientFactory: ClientFactory,
         undesirableUsageChecker: options.undesirableUsageChecker,
         scorers: toArray(options.inMemoryScorers || []).concat(scorerNames.map(exposeFingerprintScore)),
         scoreWeightings: options.weightings || DefaultScoreWeightings,
+        configuration,
     })
         .withTaggers(...toArray(options.inMemoryTaggers || []))
         // Add in memory taggers for all classification fingerprints
@@ -284,7 +298,7 @@ function orgVisualizationEndpoints(dbClientFactory: ClientFactory,
         };
     }
 
-    const aboutStaticPages = addWebAppRoutes(aspectRegistry, resultStore, analysisTracking, httpClientFactory,
+    const aboutStaticPages = addWebAppRoutes(aspectRegistry, resultStore, analysisTracking, configuration.http.client.factory,
         options.instanceMetadata || metadata());
 
     return {

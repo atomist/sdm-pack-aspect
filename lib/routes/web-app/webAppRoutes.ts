@@ -28,8 +28,8 @@ import {
     FP,
     Ideal,
     isConcreteIdeal,
-} from "@atomist/sdm-pack-fingerprints";
-import { Aspect } from "@atomist/sdm-pack-fingerprints/lib/machine/Aspect";
+} from "@atomist/sdm-pack-fingerprint";
+import { Aspect } from "@atomist/sdm-pack-fingerprint/lib/machine/Aspect";
 import * as bodyParser from "body-parser";
 import {
     Express,

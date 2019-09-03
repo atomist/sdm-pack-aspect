@@ -19,7 +19,7 @@ import { Grammar } from "@atomist/microgrammar";
 import {
     Aspect,
     FP,
-} from "@atomist/sdm-pack-fingerprints";
+} from "@atomist/sdm-pack-fingerprint";
 import { Omit } from "../../util/omit";
 import {
     fileMatchAspect,

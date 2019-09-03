@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { Aspect, sha256 } from "@atomist/sdm-pack-fingerprints";
+import { Aspect, sha256 } from "@atomist/sdm-pack-fingerprint";
 import {
     ExposedSecret,
     sniffProject,

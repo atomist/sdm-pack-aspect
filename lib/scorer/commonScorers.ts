@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { sha256 } from "@atomist/sdm-pack-fingerprints";
+import { sha256 } from "@atomist/sdm-pack-fingerprint";
 import { Language } from "@atomist/sdm-pack-sloc/lib/slocReport";
 import * as _ from "lodash";
 import { RepositoryScorer } from "../aspect/AspectRegistry";
