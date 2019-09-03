@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased](https://github.com/atomist-seeds/empty-sdm/compare/0.1.28...HEAD)
 
+### Changed
+
+-   Support for dynamic aspects, report details. [#209](https://github.com/atomist/sdm-pack-aspect/issues/209)
+
 ## [0.1.28](https://github.com/atomist-seeds/empty-sdm/compare/0.1.27...0.1.28) - 2019-08-02
 
 ## [0.1.27](https://github.com/atomist-seeds/empty-sdm/compare/0.1.26...0.1.27) - 2019-08-02
