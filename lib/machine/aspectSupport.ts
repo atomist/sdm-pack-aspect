@@ -291,7 +291,7 @@ function orgVisualizationEndpoints(dbClientFactory: ClientFactory,
 
     const aboutTheApi = api(resultStore, aspectRegistry);
 
-    if (!isInLocalMode()) {
+    if (!isInLocalMode() && !options.exposeWeb) {
         return {
             routesToSuggestOnStartup: aboutTheApi.routesToSuggestOnStartup,
             customizers: [aboutTheApi.customizer],
