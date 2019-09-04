@@ -195,7 +195,7 @@ export const PenalizeMonorepos: RepositoryScorer = {
  * Penalize repositories without a license file
  */
 export const PenalizeNoLicense: RepositoryScorer = {
-    name: "foo",
+    name: "require-license",
     category: CommunityCategory,
     scoreFingerprints: async repo => {
         const license = repo.analysis.fingerprints.find(isLicenseFingerprint);
