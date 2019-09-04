@@ -24,6 +24,7 @@ import {
     RemoteRepoRef,
 } from "@atomist/automation-client";
 import {
+    execPromise,
     PreferenceStore,
     PushImpactListenerInvocation,
 } from "@atomist/sdm";
@@ -148,11 +149,22 @@ async function safeConsolidate(aspect: Aspect,
     }
 }
 
+async function fetchChangedFiles(project: GitProject): Promise<string[]> {
+    try {
+        const output = await execPromise("git", ["show", `--pretty=format:""`, "--name-only"]);
+        return output.stdout.trim().split("\n");
+    } catch (err) {
+        logger.error("Failure getting changed files: %s", err.message);
+        return [];
+    }
+}
+
 /**
  * Make a fake push for the last commit to this project
  */
 async function fakePushImpactListenerInvocation(p: Project): Promise<PushImpactListenerInvocation> {
     const project = p as GitProject;
+    const changedFiles = await fetchChangedFiles(project);
     return {
         id: p.id as any,
         get context(): HandlerContext {
