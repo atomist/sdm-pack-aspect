@@ -59,7 +59,7 @@ export function corsHandler(): exp.RequestHandler {
 export function authHandlers(): exp.RequestHandler[] {
     // In local mode we don't need auth
     if (isInLocalMode()) {
-        return  [(req: exp.Request, res: exp.Response, next: exp.NextFunction) => next()];
+        return [(req: exp.Request, res: exp.Response, next: exp.NextFunction) => next()];
     }
 
     const cookieParser = require("cookie-parser");
@@ -78,6 +78,7 @@ export function authHandlers(): exp.RequestHandler[] {
             // Creds are missing; just return 401 error here instead of calling the backend
             if (!creds) {
                 res.sendStatus(401);
+                return;
             }
 
             const graphClient = new ApolloGraphClient(
