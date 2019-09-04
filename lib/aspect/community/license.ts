@@ -109,3 +109,25 @@ export const LicensePresence: Aspect<{ present: boolean }> = {
     },
     toDisplayableFingerprint: fp => fp.data.present ? "Yes" : "No",
 };
+
+export const FilesChangedIsPopulated: Aspect<{ count: number }> = {
+    name: "FilesChangedIsPopulated",
+    displayName: "FilesChangedIsPopulated",
+    extract: async (p, pili) => {
+        return {
+            name: "FilesChangedIsPopulatedInExtract",
+            type: "FilesChangedIsPopulated",
+            data: { count: pili.filesChanged.length },
+            sha: "yeah",
+        };
+    },
+    consolidate: async (fps, p, pili) => {
+        return {
+            name: "FilesChangedIsPopulatedInConsolidate",
+            type: "FilesChangedIsPopulated",
+            data: { count: pili.filesChanged.length },
+            sha: "yeah",
+        };
+    },
+    toDisplayableFingerprint: fp => fp.data.count + " files",
+};

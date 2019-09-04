@@ -58,6 +58,7 @@ import { codeOfConduct } from "../lib/aspect/community/codeOfConduct";
 import {
     license,
     LicensePresence,
+    FilesChangedIsPopulated,
 } from "../lib/aspect/community/license";
 import {
     ChangelogAspect,
@@ -179,6 +180,7 @@ function aspects(): Aspect[] {
         license(),
         // Based on license, decide the presence of a license: Not spread
         LicensePresence,
+        FilesChangedIsPopulated,
         codeOwnership(),
         NpmDeps,
         codeOfConduct(),
@@ -206,10 +208,10 @@ function aspects(): Aspect[] {
         globAspect({ name: "readme", displayName: "Readme file", glob: "README.md" }),
 
         projectClassificationAspect({
-                name: "javaBuild",
-                displayName: "Java build tool",
-                toDisplayableFingerprintName: () => "Java build tool",
-            },
+            name: "javaBuild",
+            displayName: "Java build tool",
+            toDisplayableFingerprintName: () => "Java build tool",
+        },
             { tags: "maven", reason: "has Maven POM", test: async p => p.hasFile("pom.xml") },
             { tags: "gradle", reason: "has build.gradle", test: async p => p.hasFile("build.gradle") },
         ),
