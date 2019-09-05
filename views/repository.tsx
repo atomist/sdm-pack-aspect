@@ -116,7 +116,7 @@ function displayTag(tag: TagUsage): React.ReactElement {
 
 function displayFingerprint(fingerprint: ProjectFingerprintForDisplay): React.ReactElement {
     return <li style={fingerprint.style} key={fingerprint.displayName}>
-        <i>{fingerprint.displayName}</i>: {fingerprint.displayValue}
+        <i>{fingerprint.displayName}</i>: {beSureThisIsAString(fingerprint.displayValue)}
         {" "} {fingerprint.idealDisplayString && `(Ideal: ${fingerprint.idealDisplayString})`}
     </li>;
 }
@@ -134,4 +134,11 @@ function displayCodeMetrics(props: RepoExplorerProps): React.ReactElement {
             })}
         </ul>,
         true);
+}
+
+function beSureThisIsAString(probableString: string): string {
+    if (typeof probableString === "string") {
+        return probableString;
+    }
+    return JSON.stringify(probableString);
 }

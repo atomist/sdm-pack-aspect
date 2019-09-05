@@ -119,40 +119,45 @@ export function addWebAppRoutes(
 
 function exposeRepositoryPage(conf: WebAppConfig): void {
     conf.express.get("/repository", ...conf.handlers, async (req, res) => {
-        const workspaceId = req.query.workspaceId || "*";
-        const id = req.query.id;
-        const analysisResult = await conf.store.loadById(id);
-        const category = req.query.category || "*";
-        if (!analysisResult) {
-            return res.send(`No project at ${JSON.stringify(id)}`);
+        try {
+            const workspaceId = req.query.workspaceId || "*";
+            const id = req.query.id;
+            const analysisResult = await conf.store.loadById(id);
+            const category = req.query.category || "*";
+            if (!analysisResult) {
+                return res.send(`No project at ${JSON.stringify(id)}`);
+            }
+
+            const allFingerprints = await conf.store.fingerprintsForProject(id);
+            const mostRecentTimestampMillis = Math.max(...allFingerprints.map(fp =>
+                fp.timestamp.getTime()));
+            const commitSha = allFingerprints.length > 0 ? allFingerprints[0].commitSha : undefined;
+            const aspectsAndFingerprints = await projectFingerprints(conf.aspectRegistry,
+                allFingerprints);
+
+            // assign style based on ideal
+            const ffd: ProjectAspectForDisplay[] = aspectsAndFingerprints.map(aspectAndFingerprints => ({
+                ...aspectAndFingerprints,
+                fingerprints: aspectAndFingerprints.fingerprints.map(fp => ({
+                    ...fp,
+                    idealDisplayString: displayIdeal(fp, aspectAndFingerprints.aspect),
+                    style: displayStyleAccordingToIdeal(fp),
+                })),
+            }));
+
+            const repo = (await conf.aspectRegistry.tagAndScoreRepos(workspaceId, [analysisResult], { category }))[0];
+            return res.send(renderStaticReactNode(
+                RepoExplorer({
+                    repo,
+                    aspects: _.sortBy(ffd.filter(f => !!f.aspect.displayName), f => f.aspect.displayName),
+                    category,
+                    timestamp: new Date(mostRecentTimestampMillis),
+                }), `Repository Insights`,
+                conf.instanceMetadata));
+        } catch (e) {
+            logger.error(e);
+            return res.sendStatus(401);
         }
-
-        const allFingerprints = await conf.store.fingerprintsForProject(id);
-        const mostRecentTimestampMillis = Math.max(...allFingerprints.map(fp =>
-            fp.timestamp.getTime()));
-        const commitSha = allFingerprints.length > 0 ? allFingerprints[0].commitSha : undefined;
-        const aspectsAndFingerprints = await projectFingerprints(conf.aspectRegistry,
-            allFingerprints);
-
-        // assign style based on ideal
-        const ffd: ProjectAspectForDisplay[] = aspectsAndFingerprints.map(aspectAndFingerprints => ({
-            ...aspectAndFingerprints,
-            fingerprints: aspectAndFingerprints.fingerprints.map(fp => ({
-                ...fp,
-                idealDisplayString: displayIdeal(fp, aspectAndFingerprints.aspect),
-                style: displayStyleAccordingToIdeal(fp),
-            })),
-        }));
-
-        const repo = (await conf.aspectRegistry.tagAndScoreRepos(workspaceId, [analysisResult], { category }))[0];
-        return res.send(renderStaticReactNode(
-            RepoExplorer({
-                repo,
-                aspects: _.sortBy(ffd.filter(f => !!f.aspect.displayName), f => f.aspect.displayName),
-                category,
-                timestamp: new Date(mostRecentTimestampMillis),
-            }), `Repository Insights`,
-            conf.instanceMetadata));
     });
 }
 
