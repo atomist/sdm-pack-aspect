@@ -58,7 +58,7 @@ export function corsHandler(): exp.RequestHandler {
 
 export function authHandlers(secure: boolean): exp.RequestHandler[] {
     // In local mode we don't need auth
-    if (isInLocalMode() && !secure) {
+    if (isInLocalMode() || !secure) {
         return  [(req: exp.Request, res: exp.Response, next: exp.NextFunction) => next()];
     }
 
