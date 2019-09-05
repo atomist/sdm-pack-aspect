@@ -25,7 +25,6 @@ import {
     configure,
 } from "@atomist/sdm-core";
 import { Build } from "@atomist/sdm-pack-build";
-import { LeinDeps } from "@atomist/sdm-pack-clojure/lib/fingerprints/clojure";
 import {
     DockerfilePath,
     DockerFrom,
@@ -216,7 +215,6 @@ function aspects(): Aspect[] {
         ),
 
         // allMavenDependenciesAspect,    // This is expensive
-        LeinDeps,
 
         buildTimeAspect(),
     ];
@@ -259,10 +257,6 @@ export function taggers(opts: Partial<TaggersParams>): Tagger[] {
         {
             name: "docker", description: "Docker status",
             test: async repo => repo.analysis.fingerprints.some(fp => fp.type === DockerFrom.name),
-        },
-        {
-            name: "clojure", description: "Lein dependencies",
-            test: async repo => repo.analysis.fingerprints.some(fp => fp.type === LeinDeps.name),
         },
         {
             name: "azure-pipelines",
