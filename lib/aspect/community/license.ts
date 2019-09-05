@@ -53,7 +53,7 @@ const defaultClassifier: ContentClassifier = content => content.trim().split("\n
  * a classificiation
  */
 export function license(opts: { classifier: ContentClassifier } =
-                            { classifier: defaultClassifier }): Aspect<LicenseData> {
+    { classifier: defaultClassifier }): Aspect<LicenseData> {
     return {
         name: LicenseType,
         displayName: "License",

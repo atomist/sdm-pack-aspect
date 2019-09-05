@@ -139,8 +139,49 @@ div.repositoryColumns>div {
     padding-left: 4px;
 }
 
+.failedAspect {
+    border-color: crimson;
+    border-style: ridge;
+    border-width: 3px;
+    padding-left: 4px;
+    font-size: small;
+    line-height: 1em;
+    overflow: scroll;
+    max-height: 1in;
+}
+
 .timeTakenToAnalyzeRepo {
     font-size: x-small;
+}
+
+.envisionSpeed {
+    background-color: gray;
+    color: transparent;
+    white-space: nowrap;
+}
+
+.belowLow {
+    display: inline-block;
+    background-color: gray;
+    white-space: nowrap;
+}
+
+.betweenLowAndHigh {
+    display: inline-block;
+    background-color: purple;
+    white-space: nowrap;
+}
+
+.maxiestMax {
+    text-align: right;
+}
+
+th.runHeader {
+    font-size: small;
+}
+
+td.runTiming {
+    font-size: small;
 }
 
 /* "explore" sunburst page */
