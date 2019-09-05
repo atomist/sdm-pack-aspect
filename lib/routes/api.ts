@@ -77,7 +77,8 @@ import {
  * Also expose Swagger API documentation.
  */
 export function api(projectAnalysisResultStore: ProjectAnalysisResultStore,
-                    aspectRegistry: AspectRegistry & AspectReportDetailsRegistry): {
+                    aspectRegistry: AspectRegistry & AspectReportDetailsRegistry,
+                    secure: boolean): {
     customizer: ExpressCustomizer,
     routesToSuggestOnStartup: Array<{ title: string, route: string }>,
 } {
@@ -98,15 +99,15 @@ export function api(projectAnalysisResultStore: ProjectAnalysisResultStore,
 
             configureAuth(express);
 
-            exposeIdealAndProblemSetting(express, aspectRegistry);
-            exposeAspectMetadata(express, projectAnalysisResultStore, aspectRegistry);
-            exposeListFingerprints(express, projectAnalysisResultStore);
-            exposeFingerprintByType(express, aspectRegistry, projectAnalysisResultStore);
-            exposeExplore(express, aspectRegistry, projectAnalysisResultStore);
-            exposeFingerprintByTypeAndName(express, aspectRegistry, projectAnalysisResultStore);
-            exposeDrift(express, aspectRegistry, projectAnalysisResultStore);
-            exposeCustomReports(express, projectAnalysisResultStore);
-            exposePersistEntropy(express, projectAnalysisResultStore, handlers);
+            exposeIdealAndProblemSetting(express, aspectRegistry, secure);
+            exposeAspectMetadata(express, projectAnalysisResultStore, aspectRegistry, secure);
+            exposeListFingerprints(express, projectAnalysisResultStore, secure);
+            exposeFingerprintByType(express, aspectRegistry, projectAnalysisResultStore, secure);
+            exposeExplore(express, aspectRegistry, projectAnalysisResultStore, secure);
+            exposeFingerprintByTypeAndName(express, aspectRegistry, projectAnalysisResultStore, secure);
+            exposeDrift(express, aspectRegistry, projectAnalysisResultStore, secure);
+            exposeCustomReports(express, projectAnalysisResultStore, secure);
+            exposePersistEntropy(express, projectAnalysisResultStore, handlers, secure);
         },
     };
 }
@@ -119,10 +120,11 @@ function exposeSwaggerDoc(express: Express, docRoute: string): void {
 
 function exposeAspectMetadata(express: Express,
                               store: ProjectAnalysisResultStore,
-                              aspectRegistry: AspectRegistry & AspectReportDetailsRegistry): void {
+                              aspectRegistry: AspectRegistry & AspectReportDetailsRegistry,
+                              secure: boolean): void {
     // Return the aspects metadata
     express.options("/api/v1/:workspace_id/aspects", corsHandler());
-    express.get("/api/v1/:workspace_id/aspects", [corsHandler(), ...authHandlers()], async (req, res) => {
+    express.get("/api/v1/:workspace_id/aspects", [corsHandler(), ...authHandlers(secure)], async (req, res) => {
         try {
             const workspaceId = req.params.workspace_id || "local";
             const fingerprintKinds = await store.distinctRepoFingerprintKinds(workspaceId);
@@ -145,10 +147,10 @@ function exposeAspectMetadata(express: Express,
     });
 }
 
-function exposeListFingerprints(express: Express, store: ProjectAnalysisResultStore): void {
+function exposeListFingerprints(express: Express, store: ProjectAnalysisResultStore, secure: boolean): void {
     // Return all fingerprints
     express.options("/api/v1/:workspace_id/fingerprints", corsHandler());
-    express.get("/api/v1/:workspace_id/fingerprints", [corsHandler(), ...authHandlers()], async (req, res) => {
+    express.get("/api/v1/:workspace_id/fingerprints", [corsHandler(), ...authHandlers(secure)], async (req, res) => {
         try {
             const workspaceId = req.params.workspace_id || "local";
             const fingerprintUsage: FingerprintUsage[] = await store.fingerprintUsageForType(workspaceId);
@@ -163,9 +165,10 @@ function exposeListFingerprints(express: Express, store: ProjectAnalysisResultSt
 
 function exposeFingerprintByType(express: Express,
                                  aspectRegistry: AspectRegistry,
-                                 store: ProjectAnalysisResultStore): void {
+                                 store: ProjectAnalysisResultStore,
+                                 secure: boolean): void {
     express.options("/api/v1/:workspace_id/fingerprint/:type", corsHandler());
-    express.get("/api/v1/:workspace_id/fingerprint/:type", [corsHandler(), ...authHandlers()], async (req, res) => {
+    express.get("/api/v1/:workspace_id/fingerprint/:type", [corsHandler(), ...authHandlers(secure)], async (req, res) => {
         try {
             const workspaceId = req.params.workspace_id || "*";
             const type = req.params.type;
@@ -188,9 +191,10 @@ function exposeFingerprintByType(express: Express,
 
 function exposeFingerprintByTypeAndName(express: Express,
                                         aspectRegistry: AspectRegistry,
-                                        store: ProjectAnalysisResultStore): void {
+                                        store: ProjectAnalysisResultStore,
+                                        secure: boolean): void {
     express.options("/api/v1/:workspace_id/fingerprint/:type/:name", corsHandler());
-    express.get("/api/v1/:workspace_id/fingerprint/:type/:name", [corsHandler(), ...authHandlers()], async (req: Request, res: Response) => {
+    express.get("/api/v1/:workspace_id/fingerprint/:type/:name", [corsHandler(), ...authHandlers(secure)], async (req: Request, res: Response) => {
         const workspaceId = req.params.workspace_id;
         const fingerprintType = req.params.type;
         const fingerprintName = req.params.name;
@@ -243,9 +247,9 @@ function exposeFingerprintByTypeAndName(express: Express,
 /**
  * Drift report, sizing aspects and fingerprints by entropy
  */
-function exposeDrift(express: Express, aspectRegistry: AspectRegistry, store: ProjectAnalysisResultStore): void {
+function exposeDrift(express: Express, aspectRegistry: AspectRegistry, store: ProjectAnalysisResultStore, secure: boolean): void {
     express.options("/api/v1/:workspace_id/drift", corsHandler());
-    express.get("/api/v1/:workspace_id/drift", [corsHandler(), ...authHandlers()], async (req, res) => {
+    express.get("/api/v1/:workspace_id/drift", [corsHandler(), ...authHandlers(secure)], async (req, res) => {
         try {
             const type = req.query.type;
             const band = req.query.band === "true";
@@ -279,10 +283,10 @@ function exposeDrift(express: Express, aspectRegistry: AspectRegistry, store: Pr
     });
 }
 
-function exposeIdealAndProblemSetting(express: Express, aspectRegistry: AspectRegistry): void {
+function exposeIdealAndProblemSetting(express: Express, aspectRegistry: AspectRegistry, secure: boolean): void {
     // Set an ideal
     express.options("/api/v1/:workspace_id/ideal/:id", corsHandler());
-    express.put("/api/v1/:workspace_id/ideal/:id", [corsHandler(), ...authHandlers()], async (req, res) => {
+    express.put("/api/v1/:workspace_id/ideal/:id", [corsHandler(), ...authHandlers(secure)], async (req, res) => {
         await aspectRegistry.idealStore.setIdeal(req.params.workspace_id, req.params.id);
         logger.info(`Set ideal to ${req.params.id}`);
         res.sendStatus(201);
@@ -290,7 +294,7 @@ function exposeIdealAndProblemSetting(express: Express, aspectRegistry: AspectRe
 
     // Note this fingerprint as a problem
     express.options("/api/v1/:workspace_id/problem/:id", corsHandler());
-    express.put("/api/v1/:workspace_id/problem/:id", [corsHandler(), ...authHandlers()], async (req, res) => {
+    express.put("/api/v1/:workspace_id/problem/:id", [corsHandler(), ...authHandlers(secure)], async (req, res) => {
         await aspectRegistry.problemStore.noteProblem(req.params.workspace_id, req.params.id);
         logger.info(`Set problem at ${req.params.id}`);
         res.sendStatus(201);
@@ -300,9 +304,9 @@ function exposeIdealAndProblemSetting(express: Express, aspectRegistry: AspectRe
 /**
  * Explore by tags
  */
-function exposeExplore(express: Express, aspectRegistry: AspectRegistry, store: ProjectAnalysisResultStore): void {
+function exposeExplore(express: Express, aspectRegistry: AspectRegistry, store: ProjectAnalysisResultStore, secure: boolean): void {
     express.options("/api/v1/:workspace_id/explore", corsHandler());
-    express.get("/api/v1/:workspace_id/explore", [corsHandler(), ...authHandlers()], async (req, res) => {
+    express.get("/api/v1/:workspace_id/explore", [corsHandler(), ...authHandlers(secure)], async (req, res) => {
         const workspaceId = req.params.workspace_id || "*";
         const repos = await store.loadInWorkspace(workspaceId, true);
         const selectedTags: string[] = req.query.tags ? req.query.tags.split(",") : [];
@@ -445,10 +449,10 @@ function fillInDriftTreeAspectNames(aspectRegistry: AspectRegistry, driftTree: S
     });
 }
 
-function exposeCustomReports(express: Express, store: ProjectAnalysisResultStore): void {
+function exposeCustomReports(express: Express, store: ProjectAnalysisResultStore, secure: boolean): void {
     // In memory queries against returns
     express.options("/api/v1/:workspace_id/report/:name", corsHandler());
-    express.get("/api/v1/:workspace_id/report/:name", [corsHandler(), ...authHandlers()], async (req, res) => {
+    express.get("/api/v1/:workspace_id/report/:name", [corsHandler(), ...authHandlers(secure)], async (req, res) => {
         try {
             const q = CustomReporters[req.params.name];
             if (!q) {
@@ -469,10 +473,11 @@ function exposeCustomReports(express: Express, store: ProjectAnalysisResultStore
     });
 }
 
-function exposePersistEntropy(express: Express, store: ProjectAnalysisResultStore, handlers: RequestHandler[]): void {
+function exposePersistEntropy(express: Express, store: ProjectAnalysisResultStore, handlers: RequestHandler[], secure: boolean): void {
     // Calculate and persist entropy for this fingerprint
-    express.put("/api/v1/:workspace/entropy/:type/:name", ...handlers, async (req, res) => {
-        await computeAnalyticsForFingerprintKind(store, req.params.workspace, req.params.type, req.params.name);
+    express.options("/api/v1/:workspace_id/entropy/:type/:name", corsHandler());
+    express.put("/api/v1/:workspace_id/entropy/:type/:name", [corsHandler(), ...authHandlers(secure)], async (req, res) => {
+        await computeAnalyticsForFingerprintKind(store, req.params.workspace_id, req.params.type, req.params.name);
         res.sendStatus(201);
     });
 }

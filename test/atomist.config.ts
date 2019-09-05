@@ -139,6 +139,9 @@ export const configuration: Configuration = configure<TestGoals>(async sdm => {
 
             publishFingerprints: storeFingerprints(store),
             virtualProjectFinder,
+
+            exposeWeb: true,
+            secureWeb: false,
         }),
     );
 

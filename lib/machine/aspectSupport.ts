@@ -186,6 +186,12 @@ export interface AspectSupportOptions {
      * Defaults to true in local mode
      */
     exposeWeb?: boolean;
+
+    /**
+     * Optionally secure the api endpoints
+     * Defaults to false in local mode
+     */
+    secureWeb?: boolean;
 }
 
 /**
@@ -289,7 +295,11 @@ function orgVisualizationEndpoints(dbClientFactory: ClientFactory,
         // Add in memory taggers for all classification fingerprints
         .withTaggers(...tagsFromClassificationFingerprints(...fingerprintClassificationNamesFound));
 
-    const aboutTheApi = api(resultStore, aspectRegistry);
+    if (options.secureWeb === undefined) {
+        options.secureWeb = !isInLocalMode();
+    }
+
+    const aboutTheApi = api(resultStore, aspectRegistry, options.secureWeb);
 
     if (!isInLocalMode() && !options.exposeWeb) {
         return {
