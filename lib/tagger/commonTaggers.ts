@@ -28,7 +28,11 @@ import {
     hasNoLicense,
     isLicenseFingerprint,
 } from "../aspect/community/license";
-import { ClassificationData, ClassifierMetadata, isClassificationDataFingerprint } from "../aspect/compose/classificationAspect";
+import {
+    ClassificationData,
+    ClassifierMetadata,
+    isClassificationDataFingerprint,
+} from "../aspect/compose/classificationAspect";
 import { isGlobMatchFingerprint } from "../aspect/compose/globAspect";
 import { BranchCountType } from "../aspect/git/branchCount";
 import { daysSince } from "../aspect/git/dateUtils";
