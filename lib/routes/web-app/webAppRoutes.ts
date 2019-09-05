@@ -156,7 +156,7 @@ function exposeRepositoryPage(conf: WebAppConfig): void {
                 conf.instanceMetadata));
         } catch (e) {
             logger.error(e);
-            res.sendStatus(401);
+            return res.sendStatus(401);
         }
     });
 }
