@@ -117,7 +117,7 @@ export function projectClassificationAspect(opts: AspectMetadata & { stopAtFirst
 export function taggerAspect(opts: AspectMetadata & { alwaysFingerprint?: boolean },
                              ...taggers: Tagger[]): ClassificationAspect {
     return {
-        classifierMetadata: taggers.map(t => ({ tags: t.name, reason: opts.name })),
+        classifierMetadata: taggers.map(t => ({ tags: t.name, reason: t.description || t.name })),
         extract: async () => [],
         consolidate: async (fingerprints, p) => {
             const rts: RepoToScore = { analysis: { id: p.id, fingerprints } };
@@ -125,7 +125,7 @@ export function taggerAspect(opts: AspectMetadata & { alwaysFingerprint?: boolea
             for (const tagger of taggers) {
                 if (await tagger.test(rts)) {
                     data.tags.push(tagger.name);
-                    data.reasons.push(tagger.description);
+                    data.reasons.push(tagger.description || tagger.name);
                 }
             }
             return (opts.alwaysFingerprint || data.tags.length > 0) ? {
