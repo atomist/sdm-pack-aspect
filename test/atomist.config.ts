@@ -21,8 +21,8 @@ import {
     PushImpact,
 } from "@atomist/sdm";
 import {
-    AllGoals,
     configure,
+    DeliveryGoals,
 } from "@atomist/sdm-core";
 import { Build } from "@atomist/sdm-pack-build";
 import {
@@ -89,7 +89,7 @@ const virtualProjectFinder: VirtualProjectFinder = DefaultVirtualProjectFinder;
 
 const store = new PostgresProjectAnalysisResultStore(sdmConfigClientFactory(loadUserConfiguration()));
 
-interface TestGoals extends AllGoals {
+interface TestGoals extends DeliveryGoals {
     build: Build;
 }
 
@@ -206,10 +206,10 @@ function aspects(): Aspect[] {
         globAspect({ name: "readme", displayName: "Readme file", glob: "README.md" }),
 
         projectClassificationAspect({
-                name: "javaBuild",
-                displayName: "Java build tool",
-                toDisplayableFingerprintName: () => "Java build tool",
-            },
+            name: "javaBuild",
+            displayName: "Java build tool",
+            toDisplayableFingerprintName: () => "Java build tool",
+        },
             { tags: "maven", reason: "has Maven POM", test: async p => p.hasFile("pom.xml") },
             { tags: "gradle", reason: "has build.gradle", test: async p => p.hasFile("build.gradle") },
         ),
