@@ -81,12 +81,14 @@ header .page-title {
     background-color: lightgray;
 }
 
+div.repositoryColumns {
+    display: flex;
+}
+
 div.repositoryColumns>div {
-    display: inline-block;
     border: 1px dotted blue;
     vertical-align: top;
     padding: 5px;
-    width: 30%;
 }
 
 .keptExistingAnalysis {
