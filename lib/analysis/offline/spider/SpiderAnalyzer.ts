@@ -168,7 +168,8 @@ async function fakePushImpactListenerInvocation(p: Project): Promise<PushImpactL
     return {
         id: p.id as any,
         get context(): HandlerContext {
-            throw new Error("Unsupported");
+            logger.warn("Returning undefined context");
+            return undefined;
         },
         commit: {
             sha: p.id.sha,
@@ -179,6 +180,7 @@ async function fakePushImpactListenerInvocation(p: Project): Promise<PushImpactL
             branch: "master",
         },
         addressChannels: async () => {
+            logger.warn("Cannot say anything in local mode");
         },
         get filesChanged(): string[] {
             return changedFiles;
