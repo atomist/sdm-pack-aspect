@@ -56,9 +56,9 @@ import { CodeMetricsAspect } from "../lib/aspect/common/codeMetrics";
 import { codeOwnership } from "../lib/aspect/common/codeOwnership";
 import { codeOfConduct } from "../lib/aspect/community/codeOfConduct";
 import {
+    FilesChangedIsPopulated,
     license,
     LicensePresence,
-    FilesChangedIsPopulated,
 } from "../lib/aspect/community/license";
 import {
     ChangelogAspect,
