@@ -11,6 +11,7 @@ import {
     StartupListener,
 } from "@atomist/sdm";
 import { Aspect } from "@atomist/sdm-pack-fingerprint";
+import * as cluster from "cluster";
 import { hasReportDetails } from "../aspect/AspectReportDetailsRegistry";
 import { AspectRegistrations } from "../typings/types";
 
@@ -30,6 +31,11 @@ async function getAspectRegistrations(ctx: Pick<HandlerContext, "graphClient">, 
 export function registerAspects(sdm: SoftwareDeliveryMachine,
                                 allAspects: Aspect[]): StartupListener {
     return async () => {
+        // Only run this on the cluster master if cluster mode is enabled
+        if (sdm.configuration.cluster.enabled && !cluster.isMaster) {
+            return;
+        }
+
         const workspaceIds = sdm.configuration.workspaceIds;
         const aspects = allAspects.filter(hasReportDetails);
 
