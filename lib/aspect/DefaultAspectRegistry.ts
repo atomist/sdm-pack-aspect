@@ -114,11 +114,11 @@ export class DefaultAspectRegistry implements AspectRegistry, AspectReportDetail
                 .query<AspectRegistrations.Query, AspectRegistrations.Variables>({
                     name: "AspectRegistrations",
                     variables: {
-                        name: [type],
                         state: [AspectRegistrationState.Enabled],
                     },
                 });
-            const aspectRegistration = _.get(aspectRegistrations, "AspectRegistration[0]");
+            const aspectRegistration = (_.get(aspectRegistrations, "AspectRegistration") || [])
+                .filter(a => a.name === type) as AspectRegistrations.AspectRegistration;
             if (!!aspectRegistration) {
                 return aspectRegistration;
             }

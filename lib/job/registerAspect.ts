@@ -83,7 +83,7 @@ export function registerAspects(sdm: SoftwareDeliveryMachine,
                     category: details.category,
                     url: details.url,
                     manageable: details.manage,
-                    state: !!registeredAspect ? registeredAspect.state : AspectRegistrationState.Enabled,
+                    state: !!registeredAspect && !!registeredAspect.state ? registeredAspect.state : AspectRegistrationState.Enabled,
                 };
 
                 await messageClient.send(aspectRegistration, addressEvent("AspectRegistration"));
