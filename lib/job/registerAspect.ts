@@ -29,7 +29,10 @@ import {
 import { Aspect } from "@atomist/sdm-pack-fingerprint";
 import * as cluster from "cluster";
 import { hasReportDetails } from "../aspect/AspectReportDetailsRegistry";
-import { AspectRegistrations } from "../typings/types";
+import {
+    AspectRegistrations,
+    AspectRegistrationState,
+} from "../typings/types";
 
 async function getAspectRegistrations(ctx: Pick<HandlerContext, "graphClient">, name?: string): Promise<AspectRegistrations.AspectRegistration[]> {
     const aspects = (await ctx.graphClient.query<AspectRegistrations.Query, AspectRegistrations.Variables>({
@@ -79,7 +82,8 @@ export function registerAspects(sdm: SoftwareDeliveryMachine,
                     description: details.description,
                     category: details.category,
                     url: details.url,
-                    enabled: !!registeredAspect ? registeredAspect.enabled : "true",
+                    manageable: details.manage,
+                    state: !!registeredAspect ? registeredAspect.state : AspectRegistrationState.Enabled,
                 };
 
                 await messageClient.send(aspectRegistration, addressEvent("AspectRegistration"));
