@@ -27,6 +27,7 @@ import {
     isLazyProjectLoader,
     ProviderType,
     PushImpactListenerInvocation,
+    SoftwareDeliveryMachine,
 } from "@atomist/sdm";
 import {
     Aspect,
@@ -51,8 +52,16 @@ export type CalculateFingerprintTaskParameters = {
     branch: string,
 };
 
-export function calculateFingerprintTask(aspects: Aspect[])
+export function calculateFingerprintTask(sdm: SoftwareDeliveryMachine,
+                                         aspects: Aspect[])
     : CommandHandlerRegistration<CalculateFingerprintTaskParameters> {
+
+    // Also register the provided aspects in the registration metadata
+    sdm.configuration.metadata = {
+        ...sdm.configuration.metadata,
+        "atomist.aspects": JSON.stringify(aspects.map(a => ({ name: a.name, displayName: a.displayName }))),
+    };
+
     return {
         name: "CalculateFingerprintTask",
         description: "Trigger calculation of fingerprints on the provided repository",

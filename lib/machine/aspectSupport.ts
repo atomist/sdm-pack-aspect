@@ -70,6 +70,7 @@ import {
     ScoredAspect,
 } from "../aspect/score/ScoredAspect";
 import { calculateFingerprintTask } from "../job/fingerprintTask";
+import { registerAspects } from "../job/registerAspect";
 import { api } from "../routes/api";
 import { addWebAppRoutes } from "../routes/web-app/webAppRoutes";
 import { exposeFingerprintScore } from "../scorer/commonScorers";
@@ -230,7 +231,10 @@ export function aspectSupport(options: AspectSupportOptions): ExtensionPack {
             } else {
                 // Add command to calculate fingerprints as part of the initial onboarding
                 // job and on subsequent runs of "analyze org"
-                sdm.addCommand(calculateFingerprintTask(aspects));
+                sdm.addCommand(calculateFingerprintTask(sdm, aspects));
+
+                // Register all aspects on startup
+                sdm.addStartupListener(registerAspects(sdm, aspects));
             }
 
             // Add support for calculating aspects on push and computing delivery aspects

@@ -1,6 +1,7 @@
 query AspectRegistrations($enabled: [String], $name: [String]) {
     AspectRegistration(enabled: $enabled, name: $name) {
         name
+        owner
         displayName
         description
         shortName
