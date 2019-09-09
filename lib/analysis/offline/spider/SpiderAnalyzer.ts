@@ -188,7 +188,8 @@ async function fakePushImpactListenerInvocation(p: Project): Promise<PushImpactL
         credentials: { token: process.env.GITHUB_TOKEN },
         impactedSubProject: p,
         get preferences(): PreferenceStore {
-            throw new Error("Unsupported");
+            logger.warn("Returning undefined preferences store");
+            return undefined;
         },
         configuration: configurationValue<Configuration>("", {}),
     };
