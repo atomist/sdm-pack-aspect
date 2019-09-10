@@ -21,10 +21,10 @@
   "main": "./index.js",
   "types": "./index.d.ts",
   "peerDependencies": {
-    "@atomist/automation-client": "^1.6.2",
+    "@atomist/automation-client": "^1.7.0",
     "@atomist/microgrammar": "^1.2.1",
-    "@atomist/sdm": "^1.6.1",
-    "@atomist/sdm-core": "^1.6.1",
+    "@atomist/sdm": "^1.7.0",
+    "@atomist/sdm-core": "^1.7.0",
     "@atomist/sdm-pack-build": "^1.0.5",
     "@atomist/sdm-pack-fingerprint": "^5.0.0",
     "@atomist/slack-messages": "^1.1.1"
@@ -65,11 +65,11 @@
     "zip-a-folder": "0.0.9"
   },
   "devDependencies": {
-    "@atomist/automation-client": "1.6.3-master.20190904061426",
+    "@atomist/automation-client": "^1.7.0",
     "@atomist/microgrammar": "^1.2.1",
-    "@atomist/sdm": "1.6.2-master.20190903184656",
-    "@atomist/sdm-core": "1.6.2-master.20190903201907",
-    "@atomist/sdm-local": "^1.1.0",
+    "@atomist/sdm": "^1.7.0",
+    "@atomist/sdm-core": "^1.7.0",
+    "@atomist/sdm-local": "^1.2.1",
     "@atomist/sdm-pack-build": "1.0.6-master.20190903202948",
     "@atomist/sdm-pack-docker": "2.0.3-master.20190903064256",
     "@atomist/sdm-pack-fingerprint": "5.0.0-master.20190903062633",
