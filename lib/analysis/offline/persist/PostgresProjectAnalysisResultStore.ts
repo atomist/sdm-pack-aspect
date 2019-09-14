@@ -251,7 +251,7 @@ GROUP BY repo_snapshots.id`;
                 const fid = await this.ensureFingerprintStored(ideal.ideal, client);
                 await client.query(`INSERT INTO ideal_fingerprints (workspace_id, fingerprint_id, authority)
 values ($1, $2, 'local-user')`, [
-                        workspaceId, fid]);
+                    workspaceId, fid]);
             });
         } else {
             throw new Error("Elimination ideals not yet supported");
@@ -379,7 +379,7 @@ GROUP by repo_snapshots.id) stats;`;
         values ($1, $2, $3, $4, $5, $6)
         ON CONFLICT ON CONSTRAINT fingerprint_analytics_pkey DO UPDATE SET entropy = $4, variants = $5, count = $6`;
                 await client.query(sql, [kind.type, kind.name, workspaceId,
-                cohortAnalysis.entropy, cohortAnalysis.variants, cohortAnalysis.count]);
+                    cohortAnalysis.entropy, cohortAnalysis.variants, cohortAnalysis.count]);
             }
             return true;
         });
@@ -515,10 +515,10 @@ VALUES ($1, $2, $3) ON CONFLICT DO NOTHING`;
         const fingerprintId = aspectName + "_" + fp.name + "_" + fp.sha;
         //  console.log("Persist fingerprint " + JSON.stringify(fp) + " for id " + id);
         // Create fp record if it doesn't exist
-        const insertFingerprintSql = `INSERT INTO fingerprints (id, name, feature_name, sha, data)
-VALUES ($1, $2, $3, $4, $5) ON CONFLICT DO NOTHING`;
+        const insertFingerprintSql = `INSERT INTO fingerprints (id, name, feature_name, sha, data, display_name, display_value)
+VALUES ($1, $2, $3, $4, $5, $6, $7) ON CONFLICT DO NOTHING`;
         logger.debug("Persisting fingerprint %j SQL\n%s", fp, insertFingerprintSql);
-        await client.query(insertFingerprintSql, [fingerprintId, fp.name, aspectName, fp.sha, JSON.stringify(fp.data)]);
+        await client.query(insertFingerprintSql, [fingerprintId, fp.name, aspectName, fp.sha, JSON.stringify(fp.data), fp.displayName, fp.displayValue]);
         return fingerprintId;
     }
 
@@ -626,8 +626,6 @@ ORDER BY entropy DESC`;
             entropy: +r.entropy,
             compliance: +r.compliance,
             entropy_band: bandFor(EntropySizeBands, +r.entropy, { casing: BandCasing.Sentence, includeNumber: false }),
-            // This is really confusing but the Aspect.name is feature_name alias type in the db
-            // categories: getCategories({ name: r.type }),
         }));
     }, []);
 }

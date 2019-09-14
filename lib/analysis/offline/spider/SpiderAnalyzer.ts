@@ -24,6 +24,7 @@ import {
     RemoteRepoRef,
 } from "@atomist/automation-client";
 import {
+    execPromise,
     PreferenceStore,
     PushImpactListenerInvocation,
 } from "@atomist/sdm";
@@ -33,6 +34,7 @@ import {
     FP,
     VirtualProjectFinder,
 } from "@atomist/sdm-pack-fingerprint";
+import { toName } from "@atomist/sdm-pack-fingerprint/lib/adhoc/preferences";
 import { Analyzed } from "../../../aspect/AspectRegistry";
 import { time } from "../../../util/showTiming";
 import {
@@ -59,7 +61,7 @@ export class SpiderAnalyzer implements Analyzer {
             // Seed the virtual project finder if we have one
             await this.virtualProjectFinder.findVirtualProjectInfo(p);
         }
-        const pili = fakePushImpactListenerInvocation(p);
+        const pili = await fakePushImpactListenerInvocation(p);
         await runExtracts(p, pili, this.aspects, fingerprints, this.timings, repoTracking);
         await runConsolidates(p, pili, this.aspects.filter(aspect => !!aspect.consolidate), fingerprints, repoTracking);
 
@@ -106,7 +108,19 @@ async function safeTimedExtract(aspect: Aspect,
                                 timeRecorder: TimeRecorder,
                                 tracking: AspectBeingTracked): Promise<FP[]> {
     try {
-        const timed = await time(async () => aspect.extract(p, pili));
+        const timed = await time(async () => {
+            const fps = toArray(await aspect.extract(p, pili)) || [];
+            fps.forEach(fp => {
+                if (!fp.displayName && aspect.toDisplayableFingerprintName) {
+                    fp.displayName = aspect.toDisplayableFingerprintName(toName(fp.type, fp.name));
+                }
+                if (!fp.displayValue && aspect.toDisplayableFingerprint) {
+                    fp.displayValue = aspect.toDisplayableFingerprint(fp);
+                }
+                return fp;
+            });
+            return fps;
+        });
         addTiming(aspect.name, timed.millis, timeRecorder);
         const result = !!timed.result ? toArray(timed.result) : [];
         tracking.completed(result.length);
@@ -148,32 +162,47 @@ async function safeConsolidate(aspect: Aspect,
     }
 }
 
+async function fetchChangedFiles(project: GitProject): Promise<string[]> {
+    try {
+        const output = await execPromise("git", ["show", `--pretty=format:""`, "--name-only"]);
+        return output.stdout.trim().split("\n");
+    } catch (err) {
+        logger.error("Failure getting changed files: %s", err.message);
+        return [];
+    }
+}
+
 /**
  * Make a fake push for the last commit to this project
  */
-function fakePushImpactListenerInvocation(p: Project): PushImpactListenerInvocation {
+async function fakePushImpactListenerInvocation(p: Project): Promise<PushImpactListenerInvocation> {
+    const project = p as GitProject;
+    const changedFiles = await fetchChangedFiles(project);
     return {
         id: p.id as any,
         get context(): HandlerContext {
-            throw new Error("Unsupported");
+            logger.warn("Returning undefined context");
+            return undefined;
         },
         commit: {
             sha: p.id.sha,
         },
-        project: p as GitProject,
+        project,
         push: {
             repo: undefined,
             branch: "master",
         },
         addressChannels: async () => {
+            logger.warn("Cannot say anything in local mode");
         },
         get filesChanged(): string[] {
-            throw new Error("Unsupported");
+            return changedFiles;
         },
         credentials: { token: process.env.GITHUB_TOKEN },
         impactedSubProject: p,
         get preferences(): PreferenceStore {
-            throw new Error("Unsupported");
+            logger.warn("Returning undefined preferences store");
+            return undefined;
         },
         configuration: configurationValue<Configuration>("", {}),
     };

@@ -45,7 +45,9 @@ CREATE TABLE fingerprints (
   feature_name text NOT NULL,
   sha varchar NOT NULL,
   data jsonb,
-  id varchar NOT NULL PRIMARY KEY
+  id varchar NOT NULL PRIMARY KEY,
+  display_name text,
+  display_value text
 );
 
 -- Join table between repo_snapshots and fingerprints

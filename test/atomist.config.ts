@@ -221,10 +221,10 @@ function aspects(): Aspect[] {
         globAspect({ name: "readme", displayName: "Readme file", glob: "README.md" }),
 
         projectClassificationAspect({
-                name: "javaBuild",
-                displayName: "Java build tool",
-                toDisplayableFingerprintName: () => "Java build tool",
-            },
+            name: "javaBuild",
+            displayName: "Java build tool",
+            toDisplayableFingerprintName: () => "Java build tool",
+        },
             { tags: "maven", reason: "has Maven POM", test: async p => p.hasFile("pom.xml") },
             { tags: "gradle", reason: "has build.gradle", test: async p => p.hasFile("build.gradle") },
         ),
