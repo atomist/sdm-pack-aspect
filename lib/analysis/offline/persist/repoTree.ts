@@ -15,6 +15,7 @@
  */
 
 import { logger } from "@atomist/automation-client";
+import * as camelcaseKeys from "camelcase-keys";
 import { PlantedTree } from "../../../tree/sunburst";
 import { validatePlantedTree } from "../../../tree/treeUtils";
 import {
@@ -102,7 +103,7 @@ export async function fingerprintsToReposTreeQuery(tq: TreeQuery, clientFactory:
         ],
     };
     validatePlantedTree(result);
-    return result;
+    return camelcaseKeys(result, { deep: true }) as any;
 }
 
 export async function driftTreeForAllAspects(workspaceId: string,
