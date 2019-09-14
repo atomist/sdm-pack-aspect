@@ -64,9 +64,6 @@ export async function getAspectReports(fus: Array<{
         }
     }
 
-    logger.info(`Workspace '${workspaceId}' has following categories: ${categories.join(", ")}` );
-    logger.info(`Workspace '${workspaceId}' has following repository fingerprints: ${JSON.stringify(fus)}` );
-
     _.uniq(categories.filter(c => !!c)).forEach(k => {
         const fu = fus.filter(f => f.fingerprints.map(fp => fp.details.category).includes(k));
         if (fu.length > 0) {
