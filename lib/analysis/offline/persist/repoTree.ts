@@ -53,7 +53,7 @@ SELECT row_to_json(fingerprint_groups) FROM (
          fingerprints.id as id, fingerprints.name as name, fingerprints.sha as sha,
             fingerprints.data as data, fingerprints.feature_name as type,
             fingerprints.display_name, fingerprints.display_value,
-         (                              
+         (
              SELECT json_agg(row_to_json(repo)) FROM (
                   SELECT
                     repo_snapshots.id, repo_snapshots.owner, repo_snapshots.name, repo_snapshots.url, repo_snapshots.provider_id, 1 as size, repo_fingerprints.path
