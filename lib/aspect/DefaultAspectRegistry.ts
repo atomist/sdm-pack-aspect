@@ -118,9 +118,9 @@ export class DefaultAspectRegistry implements AspectRegistry, AspectReportDetail
                     },
                 });
             const aspectRegistration = (_.get(aspectRegistrations, "AspectRegistration") || [])
-                .filter(a => a.name === type) as AspectRegistrations.AspectRegistration;
-            if (!!aspectRegistration) {
-                return aspectRegistration;
+                .filter(a => a.name === type) as AspectRegistrations.AspectRegistration[];
+            if (!!aspectRegistration && aspectRegistration.length > 0) {
+                return aspectRegistration[0];
             }
         }
         return undefined;
