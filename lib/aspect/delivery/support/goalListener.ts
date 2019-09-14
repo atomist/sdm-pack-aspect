@@ -15,6 +15,7 @@
  */
 
 import {
+    Aspect,
     FP,
     PublishFingerprints,
 } from "@atomist/sdm-pack-fingerprint";
@@ -45,7 +46,8 @@ import { toArray } from "@atomist/sdm-core/lib/util/misc/array";
 export type FindFingerprintsFromGoalExecution = (gei: GoalExecutionListenerInvocation) => Promise<FP[] | FP>;
 
 export function goalExecutionFingerprinter(fingerprintFinder: FindFingerprintsFromGoalExecution,
-                                           publisher: PublishFingerprints): GoalExecutionListener {
+                                           publisher: PublishFingerprints,
+                                           aspects: Aspect[]): GoalExecutionListener {
     return async gei => {
         if (gei.goalEvent.state !== SdmGoalState.in_process) {
             const fps = await fingerprintFinder(gei);
@@ -57,7 +59,7 @@ export function goalExecutionFingerprinter(fingerprintFinder: FindFingerprintsFr
                 commit: gei.goalEvent.push.after,
                 push: gei.goalEvent.push,
             };
-            return publisher(pili, toArray(fps), {});
+            return publisher(pili, aspects, toArray(fps), {});
         }
         return false;
     };

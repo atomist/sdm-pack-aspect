@@ -34,6 +34,7 @@ import {
     FP,
     VirtualProjectFinder,
 } from "@atomist/sdm-pack-fingerprint";
+import { toName } from "@atomist/sdm-pack-fingerprint/lib/adhoc/preferences";
 import { Analyzed } from "../../../aspect/AspectRegistry";
 import { time } from "../../../util/showTiming";
 import {
@@ -107,7 +108,19 @@ async function safeTimedExtract(aspect: Aspect,
                                 timeRecorder: TimeRecorder,
                                 tracking: AspectBeingTracked): Promise<FP[]> {
     try {
-        const timed = await time(async () => aspect.extract(p, pili));
+        const timed = await time(async () => {
+            const fps = toArray(await aspect.extract(p, pili)) || [];
+            fps.forEach(fp => {
+                if (!fp.displayName && aspect.toDisplayableFingerprintName) {
+                    fp.displayName = aspect.toDisplayableFingerprintName(toName(fp.type, fp.name));
+                }
+                if (!fp.displayValue && aspect.toDisplayableFingerprint) {
+                    fp.displayValue = aspect.toDisplayableFingerprint(fp);
+                }
+                return fp;
+            });
+            return fps;
+        });
         addTiming(aspect.name, timed.millis, timeRecorder);
         const result = !!timed.result ? toArray(timed.result) : [];
         tracking.completed(result.length);
