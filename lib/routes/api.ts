@@ -230,6 +230,11 @@ function exposeFingerprintByTypeAndName(express: Express,
                         ...ideal.ideal,
                         value: ideal.ideal.data.displayValue,
                     };
+                } else if (!!ideal.ideal.displayValue) { // CD This isn't great but ok until we have formal contract
+                    target = {
+                        ...ideal.ideal,
+                        value: ideal.ideal.displayValue,
+                    };
                 }
             }
 
