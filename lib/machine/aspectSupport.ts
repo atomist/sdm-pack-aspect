@@ -212,6 +212,16 @@ export function aspectSupport(options: AspectSupportOptions): ExtensionPack {
     }, ...toArray(options.taggers) || []);
     const aspects = [...toArray(options.aspects || []), ...scoringAspects, tagAspect];
 
+    // Default the two display methods with some sensible defaults
+    aspects.forEach(a => {
+        if (!a.toDisplayableFingerprint) {
+            a.toDisplayableFingerprint = fp => JSON.stringify(fp.data);
+        }
+        if (!a.toDisplayableFingerprintName) {
+            a.toDisplayableFingerprintName = fn => fn;
+        }
+    });
+
     return {
         ...metadata(),
         configure: sdm => {
