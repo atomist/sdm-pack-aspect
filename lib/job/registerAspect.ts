@@ -82,7 +82,7 @@ export function registerAspects(sdm: SoftwareDeliveryMachine,
                     description: details.description,
                     category: details.category,
                     url: details.url,
-                    manageable: details.manage,
+                    manageable: details.manage !== undefined ? details.manage : !!aspect.apply,
                     state: !!registeredAspect && !!registeredAspect.state ? registeredAspect.state : AspectRegistrationState.Enabled,
                 };
 
