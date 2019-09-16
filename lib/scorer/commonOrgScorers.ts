@@ -7,6 +7,7 @@ const average = (array) => array.reduce((a, b) => a + b) / array.length;
 
 export const AverageRepoScore: OrgScorer = {
     name: "average",
+    description: "Average score for repositories",
     score: async od => {
         const scores: number[] = od.repos.map(r => r.score);
         const score: FiveStar = average(scores) as any as FiveStar;
@@ -19,6 +20,7 @@ export const AverageRepoScore: OrgScorer = {
 
 export const WorstRepoScore: OrgScorer = {
     name: "worst",
+    description: "Worst repository",
     score: async od => {
         const scores: number[] = od.repos.map(r => r.score);
         const score = _.min(scores) as FiveStar;
@@ -31,6 +33,7 @@ export const WorstRepoScore: OrgScorer = {
 
 export const EntropyScore: OrgScorer = {
     name: "entropy",
+    description: "Entropy across workspace",
     score: async od => {
         const scores: number[] = od.fingerprintUsage.map(f => {
             if (f.entropy > 3) {
