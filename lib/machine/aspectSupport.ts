@@ -54,6 +54,7 @@ import {
     AnalysisTracking,
 } from "../analysis/tracking/analysisTracker";
 import {
+    OrgScorer,
     RepositoryScorer,
     Tagger,
     TaggerDefinition,
@@ -142,6 +143,8 @@ export interface AspectSupportOptions {
      * Scoring fingerprints. Name to scorers
      */
     scorers?: Record<string, AspectCompatibleScorer | AspectCompatibleScorer[]>;
+
+    orgScorers?: OrgScorer[],
 
     /**
      * Scorers that are computed in memory. Allows for faster iteration on scoring logic.
@@ -308,6 +311,7 @@ function orgVisualizationEndpoints(dbClientFactory: ClientFactory,
         aspects,
         undesirableUsageChecker: options.undesirableUsageChecker,
         scorers: toArray(options.inMemoryScorers || []).concat(scorerNames.map(exposeFingerprintScore)),
+        orgScorers: options.orgScorers,
         scoreWeightings: options.weightings || DefaultScoreWeightings,
         configuration,
     })

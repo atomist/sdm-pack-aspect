@@ -23,8 +23,8 @@ import {
 import * as _ from "lodash";
 import { ProjectAnalysisResult } from "../analysis/ProjectAnalysisResult";
 import { TagContext } from "../routes/api";
-import { ScoreWeightings } from "../scorer/Score";
-import { scoreRepos } from "../scorer/scoring";
+import { ScoreWeightings, WeightedScore } from "../scorer/Score";
+import { scoreOrg, scoreRepos } from "../scorer/scoring";
 import {
     AspectRegistrations,
     AspectRegistrationState,
@@ -32,7 +32,7 @@ import {
 import { showTiming } from "../util/showTiming";
 import {
     AspectRegistry,
-    isTagger,
+    isTagger, OrgData, OrgScorer,
     RepositoryScorer,
     RepoToScore,
     ScoredRepo,
@@ -55,6 +55,7 @@ import {
     problemStoreBackedUndesirableUsageCheckerFor,
     UndesirableUsageChecker,
 } from "./ProblemStore";
+import { FingerprintUsage } from "../analysis/offline/persist/ProjectAnalysisResultStore";
 
 export class DefaultAspectRegistry implements AspectRegistry, AspectReportDetailsRegistry {
 
@@ -66,6 +67,10 @@ export class DefaultAspectRegistry implements AspectRegistry, AspectReportDetail
     public withTaggers(...taggers: TaggerDefinition[]): this {
         this.taggers.push(...taggers);
         return this;
+    }
+
+    public async scoreWorkspace(workspaceId: string, data: OrgData): Promise<WeightedScore> {
+        return scoreOrg(this.opts.orgScorers || [], data, this.opts.scoreWeightings);
     }
 
     public async tagAndScoreRepos(workspaceId: string,
@@ -175,6 +180,7 @@ export class DefaultAspectRegistry implements AspectRegistry, AspectReportDetail
         aspects: AspectWithReportDetails[],
         undesirableUsageChecker: UndesirableUsageChecker,
         scorers?: RepositoryScorer[],
+        orgScorers?: OrgScorer[],
         scoreWeightings?: ScoreWeightings,
         configuration?: Configuration,
     }) {

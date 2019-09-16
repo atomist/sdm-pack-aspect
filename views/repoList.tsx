@@ -2,6 +2,7 @@ import * as _ from "lodash";
 import * as React from "react";
 import { SortOrder } from "../lib/routes/web-app/repositoryListPage";
 import { collapsible } from "./utils";
+import { WeightedScore, WeightedScores } from "../lib/scorer/Score";
 
 export interface RepoForDisplay {
     url: string;
@@ -17,6 +18,7 @@ export interface RepoForDisplay {
 }
 
 export interface RepoListProps {
+    orgScore: WeightedScore;
     repos: RepoForDisplay[];
     virtualProjectCount: number;
     sortOrder: SortOrder;
@@ -63,7 +65,8 @@ export function RepoList(props: RepoListProps): React.ReactElement {
     return <div>
         <h2>{orgCount} organizations: {" "}
             {props.repos.length} repositories, {" "}
-            {props.virtualProjectCount} virtual projects </h2>
+            {props.virtualProjectCount} virtual projects, {" "}
+            {props.orgScore.weightedScore.toFixed(2)} / 5</h2>
         <h3>{categoryDescription}</h3>
 
         {props.byOrg ? reposByOrg(props) : reposRanked(props)}

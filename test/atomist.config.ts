@@ -83,6 +83,8 @@ import {
 } from "../lib/machine/aspectSupport";
 import * as commonScorers from "../lib/scorer/commonScorers";
 import * as commonTaggers from "../lib/tagger/commonTaggers";
+import { FiveStar } from "../lib/scorer/Score";
+import { AverageRepoScore, EntropyScore, WorstRepoScore } from "../lib/scorer/commonOrgScorers";
 
 // Ensure we start up in local mode
 process.env.ATOMIST_MODE = "local";
@@ -143,6 +145,18 @@ export const configuration: Configuration = configure<TestGoals>(async sdm => {
                 all: scorers(),
             },
 
+            orgScorers: [
+                AverageRepoScore,
+                WorstRepoScore,
+                EntropyScore,
+            ],
+
+            weightings: {
+                worst: 1,
+                average: 3,
+                entropy: 3,
+            },
+
             // inMemoryScorers: commonScorers.exposeFingerprintScore("all"),
 
             // taggers: taggers({}).concat(combinationTaggers({})),
@@ -180,7 +194,7 @@ function aspects(): Aspect[] {
             unit: "tag",
             url: "fingerprint/docker-base-image/*?byOrg=true&trim=false",
             description: "Docker base images in use across all repositories in your workspace, " +
-                "broken out by image label and repositories where used.",
+            "broken out by image label and repositories where used.",
         }),
         DockerfilePath,
         enrich(DockerPorts, {
@@ -189,7 +203,7 @@ function aspects(): Aspect[] {
             unit: "port",
             url: "fingerprint/docker-ports/docker-ports?byOrg=true&trim=false",
             description: "Ports exposed in Docker configuration in use  across all repositories in your workspace, " +
-                "broken out by port number and repositories where used.",
+            "broken out by port number and repositories where used.",
             manage: false,
         }),
         license(),
@@ -205,7 +219,7 @@ function aspects(): Aspect[] {
             unit: "branch",
             url: `fingerprint/${BranchCount.name}/${BranchCount.name}?byOrg=true&trim=false`,
             description: "Number of Git branches across repositories in your workspace, " +
-                "grouped by Drift Level.",
+            "grouped by Drift Level.",
             manage: false,
         }),
         GitRecency,
@@ -222,10 +236,10 @@ function aspects(): Aspect[] {
         globAspect({ name: "readme", displayName: "Readme file", glob: "README.md" }),
 
         projectClassificationAspect({
-            name: "javaBuild",
-            displayName: "Java build tool",
-            toDisplayableFingerprintName: () => "Java build tool",
-        },
+                name: "javaBuild",
+                displayName: "Java build tool",
+                toDisplayableFingerprintName: () => "Java build tool",
+            },
             { tags: "maven", reason: "has Maven POM", test: async p => p.hasFile("pom.xml") },
             { tags: "gradle", reason: "has build.gradle", test: async p => p.hasFile("build.gradle") },
         ),

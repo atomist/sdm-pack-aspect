@@ -15,6 +15,8 @@
  */
 
 import {
+    OrgData,
+    OrgScorer,
     RepositoryScorer,
     RepoToScore,
     ScoredRepo,
@@ -27,7 +29,7 @@ import {
     Score,
     Scores,
     ScoreWeightings,
-    weightedCompositeScore,
+    weightedCompositeScore, WeightedScore,
 } from "./Score";
 
 export async function scoreRepos(scorers: RepositoryScorer[],
@@ -40,6 +42,23 @@ export async function scoreRepos(scorers: RepositoryScorer[],
 /**
  * Score the repo
  */
+export async function scoreOrg(scorers: OrgScorer[],
+                               od: OrgData,
+                               weightings: ScoreWeightings): Promise<WeightedScore> {
+    const scores: Scores = {};
+    for (const scorer of scorers) {
+        scores[scorer.name] = { ...scorer, ...await scorer.score(od) };
+    }
+    // Remove scores that don't match our desired category
+    // for (const key of Object.keys(scores)) {
+    //     const score = scores[key];
+    //     if (opts.category && score.category !== opts.category && opts.category !== AlwaysIncludeCategory) {
+    //         delete scores[key];
+    //     }
+    // }
+    return weightedCompositeScore({ scores }, weightings);
+}
+
 export async function scoreRepo(scorers: RepositoryScorer[],
                                 repo: RepoToScore,
                                 weightings: ScoreWeightings,

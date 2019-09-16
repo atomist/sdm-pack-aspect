@@ -31,6 +31,7 @@ import {
     ProblemStore,
     UndesirableUsageChecker,
 } from "./ProblemStore";
+import { FingerprintUsage } from "../analysis/offline/persist/ProjectAnalysisResultStore";
 
 /**
  * Implemented by ProjectAnalysis or any other structure
@@ -133,10 +134,38 @@ export interface TagAndScoreOptions {
     readonly category?: string;
 }
 
+export interface OrgData {
+
+    fingerprintUsage: FingerprintUsage[];
+
+    // TODO fix duplication with ReposForDisplay in UI
+    repos: Array<{
+        url: string;
+        repo: string;
+        owner: string;
+        id: string;
+        score?: number;
+    }>;
+}
+
+export interface OrgScorer extends Scorer {
+
+    /**
+     * Function that knows how to score an org.
+     * @param repo repo we are scoring
+     * @param allRepos context of this scoring activity
+     * @return undefined if this scorer doesn't know how to score this repository.
+     */
+    score: (od: OrgData) => Promise<ScorerReturn>;
+
+}
+
 /**
  * Manage a number of aspects.
  */
 export interface AspectRegistry {
+
+    scoreWorkspace(workspaceId: string, orgData: OrgData): Promise<WeightedScore>;
 
     tagAndScoreRepos(workspaceId: string,
                      repos: ProjectAnalysisResult[],
