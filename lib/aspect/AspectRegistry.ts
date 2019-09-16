@@ -52,6 +52,11 @@ export interface Tag {
 
     name: string;
 
+    /**
+     * Name of parent tag
+     */
+    parent?: string;
+
     description?: string;
 
     /**

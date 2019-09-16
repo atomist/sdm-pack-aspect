@@ -26,7 +26,7 @@ import {
     PushImpact,
 } from "@atomist/sdm";
 import {
-    AllGoals,
+    AllGoals, DeliveryGoals,
     isInLocalMode,
 } from "@atomist/sdm-core";
 import { toArray } from "@atomist/sdm-core/lib/util/misc/array";
@@ -170,7 +170,7 @@ export interface AspectSupportOptions {
      * Delivery goals to attach fingerprint behavior to, if provided.
      * Delivery goals must have well-known names
      */
-    goals?: Partial<Pick<AllGoals, "build" | "pushImpact">>;
+    goals?: Partial<Pick<DeliveryGoals, "build" | "pushImpact">>;
 
     /**
      * If this is provided, it can distinguish the UI instance.

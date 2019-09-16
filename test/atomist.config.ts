@@ -21,8 +21,7 @@ import {
     PushImpact,
 } from "@atomist/sdm";
 import {
-    AllGoals,
-    configure,
+    configure, DeliveryGoals,
 } from "@atomist/sdm-core";
 import { Build } from "@atomist/sdm-pack-build";
 import {
@@ -73,7 +72,7 @@ import { GitRecency } from "../lib/aspect/git/gitActivity";
 import {
     AcceptEverythingUndesirableUsageChecker,
     chainUndesirableUsageCheckers,
-    UndesirableUsageChecker
+    UndesirableUsageChecker,
 } from "../lib/aspect/ProblemStore";
 import { ExposedSecrets } from "../lib/aspect/secret/exposedSecrets";
 import {
@@ -93,7 +92,7 @@ const virtualProjectFinder: VirtualProjectFinder = DefaultVirtualProjectFinder;
 
 const store = new PostgresProjectAnalysisResultStore(sdmConfigClientFactory(loadUserConfiguration()));
 
-interface TestGoals extends AllGoals {
+interface TestGoals extends DeliveryGoals {
     build: Build;
 }
 
@@ -290,11 +289,10 @@ export function taggers(opts: Partial<TaggersParams>): TaggerDefinition[] {
             name: "bad",
             description: "Has problems",
             createTest: async (wsid, ar) => {
-                console.log("Create test");
                 const uc = await ar.undesirableUsageCheckerFor(wsid);
                 return async repo => repo.analysis.fingerprints.some(fp => uc.check(fp, wsid).length > 0);
-            }
-        }
+            },
+        },
     ];
 }
 

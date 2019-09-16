@@ -519,7 +519,8 @@ VALUES ($1, $2, $3) ON CONFLICT DO NOTHING`;
         const insertFingerprintSql = `INSERT INTO fingerprints (id, name, feature_name, sha, data, display_name, display_value)
 VALUES ($1, $2, $3, $4, $5, $6, $7) ON CONFLICT DO NOTHING`;
         logger.debug("Persisting fingerprint %j SQL\n%s", fp, insertFingerprintSql);
-        await client.query(insertFingerprintSql, [fingerprintId, fp.name, aspectName, fp.sha, JSON.stringify(fp.data), fp.displayName, fp.displayValue]);
+        await client.query(insertFingerprintSql, [fingerprintId, fp.name, aspectName, fp.sha,
+            JSON.stringify(fp.data), fp.displayName, fp.displayValue]);
         return fingerprintId;
     }
 

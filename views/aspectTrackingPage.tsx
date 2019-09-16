@@ -52,7 +52,6 @@ export function AspectTrackingPage(props: AspectTrackingProps): React.ReactEleme
     const minniestMin = Math.min(...props.aspectPerformances.map(a => a.minMillis));
     const maxiestMax = Math.max(...props.aspectPerformances.map(a => a.maxMillis));
     const pixelsPerMilli = widthOfGraph / (maxiestMax - minniestMin);
-    console.log(`From ${minniestMin} to ${maxiestMax}, that leaves ${pixelsPerMilli} px/ms`);
     return <table>
         <thead><tr>
             <th>Name</th><th>Runs</th><th>FPs</th><th>Fails</th><th className="runHeader">Fastest run</th>

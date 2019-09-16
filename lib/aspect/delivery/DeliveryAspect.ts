@@ -15,20 +15,18 @@
  */
 
 import {
-    GoalExecutionListenerInvocation,
     SoftwareDeliveryMachine,
 } from "@atomist/sdm";
-import { AllGoals } from "@atomist/sdm-core";
+import { DeliveryGoals } from "@atomist/sdm-core";
 import {
     Aspect,
-    FP,
     PublishFingerprints,
 } from "@atomist/sdm-pack-fingerprint";
 
 /**
  * Aspect that can register to extract fingerprints from Atomist events
  */
-export interface DeliveryAspect<GOALS extends AllGoals, DATA = any> extends Aspect<DATA> {
+export interface DeliveryAspect<GOALS extends DeliveryGoals, DATA = any> extends Aspect<DATA> {
 
     /**
      * Can this delivery aspect be registered given these goals
