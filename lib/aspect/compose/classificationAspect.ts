@@ -44,10 +44,32 @@ export interface Classifier {
      */
     readonly tags: string | string[];
 
+}
+
+export interface ProjectClassifier extends Classifier {
     /**
      * Test for whether the given project meets this classification
      */
     test: (p: Project, pili: PushImpactListenerInvocation) => Promise<boolean>;
+}
+
+export interface DerivedClassifier extends Classifier {
+    /**
+     * Test for whether the given project meets this classification
+     */
+    testFingerprints: (fps: FP[], p: Project, pili: PushImpactListenerInvocation) => Promise<boolean>;
+}
+
+export type EligibleClassifier = ProjectClassifier | DerivedClassifier;
+
+function isProjectClassifier(c: Classifier): c is ProjectClassifier {
+    const maybe = c as ProjectClassifier;
+    return !!maybe.test;
+}
+
+function isDerivedClassifier(c: Classifier): c is DerivedClassifier {
+    const maybe = c as DerivedClassifier;
+    return !!maybe.testFingerprints;
 }
 
 export interface ClassificationData {
@@ -69,40 +91,30 @@ export function isClassificationAspect(a: Aspect): a is ClassificationAspect {
     return !!maybe.tags;
 }
 
+export interface ClassificationOptions extends AspectMetadata {
+    stopAtFirst?: boolean;
+    alwaysFingerprint?: boolean;
+}
+
 /**
  * Classify the project uniquely or otherwise
  * undefined to return no fingerprint
  * @param opts: Whether to allow multiple tags and whether to compute a fingerprint in all cases
  * @param classifiers classifier functions
  */
-export function projectClassificationAspect(opts: AspectMetadata & {
-                                                stopAtFirst?: boolean,
-                                                alwaysFingerprint?: boolean,
-                                            },
-                                            ...classifiers: Classifier[]): ClassificationAspect {
+export function projectClassificationAspect(opts: ClassificationOptions,
+                                            ...classifiers: EligibleClassifier[]): ClassificationAspect {
+    const projectClassifiers = classifiers.filter(isProjectClassifier);
+    const derivedClassifiers = classifiers.filter(isDerivedClassifier);
     return {
         tags: _.flatten(classifiers.map(c => c.tags)),
         extract: async (p, pili) => {
-            const tags: string[] = [];
-            const reasons: string[] = [];
-            for (const classifier of classifiers) {
-                // Don't re-evaluate if we've already seen the tag
-                if (!_.includes(tags, classifier.tags) && await classifier.test(p, pili)) {
-                    tags.push(...toArray(classifier.tags));
-                    reasons.push(classifier.reason);
-                    if (opts.stopAtFirst) {
-                        break;
-                    }
-                }
-            }
-            const data = { tags: _.uniq(tags).sort(), reasons };
-            return (opts.alwaysFingerprint || data.tags.length > 0) ? {
-                type: opts.name,
-                name: opts.name,
-                data,
-                // We only sha the tags, not the reason
-                sha: sha256(JSON.stringify(data.tags)),
-            } : undefined;
+            const test = createTest(projectClassifiers, opts);
+            return test([], p, pili);
+        },
+        consolidate: async (fps, p, pili) => {
+            const test = createTest(derivedClassifiers, opts);
+            return test(fps, p, pili);
         },
         toDisplayableFingerprint: fp => (fp.data.tags && fp.data.tags.join()) || "unknown",
         ...opts,
@@ -139,5 +151,32 @@ export function taggerAspect(opts: AspectMetadata & { alwaysFingerprint?: boolea
         },
         toDisplayableFingerprint: fp => (fp.data.tags && fp.data.tags.join()) || "unknown",
         ...opts,
+    };
+}
+
+function createTest(classifiers: EligibleClassifier[], opts: ClassificationOptions):
+    (fps: FP[], p: Project, pili: PushImpactListenerInvocation) => Promise<FP<ClassificationData>> {
+    return async (fps, p, pili) => {
+        const tags: string[] = [];
+        const reasons: string[] = [];
+        for (const classifier of classifiers) {
+            // Don't re-evaluate if we've already seen the tag
+            if (!_.includes(tags, classifier.tags) &&
+                (isProjectClassifier(classifier) ? await classifier.test(p, pili) : await classifier.testFingerprints(fps, p, pili))) {
+                tags.push(...toArray(classifier.tags));
+                reasons.push(classifier.reason);
+                if (opts.stopAtFirst) {
+                    break;
+                }
+            }
+        }
+        const data = { tags: _.uniq(tags).sort(), reasons };
+        return (opts.alwaysFingerprint || data.tags.length > 0) ? {
+            type: opts.name,
+            name: opts.name,
+            data,
+            // We only sha the tags, not the reason
+            sha: sha256(JSON.stringify(data.tags)),
+        } : undefined;
     };
 }

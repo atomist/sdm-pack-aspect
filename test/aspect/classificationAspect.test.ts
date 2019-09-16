@@ -20,7 +20,7 @@ import {
     projectClassificationAspect,
 } from "../../lib/aspect/compose/classificationAspect";
 
-import { FP } from "@atomist/sdm-pack-fingerprint";
+import { fingerprintOf, FP } from "@atomist/sdm-pack-fingerprint";
 import * as assert from "assert";
 
 // Don't let it remove typecasts
@@ -101,6 +101,40 @@ describe("classification aspects", () => {
             const fp = await ca.extract(p, undefined) as FP<ClassificationData>;
             assert.strictEqual(fp.type, "foo");
             assert.deepStrictEqual(fp.data, { tags: ["badger"], reasons: ["meadow"] });
+        });
+
+        it("derived classifier that always matches", async () => {
+            const p = InMemoryProject.of();
+            const ca = projectClassificationAspect({ name: "foo", displayName: "x", stopAtFirst: true },
+                { tags: "badger", testFingerprints: async () => true, reason: "meadow" },
+                { tags: ["ouch", "bang"], test: async () => true, reason: "wow" },
+            );
+            const fp = await ca.consolidate([], p, undefined) as FP<ClassificationData>;
+            assert.strictEqual(fp.type, "foo");
+            assert.deepStrictEqual(fp.data, { tags: ["badger"], reasons: ["meadow"] });
+        });
+
+        it("derived classifier that takes from a fingerprint", async () => {
+            const p = InMemoryProject.of();
+            const ca = projectClassificationAspect({ name: "foo", displayName: "x", stopAtFirst: true },
+                { tags: "badger", testFingerprints: async fps => fps.length === 1, reason: "meadow" },
+                { tags: ["ouch", "bang"], test: async () => true, reason: "wow" },
+            );
+            const passedFp = fingerprintOf({ type: "foo", data: { here: true }});
+            const fp = await ca.consolidate([passedFp], p, undefined) as FP<ClassificationData>;
+            assert.strictEqual(fp.type, "foo");
+            assert.deepStrictEqual(fp.data, { tags: ["badger"], reasons: ["meadow"] });
+        });
+
+        it("derived classifier that doesn't take from a fingerprint", async () => {
+            const p = InMemoryProject.of();
+            const ca = projectClassificationAspect({ name: "foo", displayName: "x", stopAtFirst: true },
+                { tags: "badger", testFingerprints: async fps => fps.length === 3879, reason: "meadow" },
+                { tags: ["ouch", "bang"], test: async () => true, reason: "wow" },
+            );
+            const passedFp = fingerprintOf({ type: "foo", data: { here: true }});
+            const fp = await ca.consolidate([passedFp], p, undefined) as FP<ClassificationData>;
+            assert.strictEqual(fp, undefined);
         });
 
     });
