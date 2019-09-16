@@ -29,7 +29,8 @@ import {
     Score,
     Scores,
     ScoreWeightings,
-    weightedCompositeScore, WeightedScore,
+    weightedCompositeScore,
+    WeightedScore,
 } from "./Score";
 
 export async function scoreRepos(scorers: RepositoryScorer[],

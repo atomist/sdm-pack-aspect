@@ -24,8 +24,14 @@ import * as _ from "lodash";
 import { FingerprintUsage } from "../analysis/offline/persist/ProjectAnalysisResultStore";
 import { ProjectAnalysisResult } from "../analysis/ProjectAnalysisResult";
 import { TagContext } from "../routes/api";
-import { ScoreWeightings, WeightedScore } from "../scorer/Score";
-import { scoreOrg, scoreRepos } from "../scorer/scoring";
+import {
+    ScoreWeightings,
+    WeightedScore,
+} from "../scorer/Score";
+import {
+    scoreOrg,
+    scoreRepos,
+} from "../scorer/scoring";
 import {
     AspectRegistrations,
     AspectRegistrationState,
@@ -33,7 +39,9 @@ import {
 import { showTiming } from "../util/showTiming";
 import {
     AspectRegistry,
-    isTagger, OrgData, OrgScorer,
+    isTagger,
+    OrgData,
+    OrgScorer,
     RepositoryScorer,
     RepoToScore,
     ScoredRepo,

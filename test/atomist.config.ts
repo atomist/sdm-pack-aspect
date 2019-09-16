@@ -81,7 +81,11 @@ import {
     aspectSupport,
     DefaultVirtualProjectFinder,
 } from "../lib/machine/aspectSupport";
-import { AverageRepoScore, EntropyScore, WorstRepoScore } from "../lib/scorer/commonOrgScorers";
+import {
+    AverageRepoScore,
+    EntropyScore,
+    WorstRepoScore,
+} from "../lib/scorer/commonOrgScorers";
 import * as commonScorers from "../lib/scorer/commonScorers";
 import { FiveStar } from "../lib/scorer/Score";
 import * as commonTaggers from "../lib/tagger/commonTaggers";
