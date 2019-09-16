@@ -133,5 +133,8 @@ export function AnalysisTrackingPage(props: AnalysisTrackingProps): React.ReactE
             Start one at the command line:{" "}
             <span className="typeThisAtCommandLine">atomist analyze local repositories</span></div>;
     }
-    return <div>{listAnalyses(props.analyses)}</div>;
+    return <div>
+        <h2>Refresh this page to see progress.</h2>
+        {listAnalyses(props.analyses)}
+    </div>;
 }
