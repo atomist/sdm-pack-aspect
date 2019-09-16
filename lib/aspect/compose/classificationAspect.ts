@@ -92,8 +92,11 @@ export function isClassificationAspect(a: Aspect): a is ClassificationAspect {
 }
 
 export interface ClassificationOptions extends AspectMetadata {
+
+    /**
+     * Stop at the first matched tag?
+     */
     stopAtFirst?: boolean;
-    alwaysFingerprint?: boolean;
 }
 
 /**
@@ -171,12 +174,12 @@ function createTest(classifiers: EligibleClassifier[], opts: ClassificationOptio
             }
         }
         const data = { tags: _.uniq(tags).sort(), reasons };
-        return (opts.alwaysFingerprint || data.tags.length > 0) ? {
+        return {
             type: opts.name,
             name: opts.name,
             data,
             // We only sha the tags, not the reason
             sha: sha256(JSON.stringify(data.tags)),
-        } : undefined;
+        };
     };
 }
