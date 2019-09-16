@@ -3,8 +3,8 @@ import { ScoredRepo } from "../lib/aspect/AspectRegistry";
 import { isCodeMetricsFingerprint } from "../lib/aspect/common/codeMetrics";
 import { WeightedScore, WeightedScores } from "../lib/scorer/Score";
 import { TagUsage } from "../lib/tree/sunburst";
-import { collapsible } from "./utils";
 import { explainScore } from "./repoList";
+import { collapsible } from "./utils";
 
 type DisplayName = string;
 
@@ -81,7 +81,7 @@ function displayWeightedScores(weightedScore: WeightedScore): React.ReactElement
                 try {
                     const parsed = JSON.parse(score.reason) as WeightedScores;
                     const scores = Object.keys(parsed).filter(k => k !== "anchor").map(k => explainScore(parsed[k]));
-                    return <ul>{scores}</ul>
+                    return <ul>{scores}</ul>;
                 } catch (err) {
                     return <li><b>{score.name}</b>: {score.score.toFixed(2)} (x{score.weighting}) - {score.reason}</li>;
                 }

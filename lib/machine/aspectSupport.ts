@@ -144,7 +144,7 @@ export interface AspectSupportOptions {
      */
     scorers?: Record<string, AspectCompatibleScorer | AspectCompatibleScorer[]>;
 
-    orgScorers?: OrgScorer[],
+    orgScorers?: OrgScorer[];
 
     /**
      * Scorers that are computed in memory. Allows for faster iteration on scoring logic.

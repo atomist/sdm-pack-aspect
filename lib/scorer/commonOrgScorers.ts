@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-import { FiveStar } from "./Score";
 import { OrgScorer } from "../aspect/AspectRegistry";
+import { FiveStar } from "./Score";
 
 import * as _ from "lodash";
 
-const average = (array) => array.reduce((a, b) => a + b) / array.length;
+const average =array => array.reduce((a, b) => a + b) / array.length;
 
 export const AverageRepoScore: OrgScorer = {
     name: "average",
@@ -30,7 +30,7 @@ export const AverageRepoScore: OrgScorer = {
         return {
             reason: "average",
             score,
-        }
+        };
     },
 };
 
@@ -43,7 +43,7 @@ export const WorstRepoScore: OrgScorer = {
         return {
             reason: "worst",
             score,
-        }
+        };
     },
 };
 
@@ -70,6 +70,6 @@ export const EntropyScore: OrgScorer = {
         return {
             reason: "entropy",
             score,
-        }
+        };
     },
 };

@@ -1,9 +1,9 @@
 import * as _ from "lodash";
 import * as React from "react";
 import { SortOrder } from "../lib/routes/web-app/repositoryListPage";
-import { collapsible } from "./utils";
 import { Score, WeightedScore, Weighting } from "../lib/scorer/Score";
 import { bandFor, Default } from "../lib/util/bands";
+import { collapsible } from "./utils";
 
 export interface RepoForDisplay {
     url: string;

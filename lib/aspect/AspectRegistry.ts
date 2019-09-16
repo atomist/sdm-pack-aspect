@@ -20,6 +20,7 @@ import {
 } from "@atomist/automation-client";
 import { FP } from "@atomist/sdm-pack-fingerprint";
 import { Aspect } from "@atomist/sdm-pack-fingerprint/lib/machine/Aspect";
+import { FingerprintUsage } from "../analysis/offline/persist/ProjectAnalysisResultStore";
 import { ProjectAnalysisResult } from "../analysis/ProjectAnalysisResult";
 import {
     Scorer,
@@ -31,7 +32,6 @@ import {
     ProblemStore,
     UndesirableUsageChecker,
 } from "./ProblemStore";
-import { FingerprintUsage } from "../analysis/offline/persist/ProjectAnalysisResultStore";
 
 /**
  * Implemented by ProjectAnalysis or any other structure

@@ -21,6 +21,7 @@ import {
     FP,
 } from "@atomist/sdm-pack-fingerprint";
 import * as _ from "lodash";
+import { FingerprintUsage } from "../analysis/offline/persist/ProjectAnalysisResultStore";
 import { ProjectAnalysisResult } from "../analysis/ProjectAnalysisResult";
 import { TagContext } from "../routes/api";
 import { ScoreWeightings, WeightedScore } from "../scorer/Score";
@@ -55,7 +56,6 @@ import {
     problemStoreBackedUndesirableUsageCheckerFor,
     UndesirableUsageChecker,
 } from "./ProblemStore";
-import { FingerprintUsage } from "../analysis/offline/persist/ProjectAnalysisResultStore";
 
 export class DefaultAspectRegistry implements AspectRegistry, AspectReportDetailsRegistry {
 

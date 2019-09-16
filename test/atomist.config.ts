@@ -81,10 +81,10 @@ import {
     aspectSupport,
     DefaultVirtualProjectFinder,
 } from "../lib/machine/aspectSupport";
-import * as commonScorers from "../lib/scorer/commonScorers";
-import * as commonTaggers from "../lib/tagger/commonTaggers";
-import { FiveStar } from "../lib/scorer/Score";
 import { AverageRepoScore, EntropyScore, WorstRepoScore } from "../lib/scorer/commonOrgScorers";
+import * as commonScorers from "../lib/scorer/commonScorers";
+import { FiveStar } from "../lib/scorer/Score";
+import * as commonTaggers from "../lib/tagger/commonTaggers";
 
 // Ensure we start up in local mode
 process.env.ATOMIST_MODE = "local";
