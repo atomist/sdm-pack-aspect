@@ -166,7 +166,7 @@ export class RepoBeingTracked {
         const isGoing = !!this.analysisStartMillis;
         const isDone = this.existingWasKept || this.persistedSnapshotId || this.failureDetails || this.skipReason;
         const errorFields = !this.failureDetails ? {} : {
-            errorMessage: `Failed while trying to ${this.failureDetails.whileTryingTo}\n${this.failureDetails.message}`,
+            errorMessage: `Failed while trying to ${this.failureDetails.whileTryingTo}\n${this.failureDetails.message || ""}`,
             stackTrace: this.failureDetails.error ? this.failureDetails.error.stack : undefined,
         };
         return {
