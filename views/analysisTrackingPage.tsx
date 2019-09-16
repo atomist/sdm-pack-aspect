@@ -122,7 +122,8 @@ function runningFirst(a1: AnalysisTrackingAnalysis, a2: AnalysisTrackingAnalysis
         return 1;
     }
     if (a1.completedAt && a2.completedAt) {
-        return a1.completedAt.getTime() - a2.completedAt.getTime();
+        // more recent on top
+        return a2.completedAt.getTime() - a1.completedAt.getTime();
     }
     return 0;
 }
