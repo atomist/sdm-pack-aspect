@@ -77,7 +77,7 @@ export function isClassificationAspect(a: Aspect): a is ClassificationAspect {
  */
 export function projectClassificationAspect(opts: AspectMetadata & {
                                                 stopAtFirst?: boolean,
-                                                alwaysFingerprint?: boolean
+                                                alwaysFingerprint?: boolean,
                                             },
                                             ...classifiers: Classifier[]): ClassificationAspect {
     return {
