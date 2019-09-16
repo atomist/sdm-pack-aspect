@@ -75,7 +75,10 @@ export function isClassificationAspect(a: Aspect): a is ClassificationAspect {
  * @param opts: Whether to allow multiple tags and whether to compute a fingerprint in all cases
  * @param classifiers classifier functions
  */
-export function projectClassificationAspect(opts: AspectMetadata & { stopAtFirst?: boolean, alwaysFingerprint?: boolean },
+export function projectClassificationAspect(opts: AspectMetadata & {
+                                                stopAtFirst?: boolean,
+                                                alwaysFingerprint?: boolean
+                                            },
                                             ...classifiers: Classifier[]): ClassificationAspect {
     return {
         tags: _.flatten(classifiers.map(c => c.tags)),
@@ -83,7 +86,8 @@ export function projectClassificationAspect(opts: AspectMetadata & { stopAtFirst
             const tags: string[] = [];
             const reasons: string[] = [];
             for (const classifier of classifiers) {
-                if (await classifier.test(p, pili)) {
+                // Don't re-evaluate if we've already seen the tag
+                if (!_.includes(tags, classifier.tags) && await classifier.test(p, pili)) {
                     tags.push(...toArray(classifier.tags));
                     reasons.push(classifier.reason);
                     if (opts.stopAtFirst) {

@@ -63,6 +63,16 @@ describe("classification aspects", () => {
             assert.deepStrictEqual(fp.data, { tags: ["ouch"], reasons: ["wow"] });
         });
 
+        it("doesn't run unnecessary classifier", async () => {
+            const p = InMemoryProject.of();
+            const ca = projectClassificationAspect({ name: "foo", displayName: "x" },
+                { tags: "ouch", test: async () => true, reason: "wow" },
+                { tags: "ouch", test: async () => { throw new Error("should not get here")}, reason: "wow" });
+            const fp = await ca.extract(p, undefined) as FP<ClassificationData>;
+            assert.strictEqual(fp.type, "foo");
+            assert.deepStrictEqual(fp.data, { tags: ["ouch"], reasons: ["wow"] });
+        });
+
         it("one classifier produces two tags", async () => {
             const p = InMemoryProject.of();
             const ca = projectClassificationAspect({ name: "foo", displayName: "x" },
