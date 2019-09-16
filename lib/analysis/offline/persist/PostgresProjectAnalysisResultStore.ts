@@ -26,6 +26,7 @@ import {
     Ideal,
     isConcreteIdeal,
 } from "@atomist/sdm-pack-fingerprint";
+import * as camelcaseKeys from "camelcase-keys";
 import * as _ from "lodash";
 import {
     Client,
@@ -316,7 +317,7 @@ WHERE workspace_id = $1 AND problem_fingerprints.fingerprint_id = fingerprints.i
     }
 
     public async loadIdeal(workspaceId: string, type: string, name: string): Promise<Ideal> {
-        const sql = `SELECT id, name, feature_name as type, sha, data
+        const sql = `SELECT id, name, feature_name as type, sha, data, display_name, display_value
 FROM ideal_fingerprints, fingerprints
 WHERE workspace_id = $1 AND ideal_fingerprints.fingerprint_id = fingerprints.id
 AND feature_name = $2 AND name = $3`;
@@ -327,7 +328,7 @@ AND feature_name = $2 AND name = $3`;
         if (!rawRow) {
             return undefined;
         }
-        return idealRowToIdeal(rawRow);
+        return camelcaseKeys(idealRowToIdeal(rawRow), { deep: true }) as any;
     }
 
     public async loadFingerprintById(id: string): Promise<FP | undefined> {
