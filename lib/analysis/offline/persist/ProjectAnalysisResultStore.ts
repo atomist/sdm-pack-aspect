@@ -29,6 +29,7 @@ export interface PersistResult {
     attemptedCount: number;
     failed: SpiderFailure[];
     succeeded: PersistenceResult[];
+    failedFingerprints: Array<{ failedFingerprint: FP; error: Error }>;
 }
 
 export function combinePersistResults(r1: PersistResult, r2: PersistResult): PersistResult {
@@ -36,6 +37,7 @@ export function combinePersistResults(r1: PersistResult, r2: PersistResult): Per
         attemptedCount: r1.attemptedCount + r2.attemptedCount,
         failed: [...r1.failed, ...r2.failed],
         succeeded: [...r1.succeeded, ...r2.succeeded],
+        failedFingerprints: [...r1.failedFingerprints, ...r2.failedFingerprints],
     };
 }
 
@@ -43,6 +45,7 @@ export const emptyPersistResult: PersistResult = {
     attemptedCount: 0,
     failed: [],
     succeeded: [],
+    failedFingerprints: [],
 };
 
 export type FingerprintKind = Pick<FP, "type" | "name">;
@@ -100,8 +103,8 @@ export interface ProjectAnalysisResultStore {
      * @return {Promise<PlantedTree>}
      */
     aspectDriftTree(workspaceId: string,
-                    percentile: number,
-                    type?: string): Promise<PlantedTree>;
+        percentile: number,
+        type?: string): Promise<PlantedTree>;
 
     /**
      * How many repos we've analyzed
@@ -168,9 +171,9 @@ export interface ProjectAnalysisResultStore {
      * @param name fingerprint name (optional)
      */
     fingerprintsInWorkspace(workspaceId: string,
-                            distinct: boolean,
-                            type?: string,
-                            name?: string): Promise<Array<FP & { id: string }>>;
+        distinct: boolean,
+        type?: string,
+        name?: string): Promise<Array<FP & { id: string }>>;
 
     fingerprintsForProject(id: string): Promise<Array<FP & { timestamp: Date, commitSha: string }>>;
 

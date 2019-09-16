@@ -76,8 +76,8 @@ export class PostgresProjectAnalysisResultStore implements ProjectAnalysisResult
     }
 
     public aspectDriftTree(workspaceId: string,
-                           percentile: number,
-                           type?: string): Promise<PlantedTree> {
+        percentile: number,
+        type?: string): Promise<PlantedTree> {
         return type ?
             driftTreeForSingleAspect(workspaceId, type, percentile, this.clientFactory) :
             driftTreeForAllAspects(workspaceId, percentile, this.clientFactory);
@@ -129,9 +129,9 @@ WHERE workspace_id ${workspaceId === "*" ? "<>" : "="} $1
      * @return {Promise<ProjectAnalysisResult[]>}
      */
     private async loadInWorkspaceInternal(workspaceId: string,
-                                          deep: boolean,
-                                          additionalWhereClause: string = "true",
-                                          additionalParameters: any[] = []): Promise<ProjectAnalysisResult[]> {
+        deep: boolean,
+        additionalWhereClause: string = "true",
+        additionalParameters: any[] = []): Promise<ProjectAnalysisResult[]> {
         const reposOnly = `SELECT id, owner, name, url, commit_sha, timestamp, workspace_id
 FROM repo_snapshots
 WHERE workspace_id ${workspaceId !== "*" ? "=" : "<>"} $1
@@ -380,7 +380,7 @@ GROUP by repo_snapshots.id) stats;`;
         values ($1, $2, $3, $4, $5, $6)
         ON CONFLICT ON CONSTRAINT fingerprint_analytics_pkey DO UPDATE SET entropy = $4, variants = $5, count = $6`;
                 await client.query(sql, [kind.type, kind.name, workspaceId,
-                    cohortAnalysis.entropy, cohortAnalysis.variants, cohortAnalysis.count]);
+                cohortAnalysis.entropy, cohortAnalysis.variants, cohortAnalysis.count]);
             }
             return true;
         });
@@ -408,6 +408,7 @@ GROUP by repo_snapshots.id) stats;`;
                     whileTryingTo: "build object to persist",
                     message: "No RepoRef",
                 }],
+                failedFingerprints: [],
             };
         }
         if (!repoRef.url || !repoRef.sha) {
@@ -419,6 +420,7 @@ GROUP by repo_snapshots.id) stats;`;
                     whileTryingTo: "build object to persist",
                     message: `Incomplete RepoRef ${JSON.stringify(repoRef)}`,
                 }],
+                failedFingerprints: [],
             };
         }
 
@@ -454,6 +456,7 @@ VALUES ($1, $2, $3, $4, $5, $6, $7, $8, current_timestamp)`;
                 succeeded: [id],
                 attemptedCount: 1,
                 failed: [],
+                failedFingerprints: fingerprintPersistResults.failures,
             };
         } catch (err) {
             return {
@@ -464,6 +467,7 @@ VALUES ($1, $2, $3, $4, $5, $6, $7, $8, current_timestamp)`;
                     whileTryingTo: "persist in DB",
                     message: err.message,
                 }],
+                failedFingerprints: [],
             };
         }
     }
@@ -474,10 +478,10 @@ VALUES ($1, $2, $3, $4, $5, $6, $7, $8, current_timestamp)`;
             async client => {
                 return this.persistFingerprints(analyzed, snapshotIdFor(analyzed.id), client);
             }, {
-                insertedCount: 0,
-                failures: analyzed.fingerprints
-                    .map(failedFingerprint => ({ failedFingerprint, error: undefined })),
-            });
+            insertedCount: 0,
+            failures: analyzed.fingerprints
+                .map(failedFingerprint => ({ failedFingerprint, error: undefined })),
+        });
     }
 
     // Persist the fingerprints for this analysis
@@ -560,10 +564,10 @@ function problemRowToProblem(rawRow: any): ProblemUsage {
  * @return {Promise<FP[]>}
  */
 async function fingerprintsInWorkspace(clientFactory: ClientFactory,
-                                       workspaceId: string,
-                                       distinct: boolean,
-                                       type?: string,
-                                       name?: string): Promise<Array<FP & { id: string }>> {
+    workspaceId: string,
+    distinct: boolean,
+    type?: string,
+    name?: string): Promise<Array<FP & { id: string }>> {
     const sql = `SELECT ${distinct ? "DISTINCT" : ""} f.name, f.id, f.feature_name as type, f.sha, f.data
 FROM repo_snapshots rs
     RIGHT JOIN repo_fingerprints rf ON rf.repo_snapshot_id = rs.id
@@ -587,7 +591,7 @@ WHERE rs.workspace_id ${workspaceId === "*" ? "<>" : "="} $1
 }
 
 async function fingerprintsForProject(clientFactory: ClientFactory,
-                                      snapshotId: string): Promise<Array<FP & { timestamp: Date, commitSha: string }>> {
+    snapshotId: string): Promise<Array<FP & { timestamp: Date, commitSha: string }>> {
     const sql = `SELECT f.name as fingerprintName, f.feature_name, f.sha, f.data, rf.path, rs.timestamp, rs.commit_sha
 FROM repo_fingerprints rf, repo_snapshots rs, fingerprints f
 WHERE rs.id = $1 AND rf.repo_snapshot_id = rs.id AND rf.fingerprint_id = f.id

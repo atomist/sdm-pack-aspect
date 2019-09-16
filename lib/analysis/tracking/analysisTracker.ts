@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { RepoRef } from "@atomist/automation-client";
+import { logger, RepoRef } from "@atomist/automation-client";
 import { SpiderResult } from "../offline/spider/Spider";
 
 interface AnalysisTrackingRepo { description: string; url?: string; }
@@ -79,8 +79,17 @@ export class AspectBeingTracked {
     public completedAt: Date | undefined;
     public fingerprintsFound: number | undefined;
     public failedWith: Error | undefined;
-    constructor(private readonly params: { aspectName: string, aboutToRun: WayToGetFingerprintsFromAnAspect }) {
+    public moreFailures: Array<{ error: Error, furtherDescription: string }> = [];
+    constructor(readonly params: { aspectName: string, aboutToRun: WayToGetFingerprintsFromAnAspect }) {
         this.startedAt = new Date();
+    }
+
+    public isThisYou(aspectName: string): boolean {
+        return this.params.aspectName === aspectName;
+    }
+
+    public failFingerprint(fp: { type: string, name: string }, error: Error): void {
+        this.moreFailures.push({ error, furtherDescription: "Failed on fingerprint: " + fp.name });
     }
 
     public completed(fingerprintsFound: number): void {
@@ -94,12 +103,20 @@ export class AspectBeingTracked {
     }
 
     public report(): AspectForReporting {
+        let error = this.failedWith;
+        if (!error && this.moreFailures.length === 1) {
+            error = this.moreFailures[0].error;
+        } else if (error && this.moreFailures.length > 0) {
+            const allErrorMessages = (error ? error.message + "\n" : "") +
+                this.moreFailures.map(f => f.furtherDescription + ": " + f.error.message).join("\n");
+            error = new Error(`multiple errors: ${allErrorMessages}`);
+        }
         return {
             aspectName: this.params.aspectName,
             stage: this.params.aboutToRun,
             millisTaken: this.completedAt ? this.completedAt.getTime() - this.startedAt.getTime() : undefined,
             fingerprintsFound: this.fingerprintsFound || 0,
-            error: this.failedWith,
+            error,
         };
     }
 }
@@ -150,6 +167,15 @@ export class RepoBeingTracked {
     public failed(failureDetails: FailureDetails): void {
         this.failureDetails = failureDetails;
         this.millisTaken = this.millisTaken = new Date().getTime() - this.analysisStartMillis;
+    }
+
+    public failFingerprint(fp: { type: string, name: string }, error: Error): void {
+        const a = this.aspects.find(n => n.isThisYou(fp.type));
+        if (!a) {
+            logger.warn("Did not find aspect: " + fp.type);
+            return;
+        }
+        a.failFingerprint(fp, error);
     }
 
     public skipped(skipReason: string): void {
