@@ -14,7 +14,10 @@
  * limitations under the License.
  */
 
-import { logger, RepoRef } from "@atomist/automation-client";
+import {
+    logger,
+    RepoRef,
+} from "@atomist/automation-client";
 import { SpiderResult } from "../offline/spider/Spider";
 
 interface AnalysisTrackingRepo { description: string; url?: string; }
