@@ -21,7 +21,8 @@ import {
     PushImpact,
 } from "@atomist/sdm";
 import {
-    configure, DeliveryGoals,
+    configure,
+    DeliveryGoals,
 } from "@atomist/sdm-core";
 import { Build } from "@atomist/sdm-pack-build";
 import {
@@ -48,7 +49,8 @@ import { sdmConfigClientFactory } from "../lib/analysis/offline/persist/pgClient
 import { PostgresProjectAnalysisResultStore } from "../lib/analysis/offline/persist/PostgresProjectAnalysisResultStore";
 import {
     RepositoryScorer,
-    Tagger, TaggerDefinition,
+    Tagger,
+    TaggerDefinition,
 } from "../lib/aspect/AspectRegistry";
 import { enrich } from "../lib/aspect/AspectReportDetailsRegistry";
 import { CodeMetricsAspect } from "../lib/aspect/common/codeMetrics";

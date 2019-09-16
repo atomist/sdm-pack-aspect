@@ -26,7 +26,8 @@ import {
     PushImpact,
 } from "@atomist/sdm";
 import {
-    AllGoals, DeliveryGoals,
+    AllGoals,
+    DeliveryGoals,
     isInLocalMode,
 } from "@atomist/sdm-core";
 import { toArray } from "@atomist/sdm-core/lib/util/misc/array";
