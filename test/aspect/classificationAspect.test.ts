@@ -20,7 +20,10 @@ import {
     projectClassificationAspect,
 } from "../../lib/aspect/compose/classificationAspect";
 
-import { fingerprintOf, FP } from "@atomist/sdm-pack-fingerprint";
+import {
+    fingerprintOf,
+    FP,
+} from "@atomist/sdm-pack-fingerprint";
 import * as assert from "assert";
 
 // Don't let it remove typecasts
