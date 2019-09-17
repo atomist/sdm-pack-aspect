@@ -299,7 +299,7 @@ function htmlForNoteProblem(workspaceId, dataId) {
 }
 
 export function postSetIdeal(workspaceId: string, fingerprintId: string) {
-    const postUrl = `../../api/v1/${workspaceId}/ideal/${fingerprintId}`;
+    const postUrl = `../../api/v1/${workspaceId}/ideal/${encodeURIComponent(fingerprintId)}`;
     const labelElement = document.getElementById("setIdealLabel");
     fetch(postUrl, { method: "PUT" }).then(response => {
         if (response.ok) {
@@ -318,7 +318,7 @@ export function postSetIdeal(workspaceId: string, fingerprintId: string) {
 }
 
 export function postNoteProblem(workspaceId: string, fingerprintId: string) {
-    const postUrl = `../../api/v1/${workspaceId}/problem/${fingerprintId}`;
+    const postUrl = `../../api/v1/${workspaceId}/problem/${encodeURIComponent(fingerprintId)}`;
     const labelElement = document.getElementById("noteProblemLabel");
     fetch(postUrl, { method: "PUT" }).then(response => {
         if (response.ok) {
