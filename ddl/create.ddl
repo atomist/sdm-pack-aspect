@@ -11,6 +11,10 @@
 
 DROP TABLE IF EXISTS repo_fingerprints;
 
+DROP TABLE IF EXISTS ideal_fingerprints;
+
+DROP TABLE IF EXISTS problem_fingerprints;
+
 DROP TYPE IF EXISTS severity;
 
 DROP TABLE IF EXISTS fingerprints;
@@ -18,10 +22,6 @@ DROP TABLE IF EXISTS fingerprints;
 DROP TABLE IF EXISTS repo_snapshots;
 
 DROP TABLE IF EXISTS fingerprint_analytics;
-
-DROP TABLE IF EXISTS ideal_fingerprints;
-
-DROP TABLE IF EXISTS problem_fingerprints;
 
 -- Contains the latest snapshot for the given repository
 -- Application code should delete any previously held data for this
@@ -114,5 +114,3 @@ CREATE INDEX ON fingerprints (feature_name);
 
 CREATE INDEX ON fingerprint_analytics (workspace_id);
 CREATE INDEX ON fingerprint_analytics (feature_name);
-
-
