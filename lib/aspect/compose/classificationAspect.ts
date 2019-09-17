@@ -29,10 +29,7 @@ import {
 } from "../AspectRegistry";
 import { AspectMetadata } from "./commonTypes";
 
-/**
- * Knows how to classify projects into a unique String
- */
-export interface Classifier {
+export interface ClassifierMetadata {
 
     /**
      * Name of this classifier
@@ -43,6 +40,12 @@ export interface Classifier {
      * Classification this instance will return
      */
     readonly tags: string | string[];
+}
+
+/**
+ * Knows how to classify projects into a unique String
+ */
+export interface Classifier extends ClassifierMetadata {
 
 }
 
@@ -84,11 +87,11 @@ export function isClassificationDataFingerprint(fp: FP): fp is FP<Classification
     return !!maybe.data && !!maybe.data.tags && !!maybe.data.reasons;
 }
 
-export type ClassificationAspect = Aspect<ClassificationData> & { tags: string[] };
+export type ClassificationAspect = Aspect<ClassificationData> & { classifierMetadata: ClassifierMetadata[] };
 
 export function isClassificationAspect(a: Aspect): a is ClassificationAspect {
     const maybe = a as ClassificationAspect;
-    return !!maybe.tags;
+    return !!maybe.classifierMetadata;
 }
 
 export interface ClassificationOptions extends AspectMetadata {
@@ -110,7 +113,7 @@ export function projectClassificationAspect(opts: ClassificationOptions,
     const projectClassifiers = classifiers.filter(isProjectClassifier);
     const derivedClassifiers = classifiers.filter(isDerivedClassifier);
     return {
-        tags: _.flatten(classifiers.map(c => c.tags)),
+        classifierMetadata: _.flatten(classifiers.map(c => ({ reason: c.reason, tags: c.tags }))),
         extract: async (p, pili) => {
             const test = createTest(projectClassifiers, opts);
             return test([], p, pili);
@@ -133,7 +136,7 @@ export function projectClassificationAspect(opts: ClassificationOptions,
 export function taggerAspect(opts: AspectMetadata & { alwaysFingerprint?: boolean },
                              ...taggers: Tagger[]): ClassificationAspect {
     return {
-        tags: taggers.map(t => t.name),
+        classifierMetadata: taggers.map(t => ({ tags: t.name, reason: t.description || t.name })),
         extract: async () => [],
         consolidate: async (fingerprints, p) => {
             const rts: RepoToScore = { analysis: { id: p.id, fingerprints } };
@@ -141,7 +144,7 @@ export function taggerAspect(opts: AspectMetadata & { alwaysFingerprint?: boolea
             for (const tagger of taggers) {
                 if (await tagger.test(rts)) {
                     data.tags.push(tagger.name);
-                    data.reasons.push(tagger.description);
+                    data.reasons.push(tagger.description || tagger.name);
                 }
             }
             return (opts.alwaysFingerprint || data.tags.length > 0) ? {

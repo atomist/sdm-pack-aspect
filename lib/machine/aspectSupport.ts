@@ -26,7 +26,6 @@ import {
     PushImpact,
 } from "@atomist/sdm";
 import {
-    AllGoals,
     DeliveryGoals,
     isInLocalMode,
 } from "@atomist/sdm-core";
@@ -296,11 +295,11 @@ function orgVisualizationEndpoints(dbClientFactory: ClientFactory,
                                    analysisTracking: AnalysisTracking,
                                    options: AspectSupportOptions,
                                    aspects: Aspect[]): {
-    routesToSuggestOnStartup: Array<{ title: string, route: string }>,
-    customizers: ExpressCustomizer[],
-} {
+        routesToSuggestOnStartup: Array<{ title: string, route: string }>,
+        customizers: ExpressCustomizer[],
+    } {
     const resultStore = analysisResultStore(dbClientFactory);
-    const fingerprintClassificationNamesFound = _.flatten(aspects.filter(isClassificationAspect).map(ca => ca.tags));
+    const fingerprintClassificationsFound = _.flatten(aspects.filter(isClassificationAspect).map(ca => ca.classifierMetadata));
     const scorerNames = Object.getOwnPropertyNames((options.scorers || {}));
     const aspectRegistry = new DefaultAspectRegistry({
         idealStore: resultStore,
@@ -313,7 +312,7 @@ function orgVisualizationEndpoints(dbClientFactory: ClientFactory,
     })
         .withTaggers(...toArray(options.inMemoryTaggers || []))
         // Add in memory taggers for all classification fingerprints
-        .withTaggers(...tagsFromClassificationFingerprints(...fingerprintClassificationNamesFound));
+        .withTaggers(...tagsFromClassificationFingerprints(...fingerprintClassificationsFound));
 
     if (options.secureWeb === undefined) {
         options.secureWeb = !isInLocalMode();
@@ -334,7 +333,7 @@ function orgVisualizationEndpoints(dbClientFactory: ClientFactory,
     return {
         routesToSuggestOnStartup:
             [...aboutStaticPages.routesToSuggestOnStartup,
-                ...aboutTheApi.routesToSuggestOnStartup],
+            ...aboutTheApi.routesToSuggestOnStartup],
         customizers: [aboutStaticPages.customizer, aboutTheApi.customizer],
     };
 }
