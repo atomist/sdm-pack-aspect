@@ -15,7 +15,11 @@
  */
 
 import { gatherFromFiles } from "@atomist/automation-client/lib/project/util/projectUtils";
-import { Aspect, fingerprintOf, FP } from "@atomist/sdm-pack-fingerprint";
+import {
+    Aspect,
+    fingerprintOf,
+    FP,
+} from "@atomist/sdm-pack-fingerprint";
 import { AspectMetadata } from "./commonTypes";
 
 export interface GlobMatch {
