@@ -18,7 +18,7 @@ import {
     FileParser,
 } from "@atomist/automation-client";
 import { fileHitIterator } from "@atomist/automation-client/lib/tree/ast/astUtils";
-import { Aspect, FP, sha256 } from "@atomist/sdm-pack-fingerprint";
+import { Aspect, fingerprintOf, FP } from "@atomist/sdm-pack-fingerprint";
 import { Omit } from "../../util/omit";
 
 export interface FileMatch {
@@ -93,12 +93,10 @@ export function fileMatchAspect(config: Omit<Aspect, "stats" | "extract" | "appl
                     matches,
                     glob: config.glob,
                 };
-                return {
+                return fingerprintOf({
                     type: config.name,
-                    name: config.name,
                     data,
-                    sha: sha256(JSON.stringify(data)),
-                };
+                });
             },
     };
 }

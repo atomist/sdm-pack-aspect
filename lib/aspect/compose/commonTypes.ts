@@ -21,7 +21,7 @@ import { Omit } from "../../util/omit";
  * Aspect metadata without extract or consolidate. Used in Aspect consolidation
  * and aspect creation utility functions.
  */
-export type AspectMetadata<DATA = any> = Omit<Aspect<DATA>, "extract" | "consolidate">;
+export type AspectMetadata<DATA = any> = Omit<Aspect<DATA>, "extract" | "consolidate" | "apply">;
 
 export interface CountData {
     count: number;

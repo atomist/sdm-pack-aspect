@@ -22,7 +22,7 @@ import {
 import { ReviewerRegistration } from "@atomist/sdm";
 import {
     Aspect,
-    fingerprintOf,
+    sha256,
 } from "@atomist/sdm-pack-fingerprint";
 import { CodeInspection } from "@atomist/sdm/lib/api/registration/CodeInspectionRegistration";
 import { AspectMetadata } from "../compose/commonTypes";
@@ -44,10 +44,17 @@ export function reviewerAspect(opts: AspectMetadata & {
                 return [];
             }
             return result.comments.map(data => {
-                return fingerprintOf({
+                const shaAble = {
+                    detail: data.detail,
+                    category: data.category,
+                    subcategory: data.subcategory,
+                };
+                return {
                     type: opts.name,
+                    name: opts.name,
                     data,
-                });
+                    sha: sha256(JSON.stringify(shaAble)),
+                };
             });
         },
     };
