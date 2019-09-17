@@ -45,6 +45,7 @@ export interface ClassifierMetadata {
 /**
  * Knows how to classify projects into a unique String
  */
+// tslint:disable-next-line:no-empty-interface
 export interface Classifier extends ClassifierMetadata {
 
 }
