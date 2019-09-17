@@ -122,7 +122,7 @@ const AnalyzeLocalCommandParametersDefinition: ParametersObject<AnalyzeLocalComm
 };
 
 function analyzeFromGitHubOrganization(analyzer: Analyzer,
-    analysisTracking: AnalysisTracking): CommandListener<AnalyzeGitHubOrganizationCommandParameters> {
+                                       analysisTracking: AnalysisTracking): CommandListener<AnalyzeGitHubOrganizationCommandParameters> {
     return async d => {
         const spiderAppOptions: SpiderAppOptions = d.parameters;
         logger.info("analyze github org invoked with " + JSON.stringify(spiderAppOptions));
