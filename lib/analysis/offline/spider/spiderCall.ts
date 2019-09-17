@@ -19,6 +19,7 @@ import { loadUserConfiguration } from "@atomist/automation-client/lib/configurat
 import { StableDirectoryManager } from "@atomist/automation-client/lib/spi/clone/StableDirectoryManager";
 import { TmpDirectoryManager } from "@atomist/automation-client/lib/spi/clone/tmpDirectoryManager";
 import * as _ from "lodash";
+import { ProjectAnalysisResult } from "../../ProjectAnalysisResult";
 import { AnalysisTracking } from "../../tracking/analysisTracker";
 import { sdmConfigClientFactory } from "../persist/pgClientFactory";
 import { PostgresProjectAnalysisResultStore } from "../persist/PostgresProjectAnalysisResultStore";
@@ -114,24 +115,32 @@ export async function spider(params: SpiderAppOptions,
     _.fill(arr, "-");
     const sep = arr.join("");
     logger.debug("%s\nOptions: %j\nSpider criteria: %j\n%s\n", sep, params, criteria, sep);
+
+    let keepExistingPersisted = neverKeepExisting; // default
+    if (params.update !== undefined && params.update !== null) { // parameter is defined
+        keepExistingPersisted = params.update ? neverKeepExisting : alwaysKeepExisting;
+    }
     return spiderYo.spider(criteria,
         analyzer,
         analysisTracking,
         {
             persister,
-            keepExistingPersisted: async existing => {
-                if (!existing || !existing.analysis) {
-                    return false;
-                }
-                // Perform a computation here to return true if an existing analysis seems valid
-                const keep = !params.update;
-                logger.debug(keep ?
-                    `Retaining existing analysis for ${existing.analysis.id.url}:${existing.analysis.id.sha}` :
-                    `Recomputing analysis for ${existing.analysis.id.url}:${existing.analysis.id.sha}`);
-                return keep;
-            },
+            keepExistingPersisted,
             // Controls promise usage in Node
             poolSize: params.poolSize || DefaultPoolSize,
             workspaceId,
         });
+}
+
+async function alwaysKeepExisting(existing: ProjectAnalysisResult): Promise<boolean> {
+    if (!existing || !existing.analysis) {
+        return false;
+    }
+    logger.debug(`Retaining existing analysis for ${existing.analysis.id.url}:${existing.analysis.id.sha}`);
+    return true;
+}
+
+async function neverKeepExisting(existing: ProjectAnalysisResult): Promise<boolean> {
+    logger.debug(`Computing analysis for ${existing.analysis.id.url}:${existing.analysis.id.sha}`);
+    return false;
 }

@@ -40,7 +40,7 @@ const AnalyzeCommandParameterDefinitions: ParametersObject<AnalyzeCommandParamet
     },
     update: {
         type: "boolean",
-        description: "Overwrite existing analyses? (default is no)",
+        description: "Overwrite existing analyses? (default is yes)",
         required: false,
     },
     poolSize: {
@@ -122,7 +122,7 @@ const AnalyzeLocalCommandParametersDefinition: ParametersObject<AnalyzeLocalComm
 };
 
 function analyzeFromGitHubOrganization(analyzer: Analyzer,
-                                       analysisTracking: AnalysisTracking): CommandListener<AnalyzeGitHubOrganizationCommandParameters> {
+    analysisTracking: AnalysisTracking): CommandListener<AnalyzeGitHubOrganizationCommandParameters> {
     return async d => {
         const spiderAppOptions: SpiderAppOptions = d.parameters;
         logger.info("analyze github org invoked with " + JSON.stringify(spiderAppOptions));
