@@ -22,6 +22,7 @@ import * as _ from "lodash";
 import { AnalysisTracking } from "../../tracking/analysisTracker";
 import { sdmConfigClientFactory } from "../persist/pgClientFactory";
 import { PostgresProjectAnalysisResultStore } from "../persist/PostgresProjectAnalysisResultStore";
+import { DefaultPoolSize } from "./common";
 import { GitCommandGitProjectCloner } from "./github/GitCommandGitProjectCloner";
 import { GitHubSpider } from "./github/GitHubSpider";
 import { LocalSpider } from "./local/LocalSpider";
@@ -64,7 +65,7 @@ export interface SpiderAppOptions {
     update?: boolean;
 
     /**
-     * How many analyses shall we run at once? Default to something reasonable, like 40
+     * How many analyses shall we run at once? Default to something reasonable, like 10
      */
     poolSize?: number;
 }
@@ -130,7 +131,7 @@ export async function spider(params: SpiderAppOptions,
                 return keep;
             },
             // Controls promise usage in Node
-            poolSize: params.poolSize || 40,
+            poolSize: params.poolSize || DefaultPoolSize,
             workspaceId,
         });
 }
