@@ -40,7 +40,6 @@ import { showTiming } from "../util/showTiming";
 import {
     AspectRegistry,
     isTagger,
-    WorkspaceToScore,
     OrgScorer,
     RepositoryScorer,
     RepoToScore,
@@ -51,6 +50,7 @@ import {
     Tagger,
     TaggerDefinition,
     WorkspaceSpecificTagger,
+    WorkspaceToScore,
 } from "./AspectRegistry";
 import {
     AspectReportDetails,

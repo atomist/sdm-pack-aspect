@@ -15,12 +15,12 @@
  */
 
 import {
-    WorkspaceToScore,
     OrgScorer,
     RepositoryScorer,
     RepoToScore,
     ScoredRepo,
     TagAndScoreOptions,
+    WorkspaceToScore,
 } from "../aspect/AspectRegistry";
 import { fingerprintScoresFor } from "../aspect/score/ScoredAspect";
 import {
