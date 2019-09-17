@@ -14,14 +14,17 @@
  * limitations under the License.
  */
 
-import { OrgScorer } from "../aspect/AspectRegistry";
+import { WorkspaceScorer } from "../aspect/AspectRegistry";
 import { FiveStar } from "./Score";
 
 import * as _ from "lodash";
 
 const average = array => array.reduce((a, b) => a + b) / array.length;
 
-export const AverageRepoScore: OrgScorer = {
+/**
+ * Use the average repo score as the score
+ **/
+export const AverageRepoScore: WorkspaceScorer = {
     name: "average",
     description: "Average score for repositories",
     score: async od => {
@@ -34,7 +37,10 @@ export const AverageRepoScore: OrgScorer = {
     },
 };
 
-export const WorstRepoScore: OrgScorer = {
+/**
+ * Use the score of the lowest scoring repo as a score
+ */
+export const WorstRepoScore: WorkspaceScorer = {
     name: "worst",
     description: "Worst repository",
     score: async od => {
@@ -47,7 +53,10 @@ export const WorstRepoScore: OrgScorer = {
     },
 };
 
-export const EntropyScore: OrgScorer = {
+/**
+ * Score based on entropy across the organization
+ */
+export const EntropyScore: WorkspaceScorer = {
     name: "entropy",
     description: "Entropy across workspace",
     score: async od => {

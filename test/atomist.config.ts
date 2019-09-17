@@ -85,7 +85,7 @@ import {
     AverageRepoScore,
     EntropyScore,
     WorstRepoScore,
-} from "../lib/scorer/commonOrgScorers";
+} from "../lib/scorer/commonWorkspaceScorers";
 import * as commonScorers from "../lib/scorer/commonScorers";
 import { FiveStar } from "../lib/scorer/Score";
 import * as commonTaggers from "../lib/tagger/commonTaggers";
@@ -149,7 +149,7 @@ export const configuration: Configuration = configure<TestGoals>(async sdm => {
                 all: scorers(),
             },
 
-            orgScorers: [
+            workspaceScorers: [
                 AverageRepoScore,
                 WorstRepoScore,
                 EntropyScore,

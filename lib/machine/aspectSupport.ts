@@ -26,7 +26,6 @@ import {
     PushImpact,
 } from "@atomist/sdm";
 import {
-    AllGoals,
     DeliveryGoals,
     isInLocalMode,
 } from "@atomist/sdm-core";
@@ -54,10 +53,9 @@ import {
     AnalysisTracking,
 } from "../analysis/tracking/analysisTracker";
 import {
-    OrgScorer,
     RepositoryScorer,
     Tagger,
-    TaggerDefinition,
+    TaggerDefinition, WorkspaceScorer,
 } from "../aspect/AspectRegistry";
 import {
     isClassificationAspect,
@@ -144,7 +142,7 @@ export interface AspectSupportOptions {
      */
     scorers?: Record<string, AspectCompatibleScorer | AspectCompatibleScorer[]>;
 
-    orgScorers?: OrgScorer[];
+    workspaceScorers?: WorkspaceScorer[];
 
     /**
      * Scorers that are computed in memory. Allows for faster iteration on scoring logic.
@@ -311,7 +309,7 @@ function orgVisualizationEndpoints(dbClientFactory: ClientFactory,
         aspects,
         undesirableUsageChecker: options.undesirableUsageChecker,
         scorers: toArray(options.inMemoryScorers || []).concat(scorerNames.map(exposeFingerprintScore)),
-        orgScorers: options.orgScorers,
+        workspaceScorers: options.workspaceScorers,
         scoreWeightings: options.weightings || DefaultScoreWeightings,
         configuration,
     })

@@ -15,7 +15,7 @@
  */
 
 import {
-    OrgScorer,
+    WorkspaceScorer,
     RepositoryScorer,
     RepoToScore,
     ScoredRepo,
@@ -43,7 +43,7 @@ export async function scoreRepos(scorers: RepositoryScorer[],
 /**
  * Score the repo
  */
-export async function scoreOrg(scorers: OrgScorer[],
+export async function scoreOrg(scorers: WorkspaceScorer[],
                                od: WorkspaceToScore,
                                weightings: ScoreWeightings): Promise<WeightedScore> {
     const scores: Scores = {};

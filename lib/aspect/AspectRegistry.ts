@@ -155,7 +155,7 @@ export interface WorkspaceToScore {
     }>;
 }
 
-export interface OrgScorer extends Scorer {
+export interface WorkspaceScorer extends Scorer {
 
     /**
      * Function that knows how to score an org.
