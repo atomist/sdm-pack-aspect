@@ -30,7 +30,7 @@ import {
 } from "../aspect/community/license";
 import {
     ClassificationData,
-    ClassifierMetadata,
+    Classifier,
     isClassificationDataFingerprint,
 } from "../aspect/compose/classificationAspect";
 import { isGlobMatchFingerprint } from "../aspect/compose/globAspect";
@@ -47,8 +47,8 @@ import { ExposedSecrets } from "../aspect/secret/exposedSecrets";
  * @param {string} tags
  * @return {Tagger[]}
  */
-export function tagsFromClassificationFingerprints(...classifierMetadatas: ClassifierMetadata[]): Tagger[] {
-    return _.flatten(classifierMetadatas.map(cm => toArray(cm.tags).map(name => ({
+export function tagsFromClassificationFingerprints(...classifiers: Classifier[]): Tagger[] {
+    return _.flatten(classifiers.map(cm => toArray(cm.tags).map(name => ({
         name,
         description: cm.reason,
         test: async repo => repo.analysis.fingerprints.some(fp => isClassificationDataFingerprint(fp)

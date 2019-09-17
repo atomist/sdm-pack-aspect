@@ -29,7 +29,7 @@ import {
 } from "../AspectRegistry";
 import { AspectMetadata } from "./commonTypes";
 
-export interface ClassifierMetadata {
+export interface Classifier {
 
     /**
      * Name of this classifier
@@ -40,13 +40,6 @@ export interface ClassifierMetadata {
      * Classification this instance will return
      */
     readonly tags: string | string[];
-}
-
-/**
- * Knows how to classify projects into a unique String
- */
-export interface Classifier extends ClassifierMetadata {
-
 }
 
 export interface ProjectClassifier extends Classifier {
@@ -87,7 +80,7 @@ export function isClassificationDataFingerprint(fp: FP): fp is FP<Classification
     return !!maybe.data && !!maybe.data.tags && !!maybe.data.reasons;
 }
 
-export type ClassificationAspect = Aspect<ClassificationData> & { classifierMetadata: ClassifierMetadata[] };
+export type ClassificationAspect = Aspect<ClassificationData> & { classifierMetadata: Classifier[] };
 
 export function isClassificationAspect(a: Aspect): a is ClassificationAspect {
     const maybe = a as ClassificationAspect;
