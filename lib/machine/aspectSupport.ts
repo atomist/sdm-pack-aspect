@@ -55,7 +55,8 @@ import {
 import {
     RepositoryScorer,
     Tagger,
-    TaggerDefinition, WorkspaceScorer,
+    TaggerDefinition,
+    WorkspaceScorer,
 } from "../aspect/AspectRegistry";
 import {
     isClassificationAspect,
