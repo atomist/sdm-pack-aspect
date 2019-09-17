@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
+import { NoParameters, ProjectReview, ReviewComment } from "@atomist/automation-client";
 import { ReviewerRegistration } from "@atomist/sdm";
 import { Aspect, fingerprintOf } from "@atomist/sdm-pack-fingerprint";
-import { NoParameters, ProjectReview, ReviewComment } from "@atomist/automation-client";
 import { CodeInspection } from "@atomist/sdm/lib/api/registration/CodeInspectionRegistration";
 import { AspectMetadata } from "../compose/commonTypes";
 
@@ -26,7 +26,7 @@ export type EligibleReviewer = ReviewerRegistration | CodeInspection<ProjectRevi
  * Create fingerprints from the output of this reviewer
  */
 export function reviewerAspect(opts: AspectMetadata & {
-    reviewer: EligibleReviewer
+    reviewer: EligibleReviewer,
 }): Aspect<ReviewComment> {
     const inspection = isReviewerRegistration(opts.reviewer) ? opts.reviewer.inspection : opts.reviewer;
     return {
@@ -42,7 +42,7 @@ export function reviewerAspect(opts: AspectMetadata & {
                     data,
                 });
             });
-        }
+        },
     };
 }
 
