@@ -184,6 +184,10 @@ async function analyzeOneRepo<FoundRepo>(
         timestamp: new Date(),
     });
 
+    persistResult.failedFingerprints.forEach(f => {
+        tracking.failFingerprint(f.failedFingerprint, f.error);
+    });
+
     if (persistResult.failed.length === 1) {
         tracking.failed(persistResult.failed[0]);
     } else if (persistResult.succeeded.length === 1) {

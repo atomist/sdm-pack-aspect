@@ -380,7 +380,7 @@ GROUP by repo_snapshots.id) stats;`;
         values ($1, $2, $3, $4, $5, $6)
         ON CONFLICT ON CONSTRAINT fingerprint_analytics_pkey DO UPDATE SET entropy = $4, variants = $5, count = $6`;
                 await client.query(sql, [kind.type, kind.name, workspaceId,
-                    cohortAnalysis.entropy, cohortAnalysis.variants, cohortAnalysis.count]);
+                cohortAnalysis.entropy, cohortAnalysis.variants, cohortAnalysis.count]);
             }
             return true;
         });
@@ -408,6 +408,7 @@ GROUP by repo_snapshots.id) stats;`;
                     whileTryingTo: "build object to persist",
                     message: "No RepoRef",
                 }],
+                failedFingerprints: [],
             };
         }
         if (!repoRef.url || !repoRef.sha) {
@@ -419,6 +420,7 @@ GROUP by repo_snapshots.id) stats;`;
                     whileTryingTo: "build object to persist",
                     message: `Incomplete RepoRef ${JSON.stringify(repoRef)}`,
                 }],
+                failedFingerprints: [],
             };
         }
 
@@ -454,6 +456,7 @@ VALUES ($1, $2, $3, $4, $5, $6, $7, $8, current_timestamp)`;
                 succeeded: [id],
                 attemptedCount: 1,
                 failed: [],
+                failedFingerprints: fingerprintPersistResults.failures,
             };
         } catch (err) {
             return {
@@ -464,6 +467,7 @@ VALUES ($1, $2, $3, $4, $5, $6, $7, $8, current_timestamp)`;
                     whileTryingTo: "persist in DB",
                     message: err.message,
                 }],
+                failedFingerprints: [],
             };
         }
     }
@@ -474,10 +478,10 @@ VALUES ($1, $2, $3, $4, $5, $6, $7, $8, current_timestamp)`;
             async client => {
                 return this.persistFingerprints(analyzed, snapshotIdFor(analyzed.id), client);
             }, {
-                insertedCount: 0,
-                failures: analyzed.fingerprints
-                    .map(failedFingerprint => ({ failedFingerprint, error: undefined })),
-            });
+            insertedCount: 0,
+            failures: analyzed.fingerprints
+                .map(failedFingerprint => ({ failedFingerprint, error: undefined })),
+        });
     }
 
     // Persist the fingerprints for this analysis

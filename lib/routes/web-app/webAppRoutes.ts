@@ -129,8 +129,8 @@ function exposeRepositoryPage(conf: WebAppConfig): void {
             }
 
             const allFingerprints = await conf.store.fingerprintsForProject(id);
-            const mostRecentTimestampMillis = Math.max(...allFingerprints.map(fp =>
-                fp.timestamp.getTime()));
+            const mostRecentTimestamp = allFingerprints.length > 0 ? new Date(Math.max(...allFingerprints.map(fp =>
+                fp.timestamp.getTime()))) : undefined;
             const commitSha = allFingerprints.length > 0 ? allFingerprints[0].commitSha : undefined;
             const aspectsAndFingerprints = await projectFingerprints(conf.aspectRegistry,
                 allFingerprints);
@@ -151,7 +151,7 @@ function exposeRepositoryPage(conf: WebAppConfig): void {
                     repo,
                     aspects: _.sortBy(ffd.filter(f => !!f.aspect.displayName), f => f.aspect.displayName),
                     category,
-                    timestamp: new Date(mostRecentTimestampMillis),
+                    timestamp: mostRecentTimestamp,
                 }), `Repository Insights`,
                 conf.instanceMetadata));
         } catch (e) {
