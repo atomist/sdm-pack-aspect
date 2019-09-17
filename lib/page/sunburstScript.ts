@@ -276,12 +276,14 @@ function setFrozenLevelData(workspaceId, perLevelDataElements: d3.Selection<any,
 
 function formatLevelData(data: { name: string, url?: string, viewUrl?: string, tags?: Array<{ name: string }> }): string {
     console.log("tags: " + data.tags);
-    const urlToUse = data.viewUrl || data.url;
+    const viewLink = data.viewUrl ? `<a href="${data.viewUrl}"><img src="/hexagonal-fruit-of-power.png" class="linkToInsightsImage" ></img></a>` : "";
     let tagList: string = "";
     if (data.tags) {
         tagList = "<ul>" + data.tags.map(t => `<li>${t.name}</li>`).join("") + "</ul>"
     }
-    return urlToUse ? `<a href="${urlToUse}">${data.name}</a>${tagList}` : data.name;
+    const nameDisplay = data.url ? `<a href="${data.url}">${data.name}</a>` : data.name;
+
+    return nameDisplay + viewLink + tagList;
 }
 
 function htmlForSetIdeal(workspaceId, dataId) {
