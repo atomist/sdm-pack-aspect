@@ -26,6 +26,7 @@ import {
     Ideal,
     isConcreteIdeal,
 } from "@atomist/sdm-pack-fingerprint";
+import * as camelcaseKeys from "camelcase-keys";
 import * as _ from "lodash";
 import {
     Client,
@@ -251,7 +252,7 @@ GROUP BY repo_snapshots.id`;
                 const fid = await this.ensureFingerprintStored(ideal.ideal, client);
                 await client.query(`INSERT INTO ideal_fingerprints (workspace_id, fingerprint_id, authority)
 values ($1, $2, 'local-user')`, [
-                        workspaceId, fid]);
+                    workspaceId, fid]);
             });
         } else {
             throw new Error("Elimination ideals not yet supported");
@@ -316,7 +317,7 @@ WHERE workspace_id = $1 AND problem_fingerprints.fingerprint_id = fingerprints.i
     }
 
     public async loadIdeal(workspaceId: string, type: string, name: string): Promise<Ideal> {
-        const sql = `SELECT id, name, feature_name as type, sha, data
+        const sql = `SELECT id, name, feature_name as type, sha, data, display_name, display_value
 FROM ideal_fingerprints, fingerprints
 WHERE workspace_id = $1 AND ideal_fingerprints.fingerprint_id = fingerprints.id
 AND feature_name = $2 AND name = $3`;
@@ -327,7 +328,7 @@ AND feature_name = $2 AND name = $3`;
         if (!rawRow) {
             return undefined;
         }
-        return idealRowToIdeal(rawRow);
+        return camelcaseKeys(idealRowToIdeal(rawRow), { deep: true }) as any;
     }
 
     public async loadFingerprintById(id: string): Promise<FP | undefined> {
@@ -407,6 +408,7 @@ GROUP by repo_snapshots.id) stats;`;
                     whileTryingTo: "build object to persist",
                     message: "No RepoRef",
                 }],
+                failedFingerprints: [],
             };
         }
         if (!repoRef.url || !repoRef.sha) {
@@ -418,6 +420,7 @@ GROUP by repo_snapshots.id) stats;`;
                     whileTryingTo: "build object to persist",
                     message: `Incomplete RepoRef ${JSON.stringify(repoRef)}`,
                 }],
+                failedFingerprints: [],
             };
         }
 
@@ -453,6 +456,7 @@ VALUES ($1, $2, $3, $4, $5, $6, $7, $8, current_timestamp)`;
                 succeeded: [id],
                 attemptedCount: 1,
                 failed: [],
+                failedFingerprints: fingerprintPersistResults.failures,
             };
         } catch (err) {
             return {
@@ -463,6 +467,7 @@ VALUES ($1, $2, $3, $4, $5, $6, $7, $8, current_timestamp)`;
                     whileTryingTo: "persist in DB",
                     message: err.message,
                 }],
+                failedFingerprints: [],
             };
         }
     }
@@ -473,10 +478,10 @@ VALUES ($1, $2, $3, $4, $5, $6, $7, $8, current_timestamp)`;
             async client => {
                 return this.persistFingerprints(analyzed, snapshotIdFor(analyzed.id), client);
             }, {
-                insertedCount: 0,
-                failures: analyzed.fingerprints
-                    .map(failedFingerprint => ({ failedFingerprint, error: undefined })),
-            });
+            insertedCount: 0,
+            failures: analyzed.fingerprints
+                .map(failedFingerprint => ({ failedFingerprint, error: undefined })),
+        });
     }
 
     // Persist the fingerprints for this analysis
@@ -515,10 +520,11 @@ VALUES ($1, $2, $3) ON CONFLICT DO NOTHING`;
         const fingerprintId = aspectName + "_" + fp.name + "_" + fp.sha;
         //  console.log("Persist fingerprint " + JSON.stringify(fp) + " for id " + id);
         // Create fp record if it doesn't exist
-        const insertFingerprintSql = `INSERT INTO fingerprints (id, name, feature_name, sha, data)
-VALUES ($1, $2, $3, $4, $5) ON CONFLICT DO NOTHING`;
+        const insertFingerprintSql = `INSERT INTO fingerprints (id, name, feature_name, sha, data, display_name, display_value)
+VALUES ($1, $2, $3, $4, $5, $6, $7) ON CONFLICT DO NOTHING`;
         logger.debug("Persisting fingerprint %j SQL\n%s", fp, insertFingerprintSql);
-        await client.query(insertFingerprintSql, [fingerprintId, fp.name, aspectName, fp.sha, JSON.stringify(fp.data)]);
+        await client.query(insertFingerprintSql, [fingerprintId, fp.name, aspectName, fp.sha,
+            JSON.stringify(fp.data), fp.displayName, fp.displayValue]);
         return fingerprintId;
     }
 
@@ -626,8 +632,6 @@ ORDER BY entropy DESC`;
             entropy: +r.entropy,
             compliance: +r.compliance,
             entropy_band: bandFor(EntropySizeBands, +r.entropy, { casing: BandCasing.Sentence, includeNumber: false }),
-            // This is really confusing but the Aspect.name is feature_name alias type in the db
-            // categories: getCategories({ name: r.type }),
         }));
     }, []);
 }

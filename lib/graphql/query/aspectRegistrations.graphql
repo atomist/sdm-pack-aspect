@@ -1,14 +1,16 @@
-query AspectRegistrations($enabled: [String], $name: [String]) {
-    AspectRegistration(enabled: $enabled, name: $name) {
+query AspectRegistrations($state: [AspectRegistrationState], $name: [String]) {
+    AspectRegistration(state: $state, name: $name) {
         name
+        owner
         displayName
         description
         shortName
         unit
         url
+        manageable
         category
         endpoint
         uuid
-        enabled
+        state
     }
 }

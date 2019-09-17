@@ -49,7 +49,7 @@ export function buildOutcomeAspect<DATA>(opts: AspectMetadata<DATA> & {
                 throw new Error("No build goal supplied. Cannot register a build aspect");
             }
             logger.info("Registering build outcome aspect '%s'", opts.name);
-            return goals.build.withExecutionListener(goalExecutionFingerprinter(opts.fingerprintFinder, publisher));
+            return goals.build.withExecutionListener(goalExecutionFingerprinter(opts.fingerprintFinder, publisher, [opts as any]));
         },
         stats: {
             basicStatsPath: "elapsedMillis",

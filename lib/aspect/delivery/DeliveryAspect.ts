@@ -17,9 +17,7 @@
 import {
     SoftwareDeliveryMachine,
 } from "@atomist/sdm";
-import {
-    DeliveryGoals,
-} from "@atomist/sdm-core";
+import { DeliveryGoals } from "@atomist/sdm-core";
 import {
     Aspect,
     PublishFingerprints,

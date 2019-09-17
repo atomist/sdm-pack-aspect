@@ -25,7 +25,10 @@ import { ProjectAnalysisResult } from "../analysis/ProjectAnalysisResult";
 import { TagContext } from "../routes/api";
 import { ScoreWeightings } from "../scorer/Score";
 import { scoreRepos } from "../scorer/scoring";
-import { AspectRegistrations } from "../typings/types";
+import {
+    AspectRegistrations,
+    AspectRegistrationState,
+} from "../typings/types";
 import { showTiming } from "../util/showTiming";
 import {
     AspectRegistry,
@@ -111,13 +114,13 @@ export class DefaultAspectRegistry implements AspectRegistry, AspectReportDetail
                 .query<AspectRegistrations.Query, AspectRegistrations.Variables>({
                     name: "AspectRegistrations",
                     variables: {
-                        name: [type],
-                        enabled: ["true"],
+                        state: [AspectRegistrationState.Enabled],
                     },
                 });
-            const aspectRegistration = _.get(aspectRegistrations, "AspectRegistration[0]");
-            if (!!aspectRegistration) {
-                return aspectRegistration;
+            const aspectRegistration = (_.get(aspectRegistrations, "AspectRegistration") || [])
+                .filter(a => a.name === type);
+            if (!!aspectRegistration && aspectRegistration.length > 0) {
+                return aspectRegistration[0];
             }
         }
         return undefined;

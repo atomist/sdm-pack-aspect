@@ -31,7 +31,7 @@ import { Analyzed } from "../AspectRegistry";
  * @return {PublishFingerprints}
  */
 export function storeFingerprintsFor(store: ProjectAnalysisResultStore): PublishFingerprintsFor {
-    return async (ctx, repoIdentification, fingerprints, previous) => {
+    return async (ctx, aspects, repoIdentification, fingerprints, previous) => {
         if (fingerprints.length === 0) {
             return true;
         }
@@ -71,7 +71,7 @@ export function storeFingerprintsFor(store: ProjectAnalysisResultStore): Publish
 }
 
 export function storeFingerprints(store: ProjectAnalysisResultStore): PublishFingerprints {
-    return (i, fps, previous) => {
-        return storeFingerprintsFor(store)(i, i.id as RepoIdentification, fps, previous);
+    return (i, aspects, fps, previous) => {
+        return storeFingerprintsFor(store)(i, aspects, i.id as RepoIdentification, fps, previous);
     };
 }

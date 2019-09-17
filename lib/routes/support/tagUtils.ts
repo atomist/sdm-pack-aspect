@@ -27,6 +27,7 @@ export function tagUsageIn(aspectRegistry: AspectRegistry, relevantRepos: Tagged
         name,
         description: aspectRegistry.availableTags.find(t => t.name === name).description,
         severity: aspectRegistry.availableTags.find(t => t.name === name).severity,
+        parent: aspectRegistry.availableTags.find(t => t.name === name).parent,
         count: relevantTags[name].length,
     }));
 }

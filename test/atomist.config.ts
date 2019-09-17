@@ -50,6 +50,7 @@ import { PostgresProjectAnalysisResultStore } from "../lib/analysis/offline/pers
 import {
     RepositoryScorer,
     Tagger,
+    TaggerDefinition,
 } from "../lib/aspect/AspectRegistry";
 import { enrich } from "../lib/aspect/AspectReportDetailsRegistry";
 import { CodeMetricsAspect } from "../lib/aspect/common/codeMetrics";
@@ -70,7 +71,11 @@ import { buildTimeAspect } from "../lib/aspect/delivery/BuildAspect";
 import { storeFingerprints } from "../lib/aspect/delivery/storeFingerprintsPublisher";
 import { BranchCount } from "../lib/aspect/git/branchCount";
 import { GitRecency } from "../lib/aspect/git/gitActivity";
-import { AcceptEverythingUndesirableUsageChecker } from "../lib/aspect/ProblemStore";
+import {
+    AcceptEverythingUndesirableUsageChecker,
+    chainUndesirableUsageCheckers,
+    UndesirableUsageChecker,
+} from "../lib/aspect/ProblemStore";
 import { ExposedSecrets } from "../lib/aspect/secret/exposedSecrets";
 import {
     aspectSupport,
@@ -92,6 +97,17 @@ const store = new PostgresProjectAnalysisResultStore(sdmConfigClientFactory(load
 interface TestGoals extends DeliveryGoals {
     build: Build;
 }
+
+const undesirableUsageChecker: UndesirableUsageChecker = chainUndesirableUsageCheckers(
+    fingerprint => fingerprint.type === NpmDeps.name && fingerprint.name === "axios" ?
+        {
+            severity: "warn",
+            authority: "Christian",
+            description: "Don't use Axios",
+            fingerprint,
+        } :
+        undefined,
+);
 
 /**
  * Sample configuration to enable testing
@@ -134,7 +150,7 @@ export const configuration: Configuration = configure<TestGoals>(async sdm => {
             inMemoryTaggers: taggers({}),
 
             // Customize this to respond to undesirable usages
-            undesirableUsageChecker: AcceptEverythingUndesirableUsageChecker,
+            undesirableUsageChecker,
 
             publishFingerprints: storeFingerprints(store),
             virtualProjectFinder,
@@ -252,7 +268,7 @@ export interface TaggersParams {
     deadDays: number;
 }
 
-export function taggers(opts: Partial<TaggersParams>): Tagger[] {
+export function taggers(opts: Partial<TaggersParams>): TaggerDefinition[] {
     return [
         {
             name: "docker", description: "Docker status",
@@ -270,6 +286,14 @@ export function taggers(opts: Partial<TaggersParams>): Tagger[] {
             description: "C# build",
             test: async repo => repo.analysis.fingerprints.some(fp => isFileMatchFingerprint(fp) &&
                 fp.name.includes("csproj") && fp.data.matches.length > 0),
+        },
+        {
+            name: "bad",
+            description: "Has problems",
+            createTest: async (wsid, ar) => {
+                const uc = await ar.undesirableUsageCheckerFor(wsid);
+                return async repo => repo.analysis.fingerprints.some(fp => uc.check(fp, wsid).length > 0);
+            },
         },
     ];
 }

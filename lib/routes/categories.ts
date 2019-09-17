@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+import { logger } from "@atomist/automation-client";
 import * as _ from "lodash";
 import { FingerprintKind } from "../analysis/offline/persist/ProjectAnalysisResultStore";
 import { AspectRegistry } from "../aspect/AspectRegistry";

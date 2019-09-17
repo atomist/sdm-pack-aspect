@@ -52,6 +52,13 @@ export function enrich(aspect: Aspect, details: AspectReportDetails): AspectWith
 }
 
 /**
+ * Test if Aspect is AspectWithReportDetails
+ */
+export function hasReportDetails(aspect: Aspect | AspectWithReportDetails): aspect is AspectWithReportDetails {
+    return !!aspect && !!(aspect as AspectWithReportDetails).details;
+}
+
+/**
  * Manages aspect metadata such as description, short names etc as used by the web-app
  */
 export interface AspectReportDetailsRegistry {

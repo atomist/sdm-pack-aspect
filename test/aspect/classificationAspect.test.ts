@@ -20,7 +20,10 @@ import {
     projectClassificationAspect,
 } from "../../lib/aspect/compose/classificationAspect";
 
-import { FP } from "@atomist/sdm-pack-fingerprint";
+import {
+    fingerprintOf,
+    FP,
+} from "@atomist/sdm-pack-fingerprint";
 import * as assert from "assert";
 
 // Don't let it remove typecasts
@@ -34,7 +37,7 @@ describe("classification aspects", () => {
             const p = InMemoryProject.of();
             const ca = projectClassificationAspect({ name: "foo", displayName: "x" });
             const fp = await ca.extract(p, undefined) as FP<ClassificationData>;
-            assert.strictEqual(fp, undefined);
+            assert.deepStrictEqual(fp.data.tags, []);
         });
 
         it("one classifier produces no tags", async () => {
@@ -42,22 +45,27 @@ describe("classification aspects", () => {
             const ca = projectClassificationAspect({ name: "foo", displayName: "x" },
                 { tags: "ouch", test: async () => false, reason: "wow" });
             const fp = await ca.extract(p, undefined) as FP<ClassificationData>;
-            assert.strictEqual(fp, undefined);
-        });
-
-        it("one classifier produces an empty fingerprint with alwaysFingerprint", async () => {
-            const p = InMemoryProject.of();
-            const ca = projectClassificationAspect({ name: "foo", displayName: "x", alwaysFingerprint: true },
-                { tags: "ouch", test: async () => false, reason: "wow" });
-            const fp = await ca.extract(p, undefined) as FP<ClassificationData>;
-            assert.strictEqual(fp.type, "foo");
-            assert.deepStrictEqual(fp.data, { tags: [], reasons: [] });
+            assert.deepStrictEqual(fp.data.tags, []);
         });
 
         it("one classifier produces one tag", async () => {
             const p = InMemoryProject.of();
             const ca = projectClassificationAspect({ name: "foo", displayName: "x" },
                 { tags: "ouch", test: async () => true, reason: "wow" });
+            const fp = await ca.extract(p, undefined) as FP<ClassificationData>;
+            assert.strictEqual(fp.type, "foo");
+            assert.deepStrictEqual(fp.data, { tags: ["ouch"], reasons: ["wow"] });
+        });
+
+        it("doesn't run unnecessary classifier", async () => {
+            const p = InMemoryProject.of();
+            const ca = projectClassificationAspect({ name: "foo", displayName: "x" },
+                { tags: "ouch", test: async () => true, reason: "wow" },
+                {
+                    tags: "ouch", test: async () => {
+                        throw new Error("should not get here")
+                    }, reason: "wow"
+                });
             const fp = await ca.extract(p, undefined) as FP<ClassificationData>;
             assert.strictEqual(fp.type, "foo");
             assert.deepStrictEqual(fp.data, { tags: ["ouch"], reasons: ["wow"] });
@@ -91,6 +99,40 @@ describe("classification aspects", () => {
             const fp = await ca.extract(p, undefined) as FP<ClassificationData>;
             assert.strictEqual(fp.type, "foo");
             assert.deepStrictEqual(fp.data, { tags: ["badger"], reasons: ["meadow"] });
+        });
+
+        it("derived classifier that always matches", async () => {
+            const p = InMemoryProject.of();
+            const ca = projectClassificationAspect({ name: "foo", displayName: "x", stopAtFirst: true },
+                { tags: "badger", testFingerprints: async () => true, reason: "meadow" },
+                { tags: ["ouch", "bang"], test: async () => true, reason: "wow" },
+            );
+            const fp = await ca.consolidate([], p, undefined) as FP<ClassificationData>;
+            assert.strictEqual(fp.type, "foo");
+            assert.deepStrictEqual(fp.data, { tags: ["badger"], reasons: ["meadow"] });
+        });
+
+        it("derived classifier that takes from a fingerprint", async () => {
+            const p = InMemoryProject.of();
+            const ca = projectClassificationAspect({ name: "foo", displayName: "x", stopAtFirst: true },
+                { tags: "badger", testFingerprints: async fps => fps.length === 1, reason: "meadow" },
+                { tags: ["ouch", "bang"], test: async () => true, reason: "wow" },
+            );
+            const passedFp = fingerprintOf({ type: "foo", data: { here: true } });
+            const fp = await ca.consolidate([passedFp], p, undefined) as FP<ClassificationData>;
+            assert.strictEqual(fp.type, "foo");
+            assert.deepStrictEqual(fp.data, { tags: ["badger"], reasons: ["meadow"] });
+        });
+
+        it("derived classifier that doesn't take from a fingerprint", async () => {
+            const p = InMemoryProject.of();
+            const ca = projectClassificationAspect({ name: "foo", displayName: "x", stopAtFirst: true },
+                { tags: "badger", testFingerprints: async fps => fps.length === 3879, reason: "meadow" },
+                { tags: ["ouch", "bang"], test: async () => true, reason: "wow" },
+            );
+            const passedFp = fingerprintOf({ type: "foo", data: { here: true } });
+            const fp = await ca.consolidate([passedFp], p, undefined) as FP<ClassificationData>;
+            assert.deepStrictEqual(fp.data.tags, []);
         });
 
     });

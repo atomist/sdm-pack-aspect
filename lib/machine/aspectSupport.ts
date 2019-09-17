@@ -69,6 +69,8 @@ import {
     emitScoringAspect,
     ScoredAspect,
 } from "../aspect/score/ScoredAspect";
+import { calculateFingerprintTask } from "../job/fingerprintTask";
+import { registerAspects } from "../job/registerAspect";
 import { api } from "../routes/api";
 import { addWebAppRoutes } from "../routes/web-app/webAppRoutes";
 import { exposeFingerprintScore } from "../scorer/commonScorers";
@@ -210,6 +212,16 @@ export function aspectSupport(options: AspectSupportOptions): ExtensionPack {
     }, ...toArray(options.taggers) || []);
     const aspects = [...toArray(options.aspects || []), ...scoringAspects, tagAspect];
 
+    // Default the two display methods with some sensible defaults
+    aspects.forEach(a => {
+        if (!a.toDisplayableFingerprint) {
+            a.toDisplayableFingerprint = fp => JSON.stringify(fp.data);
+        }
+        if (!a.toDisplayableFingerprintName) {
+            a.toDisplayableFingerprintName = fn => fn;
+        }
+    });
+
     return {
         ...metadata(),
         configure: sdm => {
@@ -226,6 +238,13 @@ export function aspectSupport(options: AspectSupportOptions): ExtensionPack {
                 sdm.addCommand(analyzeGitHubByQueryCommandRegistration(analyzer, analysisTracking));
                 sdm.addCommand(analyzeGitHubOrganizationCommandRegistration(analyzer, analysisTracking));
                 sdm.addCommand(analyzeLocalCommandRegistration(analyzer, analysisTracking));
+            } else {
+                // Add command to calculate fingerprints as part of the initial onboarding
+                // job and on subsequent runs of "analyze org"
+                sdm.addCommand(calculateFingerprintTask(sdm, aspects));
+
+                // Register all aspects on startup
+                sdm.addStartupListener(registerAspects(sdm, aspects));
             }
 
             // Add support for calculating aspects on push and computing delivery aspects

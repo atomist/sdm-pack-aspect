@@ -122,7 +122,8 @@ function runningFirst(a1: AnalysisTrackingAnalysis, a2: AnalysisTrackingAnalysis
         return 1;
     }
     if (a1.completedAt && a2.completedAt) {
-        return a1.completedAt.getTime() - a2.completedAt.getTime();
+        // more recent on top
+        return a2.completedAt.getTime() - a1.completedAt.getTime();
     }
     return 0;
 }
@@ -133,5 +134,8 @@ export function AnalysisTrackingPage(props: AnalysisTrackingProps): React.ReactE
             Start one at the command line:{" "}
             <span className="typeThisAtCommandLine">atomist analyze local repositories</span></div>;
     }
-    return <div>{listAnalyses(props.analyses)}</div>;
+    return <div>
+        <h2>Refresh this page to see progress.</h2>
+        {listAnalyses(props.analyses)}
+    </div>;
 }
