@@ -87,7 +87,7 @@ export function explainScore(score: Score & { weighting: Weighting }): React.Rea
         good: { upTo: 4.5 },
         great: Default,
     }, score.score);
-    return <li><i>{score.description || score.name}</i> is {conclusion} at {score.score.toFixed(2)} because {_.lowerFirst(score.reason)}</li>;
+    return <li><i>{score.description || score.name}</i> is {conclusion} at {score.score.toFixed(2)}: {_.lowerFirst(score.reason)}</li>;
 }
 
 function reposByOrg(props: RepoListProps): React.ReactElement {

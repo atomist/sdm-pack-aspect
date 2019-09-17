@@ -19,7 +19,7 @@ import { FiveStar } from "./Score";
 
 import * as _ from "lodash";
 
-const average =array => array.reduce((a, b) => a + b) / array.length;
+const average = array => array.reduce((a, b) => a + b) / array.length;
 
 export const AverageRepoScore: OrgScorer = {
     name: "average",
@@ -28,7 +28,7 @@ export const AverageRepoScore: OrgScorer = {
         const scores: number[] = od.repos.map(r => r.score);
         const score: FiveStar = average(scores) as any as FiveStar;
         return {
-            reason: "average",
+            reason: "mean",
             score,
         };
     },
@@ -41,7 +41,7 @@ export const WorstRepoScore: OrgScorer = {
         const scores: number[] = od.repos.map(r => r.score);
         const score = _.min(scores) as FiveStar;
         return {
-            reason: "worst",
+            reason: "score of worst repository",
             score,
         };
     },
@@ -68,7 +68,7 @@ export const EntropyScore: OrgScorer = {
         });
         const score: FiveStar = average(scores) as any as FiveStar;
         return {
-            reason: "entropy",
+            reason: "variance among aspects identified in this workspace",
             score,
         };
     },
