@@ -21,7 +21,10 @@ import {
 import * as Octokit from "@octokit/rest";
 import * as _ from "lodash";
 import { AnalysisTracking } from "../../../tracking/analysisTracker";
-import { AnalysisRun, DefaultPoolSize } from "../common";
+import {
+    AnalysisRun,
+    DefaultPoolSize,
+} from "../common";
 import { ScmSearchCriteria } from "../ScmSearchCriteria";
 import {
     Analyzer,
