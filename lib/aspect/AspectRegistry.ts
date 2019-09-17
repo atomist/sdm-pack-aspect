@@ -134,16 +134,23 @@ export interface TagAndScoreOptions {
     readonly category?: string;
 }
 
-export interface OrgData {
+/**
+ * Information on which we'll score an organization
+ */
+export interface WorkspaceToScore {
 
+    /**
+     * Information about this organization
+     */
     fingerprintUsage: FingerprintUsage[];
 
-    // TODO fix duplication with ReposForDisplay in UI
+    /**
+     * Repos that have already been scored
+     */
     repos: Array<{
         url: string;
         repo: string;
         owner: string;
-        id: string;
         score?: number;
     }>;
 }
@@ -156,7 +163,7 @@ export interface OrgScorer extends Scorer {
      * @param allRepos context of this scoring activity
      * @return undefined if this scorer doesn't know how to score this repository.
      */
-    score: (od: OrgData) => Promise<ScorerReturn>;
+    score: (od: WorkspaceToScore) => Promise<ScorerReturn>;
 
 }
 
@@ -165,7 +172,7 @@ export interface OrgScorer extends Scorer {
  */
 export interface AspectRegistry {
 
-    scoreWorkspace(workspaceId: string, orgData: OrgData): Promise<WeightedScore>;
+    scoreWorkspace(workspaceId: string, workspaceToScore: WorkspaceToScore): Promise<WeightedScore>;
 
     tagAndScoreRepos(workspaceId: string,
                      repos: ProjectAnalysisResult[],

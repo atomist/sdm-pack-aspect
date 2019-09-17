@@ -40,7 +40,7 @@ import { showTiming } from "../util/showTiming";
 import {
     AspectRegistry,
     isTagger,
-    OrgData,
+    WorkspaceToScore,
     OrgScorer,
     RepositoryScorer,
     RepoToScore,
@@ -77,8 +77,8 @@ export class DefaultAspectRegistry implements AspectRegistry, AspectReportDetail
         return this;
     }
 
-    public async scoreWorkspace(workspaceId: string, data: OrgData): Promise<WeightedScore> {
-        return scoreOrg(this.opts.orgScorers || [], data, this.opts.scoreWeightings);
+    public async scoreWorkspace(workspaceId: string, workspaceToScore: WorkspaceToScore): Promise<WeightedScore> {
+        return scoreOrg(this.opts.orgScorers || [], workspaceToScore, this.opts.scoreWeightings);
     }
 
     public async tagAndScoreRepos(workspaceId: string,

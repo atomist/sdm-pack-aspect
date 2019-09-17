@@ -28,7 +28,7 @@ export const AverageRepoScore: OrgScorer = {
         const scores: number[] = od.repos.map(r => r.score);
         const score: FiveStar = average(scores) as any as FiveStar;
         return {
-            reason: "mean",
+            reason: "mean of all scores",
             score,
         };
     },
@@ -41,7 +41,7 @@ export const WorstRepoScore: OrgScorer = {
         const scores: number[] = od.repos.map(r => r.score);
         const score = _.min(scores) as FiveStar;
         return {
-            reason: "score of worst repository",
+            reason: "score of lowest scored repository",
             score,
         };
     },
