@@ -24,15 +24,14 @@ import * as yaml from "yamljs";
 import { AllFiles } from "@atomist/automation-client";
 import * as fs from "fs";
 import * as path from "path";
-
-import * as appRoot from "app-root-path";
+import { packageRoot } from "../../util/packageRoot";
 
 /**
  * Based on regular expressions in https://www.ndss-symposium.org/wp-content/uploads/2019/02/ndss2019_04B-3_Meli_paper.pdf
  * @type {any[]}
  */
 export async function loadSnifferOptions(): Promise<SnifferOptions> {
-    const secretsYmlPath = path.join(appRoot.path, "secrets.yml");
+    const secretsYmlPath = path.join(packageRoot(), "secrets.yml");
     const yamlString = fs.readFileSync(secretsYmlPath, "utf8");
     try {
         const native = await yaml.parse(yamlString);
