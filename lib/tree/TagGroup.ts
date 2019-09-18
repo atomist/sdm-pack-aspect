@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-import { TagUsage } from "./sunburst";
 import * as _ from "lodash";
+import { TagUsage } from "./sunburst";
 
 /**
  * Class backing displayTagButtons
