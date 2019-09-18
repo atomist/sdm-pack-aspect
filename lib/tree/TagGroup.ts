@@ -22,9 +22,15 @@ import { TagUsage } from "./sunburst";
  */
 export class TagGroup {
 
-    private readonly tagsInData: TagUsage[];
+    /**
+     * Tags we've seen in the tree
+     */
+    public readonly tagsInData: TagUsage[];
 
-    private readonly totalProjectsDisplayed: number;
+    /**
+     * Total number of projects in this tree's data
+     */
+    public readonly totalProjectsDisplayed: number;
 
     constructor(public readonly tagSelection: string[],
                 treeWithTags?: { tags?: TagUsage[], matchingRepoCount?: number }) {
