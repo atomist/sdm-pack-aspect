@@ -11,7 +11,8 @@ node_modules/
 *.js.map
 *.log
 *.txt
-/dist/
+/lib
+/src/lib/typings/types.ts
 /.nyc_output/
 /coverage/
 /doc/

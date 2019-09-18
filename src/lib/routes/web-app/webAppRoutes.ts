@@ -30,6 +30,7 @@ import {
     isConcreteIdeal,
 } from "@atomist/sdm-pack-fingerprint";
 import { Aspect } from "@atomist/sdm-pack-fingerprint/lib/machine/Aspect";
+import * as appRoot from "app-root-path";
 import * as bodyParser from "body-parser";
 import {
     Express,
@@ -92,8 +93,8 @@ export function addWebAppRoutes(
                 extended: true,
             }));
 
-            express.use(serveStatic(path.join(__dirname, "..", "..", "..", "..", "public"), { index: false }));
-            express.use(serveStatic(path.join(__dirname, "..", "..", "..", "public"), { index: false }));
+            express.use(serveStatic(path.join(appRoot.path, "public"), { index: false }));
+            express.use(serveStatic(path.join(appRoot.path, "lib", "public"), { index: false }));
 
             /* redirect / to the org page. This way we can go right here
              * for now, and later make a higher-level page if we want.
