@@ -56,6 +56,7 @@ import {
     RepositoryScorer,
     Tagger,
     TaggerDefinition,
+    WorkspaceScorer,
 } from "../aspect/AspectRegistry";
 import {
     isClassificationAspect,
@@ -141,6 +142,8 @@ export interface AspectSupportOptions {
      * Scoring fingerprints. Name to scorers
      */
     scorers?: Record<string, AspectCompatibleScorer | AspectCompatibleScorer[]>;
+
+    workspaceScorers?: WorkspaceScorer[];
 
     /**
      * Scorers that are computed in memory. Allows for faster iteration on scoring logic.
@@ -307,6 +310,7 @@ function orgVisualizationEndpoints(dbClientFactory: ClientFactory,
         aspects,
         undesirableUsageChecker: options.undesirableUsageChecker,
         scorers: toArray(options.inMemoryScorers || []).concat(scorerNames.map(exposeFingerprintScore)),
+        workspaceScorers: options.workspaceScorers,
         scoreWeightings: options.weightings || DefaultScoreWeightings,
         configuration,
     })

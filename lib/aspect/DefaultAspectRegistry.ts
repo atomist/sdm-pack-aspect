@@ -21,10 +21,17 @@ import {
     FP,
 } from "@atomist/sdm-pack-fingerprint";
 import * as _ from "lodash";
+import { FingerprintUsage } from "../analysis/offline/persist/ProjectAnalysisResultStore";
 import { ProjectAnalysisResult } from "../analysis/ProjectAnalysisResult";
 import { TagContext } from "../routes/api";
-import { ScoreWeightings } from "../scorer/Score";
-import { scoreRepos } from "../scorer/scoring";
+import {
+    ScoreWeightings,
+    WeightedScore,
+} from "../scorer/Score";
+import {
+    scoreOrg,
+    scoreRepos,
+} from "../scorer/scoring";
 import {
     AspectRegistrations,
     AspectRegistrationState,
@@ -41,7 +48,9 @@ import {
     TaggedRepo,
     Tagger,
     TaggerDefinition,
+    WorkspaceScorer,
     WorkspaceSpecificTagger,
+    WorkspaceToScore,
 } from "./AspectRegistry";
 import {
     AspectReportDetails,
@@ -66,6 +75,10 @@ export class DefaultAspectRegistry implements AspectRegistry, AspectReportDetail
     public withTaggers(...taggers: TaggerDefinition[]): this {
         this.taggers.push(...taggers);
         return this;
+    }
+
+    public async scoreWorkspace(workspaceId: string, workspaceToScore: WorkspaceToScore): Promise<WeightedScore> {
+        return scoreOrg(this.opts.workspaceScorers || [], workspaceToScore, this.opts.scoreWeightings);
     }
 
     public async tagAndScoreRepos(workspaceId: string,
@@ -175,6 +188,7 @@ export class DefaultAspectRegistry implements AspectRegistry, AspectReportDetail
         aspects: AspectWithReportDetails[],
         undesirableUsageChecker: UndesirableUsageChecker,
         scorers?: RepositoryScorer[],
+        workspaceScorers?: WorkspaceScorer[],
         scoreWeightings?: ScoreWeightings,
         configuration?: Configuration,
     }) {

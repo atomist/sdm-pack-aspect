@@ -1,8 +1,9 @@
 import * as React from "react";
 import { ScoredRepo } from "../lib/aspect/AspectRegistry";
 import { isCodeMetricsFingerprint } from "../lib/aspect/common/codeMetrics";
-import { WeightedScore } from "../lib/scorer/Score";
+import { WeightedScore, WeightedScores } from "../lib/scorer/Score";
 import { TagUsage } from "../lib/tree/sunburst";
+import { explainScore } from "./repoList";
 import { collapsible } from "./utils";
 
 type DisplayName = string;
@@ -31,7 +32,8 @@ export function RepoExplorer(props: RepoExplorerProps): React.ReactElement {
         <h3>Scoring by category: <span className="scoreCategoryName">{props.category}</span></h3>;
     const insightsImage = <img src="/hexagonal-fruit-of-power.png" className="insightsImage"></img>;
     return <div>
-        <h1>{insightsImage} {props.repo.analysis.id.owner} / <a href={props.repo.analysis.id.url}>{props.repo.analysis.id.repo}</a></h1>
+        <h1>{insightsImage} {props.repo.analysis.id.owner} / <a
+            href={props.repo.analysis.id.url}>{props.repo.analysis.id.repo}</a></h1>
         <p className="analysesProvenanceDetail">Analyzed at: {props.timestamp.toString()}</p>
         <p className="analysesProvenanceDetail">Analyzed commit: {props.repo.analysis.id.sha}</p>
 
@@ -76,7 +78,13 @@ function displayWeightedScores(weightedScore: WeightedScore): React.ReactElement
         <ul>
             {Object.getOwnPropertyNames(weightedScore.weightedScores).map(name => {
                 const score = weightedScore.weightedScores[name];
-                return <li><b>{score.name}</b>: {score.score.toFixed(2)} (x{score.weighting}) - {score.reason}</li>;
+                try {
+                    const parsed = JSON.parse(score.reason) as WeightedScores;
+                    const scores = Object.keys(parsed).filter(k => k !== "anchor").map(k => explainScore(parsed[k]));
+                    return <ul>{scores}</ul>;
+                } catch (err) {
+                    return <li><b>{score.name}</b>: {score.score.toFixed(2)} (x{score.weighting}) - {score.reason}</li>;
+                }
             })
             }
         </ul>,
@@ -124,7 +132,7 @@ function displayFingerprint(fingerprint: ProjectFingerprintForDisplay): React.Re
 function displayCodeMetrics(props: RepoExplorerProps): React.ReactElement {
     const cmf = props.repo.analysis.fingerprints.find(isCodeMetricsFingerprint);
     if (!cmf) {
-        return <div />;
+        return <div/>;
     }
 
     return collapsible("languages", "Languages",

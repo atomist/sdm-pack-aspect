@@ -1,6 +1,8 @@
 import * as _ from "lodash";
 import * as React from "react";
 import { SortOrder } from "../lib/routes/web-app/repositoryListPage";
+import { Score, WeightedScore, Weighting } from "../lib/scorer/Score";
+import { bandFor, Default } from "../lib/util/bands";
 import { collapsible } from "./utils";
 
 export interface RepoForDisplay {
@@ -17,6 +19,7 @@ export interface RepoForDisplay {
 }
 
 export interface RepoListProps {
+    orgScore: WeightedScore;
     repos: RepoForDisplay[];
     virtualProjectCount: number;
     sortOrder: SortOrder;
@@ -63,11 +66,28 @@ export function RepoList(props: RepoListProps): React.ReactElement {
     return <div>
         <h2>{orgCount} organizations: {" "}
             {props.repos.length} repositories, {" "}
-            {props.virtualProjectCount} virtual projects </h2>
-        <h3>{categoryDescription}</h3>
+            {props.virtualProjectCount} virtual projects, {" "}
+            {props.orgScore.weightedScore.toFixed(2)} / 5</h2>
+
+        <h3>Workspace Summary</h3>
+        {Object.keys(props.orgScore.weightedScores).map(k => explainScore(props.orgScore.weightedScores[k]))}
+
+        <h3>{categoryDescription || "Repositories"}</h3>
 
         {props.byOrg ? reposByOrg(props) : reposRanked(props)}
     </div>;
+}
+
+export function explainScore(score: Score & { weighting: Weighting }): React.ReactElement {
+    const conclusion = bandFor({
+        horrible: { upTo: 1 },
+        poor: { upTo: 2 },
+        disappointing: { upTo: 3 },
+        satisfactory: { upTo: 4 },
+        good: { upTo: 4.5 },
+        great: Default,
+    }, score.score);
+    return <li><i>{score.description || score.name}</i> is {conclusion} at {score.score.toFixed(2)}: {_.lowerFirst(score.reason)}</li>;
 }
 
 function reposByOrg(props: RepoListProps): React.ReactElement {

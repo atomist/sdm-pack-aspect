@@ -19,6 +19,8 @@ import {
     RepoToScore,
     ScoredRepo,
     TagAndScoreOptions,
+    WorkspaceScorer,
+    WorkspaceToScore,
 } from "../aspect/AspectRegistry";
 import { fingerprintScoresFor } from "../aspect/score/ScoredAspect";
 import {
@@ -28,6 +30,7 @@ import {
     Scores,
     ScoreWeightings,
     weightedCompositeScore,
+    WeightedScore,
 } from "./Score";
 
 export async function scoreRepos(scorers: RepositoryScorer[],
@@ -40,6 +43,16 @@ export async function scoreRepos(scorers: RepositoryScorer[],
 /**
  * Score the repo
  */
+export async function scoreOrg(scorers: WorkspaceScorer[],
+                               od: WorkspaceToScore,
+                               weightings: ScoreWeightings): Promise<WeightedScore> {
+    const scores: Scores = {};
+    for (const scorer of scorers) {
+        scores[scorer.name] = { ...scorer, ...await scorer.score(od) };
+    }
+    return weightedCompositeScore({ scores }, weightings);
+}
+
 export async function scoreRepo(scorers: RepositoryScorer[],
                                 repo: RepoToScore,
                                 weightings: ScoreWeightings,

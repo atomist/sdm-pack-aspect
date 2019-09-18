@@ -51,6 +51,8 @@ export interface Score {
 
     readonly name: string;
 
+    readonly description?: string;
+
     /**
      * Category this score belongs to, if any
      */
@@ -152,6 +154,8 @@ export interface Scorer {
      */
     readonly name: string;
 
+    readonly description?: string;
+
     /**
      * Category to include in scores, if any
      */
@@ -161,4 +165,4 @@ export interface Scorer {
 /**
  * Type returned by any scorer
  */
-export type ScorerReturn = Omit<Score, "name" | "category"> | undefined;
+export type ScorerReturn = Omit<Score, "name" | "description" | "category"> | undefined;
