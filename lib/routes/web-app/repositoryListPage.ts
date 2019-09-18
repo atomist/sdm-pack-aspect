@@ -43,8 +43,8 @@ export function exposeRepositoryListPage(conf: WebAppConfig): void {
                 return;
             }
 
-        const relevantRepos = await conf.aspectRegistry.tagAndScoreRepos(workspaceId, relevantAnalysisResults, { category });
-        const repos: RepoForDisplay[] = relevantRepos
+            const relevantRepos = await conf.aspectRegistry.tagAndScoreRepos(workspaceId, relevantAnalysisResults, { category });
+            const repos: RepoForDisplay[] = relevantRepos
             .map(ar => ({
                 url: ar.analysis.id.url,
                 repo: ar.analysis.id.repo,
@@ -53,12 +53,12 @@ export function exposeRepositoryListPage(conf: WebAppConfig): void {
                 score: ar.weightedScore.weightedScore,
                 showFullPath: !byOrg,
             }));
-        const virtualProjectCount = await conf.store.virtualProjectCount(workspaceId);
+            const virtualProjectCount = await conf.store.virtualProjectCount(workspaceId);
 
-        const fingerprintUsage = await conf.store.fingerprintUsageForType(workspaceId);
+            const fingerprintUsage = await conf.store.fingerprintUsageForType(workspaceId);
 
-        const orgScore = await conf.aspectRegistry.scoreWorkspace(workspaceId, { fingerprintUsage, repos});
-        res.send(renderStaticReactNode(
+            const orgScore = await conf.aspectRegistry.scoreWorkspace(workspaceId, { fingerprintUsage, repos});
+            res.send(renderStaticReactNode(
             RepoList({
                 orgScore,
                 repos,
