@@ -66,7 +66,7 @@ function reviewCommentAspect(opts: AspectMetadata & {
     const type = reviewCommentAspectName(opts.name);
     return {
         ...opts,
-        name: typee,
+        name: type,
         extract: async (p, pli) => {
             const result = await inspection(p, { ...pli, push: pli });
             if (!result) {
