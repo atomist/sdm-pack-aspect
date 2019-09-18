@@ -11,8 +11,8 @@ node_modules/
 *.js.map
 *.log
 *.txt
+/dist/
 /.nyc_output/
-/build/
 /coverage/
 /doc/
 /log/

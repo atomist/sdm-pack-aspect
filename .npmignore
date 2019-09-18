@@ -15,12 +15,10 @@
 /coverage/
 /log/
 /scripts/
-/src/
-/test/
+/src/test/
 /CO*.md
 /Dockerfile
 /assets/kubectl/
 *.log
 *.txt
-*.ts
 !*.d.ts

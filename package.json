@@ -18,8 +18,8 @@
     "sdm",
     "aspect"
   ],
-  "main": "./index.js",
-  "types": "./index.d.ts",
+  "main": "./src/index.js",
+  "types": "./dist/index.d.ts",
   "peerDependencies": {
     "@atomist/automation-client": "^1.7.0",
     "@atomist/microgrammar": "^1.2.1",
@@ -95,13 +95,13 @@
     "webpack-cli": "^3.3.6"
   },
   "directories": {
-    "test": "test"
+    "test": "src/test"
   },
   "scripts": {
-    "autotest": "supervisor --watch index.ts,lib,test --extensions ts --no-restart-on exit --quiet --exec npm -- test",
+    "autotest": "supervisor --watch src --extensions ts --no-restart-on exit --quiet --exec npm -- test",
     "build": "run-s compile test lint doc",
     "clean": "run-p clean:compile clean:test clean:doc clean:run",
-    "clean:compile": "rimraf git-info.json \"index.{d.ts,js}{,.map}\" \"{lib,test,views,public}/**/*.{d.ts,js}{,.map}\" lib/typings/types.ts",
+    "clean:compile": "rimraf git-info.json dist src/**/*.js src/**/*.js.map src/**/*.ts.map src/**/*.d.ts src/lib/typings/types.ts",
     "clean:dist": "run-s clean clean:npm",
     "clean:doc": "rimraf doc",
     "clean:npm": "rimraf node_modules",
@@ -110,14 +110,14 @@
     "compile": "run-s git:info gql:gen compile:ts compile:pack",
     "compile:ts": "tsc --project .",
     "compile:pack": "webpack",
-    "doc": "typedoc --mode modules --excludeExternals --ignoreCompilerErrors --exclude \"**/*.d.ts\" --out doc index.ts lib",
+    "doc": "typedoc --mode modules --excludeExternals --ignoreCompilerErrors --exclude \"**/*.d.ts\" --out doc src/index.ts src/lib",
     "git:info": "atm-git-info",
-    "gql:gen": "atm-gql-gen",
+    "gql:gen": "atm-gql-gen && mv lib/typings/types.ts src/lib/typings/types.ts",
     "lint": "tslint --config tslint.json --format verbose --project .",
     "lint:fix": "npm run lint -- --fix",
     "start": "atm-start",
-    "test": "mocha --require espower-typescript/guess \"test/**/*.test.ts\"",
-    "test:one": "mocha --require espower-typescript/guess \"test/**/${TEST:-*.test.ts}\"",
+    "test": "mocha --require espower-typescript/guess \"src/test/**/*.test.ts\"",
+    "test:one": "mocha --require espower-typescript/guess \"src/test/**/${TEST:-*.test.ts}\"",
     "typedoc": "npm run doc",
     "db:create": "psql --command \"CREATE USER org_viz WITH SUPERUSER PASSWORD 'atomist'\" && createdb -O org_viz org_viz && psql -f ./ddl/create.ddl org_viz",
     "db:delete": "psql --command \"DROP DATABASE org_viz\" --command \"DROP ROLE org_viz\""

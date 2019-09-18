@@ -8,6 +8,7 @@
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
+    "outDir": "dist/",
     "lib": [
       "dom",
       "ES2017",
@@ -24,11 +25,7 @@
     "emitDecoratorMetadata": true
   },
   "include": [
-    "index.ts",
-    "views/**/*.tsx",
-    "lib/**/*.ts",
-    "test/**/*.ts",
-    "public/**/*.ts"
+    "src/"
   ],
   "exclude": [
     ".#*"

@@ -113,7 +113,7 @@ export function api(projectAnalysisResultStore: ProjectAnalysisResultStore,
 }
 
 function exposeSwaggerDoc(express: Express, docRoute: string): void {
-    const swaggerDocPath = path.join(__dirname, "..", "..", "swagger.yaml");
+    const swaggerDocPath = path.join(__dirname, "..", "..", "..", "swagger.yaml");
     const swaggerDocument = yaml.load(swaggerDocPath);
     express.use(docRoute, swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 }

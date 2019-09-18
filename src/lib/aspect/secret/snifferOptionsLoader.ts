@@ -30,7 +30,7 @@ import * as path from "path";
  * @type {any[]}
  */
 export async function loadSnifferOptions(): Promise<SnifferOptions> {
-    const secretsYmlPath = path.join(__dirname, "..", "..", "..", "secrets.yml");
+    const secretsYmlPath = path.join(__dirname, "..", "..", "..", "..", "secrets.yml");
     const yamlString = fs.readFileSync(secretsYmlPath, "utf8");
     try {
         const native = await yaml.parse(yamlString);
