@@ -24,8 +24,8 @@ import {
     Aspect, fingerprintOf, FP,
 } from "@atomist/sdm-pack-fingerprint";
 import { CodeInspection } from "@atomist/sdm/lib/api/registration/CodeInspectionRegistration";
-import { AspectMetadata, CountAspect } from "../compose/commonTypes";
 import { ClassificationAspect, projectClassificationAspect } from "../compose/classificationAspect";
+import { AspectMetadata, CountAspect } from "../compose/commonTypes";
 
 export type EligibleReviewer = ReviewerRegistration | CodeInspection<ProjectReview, NoParameters>;
 
