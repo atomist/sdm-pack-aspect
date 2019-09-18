@@ -38,6 +38,7 @@ export * from "./lib/aspect/git/gitIgnore";
 export * from "./lib/aspect/git/dateUtils";
 export * from "./lib/aspect/secret/exposedSecrets";
 export * from "./lib/aspect/score/ScoredAspect";
+export * from "./lib/aspect/common/reviewerAspect";
 
 import * as commonScorers from "./lib/scorer/commonScorers";
 import * as commonTaggers from "./lib/tagger/commonTaggers";
