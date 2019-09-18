@@ -67,7 +67,7 @@
     "zip-a-folder": "0.0.9"
   },
   "devDependencies": {
-    "@atomist/automation-client": "^1.7.0",
+    "@atomist/automation-client": "^1.7.1-nortissej.flexible-gql-gen.20190918220049",
     "@atomist/microgrammar": "^1.2.1",
     "@atomist/sdm": "^1.7.0",
     "@atomist/sdm-core": "^1.7.0",
@@ -101,7 +101,7 @@
     "autotest": "supervisor --watch src --extensions ts --no-restart-on exit --quiet --exec npm -- test",
     "build": "run-s compile test lint doc",
     "clean": "run-p clean:compile clean:test clean:doc clean:run",
-    "clean:compile": "rimraf git-info.json lib \"index.{d.ts,js}{,.map}\" \"{src,test}/**/*.{d.ts,js}{,.map}\" src/typings/types.ts",
+    "clean:compile": "rimraf git-info.json lib \"index.{d.ts,js}{,.map}\" \"{src,test}/**/*.{d.ts,js}{,.map}\" src/lib/typings/types.ts",
     "clean:dist": "run-s clean clean:npm",
     "clean:doc": "rimraf doc",
     "clean:npm": "rimraf node_modules",
@@ -112,7 +112,7 @@
     "compile:pack": "webpack",
     "doc": "typedoc --mode modules --excludeExternals --ignoreCompilerErrors --exclude \"**/*.d.ts\" --out doc src/index.ts src/lib",
     "git:info": "atm-git-info",
-    "gql:gen": "atm-gql-gen",
+    "gql:gen": "atm-gql-gen --input graphql/ --output src/lib/typings/types.ts",
     "lint": "tslint --config tslint.json --format verbose --project .",
     "lint:fix": "npm run lint -- --fix",
     "start": "atm-start",
