@@ -15,12 +15,14 @@
  */
 
 import {
+    logger,
     NoParameters,
     ProjectReview,
     ReviewComment,
 } from "@atomist/automation-client";
-import { ReviewerRegistration } from "@atomist/sdm";
+import { CodeTransform, ReviewerRegistration } from "@atomist/sdm";
 import {
+    ApplyFingerprint,
     Aspect,
     fingerprintOf,
     FP,
@@ -37,12 +39,24 @@ import {
 
 export type EligibleReviewer = ReviewerRegistration | CodeInspection<ProjectReview, NoParameters>;
 
+export interface ReviewerAspectOptions extends AspectMetadata {
+
+    /**
+     * Reviewer that can provide the fingerprint
+     */
+    reviewer: EligibleReviewer;
+
+    /**
+     * Code transform that can remove usages of this problematic fingerprint
+     */
+    terminator?: CodeTransform<NoParameters>;
+}
+
 /**
- * Emit fingerprint aspect, count aspect and classification aspect for the given review comment
+ * Emit fingerprint aspect, count aspect and classification aspect for the given review comment.
+ * If a terminator CodeTransform is provided, it will try to delete all instances of the fingerprint
  */
-export function reviewerAspects(opts: AspectMetadata & {
-    reviewer: EligibleReviewer,
-}): Aspect[] {
+export function reviewerAspects(opts: ReviewerAspectOptions): Aspect[] {
     return [
         reviewCommentAspect(opts),
         reviewCommentCountAspect(opts),
@@ -59,9 +73,7 @@ export function isReviewCommentFingerprint(fp: FP): fp is FP<ReviewComment> {
  * Create fingerprints from the output of this reviewer.
  * Every fingerprint is unique
  */
-function reviewCommentAspect(opts: AspectMetadata & {
-    reviewer: EligibleReviewer,
-}): Aspect<ReviewComment> {
+function reviewCommentAspect(opts: ReviewerAspectOptions): Aspect<ReviewComment> {
     const inspection = isReviewerRegistration(opts.reviewer) ? opts.reviewer.inspection : opts.reviewer;
     const type = reviewCommentAspectName(opts.name);
     return {
@@ -86,9 +98,7 @@ function reviewCommentAspectName(name: string): string {
     return "instance_" + name;
 }
 
-function reviewCommentClassificationAspect(opts: AspectMetadata & {
-    reviewer: EligibleReviewer,
-}): ClassificationAspect {
+function reviewCommentClassificationAspect(opts: ReviewerAspectOptions): ClassificationAspect {
     const requiredType = reviewCommentAspectName(opts.name);
     return projectClassificationAspect({
             name: `has_${opts.name}`,
@@ -101,9 +111,12 @@ function reviewCommentClassificationAspect(opts: AspectMetadata & {
         });
 }
 
-function reviewCommentCountAspect(opts: AspectMetadata & {
-    reviewer: EligibleReviewer,
-}): CountAspect {
+/**
+ * Count the problematic usage and delete it if necessary
+ * @param {ReviewerAspectOptions} opts
+ * @return {CountAspect}
+ */
+export function reviewCommentCountAspect(opts: ReviewerAspectOptions): CountAspect {
     const requiredType = reviewCommentAspectName(opts.name);
     const type = `count_${opts.name}`;
     return {
@@ -117,6 +130,19 @@ function reviewCommentCountAspect(opts: AspectMetadata & {
                 data: { count },
             });
         },
+        apply: opts.terminator ? terminateWithExtremePrejudice(opts) : undefined,
+    };
+}
+
+function terminateWithExtremePrejudice(opts: ReviewerAspectOptions): ApplyFingerprint {
+    return async (p, pi) => {
+        const to = pi.parameters.fp;
+        if (to.data.count !== 0) {
+            const msg = `Doesn't make sense to keep a non-zero number of fingerprints in ${opts.name}`;
+            logger.warn(msg);
+            return { target: p, success: false, error: new Error(msg) };
+        }
+        return opts.terminator(p, pi);
     };
 }
 
