@@ -20,7 +20,10 @@ import {
     ProjectReview,
     ReviewComment,
 } from "@atomist/automation-client";
-import { CodeTransform, ReviewerRegistration } from "@atomist/sdm";
+import {
+    CodeTransform,
+    ReviewerRegistration,
+} from "@atomist/sdm";
 import {
     ApplyFingerprint,
     Aspect,

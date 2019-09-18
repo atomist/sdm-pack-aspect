@@ -14,7 +14,11 @@
  * limitations under the License.
  */
 
-import { InMemoryProject, NoParameters, ProjectReview } from "@atomist/automation-client";
+import {
+    InMemoryProject,
+    NoParameters,
+    ProjectReview,
+} from "@atomist/automation-client";
 import { CodeTransform } from "@atomist/sdm";
 import { toArray } from "@atomist/sdm-core/lib/util/misc/array";
 import { fingerprintOf } from "@atomist/sdm-pack-fingerprint";
