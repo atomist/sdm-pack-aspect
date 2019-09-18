@@ -24,7 +24,7 @@ import { toArray } from "@atomist/sdm-core/lib/util/misc/array";
 import { fingerprintOf } from "@atomist/sdm-pack-fingerprint";
 import { CodeInspection } from "@atomist/sdm/lib/api/registration/CodeInspectionRegistration";
 import * as assert from "assert";
-import { reviewCommentCountAspect } from "../../../lib/aspect/common/reviewerAspect";
+import { reviewCommentCountAspect, reviewerAspects } from "../../../lib/aspect/common/reviewerAspect";
 
 const FlagNothingReviewer: CodeInspection<ProjectReview, NoParameters> = async p => ({
     repoId: p.id,
@@ -35,76 +35,117 @@ const AddFileTerminator: CodeTransform<NoParameters> = async p => {
     await p.addFile("foo", "bar");
 };
 
-describe("reviewCount aspects", () => {
+describe("reviewer aspects", () => {
 
-    describe("extract", () => {
+    describe("reviewerAspects", () => {
 
-        it("should find count 0", async () => {
-            const ra = reviewCommentCountAspect({
-                reviewer: FlagNothingReviewer,
-                name: "clean",
-                displayName: "clean",
+        describe("aspect emission", () => {
+
+            it("should not emit classifier by default", async () => {
+                const ra = reviewerAspects({
+                    reviewer: FlagNothingReviewer,
+                    name: "clean",
+                    displayName: "clean",
+                });
+                assert.strictEqual(ra.length, 2);
             });
-            const fps = toArray(await ra.consolidate([], undefined, undefined));
-            assert.strictEqual(fps.length, 1);
-            assert.strictEqual(fps[0].data.count, 0);
+
+            it("should emit classifier when asked", async () => {
+                const ra = reviewerAspects({
+                    reviewer: FlagNothingReviewer,
+                    name: "clean",
+                    displayName: "clean",
+                    emitClassifier: true,
+                });
+                assert.strictEqual(ra.length, 3);
+            });
+
+            it("should emit classifier when given custom tag", async () => {
+                const ra = reviewerAspects({
+                    reviewer: FlagNothingReviewer,
+                    name: "clean",
+                    displayName: "clean",
+                    tag: "goat-magic",
+                });
+                assert.strictEqual(ra.length, 3);
+            });
+
         });
+
     });
 
-    describe("apply", () => {
+    describe("reviewCommentCountAspect", () => {
 
-        it("should not emit apply function by default", async () => {
-            const ra = reviewCommentCountAspect({
-                reviewer: FlagNothingReviewer,
-                name: "clean",
-                displayName: "clean",
+        describe("extract", () => {
+
+            it("should find count 0", async () => {
+                const ra = reviewCommentCountAspect({
+                    reviewer: FlagNothingReviewer,
+                    name: "clean",
+                    displayName: "clean",
+                });
+                const fps = toArray(await ra.consolidate([], undefined, undefined));
+                assert.strictEqual(fps.length, 1);
+                assert.strictEqual(fps[0].data.count, 0);
             });
-            assert.strictEqual(ra.apply, undefined);
         });
 
-        it("should emit apply function when terminator provided", async () => {
-            const ra = reviewCommentCountAspect({
-                reviewer: FlagNothingReviewer,
-                name: "clean",
-                displayName: "clean",
-                terminator: AddFileTerminator,
-            });
-            assert(!!ra.apply);
-        });
+        describe("apply", () => {
 
-        it("apply function should reject non-zero target", async () => {
-            const ra = reviewCommentCountAspect({
-                reviewer: FlagNothingReviewer,
-                name: "clean",
-                displayName: "clean",
-                terminator: AddFileTerminator,
+            it("should not emit apply function by default", async () => {
+                const ra = reviewCommentCountAspect({
+                    reviewer: FlagNothingReviewer,
+                    name: "clean",
+                    displayName: "clean",
+                });
+                assert.strictEqual(ra.apply, undefined);
             });
-            const nonZeroFp = fingerprintOf({
-                type: "clean",
-                data: { count: 666 },
-            });
-            try {
-                await ra.apply(InMemoryProject.of(), { parameters: { fp: nonZeroFp } } as any);
-                assert.fail("Should have died");
-            } catch {
-                // Ok
-            }
-        });
 
-        it("apply function should run with zero target", async () => {
-            const ra = reviewCommentCountAspect({
-                reviewer: FlagNothingReviewer,
-                name: "clean",
-                displayName: "clean",
-                terminator: AddFileTerminator,
+            it("should emit apply function when terminator provided", async () => {
+                const ra = reviewCommentCountAspect({
+                    reviewer: FlagNothingReviewer,
+                    name: "clean",
+                    displayName: "clean",
+                    terminator: AddFileTerminator,
+                });
+                assert(!!ra.apply);
             });
-            const zeroFp = fingerprintOf({
-                type: "clean",
-                data: { count: 0 },
+
+            it("apply function should reject non-zero target", async () => {
+                const ra = reviewCommentCountAspect({
+                    reviewer: FlagNothingReviewer,
+                    name: "clean",
+                    displayName: "clean",
+                    terminator: AddFileTerminator,
+                });
+                const nonZeroFp = fingerprintOf({
+                    type: "clean",
+                    data: { count: 666 },
+                });
+                try {
+                    await ra.apply(InMemoryProject.of(), { parameters: { fp: nonZeroFp } } as any);
+                    assert.fail("Should have died");
+                } catch {
+                    // Ok
+                }
             });
-            const p = InMemoryProject.of();
-            await ra.apply(p, { parameters: { fp: zeroFp } } as any);
-            assert(await p.hasFile("foo"));
+
+            it("apply function should run with zero target", async () => {
+                const ra = reviewCommentCountAspect({
+                    reviewer: FlagNothingReviewer,
+                    name: "clean",
+                    displayName: "clean",
+                    terminator: AddFileTerminator,
+                });
+                const zeroFp = fingerprintOf({
+                    type: "clean",
+                    data: { count: 0 },
+                });
+                const p = InMemoryProject.of();
+                await ra.apply(p, { parameters: { fp: zeroFp } } as any);
+                assert(await p.hasFile("foo"));
+            });
+
         });
 
     });

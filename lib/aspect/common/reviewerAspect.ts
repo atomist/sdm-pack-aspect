@@ -47,12 +47,23 @@ export interface ReviewerAspectOptions extends AspectMetadata {
     /**
      * Reviewer that can provide the fingerprint
      */
-    reviewer: EligibleReviewer;
+   readonly reviewer: EligibleReviewer;
 
     /**
      * Code transform that can remove usages of this problematic fingerprint
      */
-    terminator?: CodeTransform<NoParameters>;
+    readonly terminator?: CodeTransform<NoParameters>;
+
+    /**
+     * Do we want classification for this aspect
+     */
+    readonly emitClassifier?: boolean;
+
+    /**
+     * If provided, causes classification to take place and specifies a custom tag.
+     * Otherwise tag will default to name passed into reviewerAspects
+     */
+    readonly tag?: string;
 }
 
 /**
@@ -60,11 +71,14 @@ export interface ReviewerAspectOptions extends AspectMetadata {
  * If a terminator CodeTransform is provided, it will try to delete all instances of the fingerprint
  */
 export function reviewerAspects(opts: ReviewerAspectOptions): Aspect[] {
-    return [
+    const aspects: Aspect[] = [
         reviewCommentAspect(opts),
         reviewCommentCountAspect(opts),
-        reviewCommentClassificationAspect(opts),
     ];
+    if (opts.emitClassifier || opts.tag) {
+        aspects.push(reviewCommentClassificationAspect(opts));
+    }
+    return aspects;
 }
 
 export function isReviewCommentFingerprint(fp: FP): fp is FP<ReviewComment> {
@@ -108,7 +122,7 @@ function reviewCommentClassificationAspect(opts: ReviewerAspectOptions): Classif
             displayName: opts.displayName,
         },
         {
-            tags: `has-${opts.name}`,
+            tags: opts.tag || `has-${opts.name}`,
             reason: `Has review comment ${opts.name}`,
             testFingerprints: async fps => fps.some(fp => isReviewCommentFingerprint(fp) && fp.type === requiredType),
         });
