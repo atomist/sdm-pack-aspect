@@ -63,9 +63,10 @@ function reviewCommentAspect(opts: AspectMetadata & {
     reviewer: EligibleReviewer,
 }): Aspect<ReviewComment> {
     const inspection = isReviewerRegistration(opts.reviewer) ? opts.reviewer.inspection : opts.reviewer;
+    const type = reviewCommentAspectName(opts.name);
     return {
         ...opts,
-        name: reviewCommentAspectName(opts.name),
+        name: typee,
         extract: async (p, pli) => {
             const result = await inspection(p, { ...pli, push: pli });
             if (!result) {
@@ -73,7 +74,7 @@ function reviewCommentAspect(opts: AspectMetadata & {
             }
             return result.comments.map(data => {
                 return fingerprintOf({
-                    type: opts.name,
+                    type,
                     data,
                 });
             });
@@ -104,14 +105,15 @@ function reviewCommentCountAspect(opts: AspectMetadata & {
     reviewer: EligibleReviewer,
 }): CountAspect {
     const requiredType = reviewCommentAspectName(opts.name);
+    const type = `count_${opts.name}`;
     return {
-        name: `count_${opts.name}`,
+        name: type,
         displayName: opts.displayName,
         extract: async () => [],
         consolidate: async fps => {
             const count = fps.filter(fp => isReviewCommentFingerprint(fp) && fp.type === requiredType).length;
             return fingerprintOf({
-                type: "x",
+                type,
                 data: { count },
             });
         },
