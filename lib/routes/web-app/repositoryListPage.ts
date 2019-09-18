@@ -27,41 +27,47 @@ export type SortOrder = "name" | "score";
  * Takes sortOrder optional parameter to dictate sorting
  */
 export function exposeRepositoryListPage(conf: WebAppConfig): void {
-    conf.express.get("/repositories", ...conf.handlers, async (req, res) => {
-        const workspaceId = req.query.workspace || req.params.workspace_id || "*";
-        const sortOrder: SortOrder = req.query.sortOrder || "score";
-        const byOrg = req.query.byOrg !== "false";
-        const category = req.query.category || "*";
+    conf.express.get("/repositories", ...conf.handlers, async (req, res, next) => {
+        try {
+            const workspaceId = req.query.workspace || req.params.workspace_id || "*";
+            const sortOrder: SortOrder = req.query.sortOrder || "score";
+            const byOrg = req.query.byOrg !== "false";
+            const category = req.query.category || "*";
 
-        const allAnalysisResults = await conf.store.loadInWorkspace(workspaceId, true);
+            const allAnalysisResults = await conf.store.loadInWorkspace(workspaceId, true);
 
-        // optional query parameter: owner
-        const relevantAnalysisResults = allAnalysisResults.filter(ar => req.query.owner ? ar.analysis.id.owner === req.query.owner : true);
-        if (relevantAnalysisResults.length === 0) {
-            return res.send(`No matching repos for organization ${req.query.owner}`);
+            // optional query parameter: owner
+            const relevantAnalysisResults = allAnalysisResults.filter(ar => req.query.owner ? ar.analysis.id.owner === req.query.owner : true);
+            if (relevantAnalysisResults.length === 0) {
+                res.send(`No matching repos for organization ${req.query.owner}`);
+                return;
+            }
+
+            const relevantRepos = await conf.aspectRegistry.tagAndScoreRepos(workspaceId, relevantAnalysisResults, { category });
+            const reposForDisplay: RepoForDisplay[] = relevantRepos
+                .map(ar => ({
+                    url: ar.analysis.id.url,
+                    repo: ar.analysis.id.repo,
+                    owner: ar.analysis.id.owner,
+                    id: ar.id,
+                    score: ar.weightedScore.weightedScore,
+                    showFullPath: !byOrg,
+                }));
+            const virtualProjectCount = await conf.store.virtualProjectCount(workspaceId);
+            res.send(renderStaticReactNode(
+                RepoList({
+                    repos: reposForDisplay,
+                    virtualProjectCount,
+                    sortOrder,
+                    byOrg,
+                    expand: !byOrg,
+                    category,
+                }),
+                byOrg ? "Repositories by Organization" : "Repositories Ranked",
+                conf.instanceMetadata));
+            return;
+        } catch (e) {
+            next(e);
         }
-
-        const relevantRepos = await conf.aspectRegistry.tagAndScoreRepos(workspaceId, relevantAnalysisResults, { category });
-        const reposForDisplay: RepoForDisplay[] = relevantRepos
-            .map(ar => ({
-                url: ar.analysis.id.url,
-                repo: ar.analysis.id.repo,
-                owner: ar.analysis.id.owner,
-                id: ar.id,
-                score: ar.weightedScore.weightedScore,
-                showFullPath: !byOrg,
-            }));
-        const virtualProjectCount = await conf.store.virtualProjectCount(workspaceId);
-        return res.send(renderStaticReactNode(
-            RepoList({
-                repos: reposForDisplay,
-                virtualProjectCount,
-                sortOrder,
-                byOrg,
-                expand: !byOrg,
-                category,
-            }),
-            byOrg ? "Repositories by Organization" : "Repositories Ranked",
-            conf.instanceMetadata));
     });
 }

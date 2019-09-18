@@ -98,7 +98,7 @@ export function addWebAppRoutes(
             /* redirect / to the org page. This way we can go right here
              * for now, and later make a higher-level page if we want.
              */
-            express.get("/", ...handlers, async (req, res) => {
+            express.get("/", ...handlers, (req, res) => {
                 res.redirect(topLevelRoute);
             });
 
@@ -118,14 +118,15 @@ export function addWebAppRoutes(
 }
 
 function exposeRepositoryPage(conf: WebAppConfig): void {
-    conf.express.get("/repository", ...conf.handlers, async (req, res) => {
+    conf.express.get("/repository", ...conf.handlers, async (req, res, next) => {
         try {
             const workspaceId = req.query.workspaceId || "*";
             const id = req.query.id;
             const analysisResult = await conf.store.loadById(id);
             const category = req.query.category || "*";
             if (!analysisResult) {
-                return res.send(`No project at ${JSON.stringify(id)}`);
+                res.send(`No project at ${JSON.stringify(id)}`);
+                return;
             }
 
             const allFingerprints = await conf.store.fingerprintsForProject(id);
@@ -146,7 +147,7 @@ function exposeRepositoryPage(conf: WebAppConfig): void {
             }));
 
             const repo = (await conf.aspectRegistry.tagAndScoreRepos(workspaceId, [analysisResult], { category }))[0];
-            return res.send(renderStaticReactNode(
+            res.send(renderStaticReactNode(
                 RepoExplorer({
                     repo,
                     aspects: _.sortBy(ffd.filter(f => !!f.aspect.displayName), f => f.aspect.displayName),
@@ -154,15 +155,16 @@ function exposeRepositoryPage(conf: WebAppConfig): void {
                     timestamp: mostRecentTimestamp,
                 }), `Repository Insights`,
                 conf.instanceMetadata));
+            return;
         } catch (e) {
             logger.error(e);
-            return res.sendStatus(401);
+            next(e);
         }
     });
 }
 
 function exposeExplorePage(conf: WebAppConfig): void {
-    conf.express.get("/explore", ...conf.handlers, async (req, res) => {
+    conf.express.get("/explore", ...conf.handlers, (req, res, next) => {
         const tags = req.query.tags || "";
         const workspaceId = req.query.workspaceId || "*";
         const dataUrl = `/api/v1/${workspaceId}/explore?tags=${tags}`;
@@ -172,12 +174,12 @@ function exposeExplorePage(conf: WebAppConfig): void {
             heading: "Explore repositories by tag",
             title: `Repositories matching ${readable}`,
         },
-            conf.aspectRegistry, conf.httpClientFactory, req, res);
+            conf.aspectRegistry, conf.httpClientFactory, req, res).catch(next);
     });
 }
 
 function exposeDriftPage(conf: WebAppConfig): void {
-    conf.express.get("/drift", ...conf.handlers, async (req, res) => {
+    conf.express.get("/drift", ...conf.handlers, (req, res, next) => {
         const workspaceId = req.query.workspaceId || "*";
         const percentile = req.query.percentile || 0;
         const type = req.query.type;
@@ -192,12 +194,12 @@ function exposeDriftPage(conf: WebAppConfig): void {
                 `Drift across all aspects with entropy above ${percentile}th percentile`,
             subheading: "Sizing shows degree of entropy",
         },
-            conf.aspectRegistry, conf.httpClientFactory, req, res);
+            conf.aspectRegistry, conf.httpClientFactory, req, res).catch(next);
     });
 }
 
 function exposeFingerprintReportPage(conf: WebAppConfig): void {
-    conf.express.get("/fingerprint/:type/:name", ...conf.handlers, async (req, res) => {
+    conf.express.get("/fingerprint/:type/:name", ...conf.handlers, (req, res, next) => {
         const type = req.params.type;
         const name = req.params.name;
         const otherLabel = req.query.otherLabel;
@@ -218,17 +220,17 @@ function exposeFingerprintReportPage(conf: WebAppConfig): void {
         if (otherLabel) {
             dataUrl += `&otherLabel=${otherLabel}`;
         }
-        return renderDataUrl(conf.instanceMetadata, workspaceId, {
+        renderDataUrl(conf.instanceMetadata, workspaceId, {
             dataUrl,
             title: `Atomist aspect drift`,
             heading: aspect.displayName,
             subheading: fingerprintDisplayName,
-        }, conf.aspectRegistry, conf.httpClientFactory, req, res);
+        }, conf.aspectRegistry, conf.httpClientFactory, req, res).catch(next);
     });
 }
 
 function exposeCustomReportPage(conf: WebAppConfig): void {
-    conf.express.get("/report/:name", ...conf.handlers, async (req, res) => {
+    conf.express.get("/report/:name", ...conf.handlers, (req, res, next) => {
         const name = req.params.name;
         const workspaceId = req.query.workspaceId || "*";
         const queryString = jsonToQueryString(req.query);
@@ -241,7 +243,7 @@ function exposeCustomReportPage(conf: WebAppConfig): void {
             dataUrl,
             heading: name,
             title: reporter.summary,
-        }, conf.aspectRegistry, conf.httpClientFactory, req, res);
+        }, conf.aspectRegistry, conf.httpClientFactory, req, res).catch(next);
     });
 }
 

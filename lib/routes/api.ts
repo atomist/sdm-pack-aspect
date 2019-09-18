@@ -480,10 +480,8 @@ function exposeCustomReports(express: Express, store: ProjectAnalysisResultStore
 function exposePersistEntropy(express: Express, store: ProjectAnalysisResultStore, handlers: RequestHandler[], secure: boolean): void {
     // Calculate and persist entropy for this fingerprint
     express.options("/api/v1/:workspace_id/entropy/:type/:name", corsHandler());
-    express.put("/api/v1/:workspace_id/entropy/:type/:name", [corsHandler(), ...authHandlers(secure)], async (req, res) => {
-        await computeAnalyticsForFingerprintKind(store, req.params.workspace_id, req.params.type, req.params.name);
-        res.sendStatus(201);
-    });
+    express.put("/api/v1/:workspace_id/entropy/:type/:name", [corsHandler(), ...authHandlers(secure)], async (req, res, next) =>
+        computeAnalyticsForFingerprintKind(store, req.params.workspace_id, req.params.type, req.params.name).then(() => res.sendStatus(201), next));
 }
 
 function relevant(selectedTag: string, repo: ScoredRepo): boolean {

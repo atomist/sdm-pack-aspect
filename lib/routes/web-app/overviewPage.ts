@@ -36,7 +36,7 @@ import { WebAppConfig } from "./webAppConfig";
 
 export function exposeOverviewPage(conf: WebAppConfig,
                                    topLevelRoute: string): void {
-    conf.express.get(topLevelRoute, ...conf.handlers, async (req, res) => {
+    conf.express.get(topLevelRoute, ...conf.handlers, async (req, res, next) => {
         try {
             const repos = await conf.store.loadInWorkspace(req.query.workspace || req.params.workspace_id, false);
             const workspaceId = "*";

@@ -22,7 +22,7 @@ import { renderStaticReactNode } from "../../../views/topLevelPage";
 import { WebAppConfig } from "../../routes/web-app/webAppConfig";
 
 export function exposeAnalysisTrackingPage(conf: WebAppConfig): void {
-    conf.express.get("/analysis", ...conf.handlers, async (req, res) => {
+    conf.express.get("/analysis", ...conf.handlers, async (req, res, next) => {
         try {
             const data = conf.analysisTracking.report();
 
@@ -31,11 +31,11 @@ export function exposeAnalysisTrackingPage(conf: WebAppConfig): void {
                 conf.instanceMetadata));
         } catch (e) {
             logger.error(e.stack);
-            res.status(500).send("failure");
+            next(e);
         }
     });
 
-    conf.express.get("/analysis/aspects", ...conf.handlers, async (req, res) => {
+    conf.express.get("/analysis/aspects", ...conf.handlers, async (req, res, next) => {
         try {
             const data = conf.analysisTracking.report();
 
@@ -62,7 +62,7 @@ export function exposeAnalysisTrackingPage(conf: WebAppConfig): void {
                 conf.instanceMetadata));
         } catch (e) {
             logger.error(e.stack);
-            res.status(500).send("failure");
+            next(e);
         }
     });
 }
