@@ -94,7 +94,7 @@ export function addWebAppRoutes(
             }));
 
             express.use(serveStatic(path.join(packageRoot(), "public"), { index: false }));
-            express.use(serveStatic(path.join(packageRoot(), "lib", "public"), { index: false }));
+            express.use(serveStatic(path.join(packageRoot(), "dist"), { index: false }));
 
             /* redirect / to the org page. This way we can go right here
              * for now, and later make a higher-level page if we want.

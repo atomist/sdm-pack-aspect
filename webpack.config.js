@@ -4,7 +4,7 @@ module.exports = {
         sunburstScript: "./lib/page/sunburstScript.js"
     },
     output: {
-        filename: "./lib/public/[name]-bundle.js",
+        filename: "[name]-bundle.js",
         library: "SunburstYo"
     }
 }
