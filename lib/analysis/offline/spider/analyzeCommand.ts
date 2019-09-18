@@ -40,7 +40,7 @@ const AnalyzeCommandParameterDefinitions: ParametersObject<AnalyzeCommandParamet
     },
     update: {
         type: "boolean",
-        description: "Overwrite existing analyses? (default is no)",
+        description: "Overwrite existing analyses? (default is yes)",
         required: false,
     },
     poolSize: {

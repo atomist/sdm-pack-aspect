@@ -15,6 +15,8 @@
  */
 
 import { logger } from "@atomist/automation-client";
+import { toArray } from "@atomist/sdm-core/lib/util/misc/array";
+import * as _ from "lodash";
 import {
     AspectRegistry,
     Tagger,
@@ -26,7 +28,11 @@ import {
     hasNoLicense,
     isLicenseFingerprint,
 } from "../aspect/community/license";
-import { isClassificationDataFingerprint } from "../aspect/compose/classificationAspect";
+import {
+    ClassificationData,
+    Classifier,
+    isClassificationDataFingerprint,
+} from "../aspect/compose/classificationAspect";
 import { isGlobMatchFingerprint } from "../aspect/compose/globAspect";
 import { BranchCountType } from "../aspect/git/branchCount";
 import { daysSince } from "../aspect/git/dateUtils";
@@ -41,12 +47,13 @@ import { ExposedSecrets } from "../aspect/secret/exposedSecrets";
  * @param {string} tags
  * @return {Tagger[]}
  */
-export function tagsFromClassificationFingerprints(...tags: string[]): Tagger[] {
-    return tags.map(name => ({
+export function tagsFromClassificationFingerprints(...classifiers: Classifier[]): Tagger[] {
+    return _.flatten(classifiers.map(cm => toArray(cm.tags).map(name => ({
         name,
-        description: "From fingerprint",
-        test: async repo => repo.analysis.fingerprints.some(fp => isClassificationDataFingerprint(fp) && fp.data.tags.includes(name)),
-    }));
+        description: cm.reason,
+        test: async repo => repo.analysis.fingerprints.some(fp => isClassificationDataFingerprint(fp)
+            && fp.data.tags.includes(name) && fp.data.reasons.includes(cm.reason)),
+    }))));
 }
 
 /**

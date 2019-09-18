@@ -29,9 +29,6 @@ import {
 } from "../AspectRegistry";
 import { AspectMetadata } from "./commonTypes";
 
-/**
- * Knows how to classify projects into a unique String
- */
 export interface Classifier {
 
     /**
@@ -43,11 +40,32 @@ export interface Classifier {
      * Classification this instance will return
      */
     readonly tags: string | string[];
+}
 
+export interface ProjectClassifier extends Classifier {
     /**
      * Test for whether the given project meets this classification
      */
     test: (p: Project, pili: PushImpactListenerInvocation) => Promise<boolean>;
+}
+
+export interface DerivedClassifier extends Classifier {
+    /**
+     * Test for whether the given project meets this classification
+     */
+    testFingerprints: (fps: FP[], p: Project, pili: PushImpactListenerInvocation) => Promise<boolean>;
+}
+
+export type EligibleClassifier = ProjectClassifier | DerivedClassifier;
+
+function isProjectClassifier(c: Classifier): c is ProjectClassifier {
+    const maybe = c as ProjectClassifier;
+    return !!maybe.test;
+}
+
+function isDerivedClassifier(c: Classifier): c is DerivedClassifier {
+    const maybe = c as DerivedClassifier;
+    return !!maybe.testFingerprints;
 }
 
 export interface ClassificationData {
@@ -62,11 +80,19 @@ export function isClassificationDataFingerprint(fp: FP): fp is FP<Classification
     return !!maybe.data && !!maybe.data.tags && !!maybe.data.reasons;
 }
 
-export type ClassificationAspect = Aspect<ClassificationData> & { tags: string[] };
+export type ClassificationAspect = Aspect<ClassificationData> & { classifierMetadata: Classifier[] };
 
 export function isClassificationAspect(a: Aspect): a is ClassificationAspect {
     const maybe = a as ClassificationAspect;
-    return !!maybe.tags;
+    return !!maybe.classifierMetadata;
+}
+
+export interface ClassificationOptions extends AspectMetadata {
+
+    /**
+     * Stop at the first matched tag?
+     */
+    stopAtFirst?: boolean;
 }
 
 /**
@@ -75,30 +101,19 @@ export function isClassificationAspect(a: Aspect): a is ClassificationAspect {
  * @param opts: Whether to allow multiple tags and whether to compute a fingerprint in all cases
  * @param classifiers classifier functions
  */
-export function projectClassificationAspect(opts: AspectMetadata & { stopAtFirst?: boolean, alwaysFingerprint?: boolean },
-                                            ...classifiers: Classifier[]): ClassificationAspect {
+export function projectClassificationAspect(opts: ClassificationOptions,
+                                            ...classifiers: EligibleClassifier[]): ClassificationAspect {
+    const projectClassifiers = classifiers.filter(isProjectClassifier);
+    const derivedClassifiers = classifiers.filter(isDerivedClassifier);
     return {
-        tags: _.flatten(classifiers.map(c => c.tags)),
+        classifierMetadata: _.flatten(classifiers.map(c => ({ reason: c.reason, tags: c.tags }))),
         extract: async (p, pili) => {
-            const tags: string[] = [];
-            const reasons: string[] = [];
-            for (const classifier of classifiers) {
-                if (await classifier.test(p, pili)) {
-                    tags.push(...toArray(classifier.tags));
-                    reasons.push(classifier.reason);
-                    if (opts.stopAtFirst) {
-                        break;
-                    }
-                }
-            }
-            const data = { tags: _.uniq(tags).sort(), reasons };
-            return (opts.alwaysFingerprint || data.tags.length > 0) ? {
-                type: opts.name,
-                name: opts.name,
-                data,
-                // We only sha the tags, not the reason
-                sha: sha256(JSON.stringify(data.tags)),
-            } : undefined;
+            const test = createTest(projectClassifiers, opts);
+            return test([], p, pili);
+        },
+        consolidate: async (fps, p, pili) => {
+            const test = createTest(derivedClassifiers, opts);
+            return test(fps, p, pili);
         },
         toDisplayableFingerprint: fp => (fp.data.tags && fp.data.tags.join()) || "unknown",
         ...opts,
@@ -114,7 +129,7 @@ export function projectClassificationAspect(opts: AspectMetadata & { stopAtFirst
 export function taggerAspect(opts: AspectMetadata & { alwaysFingerprint?: boolean },
                              ...taggers: Tagger[]): ClassificationAspect {
     return {
-        tags: taggers.map(t => t.name),
+        classifierMetadata: taggers.map(t => ({ tags: t.name, reason: t.description || t.name })),
         extract: async () => [],
         consolidate: async (fingerprints, p) => {
             const rts: RepoToScore = { analysis: { id: p.id, fingerprints } };
@@ -122,7 +137,7 @@ export function taggerAspect(opts: AspectMetadata & { alwaysFingerprint?: boolea
             for (const tagger of taggers) {
                 if (await tagger.test(rts)) {
                     data.tags.push(tagger.name);
-                    data.reasons.push(tagger.description);
+                    data.reasons.push(tagger.description || tagger.name);
                 }
             }
             return (opts.alwaysFingerprint || data.tags.length > 0) ? {
@@ -135,5 +150,32 @@ export function taggerAspect(opts: AspectMetadata & { alwaysFingerprint?: boolea
         },
         toDisplayableFingerprint: fp => (fp.data.tags && fp.data.tags.join()) || "unknown",
         ...opts,
+    };
+}
+
+function createTest(classifiers: EligibleClassifier[], opts: ClassificationOptions):
+    (fps: FP[], p: Project, pili: PushImpactListenerInvocation) => Promise<FP<ClassificationData>> {
+    return async (fps, p, pili) => {
+        const tags: string[] = [];
+        const reasons: string[] = [];
+        for (const classifier of classifiers) {
+            // Don't re-evaluate if we've already seen the tag
+            if (!_.includes(tags, classifier.tags) &&
+                (isProjectClassifier(classifier) ? await classifier.test(p, pili) : await classifier.testFingerprints(fps, p, pili))) {
+                tags.push(...toArray(classifier.tags));
+                reasons.push(classifier.reason);
+                if (opts.stopAtFirst) {
+                    break;
+                }
+            }
+        }
+        const data = { tags: _.uniq(tags).sort(), reasons };
+        return {
+            type: opts.name,
+            name: opts.name,
+            data,
+            // We only sha the tags, not the reason
+            sha: sha256(JSON.stringify(data.tags)),
+        };
     };
 }

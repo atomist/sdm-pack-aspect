@@ -164,7 +164,8 @@ async function safeConsolidate(aspect: Aspect,
 
 async function fetchChangedFiles(project: GitProject): Promise<string[]> {
     try {
-        const output = await execPromise("git", ["show", `--pretty=format:""`, "--name-only"]);
+        const output = await execPromise("git", ["show", `--pretty=format:""`, "--name-only"],
+            { cwd: project.baseDir });
         return output.stdout.trim().split("\n");
     } catch (err) {
         logger.error("Failure getting changed files: %s", err.message);

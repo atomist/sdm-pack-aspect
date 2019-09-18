@@ -15,8 +15,12 @@
  */
 
 import { gatherFromFiles } from "@atomist/automation-client/lib/project/util/projectUtils";
-import { Aspect, FP, sha256 } from "@atomist/sdm-pack-fingerprint";
-import { Omit } from "../../util/omit";
+import {
+    Aspect,
+    fingerprintOf,
+    FP,
+} from "@atomist/sdm-pack-fingerprint";
+import { AspectMetadata } from "./commonTypes";
 
 export interface GlobMatch {
     path: string;
@@ -35,16 +39,19 @@ export function isGlobMatchFingerprint(fp: FP): fp is FP<GlobAspectData> {
 }
 
 /**
- * Check for presence of a glob
- * undefined to return no fingerprint.
- * Always extracts a fingerprint, but may have an empty path.
+ * Check for presence of a glob.
+ * Always extracts a fingerprint, but may have an empty array of matches.
  * Entropy stat is disabled by default, but callers can override this
  */
-export function globAspect(config: Omit<Aspect, "extract" | "apply"> &
-    { glob: string }): Aspect<GlobAspectData> {
+export function globAspect(config: AspectMetadata &
+    {
+        glob: string,
+        contentTest?: (content: string) => boolean,
+    }): Aspect<GlobAspectData> {
     if (!config.glob) {
         throw new Error("Glob pattern must be supplied");
     }
+    const testToUse = config.contentTest || (() => true);
     return {
         toDisplayableFingerprintName: name => `Glob pattern '${name}'`,
         toDisplayableFingerprint: fp =>
@@ -63,17 +70,18 @@ export function globAspect(config: Omit<Aspect, "extract" | "apply"> &
             const data = {
                 glob: config.glob,
                 kind: "glob" as any,
-                matches: await gatherFromFiles(p, config.glob, async f => ({
-                    path: f.path,
-                    size: (await f.getContent()).length,
-                })),
+                matches: await gatherFromFiles(p, config.glob, async f => {
+                    const content = await f.getContent();
+                    return testToUse(content) ? {
+                        path: f.path,
+                        size: content.length,
+                    } : undefined;
+                }),
             };
-            return {
+            return fingerprintOf({
                 type: config.name,
-                name: config.name,
                 data,
-                sha: sha256(JSON.stringify(data)),
-            };
+            });
         },
     };
 }

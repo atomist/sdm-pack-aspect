@@ -15,7 +15,7 @@
  */
 
 import * as assert from "assert";
-import { TagGroup } from "../../views/sunburstPage";
+import { TagGroup } from "../../lib/tree/TagGroup";
 
 describe("buttons to change the selected tags in the explore view of sunburst", () => {
     it("takes in the tag selection and the tags available in the data and the total number of projects", () => {

@@ -21,7 +21,10 @@ import {
 import * as Octokit from "@octokit/rest";
 import * as _ from "lodash";
 import { AnalysisTracking } from "../../../tracking/analysisTracker";
-import { AnalysisRun } from "../common";
+import {
+    AnalysisRun,
+    DefaultPoolSize,
+} from "../common";
 import { ScmSearchCriteria } from "../ScmSearchCriteria";
 import {
     Analyzer,
@@ -70,11 +73,11 @@ export class GitHubSpider implements Spider {
             projectFilter: criteria.projectTest,
 
         }, {
-                workspaceId: opts.workspaceId,
-                description: "querying GitHub: " + (criteria.githubQueries || []).join(" and "),
-                maxRepos: 1000,
-                poolSize: opts.poolSize || 40,
-            });
+            workspaceId: opts.workspaceId,
+            description: "querying GitHub: " + (criteria.githubQueries || []).join(" and "),
+            maxRepos: 1000,
+            poolSize: opts.poolSize || DefaultPoolSize,
+        });
 
         return run.run();
     }

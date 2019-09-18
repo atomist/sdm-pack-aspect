@@ -142,7 +142,7 @@ class FakeProjectAnalysisResultStore implements ProjectAnalysisResultStore {
             this.persisted.push(repo);
             where.push(hardCodedPlace);
         }
-        return { attemptedCount: persisted, failed: [], succeeded: where };
+        return { attemptedCount: persisted, failed: [], succeeded: where, failedFingerprints: [] };
     }
 
     public async fingerprintUsageForType(workspaceId: string, type?: string): Promise<FingerprintUsage[]> {

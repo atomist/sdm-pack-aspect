@@ -36,6 +36,13 @@ import {
     SpiderResult,
 } from "./Spider";
 
+/**
+ * A reasonable number of repositories to analyze at a time.
+ * The bucketing mechanism will wait for this many to complete, then
+ * start another batch. If this is too big, the web interface can't respond.
+ */
+export const DefaultPoolSize = 6;
+
 interface TrackedRepo<FoundRepo> {
     foundRepo: FoundRepo;
     tracking: RepoBeingTracked;
@@ -72,7 +79,7 @@ export class AnalysisRun<FoundRepo> {
             this.params.maxRepos = 1000;
         }
         if (!this.params.poolSize) {
-            this.params.poolSize = 40;
+            this.params.poolSize = DefaultPoolSize;
         }
     }
 
@@ -182,6 +189,10 @@ async function analyzeOneRepo<FoundRepo>(
             id: repoRef, // necessary?
         },
         timestamp: new Date(),
+    });
+
+    persistResult.failedFingerprints.forEach(f => {
+        tracking.failFingerprint(f.failedFingerprint, f.error);
     });
 
     if (persistResult.failed.length === 1) {

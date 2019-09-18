@@ -79,9 +79,9 @@ import {
 export function api(projectAnalysisResultStore: ProjectAnalysisResultStore,
                     aspectRegistry: AspectRegistry & AspectReportDetailsRegistry,
                     secure: boolean): {
-    customizer: ExpressCustomizer,
-    routesToSuggestOnStartup: Array<{ title: string, route: string }>,
-} {
+        customizer: ExpressCustomizer,
+        routesToSuggestOnStartup: Array<{ title: string, route: string }>,
+    } {
     const serveSwagger = isInLocalMode();
     const docRoute = "/api-docs";
     const routesToSuggestOnStartup = serveSwagger ? [{ title: "Swagger", route: docRoute }] : [];
@@ -124,7 +124,7 @@ function exposeAspectMetadata(express: Express,
                               secure: boolean): void {
     // Return the aspects metadata
     express.options("/api/v1/:workspace_id/aspects", corsHandler());
-    express.get("/api/v1/:workspace_id/aspects", [corsHandler(), ...authHandlers(secure)], async (req, res) => {
+    express.get("/api/v1/:workspace_id/aspects", [corsHandler(), ...authHandlers(secure)], async (req, res, next) => {
         try {
             const workspaceId = req.params.workspace_id || "local";
             const fingerprintKinds = await store.distinctRepoFingerprintKinds(workspaceId);
@@ -142,7 +142,7 @@ function exposeAspectMetadata(express: Express,
             });
         } catch (e) {
             logger.warn("Error occurred getting aspect metadata: %s %s", e.message, e.stack);
-            res.sendStatus(500);
+            next(e);
         }
     });
 }
@@ -150,17 +150,11 @@ function exposeAspectMetadata(express: Express,
 function exposeListFingerprints(express: Express, store: ProjectAnalysisResultStore, secure: boolean): void {
     // Return all fingerprints
     express.options("/api/v1/:workspace_id/fingerprints", corsHandler());
-    express.get("/api/v1/:workspace_id/fingerprints", [corsHandler(), ...authHandlers(secure)], async (req, res) => {
-        try {
-            const workspaceId = req.params.workspace_id || "local";
-            const fingerprintUsage: FingerprintUsage[] = await store.fingerprintUsageForType(workspaceId);
-            logger.debug("Returning fingerprints for '%s': %j", workspaceId, fingerprintUsage);
+    express.get("/api/v1/:workspace_id/fingerprints", [corsHandler(), ...authHandlers(secure)], (req, res, next) =>
+        store.fingerprintUsageForType(req.params.workspace_id || "local").then(fingerprintUsage => {
+            logger.debug("Returning fingerprints: %j", fingerprintUsage);
             res.json({ list: fingerprintUsage });
-        } catch (e) {
-            logger.warn("Error occurred getting fingerprints: %s %s", e.message, e.stack);
-            res.sendStatus(500);
-        }
-    });
+        }, next));
 }
 
 function exposeFingerprintByType(express: Express,
@@ -168,7 +162,7 @@ function exposeFingerprintByType(express: Express,
                                  store: ProjectAnalysisResultStore,
                                  secure: boolean): void {
     express.options("/api/v1/:workspace_id/fingerprint/:type", corsHandler());
-    express.get("/api/v1/:workspace_id/fingerprint/:type", [corsHandler(), ...authHandlers(secure)], async (req, res) => {
+    express.get("/api/v1/:workspace_id/fingerprint/:type", [corsHandler(), ...authHandlers(secure)], async (req, res, next) => {
         try {
             const workspaceId = req.params.workspace_id || "*";
             const type = req.params.type;
@@ -184,7 +178,7 @@ function exposeFingerprintByType(express: Express,
             });
         } catch (e) {
             logger.warn("Error occurred getting fingerprints: %s %s", e.message, e.stack);
-            res.sendStatus(500);
+            next(e);
         }
     });
 }
@@ -194,59 +188,60 @@ function exposeFingerprintByTypeAndName(express: Express,
                                         store: ProjectAnalysisResultStore,
                                         secure: boolean): void {
     express.options("/api/v1/:workspace_id/fingerprint/:type/:name", corsHandler());
-    express.get("/api/v1/:workspace_id/fingerprint/:type/:name", [corsHandler(), ...authHandlers(secure)], async (req: Request, res: Response) => {
-        const workspaceId = req.params.workspace_id;
-        const fingerprintType = req.params.type;
-        const fingerprintName = req.params.name;
-        const byName = req.params.name !== "*";
-        const showProgress = req.query.progress === "true";
-        const trim = req.query.trim === "true";
-        const byOrg = req.query.byOrg === "true";
-        const otherLabel = req.query.otherLabel;
+    express.get("/api/v1/:workspace_id/fingerprint/:type/:name", [corsHandler(), ...authHandlers(secure)],
+        async (req: Request, res: Response, next) => {
+            const workspaceId = req.params.workspace_id;
+            const fingerprintType = req.params.type;
+            const fingerprintName = req.params.name;
+            const byName = req.params.name !== "*";
+            const showProgress = req.query.progress === "true";
+            const trim = req.query.trim === "true";
+            const byOrg = req.query.byOrg === "true";
+            const otherLabel = req.query.otherLabel;
 
-        try {
-            const pt = await buildFingerprintTree({ aspectRegistry, store }, {
-                otherLabel,
-                showProgress,
-                byOrg,
-                trim,
-                fingerprintType,
-                fingerprintName,
-                workspaceId,
-                byName,
-            });
+            try {
+                const pt = await buildFingerprintTree({ aspectRegistry, store }, {
+                    otherLabel,
+                    showProgress,
+                    byOrg,
+                    trim,
+                    fingerprintType,
+                    fingerprintName,
+                    workspaceId,
+                    byName,
+                });
 
-            const ideal = await aspectRegistry.idealStore.loadIdeal(workspaceId, fingerprintType, fingerprintName);
-            let target;
-            if (isConcreteIdeal(ideal)) {
-                const aspect = aspectRegistry.aspectOf(fingerprintType);
-                if (!!aspect && !!aspect.toDisplayableFingerprint) {
-                    target = {
-                        ...ideal.ideal,
-                        value: aspect.toDisplayableFingerprint(ideal.ideal),
-                    };
-                } else if (!!ideal.ideal.data && !!ideal.ideal.data.displayValue) {
-                    target = {
-                        ...ideal.ideal,
-                        value: ideal.ideal.data.displayValue,
-                    };
-                } else if (!!ideal.ideal.displayValue) {
-                    target = {
-                        ...ideal.ideal,
-                        value: ideal.ideal.displayValue,
-                    };
+                const ideal = await aspectRegistry.idealStore.loadIdeal(workspaceId, fingerprintType, fingerprintName);
+                let target;
+                if (isConcreteIdeal(ideal)) {
+                    const aspect = aspectRegistry.aspectOf(fingerprintType);
+                    if (!!aspect && !!aspect.toDisplayableFingerprint) {
+                        target = {
+                            ...ideal.ideal,
+                            value: aspect.toDisplayableFingerprint(ideal.ideal),
+                        };
+                    } else if (!!ideal.ideal.data && !!ideal.ideal.data.displayValue) {
+                        target = {
+                            ...ideal.ideal,
+                            value: ideal.ideal.data.displayValue,
+                        };
+                    } else if (!!ideal.ideal.displayValue) {
+                        target = {
+                            ...ideal.ideal,
+                            value: ideal.ideal.displayValue,
+                        };
+                    }
                 }
-            }
 
-            res.json({
-                ...pt,
-                target,
-            });
-        } catch (e) {
-            logger.warn("Error occurred getting one fingerprint: %s %s", e.message, e.stack);
-            res.sendStatus(500);
-        }
-    });
+                res.json({
+                    ...pt,
+                    target,
+                });
+            } catch (e) {
+                logger.warn("Error occurred getting one fingerprint: %s %s", e.message, e.stack);
+                next(e);
+            }
+        });
 }
 
 /**
@@ -254,7 +249,7 @@ function exposeFingerprintByTypeAndName(express: Express,
  */
 function exposeDrift(express: Express, aspectRegistry: AspectRegistry, store: ProjectAnalysisResultStore, secure: boolean): void {
     express.options("/api/v1/:workspace_id/drift", corsHandler());
-    express.get("/api/v1/:workspace_id/drift", [corsHandler(), ...authHandlers(secure)], async (req, res) => {
+    express.get("/api/v1/:workspace_id/drift", [corsHandler(), ...authHandlers(secure)], async (req, res, next) => {
         try {
             const type = req.query.type;
             const band = req.query.band === "true";
@@ -281,9 +276,9 @@ function exposeDrift(express: Express, aspectRegistry: AspectRegistry, store: Pr
             fillInDriftTreeAspectNames(aspectRegistry, driftTree.tree);
             return res.json(driftTree);
         } catch
-            (err) {
+        (err) {
             logger.warn("Error occurred getting drift report: %s %s", err.message, err.stack);
-            res.sendStatus(500);
+            next(err);
         }
     });
 }
@@ -291,19 +286,19 @@ function exposeDrift(express: Express, aspectRegistry: AspectRegistry, store: Pr
 function exposeIdealAndProblemSetting(express: Express, aspectRegistry: AspectRegistry, secure: boolean): void {
     // Set an ideal
     express.options("/api/v1/:workspace_id/ideal/:id", corsHandler());
-    express.put("/api/v1/:workspace_id/ideal/:id", [corsHandler(), ...authHandlers(secure)], async (req, res) => {
-        await aspectRegistry.idealStore.setIdeal(req.params.workspace_id, req.params.id);
-        logger.info(`Set ideal to ${req.params.id}`);
-        res.sendStatus(201);
-    });
+    express.put("/api/v1/:workspace_id/ideal/:id", [corsHandler(), ...authHandlers(secure)], (req, res, next) =>
+        aspectRegistry.idealStore.setIdeal(req.params.workspace_id, req.params.id).then(() => {
+            logger.info(`Set ideal to ${req.params.id}`);
+            res.sendStatus(201);
+        }, next));
 
     // Note this fingerprint as a problem
     express.options("/api/v1/:workspace_id/problem/:id", corsHandler());
-    express.put("/api/v1/:workspace_id/problem/:id", [corsHandler(), ...authHandlers(secure)], async (req, res) => {
-        await aspectRegistry.problemStore.noteProblem(req.params.workspace_id, req.params.id);
-        logger.info(`Set problem at ${req.params.id}`);
-        res.sendStatus(201);
-    });
+    express.put("/api/v1/:workspace_id/problem/:id", [corsHandler(), ...authHandlers(secure)], (req, res, next) =>
+        aspectRegistry.problemStore.noteProblem(req.params.workspace_id, req.params.id).then(() => {
+            logger.info(`Set problem at ${req.params.id}`);
+            res.sendStatus(201);
+        }, next));
 }
 
 /**
@@ -311,54 +306,58 @@ function exposeIdealAndProblemSetting(express: Express, aspectRegistry: AspectRe
  */
 function exposeExplore(express: Express, aspectRegistry: AspectRegistry, store: ProjectAnalysisResultStore, secure: boolean): void {
     express.options("/api/v1/:workspace_id/explore", corsHandler());
-    express.get("/api/v1/:workspace_id/explore", [corsHandler(), ...authHandlers(secure)], async (req, res) => {
-        const workspaceId = req.params.workspace_id || "*";
-        const repos = await store.loadInWorkspace(workspaceId, true);
-        const selectedTags: string[] = req.query.tags ? req.query.tags.split(",") : [];
-        const category = req.query.category;
+    express.get("/api/v1/:workspace_id/explore", [corsHandler(), ...authHandlers(secure)], async (req, res, next) => {
+        try {
+            const workspaceId = req.params.workspace_id || "*";
+            const repos = await store.loadInWorkspace(workspaceId, true);
+            const selectedTags: string[] = req.query.tags ? req.query.tags.split(",") : [];
+            const category = req.query.category;
 
-        const taggedRepos = await aspectRegistry.tagAndScoreRepos(workspaceId, repos, { category });
+            const taggedRepos = await aspectRegistry.tagAndScoreRepos(workspaceId, repos, { category });
 
-        const relevantRepos = taggedRepos.filter(repo => selectedTags.every(tag => relevant(tag, repo)));
-        logger.info("Found %d relevant repos of %d", relevantRepos.length, repos.length);
+            const relevantRepos = taggedRepos.filter(repo => selectedTags.every(tag => relevant(tag, repo)));
+            logger.info("Found %d relevant repos of %d", relevantRepos.length, repos.length);
 
-        const allTags = tagUsageIn(aspectRegistry, relevantRepos);
+            const allTags = tagUsageIn(aspectRegistry, relevantRepos);
 
-        let repoTree: PlantedTree = {
-            circles: [{ meaning: "tag filter" }, { meaning: "repo" }],
-            tree: {
-                name: describeSelectedTagsToAnimals(selectedTags),
-                children: relevantRepos.map(r => {
-                    return {
-                        id: r.id,
-                        owner: r.analysis.id.owner,
-                        repo: r.analysis.id.repo,
-                        name: r.analysis.id.repo,
-                        url: r.analysis.id.url,
-                        size: r.analysis.fingerprints.length,
-                        tags: r.tags,
-                        weightedScore: r.weightedScore,
-                    };
-                }),
-            },
-        };
+            let repoTree: PlantedTree = {
+                circles: [{ meaning: "tag filter" }, { meaning: "repo" }],
+                tree: {
+                    name: describeSelectedTagsToAnimals(selectedTags),
+                    children: relevantRepos.map(r => {
+                        return {
+                            id: r.id,
+                            owner: r.analysis.id.owner,
+                            repo: r.analysis.id.repo,
+                            name: r.analysis.id.repo,
+                            url: r.analysis.id.url,
+                            size: r.analysis.fingerprints.length,
+                            tags: r.tags,
+                            weightedScore: r.weightedScore,
+                        };
+                    }),
+                },
+            };
 
-        if (req.query.byOrg !== "false") {
-            repoTree = splitByOrg(repoTree);
+            if (req.query.byOrg !== "false") {
+                repoTree = splitByOrg(repoTree);
+            }
+            repoTree.tree = addRepositoryViewUrl(repoTree.tree);
+
+            const tagTree: TagTree = {
+                tags: allTags,
+                selectedTags,
+                repoCount: repos.length,
+                matchingRepoCount: relevantRepos.length,
+                // TODO fix this
+                averageFingerprintCount: -1,
+                ...repoTree,
+                workspaceId,
+            };
+            res.send(tagTree);
+        } catch (err) {
+            next(err);
         }
-        repoTree.tree = addRepositoryViewUrl(repoTree.tree);
-
-        const tagTree: TagTree = {
-            tags: allTags,
-            selectedTags,
-            repoCount: repos.length,
-            matchingRepoCount: relevantRepos.length,
-            // TODO fix this
-            averageFingerprintCount: -1,
-            ...repoTree,
-            workspaceId,
-        };
-        res.send(tagTree);
     });
 }
 
@@ -457,7 +456,7 @@ function fillInDriftTreeAspectNames(aspectRegistry: AspectRegistry, driftTree: S
 function exposeCustomReports(express: Express, store: ProjectAnalysisResultStore, secure: boolean): void {
     // In memory queries against returns
     express.options("/api/v1/:workspace_id/report/:name", corsHandler());
-    express.get("/api/v1/:workspace_id/report/:name", [corsHandler(), ...authHandlers(secure)], async (req, res) => {
+    express.get("/api/v1/:workspace_id/report/:name", [corsHandler(), ...authHandlers(secure)], async (req, res, next) => {
         try {
             const q = CustomReporters[req.params.name];
             if (!q) {
@@ -473,7 +472,7 @@ function exposeCustomReports(express: Express, store: ProjectAnalysisResultStore
             return res.json(pt);
         } catch (e) {
             logger.warn("Error occurred getting report: %s %s", e.message, e.stack);
-            res.sendStatus(500);
+            next(e);
         }
     });
 }
@@ -481,10 +480,8 @@ function exposeCustomReports(express: Express, store: ProjectAnalysisResultStore
 function exposePersistEntropy(express: Express, store: ProjectAnalysisResultStore, handlers: RequestHandler[], secure: boolean): void {
     // Calculate and persist entropy for this fingerprint
     express.options("/api/v1/:workspace_id/entropy/:type/:name", corsHandler());
-    express.put("/api/v1/:workspace_id/entropy/:type/:name", [corsHandler(), ...authHandlers(secure)], async (req, res) => {
-        await computeAnalyticsForFingerprintKind(store, req.params.workspace_id, req.params.type, req.params.name);
-        res.sendStatus(201);
-    });
+    express.put("/api/v1/:workspace_id/entropy/:type/:name", [corsHandler(), ...authHandlers(secure)], async (req, res, next) =>
+        computeAnalyticsForFingerprintKind(store, req.params.workspace_id, req.params.type, req.params.name).then(() => res.sendStatus(201), next));
 }
 
 function relevant(selectedTag: string, repo: ScoredRepo): boolean {
