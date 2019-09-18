@@ -66,7 +66,7 @@ function displayTagGroup(tagGroup: TagGroup): React.ReactElement {
                 <input type="hidden" name="explore" value="true" />
                 <input className="resetTagSelection" type="submit" value="CLEAR" />
             </form></div>}
-        {tagGroup.allTagNames().map(n => displayTagButtons(tagGroup, n))}
+        {tagGroup.allTagNames.map(n => displayTagButtons(tagGroup, n))}
     </div>;
 }
 

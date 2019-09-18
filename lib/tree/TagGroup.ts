@@ -32,13 +32,18 @@ export class TagGroup {
      */
     public readonly totalProjectsDisplayed: number;
 
+    /**
+     * Construct a new tag group
+     * @param {string[]} tagSelection selected tags
+     * @param treeWithTags tags in the tree. May have been filtered down
+     */
     constructor(public readonly tagSelection: string[],
                 treeWithTags?: { tags?: TagUsage[], matchingRepoCount?: number }) {
         this.tagsInData = treeWithTags && treeWithTags.tags ? treeWithTags.tags : [];
         this.totalProjectsDisplayed = treeWithTags ? treeWithTags.matchingRepoCount : 0;
     }
 
-    public allTagNames(): string[] {
+    public get allTagNames(): string[] {
         const tagsFromData = this.tagsInData.map(t => t.name);
         const tagsFromSelection = this.tagSelection.map(this.dontFeelExcluded);
         return _.uniq([...tagsFromSelection, ...tagsFromData]);
