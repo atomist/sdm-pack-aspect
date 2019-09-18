@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-import { reviewCommentCountAspect } from "../../../lib/aspect/common/reviewerAspect";
 import { InMemoryProject, NoParameters, ProjectReview } from "@atomist/automation-client";
+import { CodeTransform } from "@atomist/sdm";
+import { toArray } from "@atomist/sdm-core/lib/util/misc/array";
+import { fingerprintOf } from "@atomist/sdm-pack-fingerprint";
 import { CodeInspection } from "@atomist/sdm/lib/api/registration/CodeInspectionRegistration";
 import * as assert from "assert";
-import { CodeTransform } from "@atomist/sdm";
-import { fingerprintOf } from "@atomist/sdm-pack-fingerprint";
-import { toArray } from "@atomist/sdm-core/lib/util/misc/array";
+import { reviewCommentCountAspect } from "../../../lib/aspect/common/reviewerAspect";
 
 const FlagNothingReviewer: CodeInspection<ProjectReview, NoParameters> = async p => ({
     repoId: p.id,
