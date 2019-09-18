@@ -24,7 +24,10 @@ import { toArray } from "@atomist/sdm-core/lib/util/misc/array";
 import { fingerprintOf } from "@atomist/sdm-pack-fingerprint";
 import { CodeInspection } from "@atomist/sdm/lib/api/registration/CodeInspectionRegistration";
 import * as assert from "assert";
-import { reviewCommentCountAspect, reviewerAspects } from "../../../lib/aspect/common/reviewerAspect";
+import {
+    reviewCommentCountAspect,
+    reviewerAspects,
+} from "../../../lib/aspect/common/reviewerAspect";
 
 const FlagNothingReviewer: CodeInspection<ProjectReview, NoParameters> = async p => ({
     repoId: p.id,
