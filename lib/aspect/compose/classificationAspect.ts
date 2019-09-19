@@ -16,6 +16,7 @@
 
 import { Project } from "@atomist/automation-client";
 import { PushImpactListenerInvocation } from "@atomist/sdm";
+import { isInLocalMode } from "@atomist/sdm-core";
 import { toArray } from "@atomist/sdm-core/lib/util/misc/array";
 import {
     Aspect,
@@ -166,13 +167,16 @@ function createTest(classifiers: EligibleClassifier[], opts: ClassificationOptio
             classifier.test(p, pili) :
             classifier.testFingerprints(fps, p, pili);
 
-        if (opts.stopAtFirst) {
+        if (opts.stopAtFirst || !isInLocalMode()) {
             // Ordering is important. Execute in series and stop when we find a match.
+            // Also team mode requires serial execution
             for (const classifier of classifiers) {
                 if (await classifierMatches(classifier, fps, p, pili)) {
                     tags.push(...toArray(classifier.tags));
                     reasons.push(classifier.reason);
-                    break;
+                    if (opts.stopAtFirst) {
+                        break;
+                    }
                 }
             }
         } else {
