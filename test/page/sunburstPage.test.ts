@@ -15,7 +15,7 @@
  */
 
 import * as assert from "assert";
-import { TagGroup } from "../../views/sunburstPage";
+import { TagGroup } from "../../lib/tree/TagGroup";
 
 describe("buttons to change the selected tags in the explore view of sunburst", () => {
     it("takes in the tag selection and the tags available in the data and the total number of projects", () => {
@@ -24,25 +24,25 @@ describe("buttons to change the selected tags in the explore view of sunburst", 
 
     it("doesn't barf when the tree is not provided", () => {
         const subject = new TagGroup(["node", "!dead"], undefined);
-        subject.allTagNames();
+        subject.allTagNames;
     });
 
     it("lists the names of all the tags", () => {
         const subject = new TagGroup(["node"], { tags: [{ name: "frog", count: 3 }] });
-        const allTagNames = subject.allTagNames();
+        const allTagNames = subject.allTagNames;
         assert(allTagNames.includes("node"), "all selected tags belong here");
         assert(allTagNames.includes("frog"), "all data tags belong here");
     });
 
     it("includes tags that are excluded in the selection criteria", () => {
         const subject = new TagGroup(["node", "!dead"], { tags: [{ name: "frog", count: 3 }] });
-        const allTagNames = subject.allTagNames();
+        const allTagNames = subject.allTagNames;
         assert(allTagNames.includes("dead"), "excluded selected tags belong here too");
     });
 
     it("does not list a tag twice, even if it's in both", () => {
         const subject = new TagGroup(["node"], { tags: [{ name: "node", count: 3 }] });
-        const allTagNames = subject.allTagNames();
+        const allTagNames = subject.allTagNames;
         assert.deepStrictEqual(allTagNames, ["node"], "No duplicate tag names please");
     });
 

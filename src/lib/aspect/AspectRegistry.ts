@@ -20,6 +20,7 @@ import {
 } from "@atomist/automation-client";
 import { FP } from "@atomist/sdm-pack-fingerprint";
 import { Aspect } from "@atomist/sdm-pack-fingerprint/lib/machine/Aspect";
+import { FingerprintUsage } from "../analysis/offline/persist/ProjectAnalysisResultStore";
 import { ProjectAnalysisResult } from "../analysis/ProjectAnalysisResult";
 import {
     Scorer,
@@ -134,9 +135,44 @@ export interface TagAndScoreOptions {
 }
 
 /**
+ * Information on which we'll score an organization
+ */
+export interface WorkspaceToScore {
+
+    /**
+     * Information about this organization
+     */
+    fingerprintUsage: FingerprintUsage[];
+
+    /**
+     * Repos that have already been scored
+     */
+    repos: Array<{
+        url: string;
+        repo: string;
+        owner: string;
+        score?: number;
+    }>;
+}
+
+export interface WorkspaceScorer extends Scorer {
+
+    /**
+     * Function that knows how to score an org.
+     * @param repo repo we are scoring
+     * @param allRepos context of this scoring activity
+     * @return undefined if this scorer doesn't know how to score this repository.
+     */
+    score: (od: WorkspaceToScore) => Promise<ScorerReturn>;
+
+}
+
+/**
  * Manage a number of aspects.
  */
 export interface AspectRegistry {
+
+    scoreWorkspace(workspaceId: string, workspaceToScore: WorkspaceToScore): Promise<WeightedScore>;
 
     tagAndScoreRepos(workspaceId: string,
                      repos: ProjectAnalysisResult[],

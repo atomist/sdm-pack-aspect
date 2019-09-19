@@ -44,27 +44,32 @@ export function exposeRepositoryListPage(conf: WebAppConfig): void {
             }
 
             const relevantRepos = await conf.aspectRegistry.tagAndScoreRepos(workspaceId, relevantAnalysisResults, { category });
-            const reposForDisplay: RepoForDisplay[] = relevantRepos
-                .map(ar => ({
-                    url: ar.analysis.id.url,
-                    repo: ar.analysis.id.repo,
-                    owner: ar.analysis.id.owner,
-                    id: ar.id,
-                    score: ar.weightedScore.weightedScore,
-                    showFullPath: !byOrg,
-                }));
+            const repos: RepoForDisplay[] = relevantRepos
+            .map(ar => ({
+                url: ar.analysis.id.url,
+                repo: ar.analysis.id.repo,
+                owner: ar.analysis.id.owner,
+                id: ar.id,
+                score: ar.weightedScore.weightedScore,
+                showFullPath: !byOrg,
+            }));
             const virtualProjectCount = await conf.store.virtualProjectCount(workspaceId);
+
+            const fingerprintUsage = await conf.store.fingerprintUsageForType(workspaceId);
+
+            const orgScore = await conf.aspectRegistry.scoreWorkspace(workspaceId, { fingerprintUsage, repos});
             res.send(renderStaticReactNode(
-                RepoList({
-                    repos: reposForDisplay,
-                    virtualProjectCount,
-                    sortOrder,
-                    byOrg,
-                    expand: !byOrg,
-                    category,
-                }),
-                byOrg ? "Repositories by Organization" : "Repositories Ranked",
-                conf.instanceMetadata));
+            RepoList({
+                orgScore,
+                repos,
+                virtualProjectCount,
+                sortOrder,
+                byOrg,
+                expand: !byOrg,
+                category,
+            }),
+            byOrg ? "Repositories by Organization" : "Repositories Ranked",
+            conf.instanceMetadata));
             return;
         } catch (e) {
             next(e);
