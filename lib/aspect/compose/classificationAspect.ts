@@ -155,19 +155,42 @@ export function taggerAspect(opts: AspectMetadata & { alwaysFingerprint?: boolea
 
 function createTest(classifiers: EligibleClassifier[], opts: ClassificationOptions):
     (fps: FP[], p: Project, pili: PushImpactListenerInvocation) => Promise<FP<ClassificationData>> {
+
     return async (fps, p, pili) => {
         const tags: string[] = [];
         const reasons: string[] = [];
-        for (const classifier of classifiers) {
-            // Don't re-evaluate if we've already seen the tag
-            if (!_.includes(tags, classifier.tags) &&
-                (isProjectClassifier(classifier) ? await classifier.test(p, pili) : await classifier.testFingerprints(fps, p, pili))) {
-                tags.push(...toArray(classifier.tags));
-                reasons.push(classifier.reason);
-                if (opts.stopAtFirst) {
+
+        // Don't re-evaluate if we've already seen the tag
+        const classifierMatches = async (classifier, fps, p, pili) => !_.includes(tags, classifier.tags) &&
+        isProjectClassifier(classifier) ?
+            classifier.test(p, pili) :
+            classifier.testFingerprints(fps, p, pili);
+
+        if (opts.stopAtFirst) {
+            // Ordering is important. Execute in series and stop when we find a match.
+            for (const classifier of classifiers) {
+                if (await classifierMatches(classifier, fps, p, pili)) {
+                    tags.push(...toArray(classifier.tags));
+                    reasons.push(classifier.reason);
                     break;
                 }
             }
+        } else {
+            // Ordering is not important. We can run in parallel
+            await Promise.all(
+                classifiers.map(classifier => {
+                    return classifierMatches(classifier, fps, p, pili)
+                        .then(result => result ? ({
+                            tags: toArray(classifier.tags),
+                            reason: classifier.reason
+                        }) : undefined)
+                        .then(st => {
+                            if (st) {
+                                tags.push(...st.tags);
+                                reasons.push(st.reason);
+                            }
+                        });
+                }));
         }
         const data = { tags: _.uniq(tags).sort(), reasons };
         return {
