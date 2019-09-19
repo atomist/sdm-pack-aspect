@@ -182,7 +182,7 @@ function createTest(classifiers: EligibleClassifier[], opts: ClassificationOptio
                     return classifierMatches(classifier, fps, p, pili)
                         .then(result => result ? ({
                             tags: toArray(classifier.tags),
-                            reason: classifier.reason
+                            reason: classifier.reason,
                         }) : undefined)
                         .then(st => {
                             if (st) {
