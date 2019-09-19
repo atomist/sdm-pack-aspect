@@ -68,6 +68,7 @@ type WayToGetFingerprintsFromAnAspect = "extract" | "consolidate";
 
 export interface AspectForReporting {
     aspectName: string;
+    visible: boolean;
     stage: WayToGetFingerprintsFromAnAspect;
     millisTaken?: number;
     error?: Error;
@@ -83,7 +84,11 @@ export class AspectBeingTracked {
     public fingerprintsFound: number | undefined;
     public failedWith: Error | undefined;
     public moreFailures: Array<{ error: Error, furtherDescription: string }> = [];
-    constructor(readonly params: { aspectName: string, aboutToRun: WayToGetFingerprintsFromAnAspect }) {
+    constructor(readonly params: {
+        aspectName: string,
+        visible: boolean,
+        aboutToRun: WayToGetFingerprintsFromAnAspect,
+    }) {
         this.startedAt = new Date();
     }
 
@@ -116,6 +121,7 @@ export class AspectBeingTracked {
         }
         return {
             aspectName: this.params.aspectName,
+            visible: this.params.visible,
             stage: this.params.aboutToRun,
             millisTaken: this.completedAt ? this.completedAt.getTime() - this.startedAt.getTime() : undefined,
             fingerprintsFound: this.fingerprintsFound || 0,
@@ -126,6 +132,7 @@ export class AspectBeingTracked {
 
 export interface AnalysisTrackingAspect {
     name: string;
+    displayName: string | undefined;
 }
 
 export class RepoBeingTracked {
@@ -162,7 +169,11 @@ export class RepoBeingTracked {
     }
 
     public plan(aspect: AnalysisTrackingAspect, aboutToRun: WayToGetFingerprintsFromAnAspect): AspectBeingTracked {
-        const newAspect = new AspectBeingTracked({ aspectName: aspect.name, aboutToRun });
+        const newAspect = new AspectBeingTracked({
+            aspectName: aspect.name,
+            visible: !!aspect.displayName, // this determines whether the aspect will display on the Insights page
+            aboutToRun,
+        });
         this.aspects.push(newAspect);
         return newAspect;
     }

@@ -23,7 +23,7 @@ const average = array => array.reduce((a, b) => a + b) / array.length;
 
 /**
  * Use the average repo score as the score
- **/
+ */
 export const AverageRepoScore: WorkspaceScorer = {
     name: "average",
     description: "Average score for repositories",

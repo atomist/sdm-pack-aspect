@@ -15,6 +15,7 @@ interface AnalysisTrackingRepo {
 interface AnalysisTrackingAspect {
     aspectName: string;
     fingerprintsFound: number;
+    visible: boolean;
     error?: Error;
 }
 interface AnalysisTrackingAnalysis {
@@ -56,8 +57,9 @@ function summarizeAspects(aspects: AnalysisTrackingAspect[]): React.ReactElement
     const fingerprintTotal = aspects.map(a => a.fingerprintsFound).filter(f => !!f).reduce((a, b) => a + b, 0);
     const errors = aspects.filter(a => !!a.error);
     const errorDisplays = errors.length > 0 ? <div>{errors.map(displayAspectError)}</div> : undefined;
+    const reportVisibleAspects = `(in ${aspects.filter(a => a.fingerprintsFound > 0 && a.visible).length} visible aspects)`;
     return <div>
-        {aspects.length} aspects => {fingerprintTotal} fingerprints
+        {aspects.length} aspects => {fingerprintTotal} fingerprints {reportVisibleAspects}
         {errorDisplays}
     </div>;
 }
@@ -136,7 +138,7 @@ export function AnalysisTrackingPage(props: AnalysisTrackingProps): React.ReactE
     }
     return <div>
         <h2>Refresh this page to see progress.</h2>
-        <a href="aspects">Track aspect performance</a>
+        <a href="aspects/">Track aspect performance</a>
         {listAnalyses(props.analyses)}
     </div>;
 }
