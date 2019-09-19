@@ -89,6 +89,7 @@ div.repositoryColumns>div {
     border: 1px dotted blue;
     vertical-align: top;
     padding: 5px;
+    overflow: scroll;
 }
 
 .keptExistingAnalysis {
