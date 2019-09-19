@@ -24,7 +24,7 @@ describe("buttons to change the selected tags in the explore view of sunburst", 
 
     it("doesn't barf when the tree is not provided", () => {
         const subject = new TagGroup(["node", "!dead"], undefined);
-        subject.allTagNames;
+        assert.deepStrictEqual(subject.allTagNames, ["node", "dead"]);
     });
 
     it("lists the names of all the tags", () => {

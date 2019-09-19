@@ -100,7 +100,8 @@ async function runConsolidates(p: Project,
                                fingerprints: FP[],
                                repoTracking: RepoBeingTracked): Promise<void> {
     for (const aspect of aspects) {
-        const consolidatedFingerprints = await safeConsolidate(aspect, fingerprints, p, pili, repoTracking.plan(aspect, "consolidate"));
+        const consolidatedFingerprints = await safeConsolidate(aspect, fingerprints, p, pili,
+            repoTracking.plan(aspect, "consolidate"));
         fingerprints.push(...consolidatedFingerprints);
     }
 }
