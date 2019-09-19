@@ -16,6 +16,7 @@
 /log/
 /scripts/
 /src/test/
+/test/
 /CO*.md
 /Dockerfile
 /assets/kubectl/

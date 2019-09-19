@@ -117,8 +117,8 @@
     "lint": "tslint --config tslint.json --format verbose --project .",
     "lint:fix": "npm run lint -- --fix",
     "start": "atm-start",
-    "test": "mocha --require espower-typescript/guess \"src/test/**/*.test.ts\"",
-    "test:one": "mocha --require espower-typescript/guess \"src/test/**/${TEST:-*.test.ts}\"",
+    "test": "mocha --require espower-typescript/guess \"test/**/*.test.ts\"",
+    "test:one": "mocha --require espower-typescript/guess \"test/**/${TEST:-*.test.ts}\"",
     "typedoc": "npm run doc",
     "db:create": "psql --command \"CREATE USER org_viz WITH SUPERUSER PASSWORD 'atomist'\" && createdb -O org_viz org_viz && psql -f ./ddl/create.ddl org_viz",
     "db:delete": "psql --command \"DROP DATABASE org_viz\" --command \"DROP ROLE org_viz\""
