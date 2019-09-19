@@ -95,7 +95,7 @@
     "webpack-cli": "^3.3.6"
   },
   "directories": {
-    "test": "src/test"
+    "test": "test"
   },
   "scripts": {
     "autotest": "supervisor --watch src --extensions ts --no-restart-on exit --quiet --exec npm -- test",
