@@ -27,10 +27,10 @@ export interface GlobMatch {
     size: number;
 }
 
-export interface GlobAspectData {
+export interface GlobAspectData<D = {}> {
     kind: "glob";
     glob: string;
-    matches: GlobMatch[];
+    matches: Array<GlobMatch & D>;
 }
 
 export function isGlobMatchFingerprint(fp: FP): fp is FP<GlobAspectData> {
@@ -38,20 +38,37 @@ export function isGlobMatchFingerprint(fp: FP): fp is FP<GlobAspectData> {
     return !!maybe && maybe.kind === "glob" && !!maybe.glob && maybe.matches !== undefined;
 }
 
+export interface Validated {
+    /** Test this for a match */
+    contentTest?: (content: string, path: string) => boolean;
+}
+
+export interface Extracted<D> {
+    /** Extract the data object */
+    extract: (content: string, path: string) => Promise<D>;
+}
+
+export type GlobAspectOptions<D> = AspectMetadata &
+    {
+        glob: string,
+    } & (Validated | Extracted<D>);
+
+function isExtracted(gao: GlobAspectOptions<any>): gao is GlobAspectOptions<any> & Extracted<any> {
+    const maybe = gao as Extracted<any>;
+    return !!maybe.extract;
+}
+
 /**
  * Check for presence of a glob.
  * Always extracts a fingerprint, but may have an empty array of matches.
- * Entropy stat is disabled by default, but callers can override this
+ * Entropy stat is disabled by default, but callers can override this.
+ * Can optionally test file content to exclude matches, or extract additional data for
+ * each match with the extract method.
  */
-export function globAspect(config: AspectMetadata &
-    {
-        glob: string,
-        contentTest?: (content: string) => boolean,
-    }): Aspect<GlobAspectData> {
+export function globAspect<D = {}>(config: GlobAspectOptions<D>): Aspect<GlobAspectData<D>> {
     if (!config.glob) {
         throw new Error("Glob pattern must be supplied");
     }
-    const testToUse = config.contentTest || (() => true);
     return {
         toDisplayableFingerprintName: name => `Glob pattern '${name}'`,
         toDisplayableFingerprint: fp =>
@@ -72,10 +89,20 @@ export function globAspect(config: AspectMetadata &
                 kind: "glob" as any,
                 matches: await gatherFromFiles(p, config.glob, async f => {
                     const content = await f.getContent();
-                    return testToUse(content) ? {
-                        path: f.path,
-                        size: content.length,
-                    } : undefined;
+                    if (isExtracted(config)) {
+                        const extracted = await config.extract(content, f.path);
+                        return extracted ? {
+                            path: f.path,
+                            size: content.length,
+                            ...extracted,
+                        } as any : undefined;
+                    } else {
+                        const testToUse = config.contentTest || (() => true);
+                        return testToUse(content, f.path) ? {
+                            path: f.path,
+                            size: content.length,
+                        } : undefined;
+                    }
                 }),
             };
             return fingerprintOf({
