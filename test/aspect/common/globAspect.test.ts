@@ -14,9 +14,18 @@
  * limitations under the License.
  */
 
-import { InMemoryProject, Project } from "@atomist/automation-client";
-import { Aspect, FP } from "@atomist/sdm-pack-fingerprint";
-import { globAspect, GlobAspectData } from "../../../lib/aspect/compose/globAspect";
+import {
+    InMemoryProject,
+    Project,
+} from "@atomist/automation-client";
+import {
+    Aspect,
+    FP,
+} from "@atomist/sdm-pack-fingerprint";
+import {
+    globAspect,
+    GlobAspectData,
+} from "../../../lib/aspect/compose/globAspect";
 
 import * as assert from "assert";
 
