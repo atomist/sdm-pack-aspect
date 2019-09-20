@@ -59,7 +59,8 @@ import {
     WorkspaceScorer,
 } from "../aspect/AspectRegistry";
 import {
-    isClassificationAspect, projectClassificationAspect,
+    isClassificationAspect,
+    projectClassificationAspect,
 } from "../aspect/compose/classificationAspect";
 import { DefaultAspectRegistry } from "../aspect/DefaultAspectRegistry";
 import { isDeliveryAspect } from "../aspect/delivery/DeliveryAspect";
