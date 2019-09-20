@@ -115,7 +115,7 @@ export function projectClassificationAspect(opts: ClassificationOptions,
     return {
         classifierMetadata: _.flatten([...projectClassifiers, ...derivedClassifiers].map(c => ({
             reason: c.reason,
-            tags: c.tags
+            tags: c.tags,
         }))),
         extract: async (p, pili) => {
             const emitter = emitFingerprints(projectClassifiers, opts);
@@ -139,7 +139,7 @@ function toDerivedClassifier(tagger: Tagger): DerivedClassifier {
                 analysis: {
                     id: p.id,
                     fingerprints,
-                }
+                },
             };
             return tagger.test(rts);
         },
