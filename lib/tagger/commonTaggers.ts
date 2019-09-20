@@ -44,15 +44,13 @@ import { ExposedSecrets } from "../aspect/secret/exposedSecrets";
 
 /**
  * Emit taggers for the given tags from classification fingerprints
- * @param {string} tags
- * @return {Tagger[]}
  */
 export function tagsFromClassificationFingerprints(...classifiers: Classifier[]): Tagger[] {
     return _.flatten(classifiers.map(cm => toArray(cm.tags).map(name => ({
         name,
         description: cm.reason,
         test: async repo => repo.analysis.fingerprints.some(fp => isClassificationDataFingerprint(fp)
-            && fp.data.tags.includes(name) && fp.data.reasons.includes(cm.reason)),
+            && fp.name === name && fp.data.reason === cm.reason),
     }))));
 }
 

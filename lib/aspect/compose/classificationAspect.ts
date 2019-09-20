@@ -20,8 +20,7 @@ import { isInLocalMode } from "@atomist/sdm-core";
 import { toArray } from "@atomist/sdm-core/lib/util/misc/array";
 import {
     Aspect,
-    FP,
-    sha256,
+    FP, sha256,
 } from "@atomist/sdm-pack-fingerprint";
 import * as _ from "lodash";
 import {
@@ -57,28 +56,31 @@ export interface DerivedClassifier extends Classifier {
     testFingerprints: (fps: FP[], p: Project, pili: PushImpactListenerInvocation) => Promise<boolean>;
 }
 
-export type EligibleClassifier = ProjectClassifier | DerivedClassifier;
+export type EligibleClassifier = ProjectClassifier | DerivedClassifier | Tagger;
 
-function isProjectClassifier(c: Classifier): c is ProjectClassifier {
+function isProjectClassifier(c: EligibleClassifier): c is ProjectClassifier {
     const maybe = c as ProjectClassifier;
-    return !!maybe.test;
+    return !!maybe.test && !!maybe.reason && !!maybe.tags;
 }
 
-function isDerivedClassifier(c: Classifier): c is DerivedClassifier {
+function isDerivedClassifier(c: EligibleClassifier): c is DerivedClassifier {
     const maybe = c as DerivedClassifier;
     return !!maybe.testFingerprints;
 }
 
+function isTagger(c: EligibleClassifier): c is Tagger {
+    const maybe = c as Tagger;
+    return !!maybe.test && !!maybe.name;
+}
+
 export interface ClassificationData {
 
-    tags: string[];
-
-    reasons: string[];
+    reason: string;
 }
 
 export function isClassificationDataFingerprint(fp: FP): fp is FP<ClassificationData> {
     const maybe = fp as FP<ClassificationData>;
-    return !!maybe.data && !!maybe.data.tags && !!maybe.data.reasons;
+    return !!maybe.data && !!maybe.data.reason;
 }
 
 export type ClassificationAspect = Aspect<ClassificationData> & { classifierMetadata: Classifier[] };
@@ -105,75 +107,77 @@ export interface ClassificationOptions extends AspectMetadata {
 export function projectClassificationAspect(opts: ClassificationOptions,
                                             ...classifiers: EligibleClassifier[]): ClassificationAspect {
     const projectClassifiers = classifiers.filter(isProjectClassifier);
-    const derivedClassifiers = classifiers.filter(isDerivedClassifier);
+    const derivedClassifiers = [
+        ...classifiers.filter(isDerivedClassifier),
+        ...classifiers.filter(isTagger).map(toDerivedClassifier),
+    ];
+
     return {
-        classifierMetadata: _.flatten(classifiers.map(c => ({ reason: c.reason, tags: c.tags }))),
+        classifierMetadata: _.flatten([...projectClassifiers, ...derivedClassifiers].map(c => ({
+            reason: c.reason,
+            tags: c.tags
+        }))),
         extract: async (p, pili) => {
-            const test = createTest(projectClassifiers, opts);
-            return test([], p, pili);
+            const emitter = emitFingerprints(projectClassifiers, opts);
+            return emitter([], p, pili);
         },
         consolidate: async (fps, p, pili) => {
-            const test = createTest(derivedClassifiers, opts);
+            const test = emitFingerprints(derivedClassifiers, opts);
             return test(fps, p, pili);
         },
-        toDisplayableFingerprint: fp => (fp.data.tags && fp.data.tags.join()) || "unknown",
+        toDisplayableFingerprint: fp => fp.name,
         ...opts,
     };
 }
 
-/**
- * Allow running taggers as a fingerprint.
- * Executes during consolidate, so very cheap.
- * @param opts: Whether to compute a fingerprint in all cases
- * @param taggers taggers to use
- */
-export function taggerAspect(opts: AspectMetadata & { alwaysFingerprint?: boolean },
-                             ...taggers: Tagger[]): ClassificationAspect {
+function toDerivedClassifier(tagger: Tagger): DerivedClassifier {
     return {
-        classifierMetadata: taggers.map(t => ({ tags: t.name, reason: t.description || t.name })),
-        extract: async () => [],
-        consolidate: async (fingerprints, p) => {
-            const rts: RepoToScore = { analysis: { id: p.id, fingerprints } };
-            const data: ClassificationData = { tags: [], reasons: [] };
-            for (const tagger of taggers) {
-                if (await tagger.test(rts)) {
-                    data.tags.push(tagger.name);
-                    data.reasons.push(tagger.description || tagger.name);
+        tags: [tagger.name],
+        reason: tagger.description,
+        testFingerprints: async (fingerprints, p) => {
+            const rts: RepoToScore = {
+                analysis: {
+                    id: p.id,
+                    fingerprints,
                 }
-            }
-            return (opts.alwaysFingerprint || data.tags.length > 0) ? {
-                type: opts.name,
-                name: opts.name,
-                data,
-                // We only sha the tags, not the reason
-                sha: sha256(JSON.stringify(data.tags)),
-            } : undefined;
+            };
+            return tagger.test(rts);
         },
-        toDisplayableFingerprint: fp => (fp.data.tags && fp.data.tags.join()) || "unknown",
-        ...opts,
     };
 }
 
-function createTest(classifiers: EligibleClassifier[], opts: ClassificationOptions):
-    (fps: FP[], p: Project, pili: PushImpactListenerInvocation) => Promise<FP<ClassificationData>> {
+function emitFingerprints(classifiers: Classifier[], opts: ClassificationOptions):
+    (fps: FP[], p: Project, pili: PushImpactListenerInvocation) => Promise<Array<FP<ClassificationData>>> {
 
     return async (fps, p, pili) => {
-        const tags: string[] = [];
-        const reasons: string[] = [];
+        const found: Array<FP<ClassificationData>> = [];
+
+        function recordFingerprint(name: string, reason: string): void {
+            if (!found.some(fp => fp.name === name)) {
+                found.push({
+                    type: opts.name,
+                    name,
+                    data: { reason },
+                    sha: sha256({ present: true }),
+                });
+            }
+        }
 
         // Don't re-evaluate if we've already seen the tag
-        const classifierMatches = async (classifier, fps, p, pili) => !_.includes(tags, classifier.tags) &&
-        isProjectClassifier(classifier) ?
-            classifier.test(p, pili) :
-            classifier.testFingerprints(fps, p, pili);
+        const classifierMatches = async (classifier, fps, p, pili) =>
+            !_.includes(found.map(f => f.name), classifier.tags) &&
+            isProjectClassifier(classifier) ?
+                classifier.test(p, pili) :
+                classifier.testFingerprints(fps, p, pili);
 
         if (opts.stopAtFirst || !isInLocalMode()) {
             // Ordering is important. Execute in series and stop when we find a match.
             // Also team mode requires serial execution
             for (const classifier of classifiers) {
                 if (await classifierMatches(classifier, fps, p, pili)) {
-                    tags.push(...toArray(classifier.tags));
-                    reasons.push(classifier.reason);
+                    for (const name of toArray(classifier.tags)) {
+                        recordFingerprint(name, classifier.reason);
+                    }
                     if (opts.stopAtFirst) {
                         break;
                     }
@@ -190,19 +194,13 @@ function createTest(classifiers: EligibleClassifier[], opts: ClassificationOptio
                         }) : undefined)
                         .then(st => {
                             if (st) {
-                                tags.push(...st.tags);
-                                reasons.push(st.reason);
+                                for (const name of st.tags) {
+                                    recordFingerprint(name, st.reason);
+                                }
                             }
                         });
                 }));
         }
-        const data = { tags: _.uniq(tags).sort(), reasons };
-        return {
-            type: opts.name,
-            name: opts.name,
-            data,
-            // We only sha the tags, not the reason
-            sha: sha256(JSON.stringify(data.tags)),
-        };
+        return found;
     };
 }

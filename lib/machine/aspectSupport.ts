@@ -59,8 +59,7 @@ import {
     WorkspaceScorer,
 } from "../aspect/AspectRegistry";
 import {
-    isClassificationAspect,
-    taggerAspect,
+    isClassificationAspect, projectClassificationAspect,
 } from "../aspect/compose/classificationAspect";
 import { DefaultAspectRegistry } from "../aspect/DefaultAspectRegistry";
 import { isDeliveryAspect } from "../aspect/delivery/DeliveryAspect";
@@ -209,7 +208,7 @@ export function aspectSupport(options: AspectSupportOptions): ExtensionPack {
         Object.getOwnPropertyNames(options.scorers || {})
             .map(name => emitScoringAspect(name, toArray(options.scorers[name] || []), options.weightings)))
         .filter(a => !!a);
-    const tagAspect = taggerAspect({
+    const tagAspect = projectClassificationAspect({
         name: "tagger",
         displayName: "tagger",
     }, ...toArray(options.taggers) || []);
