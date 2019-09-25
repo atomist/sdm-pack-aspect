@@ -61,7 +61,10 @@ import {
     isProjectAnalysisResult,
     ProjectAnalysisResult,
 } from "../../../lib/analysis/ProjectAnalysisResult";
-import { PlantedTree, TagUsage } from "../../../lib/tree/sunburst";
+import {
+    PlantedTree,
+    TagUsage,
+} from "../../../lib/tree/sunburst";
 import {
     GitHubSearchResult,
     GitHubSpider,

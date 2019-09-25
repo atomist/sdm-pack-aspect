@@ -35,7 +35,10 @@ import {
 import { Analyzed } from "../../../aspect/AspectRegistry";
 import { IdealStore } from "../../../aspect/IdealStore";
 import { ProblemUsage } from "../../../aspect/ProblemStore";
-import { PlantedTree, TagUsage } from "../../../tree/sunburst";
+import {
+    PlantedTree,
+    TagUsage,
+} from "../../../tree/sunburst";
 import {
     BandCasing,
     bandFor,

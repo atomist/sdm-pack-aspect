@@ -17,7 +17,10 @@
 import { RepoRef } from "@atomist/automation-client";
 import { FP } from "@atomist/sdm-pack-fingerprint";
 import { Analyzed } from "../../../aspect/AspectRegistry";
-import { PlantedTree, TagUsage } from "../../../tree/sunburst";
+import {
+    PlantedTree,
+    TagUsage,
+} from "../../../tree/sunburst";
 import { ProjectAnalysisResult } from "../../ProjectAnalysisResult";
 import { CohortAnalysis } from "../spider/analytics";
 import {
