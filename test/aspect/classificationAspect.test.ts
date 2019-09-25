@@ -55,7 +55,7 @@ describe("classification aspects", () => {
             const fps = await ca.extract(p, undefined) as Array<FP<ClassificationData>>;
             assert.strictEqual(fps.length, 1);
             assert.strictEqual(fps[0].type, "foo");
-            assert.deepStrictEqual(fps[0].data, { reason: "wow" });
+            assert.deepStrictEqual(fps[0].data, { description: "x", reason: "wow" });
         });
 
         it("one classifier produces two tags", async () => {
@@ -106,7 +106,7 @@ describe("classification aspects", () => {
             const fp = fps[0];
             assert.strictEqual(fp.type, "foo");
             assert.strictEqual(fp.name, "badger");
-            assert.deepStrictEqual(fp.data, { reason: "meadow" });
+            assert.deepStrictEqual(fp.data, { description: "x", reason: "meadow" });
         });
 
         it("derived classifier that takes from a fingerprint", async () => {
@@ -121,7 +121,7 @@ describe("classification aspects", () => {
             const fp = fps[0];
             assert.strictEqual(fp.type, "foo");
             assert.strictEqual(fp.name, "badger");
-            assert.deepStrictEqual(fp.data, { reason: "meadow" });
+            assert.deepStrictEqual(fp.data, { description: "x", reason: "meadow" });
         });
 
         it("derived classifier that doesn't take from a fingerprint", async () => {
