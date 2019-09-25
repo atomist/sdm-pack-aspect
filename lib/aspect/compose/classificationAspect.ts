@@ -32,7 +32,7 @@ import { AspectMetadata } from "./commonTypes";
 export interface Classifier {
 
     /**
-     * Name of this classifier
+     * Reason for this classification.
      */
     readonly reason: string;
 
@@ -75,7 +75,15 @@ function isTagger(c: EligibleClassifier): c is Tagger {
 
 export interface ClassificationData {
 
-    reason: string;
+    /**
+     * Description for this classification
+     */
+    readonly description: string;
+
+    /**
+     * Reason for this specific classification decision
+     */
+    readonly reason: string;
 }
 
 export function isClassificationDataFingerprint(fp: FP): fp is FP<ClassificationData> {
@@ -157,7 +165,7 @@ function emitFingerprints(classifiers: Classifier[], opts: ClassificationOptions
                 found.push({
                     type: opts.name,
                     name,
-                    data: { reason },
+                    data: { description: opts.displayName, reason },
                     sha: sha256({ present: true }),
                 });
             }

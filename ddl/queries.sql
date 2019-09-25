@@ -120,8 +120,16 @@ DELETE FROM repo_fingerprints
   WHERE repo_snapshot_id in (SELECT id from repo_snapshots WHERE owner <> 'Azure-Samples');
 
 -- Select tags in a workspace
-SELECT DISTINCT fp.name
+SELECT DISTINCT fp.name, fp.data ->> 'description' as description
   FROM repo_snapshots r, repo_fingerprints j, fingerprints fp
   WHERE j.repo_snapshot_id = r.id and j.fingerprint_id = fp.id
     AND r.workspace_id <> 'x'
     AND fp.data ->> 'reason' IS NOT NULL;
+
+-- Count of tags in workspace
+SELECT fp.name as tag, fp.data ->> 'description' as description, fp.feature_name as parent, count(fp.name)
+  FROM repo_snapshots r, repo_fingerprints j, fingerprints fp
+  WHERE j.repo_snapshot_id = r.id and j.fingerprint_id = fp.id
+    AND r.workspace_id <> 'x'
+    AND fp.data ->> 'reason' IS NOT NULL
+  GROUP BY tag, parent, description;
