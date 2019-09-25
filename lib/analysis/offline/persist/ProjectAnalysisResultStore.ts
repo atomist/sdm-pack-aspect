@@ -17,7 +17,7 @@
 import { RepoRef } from "@atomist/automation-client";
 import { FP } from "@atomist/sdm-pack-fingerprint";
 import { Analyzed } from "../../../aspect/AspectRegistry";
-import { PlantedTree } from "../../../tree/sunburst";
+import { PlantedTree, TagUsage } from "../../../tree/sunburst";
 import { ProjectAnalysisResult } from "../../ProjectAnalysisResult";
 import { CohortAnalysis } from "../spider/analytics";
 import {
@@ -157,6 +157,8 @@ export interface ProjectAnalysisResultStore {
     distinctRepoFingerprintKinds(workspaceId: string): Promise<Array<{ owner: string, repo: string, fingerprints: FingerprintKind[] }>>;
 
     fingerprintUsageForType(workspaceId: string, type?: string): Promise<FingerprintUsage[]>;
+
+    tags(workspaceId: string): Promise<TagUsage[]>;
 
     /**
      * Persist a record of analytics. Can be invoked repeatedly on the same data without error.

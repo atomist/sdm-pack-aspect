@@ -46,6 +46,33 @@ paths:
                       $ref: "#/definitions/Category"
             "400":
               description: Invalid workspace id
+  /{workspace}/tags:
+      get:
+            tags:
+              - tags
+            summary: Find all tags in workspace, including their usage
+            description: Find tags in workspace
+            operationId: findTags
+            produces:
+              - application/json
+            parameters:
+              - name: workspace
+                in: path
+                description: Workspace id. * for all.
+                required: true
+                type: string
+            responses:
+              "200":
+                description: successful operation
+                schema:
+                  type: object
+                  properties:
+                    list:
+                      type: array
+                      items:
+                        $ref: "#/definitions/Category"
+              "400":
+                description: Invalid workspace id
   /{workspace}/fingerprints:
     get:
           tags:

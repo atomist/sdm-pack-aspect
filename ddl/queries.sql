@@ -127,9 +127,23 @@ SELECT DISTINCT fp.name, fp.data ->> 'description' as description
     AND fp.data ->> 'reason' IS NOT NULL;
 
 -- Count of tags in workspace
-SELECT fp.name as tag, fp.data ->> 'description' as description, fp.feature_name as parent, count(fp.name)
+SELECT fp.name as name, fp.data ->> 'description' as description, fp.feature_name as parent, count(fp.name)
   FROM repo_snapshots r, repo_fingerprints j, fingerprints fp
   WHERE j.repo_snapshot_id = r.id and j.fingerprint_id = fp.id
     AND r.workspace_id <> 'x'
     AND fp.data ->> 'reason' IS NOT NULL
-  GROUP BY tag, parent, description;
+  GROUP BY fp.name, parent, description;
+
+explain analyze SELECT rs.owner, rs.name, rs.name as repo, rs.url, j.path,
+    json_agg(json_build_object('name', fp.name, 'description', fp.data ->> 'description')) as tags
+  FROM repo_snapshots rs, repo_fingerprints j, fingerprints fp
+  WHERE j.repo_snapshot_id = rs.id and j.fingerprint_id = fp.id
+    AND rs.workspace_id <> 'x'
+    AND fp.data ->> 'reason' IS NOT NULL
+    AND (SELECT count(1) FROM repo_snapshots rs2, repo_fingerprints j2, fingerprints fp2
+      WHERE rs2.id = rs.id
+        AND j2.path = j.path -- WHY IS ADDING THIS CRAZY SlOW?
+        AND j2.repo_snapshot_id = rs2.id and j2.fingerprint_id = fp2.id
+        AND fp2.data ->> 'reason' IS NOT NULL
+        AND fp2.name = 'maven') > 0
+  GROUP BY rs.owner, rs.name, rs.url, j.path;

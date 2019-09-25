@@ -61,7 +61,7 @@ import {
     isProjectAnalysisResult,
     ProjectAnalysisResult,
 } from "../../../lib/analysis/ProjectAnalysisResult";
-import { PlantedTree } from "../../../lib/tree/sunburst";
+import { PlantedTree, TagUsage } from "../../../lib/tree/sunburst";
 import {
     GitHubSearchResult,
     GitHubSpider,
@@ -146,6 +146,10 @@ class FakeProjectAnalysisResultStore implements ProjectAnalysisResultStore {
     }
 
     public async fingerprintUsageForType(workspaceId: string, type?: string): Promise<FingerprintUsage[]> {
+        return [];
+    }
+
+    public async tags(workspaceId: string): Promise<TagUsage[]> {
         return [];
     }
 

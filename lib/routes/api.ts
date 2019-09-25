@@ -79,9 +79,9 @@ import {
 export function api(projectAnalysisResultStore: ProjectAnalysisResultStore,
                     aspectRegistry: AspectRegistry & AspectReportDetailsRegistry,
                     secure: boolean): {
-        customizer: ExpressCustomizer,
-        routesToSuggestOnStartup: Array<{ title: string, route: string }>,
-    } {
+    customizer: ExpressCustomizer,
+    routesToSuggestOnStartup: Array<{ title: string, route: string }>,
+} {
     const serveSwagger = isInLocalMode();
     const docRoute = "/api-docs";
     const routesToSuggestOnStartup = serveSwagger ? [{ title: "Swagger", route: docRoute }] : [];
@@ -101,6 +101,7 @@ export function api(projectAnalysisResultStore: ProjectAnalysisResultStore,
 
             exposeIdealAndProblemSetting(express, aspectRegistry, secure);
             exposeAspectMetadata(express, projectAnalysisResultStore, aspectRegistry, secure);
+            exposeListTags(express, projectAnalysisResultStore, secure);
             exposeListFingerprints(express, projectAnalysisResultStore, secure);
             exposeFingerprintByType(express, aspectRegistry, projectAnalysisResultStore, secure);
             exposeExplore(express, aspectRegistry, projectAnalysisResultStore, secure);
@@ -154,6 +155,15 @@ function exposeListFingerprints(express: Express, store: ProjectAnalysisResultSt
         store.fingerprintUsageForType(req.params.workspace_id || "local").then(fingerprintUsage => {
             logger.debug("Returning fingerprints: %j", fingerprintUsage);
             res.json({ list: fingerprintUsage });
+        }, next));
+}
+
+function exposeListTags(express: Express, store: ProjectAnalysisResultStore, secure: boolean): void {
+    express.options("/api/v1/:workspace_id/tags", corsHandler());
+    express.get("/api/v1/:workspace_id/tags", [corsHandler(), ...authHandlers(secure)], (req, res, next) =>
+        store.tags(req.params.workspace_id || "local").then(tags => {
+            logger.debug("Returning tags: %j", tags);
+            res.json({ list: tags });
         }, next));
 }
 
@@ -276,7 +286,7 @@ function exposeDrift(express: Express, aspectRegistry: AspectRegistry, store: Pr
             fillInDriftTreeAspectNames(aspectRegistry, driftTree.tree);
             return res.json(driftTree);
         } catch
-        (err) {
+            (err) {
             logger.warn("Error occurred getting drift report: %s %s", err.message, err.stack);
             next(err);
         }
@@ -319,6 +329,7 @@ function exposeExplore(express: Express, aspectRegistry: AspectRegistry, store: 
             logger.info("Found %d relevant repos of %d", relevantRepos.length, repos.length);
 
             const allTags = tagUsageIn(aspectRegistry, relevantRepos);
+                //await store.tags(workspaceId)
 
             let repoTree: PlantedTree = {
                 circles: [{ meaning: "tag filter" }, { meaning: "repo" }],

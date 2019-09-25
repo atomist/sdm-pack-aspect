@@ -35,7 +35,7 @@ import {
 import { Analyzed } from "../../../aspect/AspectRegistry";
 import { IdealStore } from "../../../aspect/IdealStore";
 import { ProblemUsage } from "../../../aspect/ProblemStore";
-import { PlantedTree } from "../../../tree/sunburst";
+import { PlantedTree, TagUsage } from "../../../tree/sunburst";
 import {
     BandCasing,
     bandFor,
@@ -237,6 +237,20 @@ GROUP BY repo_snapshots.id`;
             });
         }, []);
     }
+
+    public tags(workspaceId: string): Promise<TagUsage[]> {
+        const sql = `SELECT fp.name as name, fp.data ->> 'description' as description, fp.feature_name as parent, count(fp.name)
+  FROM repo_snapshots rs, repo_fingerprints j, fingerprints fp
+  WHERE j.repo_snapshot_id = rs.id and j.fingerprint_id = fp.id
+    AND rs.workspace_id ${workspaceId === "*" ? "<>" : "="} $1
+    AND fp.data ->> 'reason' IS NOT NULL
+  GROUP BY fp.name, parent, description`;
+        return doWithClient(sql, this.clientFactory, async client => {
+            const result = await client.query(sql, [workspaceId]);
+            return result.rows;
+        }, []);
+    }
+
 
     public fingerprintUsageForType(workspaceId: string, type?: string): Promise<FingerprintUsage[]> {
         return fingerprintUsageForType(this.clientFactory, workspaceId, type);
