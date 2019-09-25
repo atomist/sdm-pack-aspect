@@ -118,3 +118,10 @@ SELECT COUNT(1) FROM (SELECT DISTINCT url, path
 -- Delete fingerprint references that aren't in a desired organization
 DELETE FROM repo_fingerprints
   WHERE repo_snapshot_id in (SELECT id from repo_snapshots WHERE owner <> 'Azure-Samples');
+
+-- Select tags in a workspace
+SELECT DISTINCT fp.name
+  FROM repo_snapshots r, repo_fingerprints j, fingerprints fp
+  WHERE j.repo_snapshot_id = r.id and j.fingerprint_id = fp.id
+    AND r.workspace_id <> 'x'
+    AND fp.data ->> 'reason' IS NOT NULL;
