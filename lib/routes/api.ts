@@ -329,7 +329,7 @@ function exposeExplore(express: Express, aspectRegistry: AspectRegistry, store: 
             logger.info("Found %d relevant repos of %d", relevantRepos.length, repos.length);
 
             const allTags = tagUsageIn(aspectRegistry, relevantRepos);
-                //await store.tags(workspaceId)
+                // await store.tags(workspaceId)
 
             let repoTree: PlantedTree = {
                 circles: [{ meaning: "tag filter" }, { meaning: "repo" }],

@@ -251,7 +251,6 @@ GROUP BY repo_snapshots.id`;
         }, []);
     }
 
-
     public fingerprintUsageForType(workspaceId: string, type?: string): Promise<FingerprintUsage[]> {
         return fingerprintUsageForType(this.clientFactory, workspaceId, type);
     }
