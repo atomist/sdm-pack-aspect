@@ -92,17 +92,13 @@ export function calculateFingerprintTask(sdm: SoftwareDeliveryMachine,
 
                 const token = _.get(provider, "credential.secret") || _.get(app, "token.secret");
 
-                if (!token) {
-                    return;
-                }
-
                 const id = GitHubRepoRef.from({
                     owner: ci.parameters.owner,
                     repo: ci.parameters.name,
                     branch: ci.parameters.branch,
                     rawApiBase: provider.apiUrl,
                 });
-                const credentials = { token };
+                const credentials = !!token ? { token } : undefined;
 
                 await ci.configuration.sdm.projectLoader.doWithProject({ ...ci, id, credentials }, async p => {
 
