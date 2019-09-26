@@ -101,13 +101,13 @@ export interface ProjectAnalysisResultStore {
      * Drift tree
      * @param {string} workspaceId
      * @param {number} percentile (0-100). Show fingerprints only with entropy above this
-     * @param {string} type if provided, show drift only for the particular aspect. Otherwise
-     * show drift for all aspects.
+     * @param {options} include repositories as leaves; type if provided, show drift only
+     * for the particular aspect. Otherwise show drift for all aspects.
      * @return {Promise<PlantedTree>}
      */
     aspectDriftTree(workspaceId: string,
                     percentile: number,
-                    type?: string): Promise<PlantedTree>;
+                    options?: { repos?: boolean, type?: string }): Promise<PlantedTree>;
 
     /**
      * How many repos we've analyzed

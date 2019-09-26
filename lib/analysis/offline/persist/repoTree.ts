@@ -109,7 +109,7 @@ export async function fingerprintsToReposTreeQuery(tq: TreeQuery, clientFactory:
 export async function driftTreeForAllAspects(workspaceId: string,
                                              percentile: number,
                                              clientFactory: ClientFactory): Promise<PlantedTree> {
-    const sql = driftTreeSql(workspaceId);
+    const sql = driftTreeSql(workspaceId, { repos: false });
     const circles = [
         { meaning: "report" },
         { meaning: "aspect name" },
@@ -136,20 +136,24 @@ export async function driftTreeForAllAspects(workspaceId: string,
 }
 
 export async function driftTreeForSingleAspect(workspaceId: string,
-                                               type: string,
                                                percentile: number,
+                                               options: { repos?: boolean, type?: string },
                                                clientFactory: ClientFactory): Promise<PlantedTree> {
-    const sql = driftTreeSql(workspaceId, type);
+    const sql = driftTreeSql(workspaceId, options);
     return doWithClient(sql, clientFactory, async client => {
         const result = await client.query(sql,
-            [workspaceId, percentile / 100, type]);
+            [workspaceId, percentile / 100, options.type]);
         const tree: PlantedTree = {
-            circles: [
+            circles: !options.repos ? [
                 { meaning: "type" },
                 { meaning: "fingerprint entropy" },
+            ] : [
+                { meaning: "type" },
+                { meaning: "fingerprint entropy" },
+                { meaning: "repos" },
             ],
             tree: {
-                name: type,
+                name: options.type,
                 children: result.rows[0].children.children,
             },
         };
@@ -157,8 +161,9 @@ export async function driftTreeForSingleAspect(workspaceId: string,
     });
 }
 
-function driftTreeSql(workspaceId: string, type?: string): string {
-    return `SELECT row_to_json(data) as children
+function driftTreeSql(workspaceId: string, options: { repos?: boolean, type?: string }): string {
+    if (!options.repos) {
+        return `SELECT row_to_json(data) as children
     FROM (SELECT f0.type as name, f0.type as type, json_agg(aspects) as children
         FROM (SELECT distinct feature_name as type from fingerprint_analytics) f0, (
             SELECT name, name as fingerprint_name, feature_name as type, variants, count, entropy, variants as size
@@ -168,7 +173,27 @@ function driftTreeSql(workspaceId: string, type?: string): string {
                         (SELECT percentile_disc($2) within group (order by entropy)
                             FROM fingerprint_analytics
                             WHERE workspace_id ${workspaceId === "*" ? "<>" : "="} $1)
-                ORDER BY entropy desc) as aspects
-    WHERE aspects.type = f0.type ${type ? `AND aspects.type = $3` : ""}
+                ORDER BY entropy DESC, fingerprint_name ASC) as aspects
+    WHERE aspects.type = f0.type ${options.type ? `AND aspects.type = $3` : ""}
     GROUP by f0.type) as data`;
+    } else {
+        // tslint:disable:max-line-length
+        return `SELECT row_to_json(data) as children
+    FROM (SELECT f0.type as name, f0.type as type, json_agg(aspects) as children
+        FROM (SELECT distinct feature_name as type from fingerprint_analytics) f0, (
+            SELECT f1.name, f1.name as fingerprint_name, f1.feature_name as type, f1.variants, f1.count, f1.entropy, f1.variants as size, json_agg(repos) as children
+                FROM fingerprint_analytics f1, (SELECT distinct _rs1.url, _rs1.owner, _rs1.name, _rs1.url, _f1.feature_name as type, _f1.name as fingerprint_name, 1 as size
+                FROM repo_snapshots _rs1, repo_fingerprints _rf1, fingerprints _f1 WHERE _rs1.id = _rf1.repo_snapshot_id AND _rf1.fingerprint_id = _f1.id) as repos
+                WHERE workspace_id ${workspaceId === "*" ? "<>" : "="} $1
+                    AND entropy >=
+                        (SELECT percentile_disc($2) within group (order by entropy)
+                            FROM fingerprint_analytics
+                            WHERE workspace_id ${workspaceId === "*" ? "<>" : "="} $1)
+                    AND repos.type = f1.feature_name AND repos.fingerprint_name = f1.name
+                GROUP BY f1.name, f1.feature_name, f1.variants, f1.count, f1.entropy
+                ORDER BY entropy DESC, fingerprint_name ASC) as aspects
+    WHERE aspects.type = f0.type ${options.type ? `AND aspects.type = $3` : ""}
+    GROUP by f0.type) as data`;
+        // tslint:enable:max-line-length
+    }
 }
