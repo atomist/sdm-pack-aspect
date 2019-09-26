@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased](https://github.com/atomist-seeds/empty-sdm/compare/0.1.28...HEAD)
 
+### Added
+
+-   Allow to optionally include repos in drift report. [#237](https://github.com/atomist/sdm-pack-aspect/issues/237)
+
 ### Changed
 
 -   Support for dynamic aspects, report details. [#209](https://github.com/atomist/sdm-pack-aspect/issues/209)
