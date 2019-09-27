@@ -25,6 +25,9 @@ export interface RepoExplorerProps {
     aspects: ProjectAspectForDisplay[];
     category: "*" | string;
     timestamp: Date;
+
+    /** Paths under the root */
+    virtualPaths: string[];
 }
 
 export function RepoExplorer(props: RepoExplorerProps): React.ReactElement {
@@ -33,11 +36,14 @@ export function RepoExplorer(props: RepoExplorerProps): React.ReactElement {
     const insightsImage = <img src="/hexagonal-fruit-of-power.png" className="insightsImage"></img>;
     return <div>
         <h1>{insightsImage} {props.repo.analysis.id.owner} / <a
-            href={props.repo.analysis.id.url}>{props.repo.analysis.id.repo}</a></h1>
+            href={props.repo.analysis.id.url}>{props.repo.analysis.id.repo}</a> /
+            {props.repo.analysis.id.path}</h1>
         <p className="analysesProvenanceDetail">Analyzed at: {props.timestamp.toString()}</p>
         <p className="analysesProvenanceDetail">Analyzed commit: {props.repo.analysis.id.sha}</p>
 
         {categoryDescription}
+
+        {displayVirtualProjects(props)}
 
         {displayWeightedScores(props.repo.weightedScore)}
 
@@ -70,6 +76,17 @@ function displayResources(props: RepoExplorerProps): React.ReactElement {
             <li><a href={props.repo.analysis.id.url}>
                 URL</a> - {props.repo.analysis.id.url}</li>
         </ul>, true);
+}
+
+function displayVirtualProjects(props: RepoExplorerProps): React.ReactElement {
+    return collapsible("virtualProjects",
+        `Virtual projects`,
+        <ul>
+            {props.virtualPaths.map(virtualPath => {
+                return <li><a href={`repository?id=${props.repo.id}&path=${virtualPath}`}>{virtualPath}</a></li>;
+            })}
+        </ul>,
+        true);
 }
 
 function displayWeightedScores(weightedScore: WeightedScore): React.ReactElement {

@@ -74,7 +74,6 @@ export function requireRecentCommit(opts: { days: number }): RepositoryScorer {
         const date = new Date(grt.data.lastCommitTime);
         const days = daysSince(date);
         return {
-
             score: adjustBy((1 - days) / (opts.days || 1)),
             reason: `Last commit ${days} days ago`,
         };
@@ -82,13 +81,14 @@ export function requireRecentCommit(opts: { days: number }): RepositoryScorer {
     return {
         name: "recency",
         scoreFingerprints,
+        baseOnly: true,
     };
 }
 
 /**
  * Limit languages used in a project
  */
-export function limitLanguages(opts: { limit: number }): RepositoryScorer {
+export function limitLanguages(opts: { limit: number, baseOnly?: boolean }): RepositoryScorer {
     const scoreFingerprints = async repo => {
         const cm = repo.analysis.fingerprints.find(isCodeMetricsFingerprint);
         if (!cm) {
@@ -102,6 +102,7 @@ export function limitLanguages(opts: { limit: number }): RepositoryScorer {
     return {
         name: "multi-language",
         scoreFingerprints,
+        baseOnly: opts.baseOnly,
     };
 }
 
@@ -111,7 +112,7 @@ export function limitLanguages(opts: { limit: number }): RepositoryScorer {
  * The chosen limit will depend on team preferences: For example,
  * are we trying to do microservices?
  */
-export function limitLinesOfCode(opts: { limit: number }): RepositoryScorer {
+export function limitLinesOfCode(opts: { limit: number, baseOnly?: boolean }): RepositoryScorer {
     const scoreFingerprints = async repo => {
         const cm = repo.analysis.fingerprints.find(isCodeMetricsFingerprint);
         if (!cm) {
@@ -126,6 +127,7 @@ export function limitLinesOfCode(opts: { limit: number }): RepositoryScorer {
         name: "total-loc",
         category: CodeCategory,
         scoreFingerprints,
+        baseOnly: opts.baseOnly,
     };
 }
 
@@ -170,6 +172,7 @@ export function penalizeForExcessiveBranches(opts: { branchLimit: number }): Rep
     return {
         name: BranchCountType,
         scoreFingerprints,
+        baseOnly: true,
     };
 }
 
@@ -189,6 +192,7 @@ export const PenalizeMonorepos: RepositoryScorer = {
 
     },
     name: "monorepo",
+    baseOnly: true,
 };
 
 /**
@@ -197,6 +201,7 @@ export const PenalizeMonorepos: RepositoryScorer = {
 export const PenalizeNoLicense: RepositoryScorer = {
     name: "require-license",
     category: CommunityCategory,
+    baseOnly: true,
     scoreFingerprints: async repo => {
         const license = repo.analysis.fingerprints.find(isLicenseFingerprint);
         const bad = !license || hasNoLicense(license.data);
@@ -215,6 +220,7 @@ export const PenalizeNoCodeOfConduct: RepositoryScorer =
         type: CodeOfConductType,
         category: CommunityCategory,
         reason: "Repos should have a code of conduct",
+        baseOnly: true,
     });
 
 /**
@@ -227,6 +233,7 @@ export function requireAspectOfType(opts: {
     reason: string,
     data?: any,
     category?: string,
+    baseOnly?: boolean,
 }): RepositoryScorer {
     const scoreFingerprints = async repo => {
         const found = repo.analysis.fingerprints.find(fp => fp.type === opts.type &&
@@ -241,6 +248,7 @@ export function requireAspectOfType(opts: {
         name: `${opts.type}-required`,
         category: opts.category,
         scoreFingerprints,
+        baseOnly: opts.baseOnly,
     };
 }
 
@@ -248,7 +256,7 @@ export function requireAspectOfType(opts: {
  * Penalize repositories without matches for the glob pattern.
  * Depends on globAspect
  */
-export function requireGlobAspect(opts: { glob: string, category?: string }): RepositoryScorer {
+export function requireGlobAspect(opts: { glob: string, category?: string, baseOnly?: boolean }): RepositoryScorer {
     const scoreFingerprints = async repo => {
         const globs = repo.analysis.fingerprints.filter(isGlobMatchFingerprint);
         const found = globs
@@ -264,6 +272,7 @@ export function requireGlobAspect(opts: { glob: string, category?: string }): Re
         name: `${opts.glob}-required`,
         category: opts.category,
         scoreFingerprints,
+        baseOnly: opts.baseOnly,
     };
 }
 

@@ -19,6 +19,8 @@ import { PushImpactListenerInvocation } from "@atomist/sdm";
 import { Project } from "@atomist/automation-client";
 import { Aspect, FP, sha256 } from "@atomist/sdm-pack-fingerprint";
 import {
+    FiveStar,
+    Score,
     Scored,
     Scorer,
     ScorerReturn,
@@ -33,6 +35,8 @@ import {
     RepoToScore,
 } from "../AspectRegistry";
 import { AspectMetadata } from "../compose/commonTypes";
+
+import * as _ from "lodash";
 
 /**
  * Aspect that scores pushes or projects
@@ -111,28 +115,74 @@ function scoringAspect(
             return [];
         },
         consolidate: async (fingerprints, p, pili) => {
+            const emittedFingerprints: Array<FP<WeightedScore>> = [];
             const repoToScore: RepoToScore = { analysis: { id: p.id, fingerprints } };
-            const additionalScores = await fingerprintScoresFor(repositoryScorers, repoToScore);
-            const scores = {
+
+            const distinctNonRootPaths = _.uniq(repoToScore.analysis.fingerprints
+                .map(fp => fp.path)
+                .filter(p => !["", ".", undefined].includes(p))
+            );
+
+            for (const path of distinctNonRootPaths) {
+                const scores = await fingerprintScoresFor(
+                    repositoryScorers.filter(rs => !rs.baseOnly),
+                    withFingerprintsOnlyUnderPath(repoToScore, path));
+                const scored: Scored = { scores };
+                const weightedScore = weightedCompositeScore(scored, opts.scoreWeightings);
+                emittedFingerprints.push(toFingerprint(opts.name, weightedScore, path));
+            }
+
+            // Now do roll up scores
+            const additionalScores = {
+                ...await fingerprintScoresFor(repositoryScorers,
+                    withFingerprintsOnlyUnderPath(repoToScore, "")),
+                ...await fingerprintScoresFor(repositoryScorers,
+                    withFingerprintsOnlyUnderPath(repoToScore, ".")),
+                ...await fingerprintScoresFor(repositoryScorers,
+                    withFingerprintsOnlyUnderPath(repoToScore, undefined)),
+            };
+            const scores: Record<string, Score> = {
                 ...additionalScores,
                 ...(pili as any).scores,
             };
+            // Add rollup of subprojects
+            emittedFingerprints.forEach(ef => {
+                scores[ef.path + "_" + ef.name] = {
+                    name: ef.path + "_" + ef.name,
+                    score: ef.data.weightedScore as FiveStar,
+                };
+            });
             const scored: Scored = { scores };
             const weightedScore = weightedCompositeScore(scored, opts.scoreWeightings);
-            return toFingerprint(opts.name, weightedScore);
+            emittedFingerprints.push(toFingerprint(opts.name, weightedScore));
+
+            return emittedFingerprints;
         },
         ...ScoredAspectDefaults,
         ...opts,
     };
 }
 
-function toFingerprint(type: string, data: WeightedScore): FP<WeightedScore> {
+function toFingerprint(type: string, data: WeightedScore, path?: string): FP<WeightedScore> {
     return {
         type,
         name: type,
+        path,
         data,
         sha: sha256(JSON.stringify(data.weightedScore)),
     };
+}
+
+function withFingerprintsOnlyUnderPath(rts: RepoToScore, path: string): RepoToScore {
+    return {
+        analysis: {
+            id: {
+                ...rts.analysis.id,
+                path,
+            },
+            fingerprints: rts.analysis.fingerprints.filter(fp => fp.path === path),
+        },
+    }
 }
 
 export async function fingerprintScoresFor(repositoryScorers: RepositoryScorer[],
