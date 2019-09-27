@@ -37,7 +37,8 @@ import {
 } from "../compose/classificationAspect";
 import {
     AspectMetadata,
-    CountAspect, CountData,
+    CountAspect,
+    CountData,
 } from "../compose/commonTypes";
 
 export type EligibleReviewer = ReviewerRegistration | CodeInspection<ProjectReview, NoParameters>;
