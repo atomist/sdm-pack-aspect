@@ -67,14 +67,14 @@
     "zip-a-folder": "0.0.9"
   },
   "devDependencies": {
-    "@atomist/automation-client": "^1.7.0",
+    "@atomist/automation-client": "^1.7.1-cache2.20190926081543",
     "@atomist/microgrammar": "^1.2.1",
     "@atomist/sdm": "^1.7.0",
     "@atomist/sdm-core": "^1.7.0",
     "@atomist/sdm-local": "^1.2.1",
     "@atomist/sdm-pack-build": "^1.0.6",
     "@atomist/sdm-pack-docker": "2.0.3-master.20190903064256",
-    "@atomist/sdm-pack-fingerprint": "5.0.1-master.20190914002947",
+    "@atomist/sdm-pack-fingerprint": "^5.0.1-master.20190926021653",
     "@atomist/sdm-pack-spring": "^2.0.1",
     "@atomist/slack-messages": "^1.1.1",
     "@types/d3": "^5.7.2",
