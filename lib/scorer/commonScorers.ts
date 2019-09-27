@@ -19,6 +19,7 @@ import { Language } from "@atomist/sdm-pack-sloc/lib/slocReport";
 import * as _ from "lodash";
 import { RepositoryScorer } from "../aspect/AspectRegistry";
 import { isCodeMetricsFingerprint } from "../aspect/common/codeMetrics";
+import { findReviewCommentCountFingerprint } from "../aspect/common/reviewerAspect";
 import { CodeOfConductType } from "../aspect/community/codeOfConduct";
 import {
     hasNoLicense,
@@ -34,7 +35,6 @@ import {
     FiveStar,
 } from "./Score";
 import { adjustBy } from "./scoring";
-import { findReviewCommentCountFingerprint } from "../aspect/common/reviewerAspect";
 
 export const CommunityCategory: string = "community";
 
@@ -303,7 +303,7 @@ export function penalizeForReviewViolations(opts: { reviewerName: string, violat
 export function penalizeForAllReviewViolations(opts: { reviewerNames: string[], violationsPerPointLost: number }): RepositoryScorer[] {
     return opts.reviewerNames.map(reviewerName => penalizeForReviewViolations({
         reviewerName,
-        violationsPerPointLost: opts.violationsPerPointLost
+        violationsPerPointLost: opts.violationsPerPointLost,
     }));
 }
 
