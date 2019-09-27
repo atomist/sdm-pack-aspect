@@ -120,7 +120,7 @@ function scoringAspect(
 
             const distinctNonRootPaths = _.uniq(repoToScore.analysis.fingerprints
                 .map(fp => fp.path)
-                .filter(p => !["", ".", undefined].includes(p))
+                .filter(p => !["", ".", undefined].includes(p)),
             );
 
             for (const path of distinctNonRootPaths) {
@@ -185,7 +185,7 @@ function withFingerprintsOnlyUnderPath(rts: RepoToScore, path: string): RepoToSc
             },
             fingerprints: rts.analysis.fingerprints.filter(fp => fp.path === path),
         },
-    }
+    };
 }
 
 export async function fingerprintScoresFor(repositoryScorers: RepositoryScorer[],
