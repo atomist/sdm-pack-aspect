@@ -37,7 +37,7 @@ import {
 } from "../compose/classificationAspect";
 import {
     AspectMetadata,
-    CountAspect,
+    CountAspect, CountData,
 } from "../compose/commonTypes";
 
 export type EligibleReviewer = ReviewerRegistration | CodeInspection<ProjectReview, NoParameters>;
@@ -135,7 +135,7 @@ function reviewCommentClassificationAspect(opts: ReviewerAspectOptions): Classif
  */
 export function reviewCommentCountAspect(opts: ReviewerAspectOptions): CountAspect {
     const requiredType = reviewCommentAspectName(opts.name);
-    const type = `count_${opts.name}`;
+    const type = countFingerprintTypeFor(opts.name);
     return {
         name: type,
         displayName: opts.displayName,
@@ -149,6 +149,15 @@ export function reviewCommentCountAspect(opts: ReviewerAspectOptions): CountAspe
         },
         apply: opts.terminator ? terminateWithExtremePrejudice(opts) : undefined,
     };
+}
+
+function countFingerprintTypeFor(name: string): string {
+    return `count_${name}`;
+}
+
+export function findReviewCommentCountFingerprint(name: string, fps: FP[]): FP<CountData> | undefined {
+    const type = countFingerprintTypeFor(name);
+    return fps.find(fp => fp.type === type);
 }
 
 function terminateWithExtremePrejudice(opts: ReviewerAspectOptions): ApplyFingerprint {

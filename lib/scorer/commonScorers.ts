@@ -34,6 +34,7 @@ import {
     FiveStar,
 } from "./Score";
 import { adjustBy } from "./scoring";
+import { findReviewCommentCountFingerprint } from "../aspect/common/reviewerAspect";
 
 export const CommunityCategory: string = "community";
 
@@ -274,6 +275,36 @@ export function requireGlobAspect(opts: { glob: string, category?: string, baseO
         scoreFingerprints,
         baseOnly: opts.baseOnly,
     };
+}
+
+/**
+ * Penalize for each point lost in these reviewers
+ */
+export function penalizeForReviewViolations(opts: { reviewerName: string, violationsPerPointLost: number }): RepositoryScorer {
+    return {
+        name,
+        scoreFingerprints: async repo => {
+            const found = findReviewCommentCountFingerprint(opts.reviewerName, repo.analysis.fingerprints);
+            if (!found) {
+                return undefined;
+            }
+            const score = adjustBy(-found.data.count / opts.violationsPerPointLost);
+            return {
+                score,
+                reason: `${found.data.count} review comments found for ${name}`,
+            };
+        },
+    };
+}
+
+/**
+ * Convenient function to emit scorers for all reviewers
+ */
+export function penalizeForAllReviewViolations(opts: { reviewerNames: string[], violationsPerPointLost: number }): RepositoryScorer[] {
+    return opts.reviewerNames.map(reviewerName => penalizeForReviewViolations({
+        reviewerName,
+        violationsPerPointLost: opts.violationsPerPointLost
+    }));
 }
 
 /**
