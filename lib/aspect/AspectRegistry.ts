@@ -122,6 +122,12 @@ export interface RepositoryScorer extends Scorer {
     readonly baseOnly?: boolean;
 
     /**
+     * If this is turned off, show all fingerprints, not just limited to current path.
+     * Means that baseOnly is irrelevant. Will run only once on all fingerprints in all cases.
+     */
+    readonly scoreAll?: boolean;
+
+    /**
      * Function that knows how to score a repository.
      * @param repo repo we are scoring
      * @param allRepos context of this scoring activity

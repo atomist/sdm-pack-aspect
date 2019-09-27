@@ -132,7 +132,7 @@ function scoringAspect(
                 emittedFingerprints.push(toFingerprint(opts.name, weightedScore, path));
             }
 
-            // Now do roll up scores
+            // Score under root
             const additionalScores = {
                 ...await fingerprintScoresFor(repositoryScorers,
                     withFingerprintsOnlyUnderPath(repoToScore, "")),
@@ -140,6 +140,9 @@ function scoringAspect(
                     withFingerprintsOnlyUnderPath(repoToScore, ".")),
                 ...await fingerprintScoresFor(repositoryScorers,
                     withFingerprintsOnlyUnderPath(repoToScore, undefined)),
+                // Include ones without any filter
+                ...await fingerprintScoresFor(repositoryScorers.filter(rs => rs.scoreAll),
+                    repoToScore),
             };
             const scores: Record<string, Score> = {
                 ...additionalScores,

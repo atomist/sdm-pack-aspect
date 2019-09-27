@@ -192,7 +192,7 @@ export const PenalizeMonorepos: RepositoryScorer = {
 
     },
     name: "monorepo",
-    baseOnly: true,
+    scoreAll: true,
 };
 
 /**
