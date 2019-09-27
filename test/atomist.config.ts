@@ -31,7 +31,9 @@ import {
     DockerPorts,
 } from "@atomist/sdm-pack-docker";
 import {
-    Aspect, cachingVirtualProjectFinder, fileNamesVirtualProjectFinder,
+    Aspect,
+    cachingVirtualProjectFinder,
+    fileNamesVirtualProjectFinder,
     NpmDeps,
     VirtualProjectFinder,
 } from "@atomist/sdm-pack-fingerprint";
