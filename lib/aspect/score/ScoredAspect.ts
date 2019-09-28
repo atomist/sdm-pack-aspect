@@ -141,19 +141,21 @@ function scoreBaseAndVirtualProjects(opts: ScoringAspectOptions): (fingerprints:
             emittedFingerprints.push(toFingerprint(opts.name, weightedScore, path));
         }
 
-        const baseScorers = repositoryScorers.filter(rs => rs.baseOnly || rs.scoreAll);
+        const baseScorers = distinctNonRootPaths.length > 0 ?
+            repositoryScorers.filter(rs => rs.baseOnly || rs.scoreAll) :
+            repositoryScorers;
         // Score under root
         const additionalScores = {
                 ...await fingerprintScoresFor(baseScorers,
                     withFingerprintsOnlyUnderPath(repoToScore, "")
                 ),
                 ...await fingerprintScoresFor(baseScorers,
-                            withFingerprintsOnlyUnderPath(repoToScore, ".")),
+                    withFingerprintsOnlyUnderPath(repoToScore, ".")),
                 ...await fingerprintScoresFor(baseScorers,
-                            withFingerprintsOnlyUnderPath(repoToScore, undefined)),
+                    withFingerprintsOnlyUnderPath(repoToScore, undefined)),
                 // Include ones without any filter
                 ...await fingerprintScoresFor(baseScorers.filter(rs => rs.scoreAll),
-                            repoToScore),
+                    repoToScore),
             }
         ;
         const scores: Record<string, Score> = {
