@@ -112,3 +112,11 @@ export function globAspect<D = {}>(config: GlobAspectOptions<D>): Aspect<GlobAsp
         },
     };
 }
+
+/**
+ * Count the number of glob matches of the given type
+ */
+export function countGlobMatches(fps: FP[], type: string): number {
+    const matches = fps.find(fp => fp.type === type && isGlobMatchFingerprint(fp));
+    return matches ? matches.data.matches.length : 0;
+}

@@ -25,11 +25,10 @@ import {
     hasNoLicense,
     isLicenseFingerprint,
 } from "../aspect/community/license";
-import { isGlobMatchFingerprint } from "../aspect/compose/globAspect";
+import { countGlobMatches, isGlobMatchFingerprint } from "../aspect/compose/globAspect";
 import { BranchCountType } from "../aspect/git/branchCount";
 import { daysSince } from "../aspect/git/dateUtils";
 import { GitRecencyType } from "../aspect/git/gitActivity";
-import { isScoredAspectFingerprint } from "../aspect/score/ScoredAspect";
 import {
     AlwaysIncludeCategory,
     FiveStar,
@@ -308,24 +307,19 @@ export function penalizeForAllReviewViolations(opts: { reviewerNames: string[], 
 }
 
 /**
- * Use as an inMemory scorer. Exposes persisted scores.
- * Useful during development.
- * @param {string} name
- * @return {RepositoryScorer}
+ * Use for a file pattern or something within files we don't want
  */
-export function exposeFingerprintScore(name: string): RepositoryScorer {
+export function penalizeGlobMatches(opts: { name: string, type: string, pointsLostPerMatch: number}): RepositoryScorer {
+    const scoreFingerprints = async repo => {
+        const count = countGlobMatches(repo.analysis.fingerprints, opts.type);
+        const score = adjustBy(-count * opts.pointsLostPerMatch);
+        return {
+            score,
+            reason: `${count} matches for glob typed ${opts.type}: Should have none`,
+        };
+    };
     return {
-        name,
-        scoreFingerprints: async repo => {
-            const found = repo.analysis.fingerprints
-                .filter(isScoredAspectFingerprint)
-                .find(fp => fp.type === name);
-            return !!found ?
-                {
-                    score: found.data.weightedScore,
-                    reason: JSON.stringify(found.data.weightedScores),
-                } as any :
-                undefined;
-        },
+        name: opts.name,
+        scoreFingerprints,
     };
 }
