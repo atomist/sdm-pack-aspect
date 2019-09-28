@@ -74,8 +74,8 @@ import { calculateFingerprintTask } from "../job/fingerprintTask";
 import { registerAspects } from "../job/registerAspect";
 import { api } from "../routes/api";
 import { addWebAppRoutes } from "../routes/web-app/webAppRoutes";
-import { exposeFingerprintScore } from "../scorer/support/exposeFingerprintScore";
 import { ScoreWeightings } from "../scorer/Score";
+import { exposeFingerprintScore } from "../scorer/support/exposeFingerprintScore";
 import { tagsFromClassificationFingerprints } from "../tagger/commonTaggers";
 import {
     analysisResultStore,

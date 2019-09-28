@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-import { isScoredAspectFingerprint } from "../../aspect/score/ScoredAspect";
 import { RepositoryScorer } from "../../aspect/AspectRegistry";
+import { isScoredAspectFingerprint } from "../../aspect/score/ScoredAspect";
 
 /**
  * Use as an inMemory scorer. Exposes persisted scores.
