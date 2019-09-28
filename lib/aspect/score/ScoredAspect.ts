@@ -16,7 +16,10 @@
 
 import { PushImpactListenerInvocation } from "@atomist/sdm";
 
-import { logger, Project } from "@atomist/automation-client";
+import {
+    logger,
+    Project,
+} from "@atomist/automation-client";
 import { Aspect, FP, sha256 } from "@atomist/sdm-pack-fingerprint";
 import {
     FiveStar,
