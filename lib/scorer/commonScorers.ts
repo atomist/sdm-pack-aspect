@@ -312,7 +312,7 @@ export function penalizeForAllReviewViolations(opts: { reviewerNames: string[], 
 /**
  * Use for a file pattern or something within files we don't want
  */
-export function penalizeGlobMatches(opts: { name: string, type: string, pointsLostPerMatch: number}): RepositoryScorer {
+export function penalizeGlobMatches(opts: { name?: string, type: string, pointsLostPerMatch: number}): RepositoryScorer {
     const scoreFingerprints = async repo => {
         const count = countGlobMatches(repo.analysis.fingerprints, opts.type);
         const score = adjustBy(-count * opts.pointsLostPerMatch);
@@ -322,7 +322,7 @@ export function penalizeGlobMatches(opts: { name: string, type: string, pointsLo
         };
     };
     return {
-        name: opts.name,
+        name: opts.name || opts.type,
         scoreFingerprints,
     };
 }
