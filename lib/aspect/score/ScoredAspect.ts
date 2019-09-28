@@ -146,18 +146,17 @@ function scoreBaseAndVirtualProjects(opts: ScoringAspectOptions): (fingerprints:
             repositoryScorers;
         // Score under root
         const additionalScores = {
-                ...await fingerprintScoresFor(baseScorers,
-                    withFingerprintsOnlyUnderPath(repoToScore, ""),
-                ),
-                ...await fingerprintScoresFor(baseScorers,
-                    withFingerprintsOnlyUnderPath(repoToScore, ".")),
-                ...await fingerprintScoresFor(baseScorers,
-                    withFingerprintsOnlyUnderPath(repoToScore, undefined)),
-                // Include ones without any filter
-                ...await fingerprintScoresFor(baseScorers.filter(rs => rs.scoreAll),
-                    repoToScore),
-            }
-        ;
+            ...await fingerprintScoresFor(baseScorers,
+                withFingerprintsOnlyUnderPath(repoToScore, "")
+            ),
+            ...await fingerprintScoresFor(baseScorers,
+                withFingerprintsOnlyUnderPath(repoToScore, ".")),
+            ...await fingerprintScoresFor(baseScorers,
+                withFingerprintsOnlyUnderPath(repoToScore, undefined)),
+            // Include ones without any filter
+            ...await fingerprintScoresFor(baseScorers.filter(rs => rs.scoreAll),
+                repoToScore),
+            };
         const scores: Record<string, Score> = {
             ...additionalScores,
             ...(pili as any).scores,
