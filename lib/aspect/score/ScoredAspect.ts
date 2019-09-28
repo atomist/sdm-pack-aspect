@@ -83,17 +83,17 @@ export type AspectCompatibleScorer = RepositoryScorer | ProjectScorer | PushScor
 
 export function isRepositoryScorer(s: AspectCompatibleScorer): s is RepositoryScorer {
     const maybe = s as RepositoryScorer;
-    return !!maybe.scoreFingerprints;
+    return !!maybe && !!maybe.scoreFingerprints;
 }
 
 export function isPushScorer(scorer: AspectCompatibleScorer): scorer is PushScorer {
     const maybe = scorer as PushScorer;
-    return !!maybe.scorePush;
+    return !!maybe && !!maybe.scorePush;
 }
 
 export function isPushOrProjectScorer(scorer: AspectCompatibleScorer): scorer is (PushScorer | ProjectScorer) {
     const maybe = scorer as ProjectScorer;
-    return !!maybe.scoreProject || isPushScorer(scorer);
+    return !!maybe && !!maybe.scoreProject || isPushScorer(scorer);
 }
 
 /**

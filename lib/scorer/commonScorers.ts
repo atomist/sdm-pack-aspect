@@ -282,7 +282,7 @@ export function requireGlobAspect(opts: { glob: string, category?: string, baseO
  */
 export function penalizeForReviewViolations(opts: { reviewerName: string, violationsPerPointLost: number }): RepositoryScorer {
     return {
-        name,
+        name: opts.reviewerName,
         scoreFingerprints: async repo => {
             const found = findReviewCommentCountFingerprint(opts.reviewerName, repo.analysis.fingerprints);
             if (!found) {
