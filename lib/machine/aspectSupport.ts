@@ -42,7 +42,6 @@ import {
 } from "@atomist/sdm-pack-fingerprint";
 import { AspectsFactory } from "@atomist/sdm-pack-fingerprint/lib/machine/fingerprintSupport";
 import * as _ from "lodash";
-import { virtualProjectFinder } from "../../test/atomist.config";
 import { sdmConfigClientFactory } from "../analysis/offline/persist/pgClientFactory";
 import { ClientFactory } from "../analysis/offline/persist/pgUtils";
 import {
@@ -215,7 +214,7 @@ export function aspectSupport(options: AspectSupportOptions): ExtensionPack {
         displayName: "tagger",
     }, ...toArray(options.taggers) || []);
     const aspects = [...toArray(options.aspects || []), ...scoringAspects, tagAspect]
-        .map(aspect => makeVirtualProjectAware(aspect, virtualProjectFinder));
+        .map(aspect => makeVirtualProjectAware(aspect, options.virtualProjectFinder || DefaultVirtualProjectFinder));
 
     // Default the two display methods with some sensible defaults
     aspects.forEach(a => {
