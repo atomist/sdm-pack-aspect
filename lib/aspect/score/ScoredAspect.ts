@@ -96,17 +96,17 @@ export function isPushOrProjectScorer(scorer: AspectCompatibleScorer): scorer is
     return !!maybe && !!maybe.scoreProject || isPushScorer(scorer);
 }
 
+export interface ScoringAspectOptions extends AspectMetadata {
+    scorers: AspectCompatibleScorer[];
+    scoreWeightings?: ScoreWeightings;
+}
+
 /**
  * Score this aspect based on projects, from low to high.
  * Requires no other fingerprints
  */
-function scoringAspect(
-    opts: {
-        scorers: AspectCompatibleScorer[],
-        scoreWeightings?: ScoreWeightings,
-    } & AspectMetadata): ScoredAspect {
+function scoringAspect(opts: ScoringAspectOptions): ScoredAspect {
     const pushScorers = opts.scorers.filter(isPushOrProjectScorer);
-    const repositoryScorers = opts.scorers.filter(isRepositoryScorer);
     return {
         extract: async (p, pili) => {
             // Just save these scores. They'll go into consolidate
@@ -114,55 +114,64 @@ function scoringAspect(
             (pili as any).scores = scores;
             return [];
         },
-        consolidate: async (fingerprints, p, pili) => {
-            const emittedFingerprints: Array<FP<WeightedScore>> = [];
-            const repoToScore: RepoToScore = { analysis: { id: p.id, fingerprints } };
-
-            const distinctNonRootPaths = _.uniq(repoToScore.analysis.fingerprints
-                .map(fp => fp.path)
-                .filter(p => !["", ".", undefined].includes(p)),
-            );
-
-            for (const path of distinctNonRootPaths) {
-                const scores = await fingerprintScoresFor(
-                    repositoryScorers.filter(rs => !rs.baseOnly && !rs.scoreAll),
-                    withFingerprintsOnlyUnderPath(repoToScore, path));
-                const scored: Scored = { scores };
-                const weightedScore = weightedCompositeScore(scored, opts.scoreWeightings);
-                emittedFingerprints.push(toFingerprint(opts.name, weightedScore, path));
-            }
-
-            // Score under root
-            const additionalScores = {
-                ...await fingerprintScoresFor(repositoryScorers,
-                    withFingerprintsOnlyUnderPath(repoToScore, "")),
-                ...await fingerprintScoresFor(repositoryScorers,
-                    withFingerprintsOnlyUnderPath(repoToScore, ".")),
-                ...await fingerprintScoresFor(repositoryScorers,
-                    withFingerprintsOnlyUnderPath(repoToScore, undefined)),
-                // Include ones without any filter
-                ...await fingerprintScoresFor(repositoryScorers.filter(rs => rs.scoreAll),
-                    repoToScore),
-            };
-            const scores: Record<string, Score> = {
-                ...additionalScores,
-                ...(pili as any).scores,
-            };
-            // Add rollup of subprojects
-            emittedFingerprints.forEach(ef => {
-                scores[ef.path + "_" + ef.name] = {
-                    name: ef.path + "_" + ef.name,
-                    score: ef.data.weightedScore as FiveStar,
-                };
-            });
-            const scored: Scored = { scores };
-            const weightedScore = weightedCompositeScore(scored, opts.scoreWeightings);
-            emittedFingerprints.push(toFingerprint(opts.name, weightedScore));
-
-            return emittedFingerprints;
-        },
+        consolidate: scoreBaseAndVirtualProjects(opts),
         ...ScoredAspectDefaults,
         ...opts,
+    };
+}
+
+function scoreBaseAndVirtualProjects(opts: ScoringAspectOptions): (fingerprints: FP[], p: Project, pili: PushImpactListenerInvocation) => Promise<Array<FP<WeightedScore>>> {
+    return async (fingerprints, p, pili) => {
+        const repositoryScorers = opts.scorers.filter(isRepositoryScorer);
+        const emittedFingerprints: Array<FP<WeightedScore>> = [];
+        const repoToScore: RepoToScore = { analysis: { id: p.id, fingerprints } };
+
+        const distinctNonRootPaths = _.uniq(repoToScore.analysis.fingerprints
+            .map(fp => fp.path)
+            .filter(p => !["", ".", undefined].includes(p)),
+        );
+
+        for (const path of distinctNonRootPaths) {
+            const scores = await
+                fingerprintScoresFor(
+                    repositoryScorers.filter(rs => !rs.baseOnly && !rs.scoreAll),
+                    withFingerprintsOnlyUnderPath(repoToScore, path));
+            const scored: Scored = { scores };
+            const weightedScore = weightedCompositeScore(scored, opts.scoreWeightings);
+            emittedFingerprints.push(toFingerprint(opts.name, weightedScore, path));
+        }
+
+        const baseScorers = repositoryScorers.filter(rs => rs.baseOnly || rs.scoreAll);
+        // Score under root
+        const additionalScores = {
+                ...await fingerprintScoresFor(baseScorers,
+                    withFingerprintsOnlyUnderPath(repoToScore, "")
+                ),
+                ...await fingerprintScoresFor(baseScorers,
+                            withFingerprintsOnlyUnderPath(repoToScore, ".")),
+                ...await fingerprintScoresFor(baseScorers,
+                            withFingerprintsOnlyUnderPath(repoToScore, undefined)),
+                // Include ones without any filter
+                ...await fingerprintScoresFor(baseScorers.filter(rs => rs.scoreAll),
+                            repoToScore),
+            }
+        ;
+        const scores: Record<string, Score> = {
+            ...additionalScores,
+            ...(pili as any).scores,
+        };
+        // Add rollup of subprojects
+        emittedFingerprints.forEach(ef => {
+            scores[ef.path + "_" + ef.name] = {
+                name: ef.path + "_" + ef.name,
+                score: ef.data.weightedScore as FiveStar,
+            };
+        });
+        const scored: Scored = { scores };
+        const weightedScore = weightedCompositeScore(scored, opts.scoreWeightings);
+        emittedFingerprints.push(toFingerprint(opts.name, weightedScore));
+
+        return emittedFingerprints;
     };
 }
 
