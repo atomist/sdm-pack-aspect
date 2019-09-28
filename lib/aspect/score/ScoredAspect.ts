@@ -125,7 +125,7 @@ function scoringAspect(
 
             for (const path of distinctNonRootPaths) {
                 const scores = await fingerprintScoresFor(
-                    repositoryScorers.filter(rs => !rs.baseOnly),
+                    repositoryScorers.filter(rs => !rs.baseOnly && !rs.scoreAll),
                     withFingerprintsOnlyUnderPath(repoToScore, path));
                 const scored: Scored = { scores };
                 const weightedScore = weightedCompositeScore(scored, opts.scoreWeightings);
