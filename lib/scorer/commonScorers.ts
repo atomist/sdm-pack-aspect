@@ -291,7 +291,7 @@ export function penalizeForReviewViolations(opts: { reviewerName: string, violat
             const score = adjustBy(-found.data.count / opts.violationsPerPointLost);
             return {
                 score,
-                reason: `${found.data.count} review comments found for ${name}`,
+                reason: `${found.data.count} review comments found for ${opts.reviewerName}`,
             };
         },
     };
