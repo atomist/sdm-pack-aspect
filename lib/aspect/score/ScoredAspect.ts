@@ -147,7 +147,7 @@ function scoreBaseAndVirtualProjects(opts: ScoringAspectOptions): (fingerprints:
         // Score under root
         const additionalScores = {
                 ...await fingerprintScoresFor(baseScorers,
-                    withFingerprintsOnlyUnderPath(repoToScore, "")
+                    withFingerprintsOnlyUnderPath(repoToScore, ""),
                 ),
                 ...await fingerprintScoresFor(baseScorers,
                     withFingerprintsOnlyUnderPath(repoToScore, ".")),
