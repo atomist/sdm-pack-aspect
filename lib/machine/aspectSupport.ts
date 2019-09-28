@@ -34,7 +34,7 @@ import {
     Aspect,
     cachingVirtualProjectFinder,
     fileNamesVirtualProjectFinder,
-    fingerprintSupport,
+    fingerprintSupport, makeVirtualProjectAware,
     PublishFingerprints,
     RebaseOptions,
     VirtualProjectFinder,
@@ -81,6 +81,7 @@ import {
     analysisResultStore,
     createAnalyzer,
 } from "./machine";
+import { virtualProjectFinder } from "../../test/atomist.config";
 
 /**
  * Default VirtualProjectFinder, which recognizes Maven, npm,
@@ -204,7 +205,6 @@ export interface AspectSupportOptions {
  * If we're in local mode, expose analyzer commands and HTTP endpoints.
  */
 export function aspectSupport(options: AspectSupportOptions): ExtensionPack {
-
     const scoringAspects: ScoredAspect[] = _.flatten(
         Object.getOwnPropertyNames(options.scorers || {})
             .map(name => emitScoringAspect(name, toArray(options.scorers[name] || []), options.weightings)))
@@ -213,7 +213,8 @@ export function aspectSupport(options: AspectSupportOptions): ExtensionPack {
         name: "tagger",
         displayName: "tagger",
     }, ...toArray(options.taggers) || []);
-    const aspects = [...toArray(options.aspects || []), ...scoringAspects, tagAspect];
+    const aspects = [...toArray(options.aspects || []), ...scoringAspects, tagAspect]
+        .map(aspect => makeVirtualProjectAware(aspect, virtualProjectFinder));
 
     // Default the two display methods with some sensible defaults
     aspects.forEach(a => {

@@ -74,7 +74,6 @@ import { storeFingerprints } from "../lib/aspect/delivery/storeFingerprintsPubli
 import { BranchCount } from "../lib/aspect/git/branchCount";
 import { GitRecency } from "../lib/aspect/git/gitActivity";
 import {
-    AcceptEverythingUndesirableUsageChecker,
     chainUndesirableUsageCheckers,
     UndesirableUsageChecker,
 } from "../lib/aspect/ProblemStore";
