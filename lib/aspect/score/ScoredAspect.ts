@@ -16,7 +16,7 @@
 
 import { PushImpactListenerInvocation } from "@atomist/sdm";
 
-import { Project } from "@atomist/automation-client";
+import { logger, Project } from "@atomist/automation-client";
 import { Aspect, FP, sha256 } from "@atomist/sdm-pack-fingerprint";
 import {
     FiveStar,
@@ -130,11 +130,11 @@ function scoreBaseAndVirtualProjects(opts: ScoringAspectOptions): (fingerprints:
             .map(fp => fp.path)
             .filter(p => !["", ".", undefined].includes(p)),
         );
+        logger.info("Distinct non root paths for %s are %j", repoToScore.analysis.id.url, distinctNonRootPaths);
 
         for (const path of distinctNonRootPaths) {
-            const scores = await
-                fingerprintScoresFor(
-                    repositoryScorers.filter(rs => !rs.baseOnly && !rs.scoreAll),
+            const scores = await fingerprintScoresFor(
+                    repositoryScorers.filter(rs => !(rs.baseOnly || rs.scoreAll)),
                     withFingerprintsOnlyUnderPath(repoToScore, path));
             const scored: Scored = { scores };
             const weightedScore = weightedCompositeScore(scored, opts.scoreWeightings);
@@ -142,7 +142,7 @@ function scoreBaseAndVirtualProjects(opts: ScoringAspectOptions): (fingerprints:
         }
 
         const baseScorers = distinctNonRootPaths.length > 0 ?
-            repositoryScorers.filter(rs => rs.baseOnly || rs.scoreAll) :
+            repositoryScorers.filter(rs => rs.baseOnly) :
             repositoryScorers;
         // Score under root
         const additionalScores = {
