@@ -41,6 +41,7 @@ import {
 } from "@atomist/sdm-pack-fingerprint";
 import { AspectsFactory } from "@atomist/sdm-pack-fingerprint/lib/machine/fingerprintSupport";
 import * as _ from "lodash";
+import { virtualProjectFinder } from "../../test/atomist.config";
 import { sdmConfigClientFactory } from "../analysis/offline/persist/pgClientFactory";
 import { ClientFactory } from "../analysis/offline/persist/pgUtils";
 import {
@@ -81,7 +82,6 @@ import {
     analysisResultStore,
     createAnalyzer,
 } from "./machine";
-import { virtualProjectFinder } from "../../test/atomist.config";
 
 /**
  * Default VirtualProjectFinder, which recognizes Maven, npm,

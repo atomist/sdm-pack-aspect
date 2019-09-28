@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { VirtualProjectFinder, } from "@atomist/sdm-pack-fingerprint";
+import { VirtualProjectFinder } from "@atomist/sdm-pack-fingerprint";
 import { Aspect } from "@atomist/sdm-pack-fingerprint/lib/machine/Aspect";
 import { ClientFactory } from "../analysis/offline/persist/pgUtils";
 import { PostgresProjectAnalysisResultStore } from "../analysis/offline/persist/PostgresProjectAnalysisResultStore";
