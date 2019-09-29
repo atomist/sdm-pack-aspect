@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-import { Aspect, fingerprintOf } from "@atomist/sdm-pack-fingerprint";
 import { Project, ProjectFile } from "@atomist/automation-client";
+import { Aspect, fingerprintOf } from "@atomist/sdm-pack-fingerprint";
 
 import * as _ from "lodash";
 
-import * as pathlib from "path";
 import { isFile } from "@atomist/automation-client/lib/project/File";
+import * as pathlib from "path";
 
 export interface VirtualProjectData {
 
@@ -57,7 +57,7 @@ export function virtualProjectAspect(
                         type: VirtualProjectType,
                         data: { reason: finding.reason, path },
                         path,
-                    })
+                    }),
                 )));
         },
     };
