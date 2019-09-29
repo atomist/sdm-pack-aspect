@@ -50,7 +50,6 @@ export interface VirtualProjectFinding {
 
 export const VirtualProjectType = "virtual-projects";
 
-// TODO move to aspect pack
 export function virtualProjectAspect(
     ...finders: Array<(p: Project) => Promise<VirtualProjectFinding>>): Aspect<VirtualProjectData> {
     return {
