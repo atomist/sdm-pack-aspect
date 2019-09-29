@@ -16,23 +16,32 @@
 
 import {
     InMemoryProject,
-    NoParameters,
-    ProjectReview,
+    NoParameters, Project,
+    ProjectReview, ReviewComment,
 } from "@atomist/automation-client";
 import { CodeTransform } from "@atomist/sdm";
 import { toArray } from "@atomist/sdm-core/lib/util/misc/array";
-import { fingerprintOf } from "@atomist/sdm-pack-fingerprint";
+import { Aspect, fingerprintOf } from "@atomist/sdm-pack-fingerprint";
 import { CodeInspection } from "@atomist/sdm/lib/api/registration/CodeInspectionRegistration";
 import * as assert from "assert";
 import {
+    reviewCommentAspect,
     reviewCommentCountAspect,
     reviewerAspects,
 } from "../../../lib/aspect/common/reviewerAspect";
+import { pathBefore } from "../../../lib/util/fingerprintUtils";
 
 const FlagNothingReviewer: CodeInspection<ProjectReview, NoParameters> = async p => ({
     repoId: p.id,
     comments: [],
 });
+
+function returnTheseCommentsReviewer(comments: ReviewComment[]): CodeInspection<ProjectReview, NoParameters> {
+    return async p => ({
+        repoId: p.id,
+        comments,
+    });
+}
 
 const AddFileTerminator: CodeTransform<NoParameters> = async p => {
     await p.addFile("foo", "bar");
@@ -153,4 +162,67 @@ describe("reviewer aspects", () => {
 
     });
 
+    describe("reviewerCommentAspect", () => {
+
+        it("should find one", async () => {
+            const comments: ReviewComment[] = [
+                { detail: "x", category: "y", severity: "info" },
+            ];
+            const rca = reviewCommentAspect({
+                name: "x",
+                displayName: "x",
+                reviewer: returnTheseCommentsReviewer(comments),
+            });
+            const extracted = await extractFingerprints(rca, InMemoryProject.of());
+            assert.strictEqual(extracted.length, 1);
+            assert.strictEqual(extracted[0].path, undefined);
+        });
+
+        it("should find one in root with desired path", async () => {
+            const comments: ReviewComment[] = [
+                {
+                    detail: "x", category: "y", severity: "info",
+                    sourceLocation: {
+                        path: "src/main/java/com/myco/Myco.java",
+                        offset: -1,
+                    }
+                },
+            ];
+            const rca = reviewCommentAspect({
+                name: "x",
+                displayName: "x",
+                reviewer: returnTheseCommentsReviewer(comments),
+                virtualProjectPathResolver: path => pathBefore(path, "/src/main/java")
+            });
+            const extracted = await extractFingerprints(rca, InMemoryProject.of());
+            assert.strictEqual(extracted.length, 1);
+            assert.strictEqual(extracted[0].path, undefined);
+        });
+
+        it("should find one at a relative path", async () => {
+            const comments: ReviewComment[] = [
+                {
+                    detail: "x", category: "y", severity: "info",
+                    sourceLocation: {
+                        path: "thing/one/src/main/java/com/myco/Myco.java",
+                        offset: -1,
+                    }
+                },
+            ];
+            const rca = reviewCommentAspect({
+                name: "x",
+                displayName: "x",
+                reviewer: returnTheseCommentsReviewer(comments),
+                virtualProjectPathResolver: path => pathBefore(path, "/src/main/java")
+            });
+            const extracted = await extractFingerprints(rca, InMemoryProject.of());
+            assert.strictEqual(extracted.length, 1);
+            assert.strictEqual(extracted[0].path, "thing/one");
+        });
+    });
+
 });
+
+async function extractFingerprints(rc: Aspect<ReviewComment>, p: Project) {
+    return toArray(await rc.extract(p, undefined));
+}

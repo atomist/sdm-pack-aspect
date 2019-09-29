@@ -74,7 +74,7 @@
     "@atomist/sdm-local": "^1.2.1",
     "@atomist/sdm-pack-build": "^1.0.6",
     "@atomist/sdm-pack-docker": "2.0.3-master.20190903064256",
-    "@atomist/sdm-pack-fingerprint": "5.0.1-master.20190926021653",
+    "@atomist/sdm-pack-fingerprint": "^5.0.1-master.20190929015035",
     "@atomist/sdm-pack-spring": "^2.0.1",
     "@atomist/slack-messages": "^1.1.1",
     "@types/d3": "^5.7.2",
