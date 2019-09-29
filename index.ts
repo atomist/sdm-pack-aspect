@@ -43,4 +43,6 @@ export * from "./lib/aspect/common/reviewerAspect";
 import * as commonScorers from "./lib/scorer/commonScorers";
 import * as commonTaggers from "./lib/tagger/commonTaggers";
 
+export * from "./lib/util/fingerprintUtils";
+
 export { commonTaggers, commonScorers };
