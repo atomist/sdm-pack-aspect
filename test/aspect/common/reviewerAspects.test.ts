@@ -16,12 +16,17 @@
 
 import {
     InMemoryProject,
-    NoParameters, Project,
-    ProjectReview, ReviewComment,
+    NoParameters,
+    Project,
+    ProjectReview,
+    ReviewComment,
 } from "@atomist/automation-client";
 import { CodeTransform } from "@atomist/sdm";
 import { toArray } from "@atomist/sdm-core/lib/util/misc/array";
-import { Aspect, fingerprintOf } from "@atomist/sdm-pack-fingerprint";
+import {
+    Aspect,
+    fingerprintOf,
+} from "@atomist/sdm-pack-fingerprint";
 import { CodeInspection } from "@atomist/sdm/lib/api/registration/CodeInspectionRegistration";
 import * as assert from "assert";
 import {
