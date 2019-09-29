@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+import { ProjectFile } from "@atomist/automation-client";
 import { gatherFromFiles } from "@atomist/automation-client/lib/project/util/projectUtils";
 import {
     Aspect,
@@ -21,7 +22,6 @@ import {
     FP,
 } from "@atomist/sdm-pack-fingerprint";
 import { AspectMetadata } from "./commonTypes";
-import { ProjectFile } from "@atomist/automation-client";
 
 export interface GlobMatch {
     path: string;
