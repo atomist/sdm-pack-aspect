@@ -14,8 +14,14 @@
  * limitations under the License.
  */
 
-import { Project, ProjectFile } from "@atomist/automation-client";
-import { Aspect, fingerprintOf } from "@atomist/sdm-pack-fingerprint";
+import {
+    Project,
+    ProjectFile,
+} from "@atomist/automation-client";
+import {
+    Aspect,
+    fingerprintOf,
+} from "@atomist/sdm-pack-fingerprint";
 
 import * as _ from "lodash";
 
