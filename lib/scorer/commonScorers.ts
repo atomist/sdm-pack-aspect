@@ -288,7 +288,7 @@ export function penalizeForReviewViolations(opts: { reviewerName: string, violat
         scoreFingerprints: async repo => {
             const found = findReviewCommentCountFingerprint(opts.reviewerName, repo.analysis.fingerprints);
             const count = !!found ? found.data.count : 0;
-            const score = !!found ? adjustBy(-count / opts.violationsPerPointLost) : 5;
+            const score = adjustBy(-count / opts.violationsPerPointLost);
             return {
                 score,
                 reason: `${count} review comments found for ${opts.reviewerName}`,
