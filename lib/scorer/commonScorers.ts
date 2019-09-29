@@ -287,10 +287,7 @@ export function penalizeForReviewViolations(opts: { reviewerName: string, violat
         name: opts.reviewerName,
         scoreFingerprints: async repo => {
             const found = findReviewCommentCountFingerprint(opts.reviewerName, repo.analysis.fingerprints);
-            if (!found) {
-                return undefined;
-            }
-            const score = adjustBy(-found.data.count / opts.violationsPerPointLost);
+            const score = !!found ? adjustBy(-found.data.count / opts.violationsPerPointLost) : 5;
             return {
                 score,
                 reason: `${found.data.count} review comments found for ${opts.reviewerName}`,
@@ -312,7 +309,7 @@ export function penalizeForAllReviewViolations(opts: { reviewerNames: string[], 
 /**
  * Use for a file pattern or something within files we don't want
  */
-export function penalizeGlobMatches(opts: { name?: string, type: string, pointsLostPerMatch: number}): RepositoryScorer {
+export function penalizeGlobMatches(opts: { name?: string, type: string, pointsLostPerMatch: number }): RepositoryScorer {
     const scoreFingerprints = async repo => {
         const count = countGlobMatches(repo.analysis.fingerprints, opts.type);
         const score = adjustBy(-count * opts.pointsLostPerMatch);
