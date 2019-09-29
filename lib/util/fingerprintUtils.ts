@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-import * as _ from "lodash";
 import { FP } from "@atomist/sdm-pack-fingerprint";
+import * as _ from "lodash";
 
 /**
  * Distinct non-root paths found in this fingerprints

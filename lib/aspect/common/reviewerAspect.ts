@@ -31,6 +31,7 @@ import {
     FP,
 } from "@atomist/sdm-pack-fingerprint";
 import { CodeInspection } from "@atomist/sdm/lib/api/registration/CodeInspectionRegistration";
+import { distinctNonRootPaths } from "../../util/fingerprintUtils";
 import {
     ClassificationAspect,
     projectClassificationAspect,
@@ -40,7 +41,6 @@ import {
     CountAspect,
     CountData,
 } from "../compose/commonTypes";
-import { distinctNonRootPaths } from "../../util/fingerprintUtils";
 
 export type EligibleReviewer = ReviewerRegistration | CodeInspection<ProjectReview, NoParameters>;
 

@@ -185,14 +185,14 @@ describe("reviewer aspects", () => {
                     sourceLocation: {
                         path: "src/main/java/com/myco/Myco.java",
                         offset: -1,
-                    }
+                    },
                 },
             ];
             const rca = reviewCommentAspect({
                 name: "x",
                 displayName: "x",
                 reviewer: returnTheseCommentsReviewer(comments),
-                virtualProjectPathResolver: path => pathBefore(path, "/src/main/java")
+                virtualProjectPathResolver: path => pathBefore(path, "/src/main/java"),
             });
             const extracted = await extractFingerprints(rca, InMemoryProject.of());
             assert.strictEqual(extracted.length, 1);
@@ -206,14 +206,14 @@ describe("reviewer aspects", () => {
                     sourceLocation: {
                         path: "thing/one/src/main/java/com/myco/Myco.java",
                         offset: -1,
-                    }
+                    },
                 },
             ];
             const rca = reviewCommentAspect({
                 name: "x",
                 displayName: "x",
                 reviewer: returnTheseCommentsReviewer(comments),
-                virtualProjectPathResolver: path => pathBefore(path, "/src/main/java")
+                virtualProjectPathResolver: path => pathBefore(path, "/src/main/java"),
             });
             const extracted = await extractFingerprints(rca, InMemoryProject.of());
             assert.strictEqual(extracted.length, 1);
