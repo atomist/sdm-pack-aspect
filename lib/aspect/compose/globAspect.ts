@@ -21,6 +21,7 @@ import {
     FP,
 } from "@atomist/sdm-pack-fingerprint";
 import { AspectMetadata } from "./commonTypes";
+import { ProjectFile } from "@atomist/automation-client";
 
 export interface GlobMatch {
     path: string;
@@ -45,7 +46,7 @@ export interface Validated {
 
 export interface Extracted<D> {
     /** Extract the data object */
-    extract: (content: string, path: string) => Promise<D>;
+    extract: (f: ProjectFile) => Promise<D>;
 }
 
 export type GlobAspectOptions<D> = AspectMetadata &
@@ -90,7 +91,7 @@ export function globAspect<D = {}>(config: GlobAspectOptions<D>): Aspect<GlobAsp
                 matches: await gatherFromFiles(p, config.glob, async f => {
                     const content = await f.getContent();
                     if (isExtracted(config)) {
-                        const extracted = await config.extract(content, f.path);
+                        const extracted = await config.extract(f);
                         return extracted ? {
                             path: f.path,
                             size: content.length,
