@@ -32,8 +32,6 @@ import {
 import { toArray } from "@atomist/sdm-core/lib/util/misc/array";
 import {
     Aspect,
-    cachingVirtualProjectFinder,
-    fileNamesVirtualProjectFinder,
     fingerprintSupport,
     makeVirtualProjectAware,
     PublishFingerprints,
@@ -82,20 +80,6 @@ import {
     analysisResultStore,
     createAnalyzer,
 } from "./machine";
-
-/**
- * Default VirtualProjectFinder, which recognizes Maven, npm,
- * and Gradle projects and Python projects using requirements.txt.
- */
-export const DefaultVirtualProjectFinder: VirtualProjectFinder =
-    // Consider directories containing any of these files to be virtual projects
-    cachingVirtualProjectFinder(
-        fileNamesVirtualProjectFinder(
-            "package.json",
-            "pom.xml",
-            "build.gradle",
-            "requirements.txt",
-        ));
 
 export const DefaultScoreWeightings: ScoreWeightings = {
     // Weight this to penalize projects with few other scorers
@@ -214,7 +198,7 @@ export function aspectSupport(options: AspectSupportOptions): ExtensionPack {
         displayName: "tagger",
     }, ...toArray(options.taggers) || []);
     const aspects = [...toArray(options.aspects || []), ...scoringAspects, tagAspect]
-        .map(aspect => makeVirtualProjectAware(aspect, options.virtualProjectFinder || DefaultVirtualProjectFinder));
+        .map(aspect => makeVirtualProjectAware(aspect, options.virtualProjectFinder));
 
     // Default the two display methods with some sensible defaults
     aspects.forEach(a => {
