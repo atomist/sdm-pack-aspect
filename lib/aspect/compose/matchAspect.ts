@@ -4,8 +4,8 @@ import { MatchResult } from "@atomist/automation-client";
 import { Aspect, fingerprintOf } from "@atomist/sdm-pack-fingerprint";
 
 import * as _ from "lodash";
-import { AspectMetadata } from "../../../lib/aspect/compose/commonTypes";
-import { GlobAspectData, GlobMatch } from "../../../lib/aspect/compose/globAspect";
+import { AspectMetadata } from "./commonTypes";
+import { GlobAspectData, GlobMatch } from "./globAspect";
 
 export interface MatchAspectOptions<D> extends AspectMetadata, Omit<PathExpressionQueryOptions, "globPatterns"> {
     mapper: (m: MatchResult) => D;

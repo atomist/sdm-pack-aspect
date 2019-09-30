@@ -32,6 +32,8 @@ export * from "./lib/aspect/community/oss";
 export * from "./lib/aspect/compose/classificationAspect";
 export * from "./lib/aspect/compose/fileMatchAspect";
 export * from "./lib/aspect/compose/globAspect";
+export * from "./lib/aspect/compose/matchAspect";
+export * from "./lib/aspect/common/globVirtualizer";
 export * from "./lib/aspect/compose/microgrammarMatchAspect";
 export * from "./lib/aspect/git/branchCount";
 export * from "./lib/aspect/git/gitActivity";
@@ -44,6 +46,7 @@ export * from "./lib/aspect/common/virtualProjectAspect";
 
 import * as commonScorers from "./lib/scorer/commonScorers";
 import * as commonTaggers from "./lib/tagger/commonTaggers";
+export * from "./lib/scorer/scorerUtils";
 
 export * from "./lib/util/fingerprintUtils";
 
