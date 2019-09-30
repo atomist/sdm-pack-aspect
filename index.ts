@@ -21,6 +21,7 @@ export * from "./lib/aspect/AspectReportDetailsRegistry";
 export * from "./lib/aspect/IdealStore";
 export * from "./lib/aspect/ProblemStore";
 export * from "./lib/tagger/commonTaggers";
+export * from "./lib/aspect/compose/commonTypes";
 export * from "./lib/scorer/Score";
 export * from "./lib/scorer/scoring";
 export * from "./lib/aspect/common/codeMetrics";
