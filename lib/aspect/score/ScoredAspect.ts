@@ -135,10 +135,11 @@ function scoreBaseAndVirtualProjects(opts: ScoringAspectOptions): (fingerprints:
         );
         logger.info("Distinct non root paths for %s are %j", repoToScore.analysis.id.url, distinctNonRootPaths);
 
+        const virtualProjectScorers = repositoryScorers.filter(rs => !(rs.baseOnly || rs.scoreAll));
         for (const path of distinctNonRootPaths) {
             const scores = await fingerprintScoresFor(
-                    repositoryScorers.filter(rs => !(rs.baseOnly || rs.scoreAll)),
-                    withFingerprintsOnlyUnderPath(repoToScore, path));
+                virtualProjectScorers,
+                withFingerprintsOnlyUnderPath(repoToScore, path));
             const scored: Scored = { scores };
             const weightedScore = weightedCompositeScore(scored, opts.scoreWeightings);
             emittedFingerprints.push(toFingerprint(opts.name, weightedScore, path));
@@ -159,7 +160,7 @@ function scoreBaseAndVirtualProjects(opts: ScoringAspectOptions): (fingerprints:
             // Include ones without any filter
             ...await fingerprintScoresFor(baseScorers.filter(rs => rs.scoreAll),
                 repoToScore),
-            };
+        };
         const scores: Record<string, Score> = {
             ...additionalScores,
             ...(pili as any).scores,

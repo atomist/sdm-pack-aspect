@@ -25,10 +25,13 @@ import {
 } from "../compose/globAspect";
 
 /**
- * Virtualize all glob fingerprints into virtual projects
+ * Virtualize all glob fingerprints into virtual projects.
+ * This means that we can write fingerprints that address the whole project and they
+ * still get published again for each virtual project.
+ * Anything that produces GlobAspectData gets this handling.
  */
 export const GlobVirtualizer: Aspect<GlobAspectData> = {
-    name: "globSprayer",
+    name: "glob-virtualizer",
     displayName: undefined,
     extract: async () => [],
     consolidate: async fingerprints => {
