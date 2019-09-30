@@ -19,7 +19,10 @@ import {
     FP,
 } from "@atomist/sdm-pack-fingerprint";
 import { distinctNonRootPaths } from "../../util/fingerprintUtils";
-import { GlobAspectData, isGlobMatchFingerprint } from "../compose/globAspect";
+import {
+    GlobAspectData,
+    isGlobMatchFingerprint,
+} from "../compose/globAspect";
 
 /**
  * Virtualize all glob fingerprints into virtual projects

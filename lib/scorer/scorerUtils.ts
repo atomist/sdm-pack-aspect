@@ -15,7 +15,10 @@
  */
 
 import { FP } from "@atomist/sdm-pack-fingerprint";
-import { RepositoryScorer, RepoToScore } from "../aspect/AspectRegistry";
+import {
+    RepositoryScorer,
+    RepoToScore,
+} from "../aspect/AspectRegistry";
 import { FiveStar } from "./Score";
 
 /**
