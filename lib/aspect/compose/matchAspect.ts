@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-import { fileMatches, PathExpressionQueryOptions } from "@atomist/automation-client/lib/tree/ast/astUtils";
 import { MatchResult } from "@atomist/automation-client";
+import { fileMatches, PathExpressionQueryOptions } from "@atomist/automation-client/lib/tree/ast/astUtils";
 import { Aspect, fingerprintOf } from "@atomist/sdm-pack-fingerprint";
 
 import * as _ from "lodash";

@@ -15,8 +15,8 @@
  */
 
 import { FP } from "@atomist/sdm-pack-fingerprint";
-import { FiveStar } from "./Score";
 import { RepositoryScorer, RepoToScore } from "../aspect/AspectRegistry";
+import { FiveStar } from "./Score";
 
 /**
  * Emit the given score only when the condition is met.
