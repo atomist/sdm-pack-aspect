@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+/* tslint:disable:max-file-line-count */
+
 import { logger } from "@atomist/automation-client";
 import { ExpressCustomizer } from "@atomist/automation-client/lib/configuration";
 import { isFingerprint } from "@atomist/sdm";
@@ -80,9 +82,9 @@ import {
 export function api(projectAnalysisResultStore: ProjectAnalysisResultStore,
                     aspectRegistry: AspectRegistry & AspectReportDetailsRegistry,
                     secure: boolean): {
-    customizer: ExpressCustomizer,
-    routesToSuggestOnStartup: Array<{ title: string, route: string }>,
-} {
+        customizer: ExpressCustomizer,
+        routesToSuggestOnStartup: Array<{ title: string, route: string }>,
+    } {
     const serveSwagger = isInLocalMode();
     const docRoute = "/api-docs";
     const routesToSuggestOnStartup = serveSwagger ? [{ title: "Swagger", route: docRoute }] : [];
@@ -293,8 +295,7 @@ function exposeDrift(express: Express, aspectRegistry: AspectRegistry, store: Pr
             // driftTree.tree = flattenSoleFingerprints(driftTree.tree);
             fillInDriftTreeAspectNames(aspectRegistry, driftTree.tree);
             return res.json(driftTree);
-        } catch
-            (err) {
+        } catch (err) {
             logger.warn("Error occurred getting drift report: %s %s", err.message, err.stack);
             next(err);
         }
@@ -337,7 +338,7 @@ function exposeExplore(express: Express, aspectRegistry: AspectRegistry, store: 
             logger.info("Found %d relevant repos of %d", relevantRepos.length, repos.length);
 
             const allTags = tagUsageIn(aspectRegistry, relevantRepos);
-                // await store.tags(workspaceId)
+            // await store.tags(workspaceId)
 
             let repoTree: PlantedTree = {
                 circles: [{ meaning: "tag filter" }, { meaning: "repo" }],

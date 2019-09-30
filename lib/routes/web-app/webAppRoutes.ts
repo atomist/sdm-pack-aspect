@@ -122,7 +122,7 @@ function exposeRepositoryPage(conf: WebAppConfig): void {
         try {
             const workspaceId = req.query.workspaceId || "*";
             const id = req.query.id;
-            const path = req.query.path || "";
+            const queryPath = req.query.path || "";
             const category = req.query.category || "*";
 
             const analysisResult = await conf.store.loadById(id, true);
@@ -134,7 +134,7 @@ function exposeRepositoryPage(conf: WebAppConfig): void {
 
             const everyFingerprint = await conf.store.fingerprintsForProject(id);
             const virtualPaths = _.uniq(everyFingerprint.map(f => f.path)).filter(p => !!p);
-            const allFingerprints = everyFingerprint.filter(fp => fp.path === path);
+            const allFingerprints = everyFingerprint.filter(fp => fp.path === queryPath);
             // TODO this is nasty. why query deep in the first place?
             analysisResult.analysis.fingerprints = allFingerprints;
 
@@ -155,7 +155,7 @@ function exposeRepositoryPage(conf: WebAppConfig): void {
 
             const repo = (await conf.aspectRegistry.tagAndScoreRepos(workspaceId, [analysisResult], { category }))[0];
             // TODO nasty
-            repo.analysis.id.path = path;
+            repo.analysis.id.path = queryPath;
             res.send(renderStaticReactNode(
                 RepoExplorer({
                     repo,

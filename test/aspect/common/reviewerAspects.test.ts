@@ -26,6 +26,7 @@ import { toArray } from "@atomist/sdm-core/lib/util/misc/array";
 import {
     Aspect,
     fingerprintOf,
+    FP,
 } from "@atomist/sdm-pack-fingerprint";
 import { CodeInspection } from "@atomist/sdm/lib/api/registration/CodeInspectionRegistration";
 import * as assert from "assert";
@@ -228,6 +229,6 @@ describe("reviewer aspects", () => {
 
 });
 
-async function extractFingerprints(rc: Aspect<ReviewComment>, p: Project) {
+async function extractFingerprints(rc: Aspect<ReviewComment>, p: Project): Promise<Array<FP<ReviewComment>>> {
     return toArray(await rc.extract(p, undefined));
 }

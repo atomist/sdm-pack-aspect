@@ -112,8 +112,7 @@ export interface ClassificationOptions extends AspectMetadata {
  * @param opts: Whether to allow multiple tags and whether to compute a fingerprint in all cases
  * @param classifiers classifier functions
  */
-export function projectClassificationAspect(opts: ClassificationOptions,
-                                            ...classifiers: EligibleClassifier[]): ClassificationAspect {
+export function projectClassificationAspect(opts: ClassificationOptions, ...classifiers: EligibleClassifier[]): ClassificationAspect {
     const projectClassifiers = classifiers.filter(isProjectClassifier);
     const derivedClassifiers = [
         ...classifiers.filter(isDerivedClassifier),
@@ -172,11 +171,11 @@ function emitFingerprints(classifiers: Classifier[], opts: ClassificationOptions
         }
 
         // Don't re-evaluate if we've already seen the tag
-        const classifierMatches = async (classifier, fps, p, pili) =>
+        const classifierMatches = async (classifier, ifps, ip, ipili) =>
             !_.includes(found.map(f => f.name), classifier.tags) &&
-            isProjectClassifier(classifier) ?
-                classifier.test(p, pili) :
-                classifier.testFingerprints(fps, p, pili);
+                isProjectClassifier(classifier) ?
+                classifier.test(ip, ipili) :
+                classifier.testFingerprints(ifps, ip, ipili);
 
         if (opts.stopAtFirst || !isInLocalMode()) {
             // Ordering is important. Execute in series and stop when we find a match.

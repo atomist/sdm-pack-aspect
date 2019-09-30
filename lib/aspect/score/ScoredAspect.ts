@@ -123,7 +123,9 @@ function scoringAspect(opts: ScoringAspectOptions): ScoredAspect {
     };
 }
 
-function scoreBaseAndVirtualProjects(opts: ScoringAspectOptions): (fingerprints: FP[], p: Project, pili: PushImpactListenerInvocation) => Promise<Array<FP<WeightedScore>>> {
+function scoreBaseAndVirtualProjects(opts: ScoringAspectOptions):
+    (fingerprints: FP[], p: Project, pili: PushImpactListenerInvocation) => Promise<Array<FP<WeightedScore>>> {
+
     return async (fingerprints, p, pili) => {
         const repositoryScorers = opts.scorers.filter(isRepositoryScorer);
         const emittedFingerprints: Array<FP<WeightedScore>> = [];
@@ -131,17 +133,17 @@ function scoreBaseAndVirtualProjects(opts: ScoringAspectOptions): (fingerprints:
 
         const distinctNonRootPaths = _.uniq(repoToScore.analysis.fingerprints
             .map(fp => fp.path)
-            .filter(p => !["", ".", undefined].includes(p)),
+            .filter(fp => !["", ".", undefined].includes(fp)),
         );
         logger.info("Distinct non root paths for %s are %j", repoToScore.analysis.id.url, distinctNonRootPaths);
 
         for (const path of distinctNonRootPaths) {
-            const scores = await fingerprintScoresFor(
-                    repositoryScorers.filter(rs => !(rs.baseOnly || rs.scoreAll)),
-                    withFingerprintsOnlyUnderPath(repoToScore, path));
-            const scored: Scored = { scores };
-            const weightedScore = weightedCompositeScore(scored, opts.scoreWeightings);
-            emittedFingerprints.push(toFingerprint(opts.name, weightedScore, path));
+            const pathScores = await fingerprintScoresFor(
+                repositoryScorers.filter(rs => !(rs.baseOnly || rs.scoreAll)),
+                withFingerprintsOnlyUnderPath(repoToScore, path));
+            const pathScored: Scored = { scores: pathScores };
+            const pathWeightedScore = weightedCompositeScore(pathScored, opts.scoreWeightings);
+            emittedFingerprints.push(toFingerprint(opts.name, pathWeightedScore, path));
         }
 
         const baseScorers = distinctNonRootPaths.length > 0 ?
@@ -159,7 +161,7 @@ function scoreBaseAndVirtualProjects(opts: ScoringAspectOptions): (fingerprints:
             // Include ones without any filter
             ...await fingerprintScoresFor(baseScorers.filter(rs => rs.scoreAll),
                 repoToScore),
-            };
+        };
         const scores: Record<string, Score> = {
             ...additionalScores,
             ...(pili as any).scores,
@@ -201,8 +203,7 @@ function withFingerprintsOnlyUnderPath(rts: RepoToScore, path: string): RepoToSc
     };
 }
 
-export async function fingerprintScoresFor(repositoryScorers: RepositoryScorer[],
-                                           toScore: RepoToScore): Promise<Scores> {
+export async function fingerprintScoresFor(repositoryScorers: RepositoryScorer[], toScore: RepoToScore): Promise<Scores> {
     const scores: Scores = {};
     for (const scorer of repositoryScorers) {
         const sr = await scorer.scoreFingerprints(toScore);
@@ -218,8 +219,7 @@ export async function fingerprintScoresFor(repositoryScorers: RepositoryScorer[]
     return scores;
 }
 
-async function pushAndProjectScoresFor(pushScorers: Array<PushScorer | ProjectScorer>,
-                                       toScore: PushImpactListenerInvocation): Promise<Scores> {
+async function pushAndProjectScoresFor(pushScorers: Array<PushScorer | ProjectScorer>, toScore: PushImpactListenerInvocation): Promise<Scores> {
     const scores: Scores = {};
     for (const scorer of pushScorers) {
         const sr = isPushScorer(scorer) ?
@@ -237,9 +237,7 @@ async function pushAndProjectScoresFor(pushScorers: Array<PushScorer | ProjectSc
     return scores;
 }
 
-export function emitScoringAspect(name: string,
-                                  scorers: AspectCompatibleScorer[],
-                                  scoreWeightings: ScoreWeightings): ScoredAspect | undefined {
+export function emitScoringAspect(name: string, scorers: AspectCompatibleScorer[], scoreWeightings: ScoreWeightings): ScoredAspect | undefined {
     return scorers.length > 0 ?
         scoringAspect(
             {
