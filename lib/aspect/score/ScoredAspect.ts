@@ -16,9 +16,14 @@
 
 import { PushImpactListenerInvocation } from "@atomist/sdm";
 
-import { Project } from "@atomist/automation-client";
+import {
+    logger,
+    Project,
+} from "@atomist/automation-client";
 import { Aspect, FP, sha256 } from "@atomist/sdm-pack-fingerprint";
 import {
+    FiveStar,
+    Score,
     Scored,
     Scorer,
     ScorerReturn,
@@ -33,6 +38,8 @@ import {
     RepoToScore,
 } from "../AspectRegistry";
 import { AspectMetadata } from "../compose/commonTypes";
+
+import * as _ from "lodash";
 
 /**
  * Aspect that scores pushes or projects
@@ -79,30 +86,30 @@ export type AspectCompatibleScorer = RepositoryScorer | ProjectScorer | PushScor
 
 export function isRepositoryScorer(s: AspectCompatibleScorer): s is RepositoryScorer {
     const maybe = s as RepositoryScorer;
-    return !!maybe.scoreFingerprints;
+    return !!maybe && !!maybe.scoreFingerprints;
 }
 
 export function isPushScorer(scorer: AspectCompatibleScorer): scorer is PushScorer {
     const maybe = scorer as PushScorer;
-    return !!maybe.scorePush;
+    return !!maybe && !!maybe.scorePush;
 }
 
 export function isPushOrProjectScorer(scorer: AspectCompatibleScorer): scorer is (PushScorer | ProjectScorer) {
     const maybe = scorer as ProjectScorer;
-    return !!maybe.scoreProject || isPushScorer(scorer);
+    return !!maybe && !!maybe.scoreProject || isPushScorer(scorer);
+}
+
+export interface ScoringAspectOptions extends AspectMetadata {
+    scorers: AspectCompatibleScorer[];
+    scoreWeightings?: ScoreWeightings;
 }
 
 /**
  * Score this aspect based on projects, from low to high.
  * Requires no other fingerprints
  */
-function scoringAspect(
-    opts: {
-        scorers: AspectCompatibleScorer[],
-        scoreWeightings?: ScoreWeightings,
-    } & AspectMetadata): ScoredAspect {
+function scoringAspect(opts: ScoringAspectOptions): ScoredAspect {
     const pushScorers = opts.scorers.filter(isPushOrProjectScorer);
-    const repositoryScorers = opts.scorers.filter(isRepositoryScorer);
     return {
         extract: async (p, pili) => {
             // Just save these scores. They'll go into consolidate
@@ -110,28 +117,87 @@ function scoringAspect(
             (pili as any).scores = scores;
             return [];
         },
-        consolidate: async (fingerprints, p, pili) => {
-            const repoToScore: RepoToScore = { analysis: { id: p.id, fingerprints } };
-            const additionalScores = await fingerprintScoresFor(repositoryScorers, repoToScore);
-            const scores = {
-                ...additionalScores,
-                ...(pili as any).scores,
-            };
-            const scored: Scored = { scores };
-            const weightedScore = weightedCompositeScore(scored, opts.scoreWeightings);
-            return toFingerprint(opts.name, weightedScore);
-        },
+        consolidate: scoreBaseAndVirtualProjects(opts),
         ...ScoredAspectDefaults,
         ...opts,
     };
 }
 
-function toFingerprint(type: string, data: WeightedScore): FP<WeightedScore> {
+function scoreBaseAndVirtualProjects(opts: ScoringAspectOptions): (fingerprints: FP[], p: Project, pili: PushImpactListenerInvocation) => Promise<Array<FP<WeightedScore>>> {
+    return async (fingerprints, p, pili) => {
+        const repositoryScorers = opts.scorers.filter(isRepositoryScorer);
+        const emittedFingerprints: Array<FP<WeightedScore>> = [];
+        const repoToScore: RepoToScore = { analysis: { id: p.id, fingerprints } };
+
+        const distinctNonRootPaths = _.uniq(repoToScore.analysis.fingerprints
+            .map(fp => fp.path)
+            .filter(p => !["", ".", undefined].includes(p)),
+        );
+        logger.info("Distinct non root paths for %s are %j", repoToScore.analysis.id.url, distinctNonRootPaths);
+
+        for (const path of distinctNonRootPaths) {
+            const scores = await fingerprintScoresFor(
+                    repositoryScorers.filter(rs => !(rs.baseOnly || rs.scoreAll)),
+                    withFingerprintsOnlyUnderPath(repoToScore, path));
+            const scored: Scored = { scores };
+            const weightedScore = weightedCompositeScore(scored, opts.scoreWeightings);
+            emittedFingerprints.push(toFingerprint(opts.name, weightedScore, path));
+        }
+
+        const baseScorers = distinctNonRootPaths.length > 0 ?
+            repositoryScorers.filter(rs => rs.baseOnly) :
+            repositoryScorers;
+        // Score under root
+        const additionalScores = {
+            ...await fingerprintScoresFor(baseScorers,
+                withFingerprintsOnlyUnderPath(repoToScore, ""),
+            ),
+            ...await fingerprintScoresFor(baseScorers,
+                withFingerprintsOnlyUnderPath(repoToScore, ".")),
+            ...await fingerprintScoresFor(baseScorers,
+                withFingerprintsOnlyUnderPath(repoToScore, undefined)),
+            // Include ones without any filter
+            ...await fingerprintScoresFor(baseScorers.filter(rs => rs.scoreAll),
+                repoToScore),
+            };
+        const scores: Record<string, Score> = {
+            ...additionalScores,
+            ...(pili as any).scores,
+        };
+        // Add rollup of subprojects
+        emittedFingerprints.forEach(ef => {
+            scores[ef.path + "_" + ef.name] = {
+                name: ef.path + "_" + ef.name,
+                score: ef.data.weightedScore as FiveStar,
+            };
+        });
+        const scored: Scored = { scores };
+        const weightedScore = weightedCompositeScore(scored, opts.scoreWeightings);
+        emittedFingerprints.push(toFingerprint(opts.name, weightedScore));
+
+        return emittedFingerprints;
+    };
+}
+
+function toFingerprint(type: string, data: WeightedScore, path?: string): FP<WeightedScore> {
     return {
         type,
         name: type,
+        path,
         data,
         sha: sha256(JSON.stringify(data.weightedScore)),
+    };
+}
+
+function withFingerprintsOnlyUnderPath(rts: RepoToScore, path: string): RepoToScore {
+    return {
+        analysis: {
+            id: {
+                ...rts.analysis.id,
+                path,
+            },
+            fingerprints: rts.analysis.fingerprints.filter(fp => fp.path === path),
+        },
     };
 }
 

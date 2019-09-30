@@ -32,9 +32,8 @@ import {
 import { toArray } from "@atomist/sdm-core/lib/util/misc/array";
 import {
     Aspect,
-    cachingVirtualProjectFinder,
-    fileNamesVirtualProjectFinder,
     fingerprintSupport,
+    makeVirtualProjectAware,
     PublishFingerprints,
     RebaseOptions,
     VirtualProjectFinder,
@@ -74,27 +73,13 @@ import { calculateFingerprintTask } from "../job/fingerprintTask";
 import { registerAspects } from "../job/registerAspect";
 import { api } from "../routes/api";
 import { addWebAppRoutes } from "../routes/web-app/webAppRoutes";
-import { exposeFingerprintScore } from "../scorer/commonScorers";
 import { ScoreWeightings } from "../scorer/Score";
+import { exposeFingerprintScore } from "../scorer/support/exposeFingerprintScore";
 import { tagsFromClassificationFingerprints } from "../tagger/commonTaggers";
 import {
     analysisResultStore,
     createAnalyzer,
 } from "./machine";
-
-/**
- * Default VirtualProjectFinder, which recognizes Maven, npm,
- * and Gradle projects and Python projects using requirements.txt.
- */
-export const DefaultVirtualProjectFinder: VirtualProjectFinder =
-    // Consider directories containing any of these files to be virtual projects
-    cachingVirtualProjectFinder(
-        fileNamesVirtualProjectFinder(
-            "package.json",
-            "pom.xml",
-            "build.gradle",
-            "requirements.txt",
-        ));
 
 export const DefaultScoreWeightings: ScoreWeightings = {
     // Weight this to penalize projects with few other scorers
@@ -204,7 +189,6 @@ export interface AspectSupportOptions {
  * If we're in local mode, expose analyzer commands and HTTP endpoints.
  */
 export function aspectSupport(options: AspectSupportOptions): ExtensionPack {
-
     const scoringAspects: ScoredAspect[] = _.flatten(
         Object.getOwnPropertyNames(options.scorers || {})
             .map(name => emitScoringAspect(name, toArray(options.scorers[name] || []), options.weightings)))
@@ -213,7 +197,8 @@ export function aspectSupport(options: AspectSupportOptions): ExtensionPack {
         name: "tagger",
         displayName: "tagger",
     }, ...toArray(options.taggers) || []);
-    const aspects = [...toArray(options.aspects || []), ...scoringAspects, tagAspect];
+    const aspects = [...toArray(options.aspects || []), ...scoringAspects, tagAspect]
+        .map(aspect => makeVirtualProjectAware(aspect, options.virtualProjectFinder));
 
     // Default the two display methods with some sensible defaults
     aspects.forEach(a => {

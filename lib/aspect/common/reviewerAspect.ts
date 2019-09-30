@@ -31,6 +31,7 @@ import {
     FP,
 } from "@atomist/sdm-pack-fingerprint";
 import { CodeInspection } from "@atomist/sdm/lib/api/registration/CodeInspectionRegistration";
+import { distinctNonRootPaths } from "../../util/fingerprintUtils";
 import {
     ClassificationAspect,
     projectClassificationAspect,
@@ -38,6 +39,7 @@ import {
 import {
     AspectMetadata,
     CountAspect,
+    CountData,
 } from "../compose/commonTypes";
 
 export type EligibleReviewer = ReviewerRegistration | CodeInspection<ProjectReview, NoParameters>;
@@ -47,7 +49,7 @@ export interface ReviewerAspectOptions extends AspectMetadata {
     /**
      * Reviewer that can provide the fingerprint
      */
-   readonly reviewer: EligibleReviewer;
+    readonly reviewer: EligibleReviewer;
 
     /**
      * Code transform that can remove usages of this problematic fingerprint
@@ -64,6 +66,11 @@ export interface ReviewerAspectOptions extends AspectMetadata {
      * Otherwise tag will default to name passed into reviewerAspects
      */
     readonly tag?: string;
+
+    /**
+     * If provided, resolve the virtual project path
+     */
+    virtualProjectPathResolver?: (path: string) => string;
 }
 
 /**
@@ -90,7 +97,7 @@ export function isReviewCommentFingerprint(fp: FP): fp is FP<ReviewComment> {
  * Create fingerprints from the output of this reviewer.
  * Every fingerprint is unique
  */
-function reviewCommentAspect(opts: ReviewerAspectOptions): Aspect<ReviewComment> {
+export function reviewCommentAspect(opts: ReviewerAspectOptions): Aspect<ReviewComment> {
     const inspection = isReviewerRegistration(opts.reviewer) ? opts.reviewer.inspection : opts.reviewer;
     const type = reviewCommentAspectName(opts.name);
     return {
@@ -105,6 +112,9 @@ function reviewCommentAspect(opts: ReviewerAspectOptions): Aspect<ReviewComment>
                 return fingerprintOf({
                     type,
                     data,
+                    path: (!!opts.virtualProjectPathResolver && !!data.sourceLocation) ?
+                        opts.virtualProjectPathResolver(data.sourceLocation.path) :
+                        undefined,
                 });
             });
         },
@@ -135,20 +145,41 @@ function reviewCommentClassificationAspect(opts: ReviewerAspectOptions): Classif
  */
 export function reviewCommentCountAspect(opts: ReviewerAspectOptions): CountAspect {
     const requiredType = reviewCommentAspectName(opts.name);
-    const type = `count_${opts.name}`;
+    const type = countFingerprintTypeFor(opts.name);
     return {
         name: type,
         displayName: opts.displayName,
         extract: async () => [],
         consolidate: async fps => {
-            const count = fps.filter(fp => isReviewCommentFingerprint(fp) && fp.type === requiredType).length;
-            return fingerprintOf({
+            const relevantFingerprints = fps.filter(fp => isReviewCommentFingerprint(fp) && fp.type === requiredType);
+            const toEmit: Array<FP<CountData>> = [];
+            // Always put the full count on the root
+            toEmit.push(fingerprintOf({
                 type,
-                data: { count },
-            });
+                data: { count: relevantFingerprints.length },
+            }));
+            // Fingerprint each subproject distinctly with its own count
+            const nonRootPaths = distinctNonRootPaths(relevantFingerprints);
+            for (const path of nonRootPaths) {
+                toEmit.push(fingerprintOf({
+                    type,
+                    data: { count: relevantFingerprints.filter(fp => fp.path === path).length },
+                    path,
+                }));
+            }
+            return toEmit;
         },
         apply: opts.terminator ? terminateWithExtremePrejudice(opts) : undefined,
     };
+}
+
+function countFingerprintTypeFor(name: string): string {
+    return `count_${name}`;
+}
+
+export function findReviewCommentCountFingerprint(name: string, fps: FP[]): FP<CountData> | undefined {
+    const type = countFingerprintTypeFor(name);
+    return fps.find(fp => fp.type === type);
 }
 
 function terminateWithExtremePrejudice(opts: ReviewerAspectOptions): ApplyFingerprint {

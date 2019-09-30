@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+import { ProjectFile } from "@atomist/automation-client";
 import { gatherFromFiles } from "@atomist/automation-client/lib/project/util/projectUtils";
 import {
     Aspect,
@@ -45,7 +46,7 @@ export interface Validated {
 
 export interface Extracted<D> {
     /** Extract the data object */
-    extract: (content: string, path: string) => Promise<D>;
+    extract: (f: ProjectFile) => Promise<D>;
 }
 
 export type GlobAspectOptions<D> = AspectMetadata &
@@ -90,7 +91,7 @@ export function globAspect<D = {}>(config: GlobAspectOptions<D>): Aspect<GlobAsp
                 matches: await gatherFromFiles(p, config.glob, async f => {
                     const content = await f.getContent();
                     if (isExtracted(config)) {
-                        const extracted = await config.extract(content, f.path);
+                        const extracted = await config.extract(f);
                         return extracted ? {
                             path: f.path,
                             size: content.length,
@@ -111,4 +112,12 @@ export function globAspect<D = {}>(config: GlobAspectOptions<D>): Aspect<GlobAsp
             });
         },
     };
+}
+
+/**
+ * Count the number of glob matches of the given type
+ */
+export function countGlobMatches(fps: FP[], type: string): number {
+    const matches = fps.find(fp => fp.type === type && isGlobMatchFingerprint(fp));
+    return matches ? matches.data.matches.length : 0;
 }

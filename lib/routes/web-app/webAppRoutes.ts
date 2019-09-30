@@ -122,17 +122,24 @@ function exposeRepositoryPage(conf: WebAppConfig): void {
         try {
             const workspaceId = req.query.workspaceId || "*";
             const id = req.query.id;
-            const analysisResult = await conf.store.loadById(id);
+            const path = req.query.path || "";
             const category = req.query.category || "*";
+
+            const analysisResult = await conf.store.loadById(id, true);
+
             if (!analysisResult) {
                 res.send(`No project at ${JSON.stringify(id)}`);
                 return;
             }
 
-            const allFingerprints = await conf.store.fingerprintsForProject(id);
+            const everyFingerprint = await conf.store.fingerprintsForProject(id);
+            const virtualPaths = _.uniq(everyFingerprint.map(f => f.path)).filter(p => !!p);
+            const allFingerprints = everyFingerprint.filter(fp => fp.path === path);
+            // TODO this is nasty. why query deep in the first place?
+            analysisResult.analysis.fingerprints = allFingerprints;
+
             const mostRecentTimestamp = allFingerprints.length > 0 ? new Date(Math.max(...allFingerprints.map(fp =>
                 fp.timestamp.getTime()))) : undefined;
-            const commitSha = allFingerprints.length > 0 ? allFingerprints[0].commitSha : undefined;
             const aspectsAndFingerprints = await projectFingerprints(conf.aspectRegistry,
                 allFingerprints);
 
@@ -147,12 +154,15 @@ function exposeRepositoryPage(conf: WebAppConfig): void {
             }));
 
             const repo = (await conf.aspectRegistry.tagAndScoreRepos(workspaceId, [analysisResult], { category }))[0];
+            // TODO nasty
+            repo.analysis.id.path = path;
             res.send(renderStaticReactNode(
                 RepoExplorer({
                     repo,
                     aspects: _.sortBy(ffd.filter(f => !!f.aspect.displayName), f => f.aspect.displayName),
                     category,
                     timestamp: mostRecentTimestamp,
+                    virtualPaths,
                 }), `Repository Insights`,
                 conf.instanceMetadata));
             return;

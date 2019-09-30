@@ -32,6 +32,8 @@ import {
 } from "@atomist/sdm-pack-docker";
 import {
     Aspect,
+    cachingVirtualProjectFinder,
+    fileNamesVirtualProjectFinder,
     NpmDeps,
     VirtualProjectFinder,
 } from "@atomist/sdm-pack-fingerprint";
@@ -72,14 +74,12 @@ import { storeFingerprints } from "../lib/aspect/delivery/storeFingerprintsPubli
 import { BranchCount } from "../lib/aspect/git/branchCount";
 import { GitRecency } from "../lib/aspect/git/gitActivity";
 import {
-    AcceptEverythingUndesirableUsageChecker,
     chainUndesirableUsageCheckers,
     UndesirableUsageChecker,
 } from "../lib/aspect/ProblemStore";
 import { ExposedSecrets } from "../lib/aspect/secret/exposedSecrets";
 import {
     aspectSupport,
-    DefaultVirtualProjectFinder,
 } from "../lib/machine/aspectSupport";
 import * as commonScorers from "../lib/scorer/commonScorers";
 import {
@@ -87,7 +87,6 @@ import {
     EntropyScore,
     WorstRepoScore,
 } from "../lib/scorer/commonWorkspaceScorers";
-import { FiveStar } from "../lib/scorer/Score";
 import * as commonTaggers from "../lib/tagger/commonTaggers";
 
 // Ensure we start up in local mode
@@ -96,7 +95,23 @@ process.env.ATOMIST_MODE = "local";
 // Ensure we use this workspace so we can see all fingerprints with the local UI
 process.env.ATOMIST_WORKSPACES = "local";
 
-const virtualProjectFinder: VirtualProjectFinder = DefaultVirtualProjectFinder;
+export const virtualProjectFinder: VirtualProjectFinder =
+    // Consider directories containing any of these files to be virtual projects
+    cachingVirtualProjectFinder(
+        fileNamesVirtualProjectFinder(
+            "package.json",
+            {
+                glob: "pom.xml",
+                status: async f => {
+                    return {
+                        include: true,
+                        keepLooking: (await f.getContent()).includes("<modules>"),
+                    };
+                },
+            },
+            "build.gradle",
+            "requirements.txt",
+        ));
 
 const store = new PostgresProjectAnalysisResultStore(sdmConfigClientFactory(loadUserConfiguration()));
 
@@ -261,15 +276,16 @@ export function scorers(): RepositoryScorer[] {
         commonScorers.PenalizeMonorepos,
         commonScorers.limitLanguages({ limit: 4 }),
         // Adjust depending on the service granularity you want
-        commonScorers.limitLinesOfCode({ limit: 30000 }),
+        commonScorers.limitLinesOfCode({ limit: 50000, baseOnly: true }),
+        commonScorers.limitLinesOfCode({ limit: 30000, baseOnly: false }),
         commonScorers.limitLinesOfCodeIn({ language: YamlLanguage, limit: 500, freeAmount: 200 }),
         commonScorers.limitLinesOfCodeIn({ language: PowerShellLanguage, limit: 200, freeAmount: 100 }),
         commonScorers.limitLinesOfCodeIn({ language: ShellLanguage, limit: 200, freeAmount: 100 }),
         commonScorers.requireRecentCommit({ days: 30 }),
         commonScorers.PenalizeNoLicense,
         commonScorers.PenalizeNoCodeOfConduct,
-        commonScorers.requireGlobAspect({ glob: "CHANGELOG.md" }),
-        commonScorers.requireGlobAspect({ glob: "CONTRIBUTING.md" }),
+        commonScorers.requireGlobAspect({ glob: "CHANGELOG.md", baseOnly: true }),
+        commonScorers.requireGlobAspect({ glob: "CONTRIBUTING.md", baseOnly: true }),
     ];
 }
 

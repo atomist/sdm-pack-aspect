@@ -195,8 +195,8 @@ GROUP BY repo_snapshots.id`;
         return queryForRepoRows;
     }
 
-    public async loadById(id: string): Promise<ProjectAnalysisResult | undefined> {
-        const hits = await this.loadInWorkspaceInternal("*", true,
+    public async loadById(id: string, deep: boolean): Promise<ProjectAnalysisResult | undefined> {
+        const hits = await this.loadInWorkspaceInternal("*", deep,
             "repo_snapshots.id = $2", [id]);
         return hits.length === 1 ? hits[0] : undefined;
     }

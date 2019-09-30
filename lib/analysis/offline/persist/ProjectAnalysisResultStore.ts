@@ -140,7 +140,7 @@ export interface ProjectAnalysisResultStore {
      * @param {string} id
      * @return {Promise<ProjectAnalysisResult | undefined>}
      */
-    loadById(id: string): Promise<ProjectAnalysisResult | undefined>;
+    loadById(id: string, deep: boolean): Promise<ProjectAnalysisResult | undefined>;
 
     persist(repos: ProjectAnalysisResult | AsyncIterable<ProjectAnalysisResult> | ProjectAnalysisResult[]): Promise<PersistResult>;
 

@@ -14,10 +14,7 @@
  * limitations under the License.
  */
 
-import {
-    makeVirtualProjectAware,
-    VirtualProjectFinder,
-} from "@atomist/sdm-pack-fingerprint";
+import { VirtualProjectFinder } from "@atomist/sdm-pack-fingerprint";
 import { Aspect } from "@atomist/sdm-pack-fingerprint/lib/machine/Aspect";
 import { ClientFactory } from "../analysis/offline/persist/pgUtils";
 import { PostgresProjectAnalysisResultStore } from "../analysis/offline/persist/PostgresProjectAnalysisResultStore";
@@ -29,13 +26,10 @@ import { ProblemStore } from "../aspect/ProblemStore";
 
 /**
  * Create the analyzer used for spidering repos.
- * @param {Aspect[]} aspects
- * @param {VirtualProjectFinder} virtualProjectFinder
  * @return {Analyzer}
  */
 export function createAnalyzer(aspects: Aspect[], virtualProjectFinder: VirtualProjectFinder): Analyzer {
-    const configuredAspects = aspects.map(aspect => makeVirtualProjectAware(aspect, virtualProjectFinder));
-    return new SpiderAnalyzer(configuredAspects, virtualProjectFinder);
+    return new SpiderAnalyzer(aspects, virtualProjectFinder);
 }
 
 export function analysisResultStore(factory: ClientFactory): ProjectAnalysisResultStore & IdealStore & ProblemStore {
