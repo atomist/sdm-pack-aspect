@@ -20,7 +20,7 @@ import {
 import {
     Aspect,
     ExtractFingerprint,
-    fingerprintOf,
+    fingerprintOf, FP,
 } from "@atomist/sdm-pack-fingerprint";
 import * as child_process from "child_process";
 import * as util from "util";
@@ -47,6 +47,10 @@ export const GitRecencyType = "git-recency";
 
 export interface GitRecencyData {
     lastCommitTime: number;
+}
+
+export function isGitRecencyFingerprint(fp: FP): fp is FP<GitRecencyData> {
+    return fp.type === GitRecencyType;
 }
 
 const gitRecencyExtractor: ExtractFingerprint<GitRecencyData> =
