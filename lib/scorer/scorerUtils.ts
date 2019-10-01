@@ -57,7 +57,8 @@ export function scoreOnFingerprintPresence(opts: {
                     reason: opts.reason + " - present",
                     score: opts.scoreWhenPresent,
                 };
-            } else if (opts.scoreWhenAbsent) {
+            }
+            if (!found && opts.scoreWhenAbsent) {
                 return {
                     reason: opts.reason + " - absent",
                     score: opts.scoreWhenAbsent,
