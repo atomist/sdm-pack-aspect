@@ -14,7 +14,10 @@
  * limitations under the License.
  */
 
-import { Aspect, FP } from "@atomist/sdm-pack-fingerprint";
+import {
+    Aspect,
+    FP,
+} from "@atomist/sdm-pack-fingerprint";
 import * as _ from "lodash";
 import { aspectSpecifiesNoEntropy } from "../../../routes/api";
 import {
