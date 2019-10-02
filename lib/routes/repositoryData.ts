@@ -106,7 +106,7 @@ export function exposeRepositoryData(express: Express,
                 const tags = relevantFingerprints.filter(isTagFingerprint)
                     .map(fp => ({ type: fp.type, name: fp.name }));
                 const scores = {};
-                const scoreFingerprints = relevantFingerprints.filter(fp => fp.data.weightedScore);
+                const scoreFingerprints = relevantFingerprints.filter(fp => fp.data.weightedScore && _.keys(fp.data.weightedScores).length > 0);
                 scoreFingerprints.forEach(fp => scores[fp.name] = fp.data);
                 const score = average(scoreFingerprints.map(sfp => sfp.data.weightedScore));
 
@@ -122,7 +122,7 @@ export function exposeRepositoryData(express: Express,
                     scores,
                     score,
                 };
-                await res.send(data);
+                await res.json(data);
 
             } catch (e) {
                 logger.error(e);
