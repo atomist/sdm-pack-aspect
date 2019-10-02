@@ -16,6 +16,7 @@
 
 import { Aspect, FP } from "@atomist/sdm-pack-fingerprint";
 import * as _ from "lodash";
+import { aspectSpecifiesNoEntropy } from "../../../routes/api";
 import {
     FingerprintKind,
     ProjectAnalysisResultStore,
@@ -29,16 +30,18 @@ export async function computeAnalytics(
         persister: ProjectAnalysisResultStore,
         analyzer: {
             aspectOf(aspectName: string): Aspect<any> | undefined,
-        }},
+        },
+    },
     workspaceId: string): Promise<void> {
     const allFingerprints = await world.persister.fingerprintsInWorkspace(workspaceId, false);
     const fingerprintKinds = await world.persister.distinctFingerprintKinds(workspaceId);
 
-    const persistThese = fingerprintKinds.map((kind: FingerprintKind) => {
-        const fingerprintsOfKind = allFingerprints.filter(f => f.type === kind.type && f.name === kind.name);
-        const cohortAnalysis = analyzeCohort(fingerprintsOfKind);
-        return { workspaceId, kind, cohortAnalysis };
-    });
+    const persistThese = fingerprintKinds.filter(k => !aspectSpecifiesNoEntropy(world.analyzer.aspectOf(k.type)))
+        .map((kind: FingerprintKind) => {
+            const fingerprintsOfKind = allFingerprints.filter(f => f.type === kind.type && f.name === kind.name);
+            const cohortAnalysis = analyzeCohort(fingerprintsOfKind);
+            return { workspaceId, kind, cohortAnalysis };
+        });
 
     await world.persister.persistAnalytics(persistThese);
 }
