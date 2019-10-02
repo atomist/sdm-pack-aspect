@@ -44,7 +44,7 @@ export function exposeRepositoriesData(express: Express,
 
                 const results: any[] = [];
                 for (const analysisResult of analysisResults) {
-                    const fingerprints = await analysisResult.analysis.fingerprints;
+                    const fingerprints = analysisResult.analysis.fingerprints;
                     const virtualPaths = _.uniq(fingerprints.map(f => f.path)).filter(p => !!p);
 
                     const tags = fingerprints.filter(isTagFingerprint)
@@ -100,7 +100,7 @@ export function exposeRepositoryData(express: Express,
                     return;
                 }
 
-                const allFingerprints = await analysisResult.analysis.fingerprints;
+                const allFingerprints = analysisResult.analysis.fingerprints;
                 const virtualPaths = _.uniq(allFingerprints.map(f => f.path)).filter(p => !!p);
                 const relevantFingerprints = allFingerprints.filter(fp => fp.path === path);
                 const tags = relevantFingerprints.filter(isTagFingerprint)
