@@ -20,7 +20,10 @@ import { logger } from "@atomist/automation-client";
 import { ExpressCustomizer } from "@atomist/automation-client/lib/configuration";
 import { isFingerprint } from "@atomist/sdm";
 import { isInLocalMode } from "@atomist/sdm-core";
-import { Aspect, isConcreteIdeal } from "@atomist/sdm-pack-fingerprint";
+import {
+    Aspect,
+    isConcreteIdeal,
+} from "@atomist/sdm-pack-fingerprint";
 import * as bodyParser from "body-parser";
 import {
     Express,
