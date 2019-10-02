@@ -90,6 +90,7 @@ const oneProjectAnalysis: any = {
 // tslint:disable-next-line:no-object-literal-type-assertion
 const analyzer: Analyzer = {
     analyze: async p => oneProjectAnalysis,
+    aspectOf(aspectName: string) { return undefined },
     timings: {},
 };
 

@@ -71,6 +71,10 @@ export class SpiderAnalyzer implements Analyzer {
         };
     }
 
+    public aspectOf(aspectName: string): Aspect<any> | undefined {
+        return this.aspects.find(a => a.name === aspectName);
+    }
+
     constructor(private readonly aspects: Aspect[],
                 private readonly virtualProjectFinder?: VirtualProjectFinder) {
 

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { FP } from "@atomist/sdm-pack-fingerprint";
+import { Aspect, FP } from "@atomist/sdm-pack-fingerprint";
 import * as _ from "lodash";
 import {
     FingerprintKind,
@@ -25,7 +25,11 @@ import {
  * Retrieve all fingerprints, then compute and store fingerprint_analytics for the whole workspace
  */
 export async function computeAnalytics(
-    world: { persister: ProjectAnalysisResultStore },
+    world: {
+        persister: ProjectAnalysisResultStore,
+        analyzer: {
+            aspectOf(aspectName: string): Aspect<any> | undefined,
+        }},
     workspaceId: string): Promise<void> {
     const allFingerprints = await world.persister.fingerprintsInWorkspace(workspaceId, false);
     const fingerprintKinds = await world.persister.distinctFingerprintKinds(workspaceId);
@@ -43,9 +47,9 @@ export async function computeAnalytics(
  * Calculate and persist entropy for one fingerprint kind
  */
 export async function computeAnalyticsForFingerprintKind(persister: ProjectAnalysisResultStore,
-    workspaceId: string,
-    type: string,
-    name: string): Promise<void> {
+                                                         workspaceId: string,
+                                                         type: string,
+                                                         name: string): Promise<void> {
     const fingerprints = await persister.fingerprintsInWorkspace(workspaceId, false, type, name);
     if (fingerprints.length === 0) {
         return;

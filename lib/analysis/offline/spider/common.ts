@@ -21,6 +21,7 @@ import {
     RepoId,
     RepoRef,
 } from "@atomist/automation-client";
+import { Aspect } from "@atomist/sdm-pack-fingerprint";
 import { Analyzed } from "../../../aspect/AspectRegistry";
 import {
     AnalysisTracking,
