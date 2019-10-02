@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-import * as _ from "lodash";
 import { logger } from "@atomist/automation-client";
-import { ProjectAnalysisResultStore } from "../analysis/offline/persist/ProjectAnalysisResultStore";
-import { Express } from "express";
-import { authHandlers, corsHandler } from "./auth";
-import { average } from "../scorer/commonWorkspaceScorers";
 import { FP } from "@atomist/sdm-pack-fingerprint";
+import { Express } from "express";
+import * as _ from "lodash";
+import { ProjectAnalysisResultStore } from "../analysis/offline/persist/ProjectAnalysisResultStore";
 import { VirtualProjectType } from "../aspect/common/virtualProjectAspect";
+import { average } from "../scorer/commonWorkspaceScorers";
+import { authHandlers, corsHandler } from "./auth";
 
 function isTagFingerprint(fp: FP): boolean {
     return fp.data.reason && fp.type !== VirtualProjectType;
@@ -58,7 +58,7 @@ export function exposeRepositoriesData(express: Express,
                         virtualPaths,
                         tags,
                         score,
-                    })
+                    });
                 }
 
                 const data = {

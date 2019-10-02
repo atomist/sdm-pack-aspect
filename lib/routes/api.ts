@@ -69,12 +69,12 @@ import {
 } from "./auth";
 import { buildFingerprintTree } from "./buildFingerprintTree";
 import { getAspectReports } from "./categories";
+import { exposeRepositoriesData, exposeRepositoryData } from "./repositoryData";
 import { tagUsageIn } from "./support/tagUtils";
 import {
     addRepositoryViewUrl,
     splitByOrg,
 } from "./support/treeMunging";
-import { exposeRepositoriesData, exposeRepositoryData } from "./repositoryData";
 
 /**
  * Expose the public API routes, returning JSON.
