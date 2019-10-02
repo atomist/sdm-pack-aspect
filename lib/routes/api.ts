@@ -20,7 +20,7 @@ import { logger } from "@atomist/automation-client";
 import { ExpressCustomizer } from "@atomist/automation-client/lib/configuration";
 import { isFingerprint } from "@atomist/sdm";
 import { isInLocalMode } from "@atomist/sdm-core";
-import { isConcreteIdeal } from "@atomist/sdm-pack-fingerprint";
+import { Aspect, isConcreteIdeal } from "@atomist/sdm-pack-fingerprint";
 import * as bodyParser from "body-parser";
 import {
     Express,
@@ -447,6 +447,10 @@ function fillInAspectNames(aspectRegistry: AspectRegistry, tree: SunburstTree): 
 /**
  * If the aspect says entropy isn't significant, reduce it.
  */
+
+/**
+ * If the aspect says entropy isn't significant, reduce it.
+ */
 function removeAspectsWithoutMeaningfulEntropy(aspectRegistry: AspectRegistry, driftTree: PlantedTree): PlantedTree {
     driftTree.tree = killChildren(driftTree.tree, child => {
         if (isSunburstTree(child)) {
@@ -455,11 +459,15 @@ function removeAspectsWithoutMeaningfulEntropy(aspectRegistry: AspectRegistry, d
         const t = child as any;
         if (t.type) {
             const aspect = aspectRegistry.aspectOf(t.type);
-            return !!aspect && !!aspect.stats && aspect.stats.defaultStatStatus.entropy === false;
+            return aspectSpecifiesNoEntropy(aspect);
         }
         return false;
     });
     return driftTree;
+}
+
+export function aspectSpecifiesNoEntropy(aspect: Aspect<any> | undefined): boolean {
+    return !!aspect && !!aspect.stats && aspect.stats.defaultStatStatus.entropy === false;
 }
 
 function flattenSoleFingerprints(tree: SunburstTree): SunburstTree {

@@ -59,11 +59,16 @@ export function virtualProjectAspect(
             const findings = await Promise.all(finders.map(finder => finder(p)));
             return _.flatten(findings.map(finding =>
                 finding.paths.map(path => fingerprintOf({
-                        type: VirtualProjectType,
-                        data: { reason: finding.reason, path },
-                        path,
-                    }),
+                    type: VirtualProjectType,
+                    data: { reason: finding.reason, path },
+                    path,
+                }),
                 )));
+        },
+        stats: {
+            defaultStatStatus: {
+                entropy: false,
+            },
         },
     };
 }
