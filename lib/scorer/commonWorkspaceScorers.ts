@@ -19,7 +19,7 @@ import { FiveStar } from "./Score";
 
 import * as _ from "lodash";
 
-const average = (array: number[]) => array.reduce((a, b) => a + b, 0) / array.length;
+export const average = (array: number[]) => array.reduce((a, b) => a + b, 0) / array.length;
 
 /**
  * Use the average repo score as the score

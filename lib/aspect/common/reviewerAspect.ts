@@ -148,7 +148,7 @@ export function reviewCommentCountAspect(opts: ReviewerAspectOptions): CountAspe
     const type = countFingerprintTypeFor(opts.name);
     return {
         name: type,
-        displayName: opts.displayName,
+        displayName: opts.displayName + " count",
         extract: async () => [],
         consolidate: async fps => {
             const relevantFingerprints = fps.filter(fp => isReviewCommentFingerprint(fp) && fp.type === requiredType);

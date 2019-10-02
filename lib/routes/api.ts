@@ -74,6 +74,7 @@ import {
     addRepositoryViewUrl,
     splitByOrg,
 } from "./support/treeMunging";
+import { exposeRepositoriesData, exposeRepositoryData } from "./repositoryData";
 
 /**
  * Expose the public API routes, returning JSON.
@@ -106,6 +107,8 @@ export function api(projectAnalysisResultStore: ProjectAnalysisResultStore,
             exposeAspectMetadata(express, projectAnalysisResultStore, aspectRegistry, secure);
             exposeListTags(express, projectAnalysisResultStore, secure);
             exposeListFingerprints(express, projectAnalysisResultStore, secure);
+            exposeRepositoriesData(express, projectAnalysisResultStore, secure);
+            exposeRepositoryData(express, projectAnalysisResultStore, secure);
             exposeFingerprintByType(express, aspectRegistry, projectAnalysisResultStore, secure);
             exposeExplore(express, aspectRegistry, projectAnalysisResultStore, secure);
             exposeFingerprintByTypeAndName(express, aspectRegistry, projectAnalysisResultStore, secure);
@@ -151,6 +154,12 @@ function exposeAspectMetadata(express: Express,
     });
 }
 
+/**
+ * Expose all fingerprints in workspace
+ * @param {e.Express} express
+ * @param {ProjectAnalysisResultStore} store
+ * @param {boolean} secure
+ */
 function exposeListFingerprints(express: Express, store: ProjectAnalysisResultStore, secure: boolean): void {
     // Return all fingerprints
     express.options("/api/v1/:workspace_id/fingerprints", corsHandler());
