@@ -54,7 +54,7 @@ export function virtualProjectAspect(
     ...finders: Array<(p: Project) => Promise<VirtualProjectFinding>>): Aspect<VirtualProjectData> {
     return {
         name: VirtualProjectType,
-        displayName: undefined,
+        displayName: "Virtual project",
         extract: async p => {
             const findings = await Promise.all(finders.map(finder => finder(p)));
             return _.flatten(findings.map(finding =>
