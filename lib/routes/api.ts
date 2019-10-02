@@ -118,6 +118,14 @@ export function api(projectAnalysisResultStore: ProjectAnalysisResultStore,
             exposeDrift(express, aspectRegistry, projectAnalysisResultStore, secure);
             exposeCustomReports(express, projectAnalysisResultStore, secure);
             exposePersistEntropy(express, projectAnalysisResultStore, handlers, secure);
+
+            express.use((err, req, res, next) => {
+                if (res.headersSent) {
+                    return next(err);
+                }
+                res.status(500);
+                res.json({ message: err.message });
+            });
         },
     };
 }
