@@ -21,7 +21,10 @@ import * as _ from "lodash";
 import { ProjectAnalysisResultStore } from "../analysis/offline/persist/ProjectAnalysisResultStore";
 import { VirtualProjectType } from "../aspect/common/virtualProjectAspect";
 import { average } from "../scorer/commonWorkspaceScorers";
-import { authHandlers, corsHandler } from "./auth";
+import {
+    authHandlers,
+    corsHandler,
+} from "./auth";
 
 function isTagFingerprint(fp: FP): boolean {
     return fp.data.reason && fp.type !== VirtualProjectType;
