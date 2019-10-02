@@ -108,9 +108,9 @@ export class AnalysisRun<FoundRepo> {
 
             logger.debug("Computing analytics over all fingerprints...");
             // Question for Rod: should this run intermittently or only at the end?
-            // Answer from Rod: intermitently.
+            // Answer from Rod: intermittently.
 
-            await computeAnalytics(this.world.persister, this.params.workspaceId);
+            await computeAnalytics(this.world, this.params.workspaceId);
             const finalResult = trackedRepos.map(tr => tr.tracking.spiderResult()).reduce(combineSpiderResults, emptySpiderResult);
             analysisBeingTracked.stop();
             return finalResult;

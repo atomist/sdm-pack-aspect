@@ -24,9 +24,11 @@ import {
 /**
  * Retrieve all fingerprints, then compute and store fingerprint_analytics for the whole workspace
  */
-export async function computeAnalytics(persister: ProjectAnalysisResultStore, workspaceId: string): Promise<void> {
-    const allFingerprints = await persister.fingerprintsInWorkspace(workspaceId, false);
-    const fingerprintKinds = await persister.distinctFingerprintKinds(workspaceId);
+export async function computeAnalytics(
+    world: { persister: ProjectAnalysisResultStore },
+    workspaceId: string): Promise<void> {
+    const allFingerprints = await world.persister.fingerprintsInWorkspace(workspaceId, false);
+    const fingerprintKinds = await world.persister.distinctFingerprintKinds(workspaceId);
 
     const persistThese = fingerprintKinds.map((kind: FingerprintKind) => {
         const fingerprintsOfKind = allFingerprints.filter(f => f.type === kind.type && f.name === kind.name);
@@ -34,16 +36,16 @@ export async function computeAnalytics(persister: ProjectAnalysisResultStore, wo
         return { workspaceId, kind, cohortAnalysis };
     });
 
-    await persister.persistAnalytics(persistThese);
+    await world.persister.persistAnalytics(persistThese);
 }
 
 /**
  * Calculate and persist entropy for one fingerprint kind
  */
 export async function computeAnalyticsForFingerprintKind(persister: ProjectAnalysisResultStore,
-                                                         workspaceId: string,
-                                                         type: string,
-                                                         name: string): Promise<void> {
+    workspaceId: string,
+    type: string,
+    name: string): Promise<void> {
     const fingerprints = await persister.fingerprintsInWorkspace(workspaceId, false, type, name);
     if (fingerprints.length === 0) {
         return;
