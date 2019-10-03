@@ -629,11 +629,12 @@ ORDER BY feature_name, fingerprintName ASC`;
 }
 
 async function fingerprintUsageForType(clientFactory: ClientFactory, workspaceId: string, type?: string): Promise<FingerprintUsage[]> {
-    const sql = `SELECT name, feature_name as type, variants, count, entropy, compliance
-FROM fingerprint_analytics f
-WHERE f.workspace_id ${workspaceId === "*" ? "!=" : "="} $1
-AND  ${type ? "f.feature_name = $2" : "true"}
-ORDER BY entropy DESC`;
+    const sql = `SELECT distinct fa.name, fa.feature_name as type, fa.variants, fa.count, fa.entropy, fa.compliance, f.display_name
+FROM fingerprint_analytics fa, fingerprints f
+WHERE fa.workspace_id ${workspaceId === "*" ? "!=" : "="} $1
+AND f.name = fa.name AND f.feature_name = fa.feature_name
+AND  ${type ? "fa.feature_name = $2" : "true"}
+ORDER BY fa.entropy DESC`;
     return doWithClient<FingerprintUsage[]>(sql, clientFactory, async client => {
         const params = [workspaceId];
         if (!!type) {
@@ -642,12 +643,13 @@ ORDER BY entropy DESC`;
         const rows = await client.query(sql, params);
         return rows.rows.map(r => ({
             name: r.name,
+            displayName: r.display_name,
             type: r.type,
             variants: +r.variants,
             count: +r.count,
             entropy: +r.entropy,
+            entropyBand: bandFor(EntropySizeBands, +r.entropy, { casing: BandCasing.Sentence, includeNumber: false }),
             compliance: +r.compliance,
-            entropy_band: bandFor(EntropySizeBands, +r.entropy, { casing: BandCasing.Sentence, includeNumber: false }),
         }));
     }, []);
 }
