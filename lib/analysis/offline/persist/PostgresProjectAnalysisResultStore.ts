@@ -642,7 +642,7 @@ ORDER BY fa.entropy DESC`;
             params.push(type);
         }
         const rows = await client.query(sql, params);
-        return rows.rows.map(r => ({
+        const fps = rows.rows.map(r => ({
             name: r.name,
             displayName: r.display_name,
             type: r.type,
@@ -653,6 +653,13 @@ ORDER BY fa.entropy DESC`;
             entropyBand: bandFor(EntropySizeBands, +r.entropy, { casing: BandCasing.Sentence, includeNumber: false }),
             compliance: +r.compliance,
         }));
+        return fps.filter(fp => {
+            if (!!fp.displayName) {
+                return true;
+            } else {
+                return fps.filter(f => fp.type === f.type && fp.name === f.name).length === 1;
+            }
+        });
     }, []);
 }
 
