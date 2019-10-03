@@ -16,7 +16,10 @@
 
 import { logger } from "@atomist/automation-client";
 import * as _ from "lodash";
-import { FingerprintKind } from "../analysis/offline/persist/ProjectAnalysisResultStore";
+import {
+    FingerprintKind,
+    FingerprintUsage,
+} from "../analysis/offline/persist/ProjectAnalysisResultStore";
 import { AspectRegistry } from "../aspect/AspectRegistry";
 import {
     AspectReportDetails,
@@ -44,11 +47,12 @@ async function aspectReportDetailsOf(type: string,
     return details[type];
 }
 
-export async function getAspectReports(fus: Array<{
+export async function getAspectReports(fps: Array<{
                                            owner: string,
                                            repo: string,
                                            fingerprints: Array<FingerprintKind & { details: AspectReportDetails }>,
                                        }>,
+                                       fus: FingerprintUsage[],
                                        aspectRegistry: AspectRegistry & AspectReportDetailsRegistry,
                                        workspaceId: string): Promise<AspectReport[]> {
     const aspects = aspectRegistry.aspects as AspectWithReportDetails[];
@@ -56,7 +60,15 @@ export async function getAspectReports(fus: Array<{
     const categories = [];
     const loadedDetails = {};
 
-    for (const fu of fus) {
+    const entropyCounts = _.sortBy(_.map(fus.reduce((p, c) => {
+        const e = _.get(p, c.type, { zero: 0, low: 0, medium: 0, high: 0 });
+        const band = (c as any).entropyBand.toLowerCase();
+        e[band] = (e[band] || 0) + 1;
+        _.set(p, c.type, e);
+        return p;
+    }, {}), (v, k) => ({ ...(v as any), type: k })), "high", "medium", "low", "zero").reverse();
+
+    for (const fu of fps) {
         for (const f of fu.fingerprints) {
             const details = await aspectReportDetailsOf(f.type, workspaceId, loadedDetails, aspectRegistry);
             f.details = details;
@@ -65,7 +77,7 @@ export async function getAspectReports(fus: Array<{
     }
 
     _.uniq(categories.filter(c => !!c)).forEach(k => {
-        const fu = fus.filter(f => f.fingerprints.map(fp => fp.details.category).includes(k));
+        const fu = fps.filter(f => f.fingerprints.map(fp => fp.details.category).includes(k));
         if (fu.length > 0) {
             const allFps = _.uniqBy(
                 _.flatten(
@@ -84,6 +96,8 @@ export async function getAspectReports(fus: Array<{
                         unit: rd.unit,
                         url: `/api/v1/${workspaceId}/${rd.url}`,
                         manage: rd.manage !== undefined ? rd.manage : true,
+                        order: entropyCounts.findIndex(e => e.type === f.type),
+                        entropyBands: entropyCounts.find(e => e.type === f.type),
                     };
                 }), "url")
                     .sort((r1, r2) => {

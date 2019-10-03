@@ -18,7 +18,6 @@
 
 import { logger } from "@atomist/automation-client";
 import { ExpressCustomizer } from "@atomist/automation-client/lib/configuration";
-import { isFingerprint } from "@atomist/sdm";
 import { isInLocalMode } from "@atomist/sdm-core";
 import {
     Aspect,
@@ -149,7 +148,8 @@ function exposeAspectMetadata(express: Express,
         try {
             const workspaceId = req.params.workspace_id || "local";
             const fingerprintKinds = await store.distinctRepoFingerprintKinds(workspaceId);
-            const reports = await getAspectReports(fingerprintKinds as any, aspectRegistry, workspaceId);
+            const fingerprintUsage = await store.fingerprintUsageForType(workspaceId);
+            const reports = await getAspectReports(fingerprintKinds as any, fingerprintUsage, aspectRegistry, workspaceId);
             logger.debug("Returning aspect reports for '%s': %j", workspaceId, reports);
             const count = await store.distinctRepoCount(workspaceId);
             const at = await store.latestTimestamp(workspaceId);
