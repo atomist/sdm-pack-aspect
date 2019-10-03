@@ -142,7 +142,7 @@ export function AnalysisTrackingPage(props: AnalysisTrackingProps): React.ReactE
     }
     return <div>
         <h2>Refresh this page to see progress.</h2>
-        <a href="aspects/">Track aspect performance</a>
+        <a href="/analysis/aspects/">Track aspect performance</a>
         {listAnalyses(props.analyses)}
     </div>;
 }
