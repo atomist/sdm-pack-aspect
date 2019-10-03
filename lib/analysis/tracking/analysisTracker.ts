@@ -18,8 +18,8 @@ import {
     logger,
     RepoRef,
 } from "@atomist/automation-client";
+import { isVirtualProjectsInfo, VirtualProjectInfo } from "@atomist/sdm-pack-fingerprint";
 import { SpiderResult } from "../offline/spider/Spider";
-import { VirtualProjectInfo, isVirtualProjectsInfo } from "@atomist/sdm-pack-fingerprint";
 
 interface AnalysisTrackingRepo { description: string; url?: string; }
 
@@ -42,7 +42,7 @@ interface RepoForReporting {
     errorMessage?: string;
     stackTrace?: string;
     snapshotId?: string;
-    virtualProjectsReport?: { count: number, finderName: string }
+    virtualProjectsReport?: { count: number, finderName: string };
 }
 interface AnalysisForReporting {
     description: string;
@@ -137,11 +137,10 @@ export interface AnalysisTrackingAspect {
     displayName: string | undefined;
 }
 
-
-type AboutVirtualProjects = {
+interface AboutVirtualProjects {
     finderName: string;
     info: VirtualProjectInfo;
-};
+}
 
 export class RepoBeingTracked {
 

@@ -9,7 +9,7 @@ interface AnalysisTrackingRepo {
     errorMessage?: string;
     stackTrace?: string;
     snapshotId?: string;
-    virtualProjectsReport?: { count: number, finderName: string },
+    virtualProjectsReport?: { count: number, finderName: string };
     aspects: AnalysisTrackingAspect[];
 }
 
