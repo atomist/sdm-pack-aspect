@@ -50,7 +50,20 @@ export interface VirtualProjectFinding {
 
 export const VirtualProjectType = "virtual-projects";
 
+export interface VirtualProjectAspectConfig {
+
+    /**
+     * Number of virtual projects at which to veto further analysis
+     */
+    virtualProjectLimit?: number;
+
+}
+
+/**
+ * Emit a fingerprint for each virtual project in the repository
+ */
 export function virtualProjectAspect(
+    config: VirtualProjectAspectConfig,
     ...finders: Array<(p: Project) => Promise<VirtualProjectFinding>>): Aspect<VirtualProjectData> {
     return {
         name: VirtualProjectType,
@@ -59,12 +72,16 @@ export function virtualProjectAspect(
             const findings = await Promise.all(finders.map(finder => finder(p)));
             return _.flatten(findings.map(finding =>
                 finding.paths.map(path => fingerprintOf({
-                    type: VirtualProjectType,
-                    data: { reason: finding.reason, path },
-                    path,
-                }),
+                        type: VirtualProjectType,
+                        data: { reason: finding.reason, path },
+                        path,
+                    }),
                 )));
         },
+        vetoWhen: fps =>
+            fps.length > (config.virtualProjectLimit || Number.MAX_VALUE) ?
+                { reason: `Too many virtual projects: Found ${fps.length}, limit at ${config.virtualProjectLimit}` } :
+                false,
         stats: {
             defaultStatStatus: {
                 entropy: false,

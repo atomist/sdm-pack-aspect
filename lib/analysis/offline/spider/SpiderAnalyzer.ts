@@ -45,6 +45,7 @@ import {
     Analyzer,
     TimeRecorder,
 } from "./Spider";
+import { constructFurtherAnalysisVetoFingerprint } from "@atomist/sdm-pack-fingerprint/lib/machine/Aspect";
 
 /**
  * Analyzer implementation that captures timings that are useful during
@@ -62,8 +63,10 @@ export class SpiderAnalyzer implements Analyzer {
             await this.virtualProjectFinder.findVirtualProjectInfo(p);
         }
         const pili = await fakePushImpactListenerInvocation(p);
-        await runExtracts(p, pili, this.aspects, fingerprints, this.timings, repoTracking);
-        await runConsolidates(p, pili, this.aspects.filter(aspect => !!aspect.consolidate), fingerprints, repoTracking);
+        const keepGoing = await runExtracts(p, pili, this.aspects, fingerprints, this.timings, repoTracking);
+        if (keepGoing) {
+            await runConsolidates(p, pili, this.aspects.filter(aspect => !!aspect.consolidate), fingerprints, repoTracking);
+        }
 
         return {
             id: p.id as RemoteRepoRef,
@@ -81,17 +84,45 @@ export class SpiderAnalyzer implements Analyzer {
     }
 }
 
+/**
+ * Return whether to continue to evaluate consolidates
+ */
 async function runExtracts(p: Project,
                            pili: PushImpactListenerInvocation,
                            aspects: Aspect[],
                            fingerprints: FP[],
                            timings: TimeRecorder,
-                           repoTracking: RepoBeingTracked): Promise<void> {
-    await Promise.all(aspects
+                           repoTracking: RepoBeingTracked): Promise<boolean> {
+
+    const vetoAspects = aspects.filter(a => !!a.vetoWhen);
+    const otherAspects = aspects.filter(a => !a.vetoWhen);
+
+    // Run veto aspects first
+    for (const vetoAspect of vetoAspects) {
+        try {
+            const fps = await safeTimedExtract(vetoAspect, p, pili, timings, repoTracking.plan(vetoAspect, "extract"));
+            if (!!fps) {
+                fingerprints.push(...fps);
+            }
+            const vetoResult = vetoAspect.vetoWhen(fps);
+            if (vetoResult) {
+                logger.info("Fingerprinting was vetoed: %j", vetoResult);
+                fingerprints.push(constructFurtherAnalysisVetoFingerprint(vetoAspect, vetoResult));
+                return false;
+            }
+        } catch (e) {
+            logger.warn(`Veto aspect '${vetoAspect.name}' extract failed: ${e.message}: Vetoing anyway`);
+            fingerprints.push(constructFurtherAnalysisVetoFingerprint(vetoAspect, { reason: `Error: ${e.message}` }));
+            return false;
+        }
+    }
+
+    await Promise.all(otherAspects
         .map(aspect => safeTimedExtract(aspect, p, pili, timings, repoTracking.plan(aspect, "extract"))
             .then(fps =>
                 fingerprints.push(...fps),
             )));
+    return true;
 }
 
 /**
