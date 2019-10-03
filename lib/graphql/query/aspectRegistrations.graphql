@@ -1,5 +1,5 @@
 query AspectRegistrations($state: [AspectRegistrationState], $name: [String]) {
-    AspectRegistration(state: $state, name: $name) {
+    AspectRegistration(state: $state, name: $name, _first: 100) {
         name
         owner
         displayName
