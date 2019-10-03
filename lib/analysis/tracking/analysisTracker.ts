@@ -242,7 +242,7 @@ export class RepoBeingTracked {
 
     public spiderResult(): SpiderResult {
         if (!this.repoRef) {
-            throw new Error("Can't return a SpiderResult until repoRef is set");
+            throw new Error("Can't return a SpiderResult until repoRef is set. Please do that first");
         }
         return {
             repositoriesDetected: 1,
