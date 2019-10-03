@@ -18,7 +18,10 @@ import {
     logger,
     RepoRef,
 } from "@atomist/automation-client";
-import { isVirtualProjectsInfo, VirtualProjectInfo } from "@atomist/sdm-pack-fingerprint";
+import {
+    isVirtualProjectsInfo,
+    VirtualProjectInfo,
+} from "@atomist/sdm-pack-fingerprint";
 import { SpiderResult } from "../offline/spider/Spider";
 
 interface AnalysisTrackingRepo { description: string; url?: string; }
