@@ -19,6 +19,7 @@ import {
     RepoRef,
 } from "@atomist/automation-client";
 import { SpiderResult } from "../offline/spider/Spider";
+import { VirtualProjectInfo, isVirtualProjectsInfo } from "@atomist/sdm-pack-fingerprint";
 
 interface AnalysisTrackingRepo { description: string; url?: string; }
 
@@ -41,6 +42,7 @@ interface RepoForReporting {
     errorMessage?: string;
     stackTrace?: string;
     snapshotId?: string;
+    virtualProjectsReport?: { count: number, finderName: string }
 }
 interface AnalysisForReporting {
     description: string;
@@ -135,6 +137,12 @@ export interface AnalysisTrackingAspect {
     displayName: string | undefined;
 }
 
+
+type AboutVirtualProjects = {
+    finderName: string;
+    info: VirtualProjectInfo;
+};
+
 export class RepoBeingTracked {
 
     public repoRef: RepoRef | undefined = undefined;
@@ -143,6 +151,7 @@ export class RepoBeingTracked {
     public persistedSnapshotId: string | undefined;
     public failureDetails: FailureDetails | undefined = undefined;
     public skipReason: string | undefined;
+    public aboutVirtualProjects: AboutVirtualProjects | undefined;
     private analysisStartMillis: number | undefined;
 
     private readonly aspects: AspectBeingTracked[] = [];
@@ -157,6 +166,10 @@ export class RepoBeingTracked {
 
     public beganAnalysis(): void {
         this.analysisStartMillis = new Date().getTime();
+    }
+
+    public foundVirtualProjects(about: AboutVirtualProjects) {
+        this.aboutVirtualProjects = about;
     }
 
     public setRepoRef(repoRef: RepoRef): void {
@@ -209,6 +222,10 @@ export class RepoBeingTracked {
             errorMessage: `Failed while trying to ${this.failureDetails.whileTryingTo}\n${this.failureDetails.message || ""}`,
             stackTrace: this.failureDetails.error ? this.failureDetails.error.stack : undefined,
         };
+        const virtualProjectsReport = this.aboutVirtualProjects && {
+            finderName: this.aboutVirtualProjects.finderName,
+            count: isVirtualProjectsInfo(this.aboutVirtualProjects.info) ? this.aboutVirtualProjects.info.virtualProjects.length : 0,
+        };
         return {
             ...this.params,
             progress: isDone ? "Stopped" : isGoing ? "Going" : "Planned",
@@ -216,6 +233,7 @@ export class RepoBeingTracked {
             millisTaken: this.millisTaken,
             snapshotId: this.persistedSnapshotId,
             aspects: this.aspects.map(a => a.report()),
+            virtualProjectsReport,
             ...errorFields,
         };
     }
