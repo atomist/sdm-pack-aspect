@@ -116,9 +116,10 @@ function displayAspects(props: RepoExplorerProps): React.ReactElement {
         true);
 }
 
-function displayAspect(feature: ProjectAspectForDisplay): React.ReactElement {
-    return <li>
-        {collapsible("aspects",
+function displayAspect(feature: ProjectAspectForDisplay, i: number): React.ReactElement {
+    const key = "aspect-" + i;
+    return <li key={key}>
+        {collapsible(key,
             feature.aspect.displayName,
             <ul>
                 {feature.fingerprints.map(displayFingerprint)}
@@ -149,7 +150,7 @@ function displayFingerprint(fingerprint: ProjectFingerprintForDisplay): React.Re
 function displayCodeMetrics(props: RepoExplorerProps): React.ReactElement {
     const cmf = props.repo.analysis.fingerprints.find(isCodeMetricsFingerprint);
     if (!cmf) {
-        return <div/>;
+        return <div />;
     }
 
     return collapsible("languages", "Languages",
