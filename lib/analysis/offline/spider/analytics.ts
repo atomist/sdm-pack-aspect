@@ -14,8 +14,12 @@
  * limitations under the License.
  */
 
-import { FP } from "@atomist/sdm-pack-fingerprint";
+import {
+    Aspect,
+    FP,
+} from "@atomist/sdm-pack-fingerprint";
 import * as _ from "lodash";
+import { aspectSpecifiesNoEntropy } from "../../../routes/api";
 import {
     FingerprintKind,
     ProjectAnalysisResultStore,
@@ -24,17 +28,25 @@ import {
 /**
  * Retrieve all fingerprints, then compute and store fingerprint_analytics for the whole workspace
  */
-export async function computeAnalytics(persister: ProjectAnalysisResultStore, workspaceId: string): Promise<void> {
-    const allFingerprints = await persister.fingerprintsInWorkspace(workspaceId, false);
-    const fingerprintKinds = await persister.distinctFingerprintKinds(workspaceId);
+export async function computeAnalytics(
+    world: {
+        persister: ProjectAnalysisResultStore,
+        analyzer: {
+            aspectOf(aspectName: string): Aspect<any> | undefined,
+        },
+    },
+    workspaceId: string): Promise<void> {
+    const allFingerprints = await world.persister.fingerprintsInWorkspace(workspaceId, false);
+    const fingerprintKinds = await world.persister.distinctFingerprintKinds(workspaceId);
 
-    const persistThese = fingerprintKinds.map((kind: FingerprintKind) => {
-        const fingerprintsOfKind = allFingerprints.filter(f => f.type === kind.type && f.name === kind.name);
-        const cohortAnalysis = analyzeCohort(fingerprintsOfKind);
-        return { workspaceId, kind, cohortAnalysis };
-    });
+    const persistThese = fingerprintKinds.filter(k => !aspectSpecifiesNoEntropy(world.analyzer.aspectOf(k.type)))
+        .map((kind: FingerprintKind) => {
+            const fingerprintsOfKind = allFingerprints.filter(f => f.type === kind.type && f.name === kind.name);
+            const cohortAnalysis = analyzeCohort(fingerprintsOfKind);
+            return { workspaceId, kind, cohortAnalysis };
+        });
 
-    await persister.persistAnalytics(persistThese);
+    await world.persister.persistAnalytics(persistThese);
 }
 
 /**

@@ -24,6 +24,7 @@ import { ProjectAnalysisResultStore } from "../persist/ProjectAnalysisResultStor
 import { SpideredRepo } from "../SpideredRepo";
 import { ScmSearchCriteria } from "./ScmSearchCriteria";
 
+import { Aspect } from "@atomist/sdm-pack-fingerprint";
 import * as _ from "lodash";
 import {
     AnalysisTracking,
@@ -91,6 +92,8 @@ export type TimeRecorder = Record<string, Timing>;
 export interface Analyzer {
 
     analyze(p: Project, repoTracking: RepoBeingTracked): Promise<Analyzed>;
+
+    aspectOf(aspectName: string): Aspect<any> | undefined;
 
     readonly timings: TimeRecorder;
 }
