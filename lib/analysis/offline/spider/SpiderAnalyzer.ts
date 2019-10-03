@@ -35,6 +35,7 @@ import {
     VirtualProjectFinder,
 } from "@atomist/sdm-pack-fingerprint";
 import { toName } from "@atomist/sdm-pack-fingerprint/lib/adhoc/preferences";
+import { constructFurtherAnalysisVetoFingerprint } from "@atomist/sdm-pack-fingerprint/lib/machine/Aspect";
 import { Analyzed } from "../../../aspect/AspectRegistry";
 import { time } from "../../../util/showTiming";
 import {
@@ -45,7 +46,6 @@ import {
     Analyzer,
     TimeRecorder,
 } from "./Spider";
-import { constructFurtherAnalysisVetoFingerprint } from "@atomist/sdm-pack-fingerprint/lib/machine/Aspect";
 
 /**
  * Analyzer implementation that captures timings that are useful during
