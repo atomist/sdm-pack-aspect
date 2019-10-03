@@ -26,6 +26,7 @@ import {
     Ideal,
     isConcreteIdeal,
 } from "@atomist/sdm-pack-fingerprint";
+import { toName } from "@atomist/sdm-pack-fingerprint/lib/adhoc/preferences";
 import * as camelcaseKeys from "camelcase-keys";
 import * as _ from "lodash";
 import {
@@ -645,6 +646,7 @@ ORDER BY fa.entropy DESC`;
             name: r.name,
             displayName: r.display_name,
             type: r.type,
+            fingerprint: toName(r.type, r.name),
             variants: +r.variants,
             count: +r.count,
             entropy: +r.entropy,
