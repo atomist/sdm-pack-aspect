@@ -45,7 +45,7 @@ function displayRepository(repo: AnalysisTrackingRepo & { repoAnalysisId: string
     const insightsLink = repo.snapshotId ? <a href={"/repository?id=" + repo.snapshotId}>
         <img src="/hexagonal-fruit-of-power.png" className="linkToInsightsImage"></img>
     </a> : undefined;
-    const virtualProjectsDescription = repo.virtualProjectsReport ? "Not checking repo for interior projects" :
+    const virtualProjectsDescription = !repo.virtualProjectsReport ? "Not checking repo for interior projects" :
         `${repo.virtualProjectsReport.count} interior projects found by ${repo.virtualProjectsReport.finderName}`;
     const aspectSummary = repo.progress === "Planned" || repo.keptExisting ? undefined : summarizeAspects(repo.aspects);
     return <div className={className}>
