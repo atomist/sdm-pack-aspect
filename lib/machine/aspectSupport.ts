@@ -182,6 +182,12 @@ export interface AspectSupportOptions {
      * Defaults to false in local mode
      */
     secureWeb?: boolean;
+
+    /**
+     * Optionally register aspects hosted in SDM
+     * Defaults to true
+     */
+    registerAspects?: boolean;
 }
 
 /**
@@ -231,8 +237,10 @@ export function aspectSupport(options: AspectSupportOptions): ExtensionPack {
                 // job and on subsequent runs of "analyze org"
                 sdm.addCommand(calculateFingerprintTask(sdm, aspects));
 
-                // Register all aspects on startup
-                sdm.addStartupListener(registerAspects(sdm, aspects));
+                if (options.registerAspects !== false) {
+                    // Register all aspects on startup
+                    sdm.addStartupListener(registerAspects(sdm, aspects));
+                }
             }
 
             // Add support for calculating aspects on push and computing delivery aspects
