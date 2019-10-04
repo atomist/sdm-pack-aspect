@@ -24,7 +24,6 @@ export * from "./lib/tagger/commonTaggers";
 export * from "./lib/aspect/compose/commonTypes";
 export * from "./lib/scorer/Score";
 export * from "./lib/scorer/scoring";
-export * from "./lib/aspect/common/codeMetrics";
 export * from "./lib/aspect/common/codeOwnership";
 export * from "./lib/aspect/community/codeOfConduct";
 export * from "./lib/aspect/community/license";
