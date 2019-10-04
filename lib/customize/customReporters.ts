@@ -15,18 +15,26 @@
  */
 
 import {
+    isCodeMetricsFingerprint,
+} from "@atomist/sdm-pack-sloc";
+import { CodeMetricsData } from "@atomist/sdm-pack-sloc/lib/aspect/codeMetricsAspect";
+import {
     CodeStats,
     consolidate,
     Language,
 } from "@atomist/sdm-pack-sloc/lib/slocReport";
 import * as _ from "lodash";
 import { Analyzed } from "../aspect/AspectRegistry";
-import { findCodeMetricsData } from "../aspect/common/codeMetrics";
 import { Reporters } from "../aspect/reporters";
 import { treeBuilder } from "../tree/TreeBuilder";
 import { bandFor } from "../util/bands";
 
 export type AnalyzedGrouper = (ar: Analyzed) => string;
+
+function findCodeMetricsData(ar: Analyzed): CodeMetricsData {
+    const fp = ar.fingerprints.find(isCodeMetricsFingerprint);
+    return fp ? fp.data : undefined;
+}
 
 const groupByLoc: AnalyzedGrouper = ar => {
     const cm = findCodeMetricsData(ar);

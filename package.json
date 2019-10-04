@@ -30,6 +30,7 @@
     "@atomist/slack-messages": "^1.1.1"
   },
   "dependencies": {
+    "@atomist/sdm-pack-sloc": "^2.0.0-master.20191004134721",
     "@octokit/rest": "^16.28.3",
     "@types/js-yaml": "^3.12.1",
     "@types/json-stable-stringify": "^1.0.32",

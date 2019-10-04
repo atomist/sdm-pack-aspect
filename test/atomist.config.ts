@@ -37,6 +37,7 @@ import {
     NpmDeps,
     VirtualProjectFinder,
 } from "@atomist/sdm-pack-fingerprint";
+import { CodeMetricsAspect } from "@atomist/sdm-pack-sloc";
 import {
     PowerShellLanguage,
     ShellLanguage,
@@ -55,7 +56,6 @@ import {
     TaggerDefinition,
 } from "../lib/aspect/AspectRegistry";
 import { enrich } from "../lib/aspect/AspectReportDetailsRegistry";
-import { CodeMetricsAspect } from "../lib/aspect/common/codeMetrics";
 import { codeOwnership } from "../lib/aspect/common/codeOwnership";
 import { codeOfConduct } from "../lib/aspect/community/codeOfConduct";
 import {

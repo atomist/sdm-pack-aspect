@@ -16,13 +16,13 @@
 
 import { logger } from "@atomist/automation-client";
 import { toArray } from "@atomist/sdm-core/lib/util/misc/array";
+import { isCodeMetricsFingerprint } from "@atomist/sdm-pack-sloc";
 import * as _ from "lodash";
 import {
     AspectRegistry,
     Tagger,
     WorkspaceSpecificTagger,
 } from "../aspect/AspectRegistry";
-import { isCodeMetricsFingerprint } from "../aspect/common/codeMetrics";
 import { CodeOfConductType } from "../aspect/community/codeOfConduct";
 import {
     hasNoLicense,

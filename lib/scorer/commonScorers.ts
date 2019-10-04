@@ -15,10 +15,10 @@
  */
 
 import { sha256 } from "@atomist/sdm-pack-fingerprint";
+import { isCodeMetricsFingerprint } from "@atomist/sdm-pack-sloc";
 import { Language } from "@atomist/sdm-pack-sloc/lib/slocReport";
 import * as _ from "lodash";
 import { RepositoryScorer } from "../aspect/AspectRegistry";
-import { isCodeMetricsFingerprint } from "../aspect/common/codeMetrics";
 import { findReviewCommentCountFingerprint } from "../aspect/common/reviewerAspect";
 import { CodeOfConductType } from "../aspect/community/codeOfConduct";
 import {

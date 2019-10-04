@@ -1,6 +1,6 @@
+import { isCodeMetricsFingerprint } from "@atomist/sdm-pack-sloc";
 import * as React from "react";
 import { ScoredRepo } from "../lib/aspect/AspectRegistry";
-import { isCodeMetricsFingerprint } from "../lib/aspect/common/codeMetrics";
 import { WeightedScore, WeightedScores } from "../lib/scorer/Score";
 import { TagUsage } from "../lib/tree/sunburst";
 import { explainScore } from "./repoList";
