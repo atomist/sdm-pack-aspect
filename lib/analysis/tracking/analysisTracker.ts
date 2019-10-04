@@ -170,7 +170,7 @@ export class RepoBeingTracked {
         this.analysisStartMillis = new Date().getTime();
     }
 
-    public foundVirtualProjects(about: AboutVirtualProjects) {
+    public foundVirtualProjects(about: AboutVirtualProjects): void {
         this.aboutVirtualProjects = about;
     }
 

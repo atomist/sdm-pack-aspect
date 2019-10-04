@@ -79,7 +79,7 @@ export class SpiderAnalyzer implements Analyzer {
     }
 
     constructor(private readonly aspects: Aspect[],
-                private readonly virtualProjectFinder?: VirtualProjectFinder) {
+        private readonly virtualProjectFinder?: VirtualProjectFinder) {
 
     }
 }
@@ -88,11 +88,11 @@ export class SpiderAnalyzer implements Analyzer {
  * Return whether to continue to evaluate consolidates
  */
 async function runExtracts(p: Project,
-                           pili: PushImpactListenerInvocation,
-                           aspects: Aspect[],
-                           fingerprints: FP[],
-                           timings: TimeRecorder,
-                           repoTracking: RepoBeingTracked): Promise<boolean> {
+    pili: PushImpactListenerInvocation,
+    aspects: Aspect[],
+    fingerprints: FP[],
+    timings: TimeRecorder,
+    repoTracking: RepoBeingTracked): Promise<boolean> {
 
     const vetoAspects = aspects.filter(a => !!a.vetoWhen);
     const otherAspects = aspects.filter(a => !a.vetoWhen);
@@ -130,10 +130,10 @@ async function runExtracts(p: Project,
  * later aspects that consolidate.
  */
 async function runConsolidates(p: Project,
-                               pili: PushImpactListenerInvocation,
-                               aspects: Aspect[],
-                               fingerprints: FP[],
-                               repoTracking: RepoBeingTracked): Promise<void> {
+    pili: PushImpactListenerInvocation,
+    aspects: Aspect[],
+    fingerprints: FP[],
+    repoTracking: RepoBeingTracked): Promise<void> {
     for (const aspect of aspects) {
         const consolidatedFingerprints = await safeConsolidate(aspect, fingerprints, p, pili,
             repoTracking.plan(aspect, "consolidate"));
@@ -142,10 +142,10 @@ async function runConsolidates(p: Project,
 }
 
 async function safeTimedExtract(aspect: Aspect,
-                                p: Project,
-                                pili: PushImpactListenerInvocation,
-                                timeRecorder: TimeRecorder,
-                                tracking: AspectBeingTracked): Promise<FP[]> {
+    p: Project,
+    pili: PushImpactListenerInvocation,
+    timeRecorder: TimeRecorder,
+    tracking: AspectBeingTracked): Promise<FP[]> {
     try {
         const timed = await time(async () => {
             const fps = toArray(await aspect.extract(p, pili)) || [];
@@ -185,10 +185,10 @@ function addTiming(type: string, millis: number, timeRecorder: TimeRecorder): vo
 }
 
 async function safeConsolidate(aspect: Aspect,
-                               existingFingerprints: FP[],
-                               p: Project,
-                               pili: PushImpactListenerInvocation,
-                               tracking: AspectBeingTracked): Promise<FP[]> {
+    existingFingerprints: FP[],
+    p: Project,
+    pili: PushImpactListenerInvocation,
+    tracking: AspectBeingTracked): Promise<FP[]> {
     try {
         const extracted = await aspect.consolidate(existingFingerprints, p, pili);
         const result = !!extracted ? toArray(extracted) : [];

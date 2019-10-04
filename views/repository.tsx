@@ -80,7 +80,7 @@ function displayResources(props: RepoExplorerProps): React.ReactElement {
 
 function displayVirtualProjects(props: RepoExplorerProps): React.ReactElement {
     return collapsible("virtualProjects",
-        `Virtual projects`,
+        `Virtual projects (${props.virtualPaths.length})`,
         <ul>
             {props.virtualPaths.map(virtualPath => {
                 return <li><a href={`repository?id=${props.repo.id}&path=${virtualPath}`}>{virtualPath}</a></li>;
