@@ -76,6 +76,7 @@ export interface ReviewerAspectOptions extends AspectMetadata {
 /**
  * Emit fingerprint aspect, count aspect and classification aspect for the given review comment.
  * If a terminator CodeTransform is provided, it will try to delete all instances of the fingerprint
+ * @deprecated use inspectionAspect
  */
 export function reviewerAspects(opts: ReviewerAspectOptions): Aspect[] {
     const aspects: Aspect[] = [

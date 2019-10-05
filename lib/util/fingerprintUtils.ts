@@ -22,7 +22,7 @@ import * as _ from "lodash";
  * @param {FP[]} fingerprints
  * @return {string[]}
  */
-export function distinctNonRootPaths(fingerprints: FP[]): string[] {
+export function distinctNonRootPaths(fingerprints: Array<{path?: string}>): string[] {
     return _.uniq(fingerprints
         .map(fp => fp.path)
         .filter(p => !["", ".", undefined].includes(p)),

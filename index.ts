@@ -33,6 +33,7 @@ export * from "./lib/aspect/compose/fileMatchAspect";
 export * from "./lib/aspect/compose/globAspect";
 export * from "./lib/aspect/compose/matchAspect";
 export * from "./lib/aspect/common/globVirtualizer";
+export * from "./lib/aspect/common/inspectionVirtualizer";
 export * from "./lib/aspect/compose/microgrammarMatchAspect";
 export * from "./lib/aspect/git/branchCount";
 export * from "./lib/aspect/git/gitActivity";
