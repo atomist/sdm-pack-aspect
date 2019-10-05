@@ -30,7 +30,7 @@
     "@atomist/slack-messages": "^1.1.1"
   },
   "dependencies": {
-    "@atomist/sdm-pack-sloc": "1.0.3-master.20190502175705",
+    "@atomist/sdm-pack-sloc": "^2.0.0-master.20191004134721",
     "@octokit/rest": "^16.28.3",
     "@types/js-yaml": "^3.12.1",
     "@types/json-stable-stringify": "^1.0.32",
@@ -39,6 +39,7 @@
     "@types/yamljs": "^0.2.30",
     "app-root-path": "^2.2.1",
     "body-parser": "^1.19.0",
+    "build": "^0.1.4",
     "camelcase-keys": "^6.0.1",
     "cookie-parser": "^1.4.4",
     "cors": "^2.8.5",
@@ -57,6 +58,7 @@
     "react": "^16.8.6",
     "react-dom": "^16.8.6",
     "recursive-readdir": "^2.2.2",
+    "run": "^1.4.0",
     "semver": "^6.3.0",
     "serve-static": "^1.14.1",
     "stringify-tree": "^1.0.2",

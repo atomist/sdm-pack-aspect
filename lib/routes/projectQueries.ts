@@ -14,13 +14,21 @@
  * limitations under the License.
  */
 
+import {
+    CodeMetricsData,
+    isCodeMetricsFingerprint,
+} from "@atomist/sdm-pack-sloc/lib/aspect/codeMetricsAspect";
 import { CodeStats } from "@atomist/sdm-pack-sloc/lib/slocReport";
 import { Analyzed } from "../aspect/AspectRegistry";
-import { findCodeMetricsData } from "../aspect/common/codeMetrics";
 import {
     ReportBuilder,
     treeBuilder,
 } from "../tree/TreeBuilder";
+
+function findCodeMetricsData(ar: Analyzed): CodeMetricsData {
+    const fp = ar.fingerprints.find(isCodeMetricsFingerprint);
+    return fp ? fp.data : undefined;
+}
 
 /**
  * Languages used in this project
