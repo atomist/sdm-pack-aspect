@@ -14,15 +14,15 @@
  * limitations under the License.
  */
 
-import { InMemoryProject, NoParameters, Project, ProjectReview, ReviewComment, } from "@atomist/automation-client";
+import { InMemoryProject, NoParameters, Project, ProjectReview, ReviewComment } from "@atomist/automation-client";
 import { CodeTransform } from "@atomist/sdm";
 import { toArray } from "@atomist/sdm-core/lib/util/misc/array";
-import { Aspect, fingerprintOf, FP, } from "@atomist/sdm-pack-fingerprint";
+import { Aspect, fingerprintOf, FP } from "@atomist/sdm-pack-fingerprint";
 import { CodeInspection } from "@atomist/sdm/lib/api/registration/CodeInspectionRegistration";
 import * as assert from "assert";
-import { pathBefore } from "../../../lib/util/fingerprintUtils";
 import { inspectionAspect, InspectionAspectData } from "../../../lib/aspect/common/inspectionAspect";
 import { InspectionVirtualizer } from "../../../lib/aspect/common/inspectionVirtualizer";
+import { pathBefore } from "../../../lib/util/fingerprintUtils";
 
 const FlagNothingReviewer: CodeInspection<ProjectReview, NoParameters> = async p => ({
     repoId: p.id,
