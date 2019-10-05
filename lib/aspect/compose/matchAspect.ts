@@ -15,25 +15,15 @@
  */
 
 import { MatchResult } from "@atomist/automation-client";
-import {
-    fileMatches,
-    PathExpressionQueryOptions,
-} from "@atomist/automation-client/lib/tree/ast/astUtils";
-import {
-    Aspect,
-    fingerprintOf,
-} from "@atomist/sdm-pack-fingerprint";
+import { fileMatches, PathExpressionQueryOptions } from "@atomist/automation-client/lib/tree/ast/astUtils";
+import { Aspect, fingerprintOf } from "@atomist/sdm-pack-fingerprint";
 
 import * as _ from "lodash";
-import { AspectMetadata } from "./commonTypes";
-import {
-    GlobAspectData,
-    GlobMatch,
-} from "./globAspect";
+import { Omit } from "../../util/omit";
+import { GlobAspectData, GlobAspectMetadata, GlobMatch } from "./globAspect";
 
-export interface MatchAspectOptions<D> extends AspectMetadata, Omit<PathExpressionQueryOptions, "globPatterns"> {
+export interface MatchAspectOptions<D> extends GlobAspectMetadata, Omit<PathExpressionQueryOptions, "globPatterns"> {
     mapper: (m: MatchResult) => D;
-    glob: string;
 }
 
 /**
@@ -77,6 +67,9 @@ export function matchAspect<D = {}>(config: MatchAspectOptions<D>): Aspect<GlobA
                 kind: "globMatch" as any,
                 matches,
             };
+            if (!config.alwaysEmit && data.matches.length === 0) {
+                return [];
+            }
             return fingerprintOf({
                 type: config.name,
                 data,

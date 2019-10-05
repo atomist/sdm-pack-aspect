@@ -49,10 +49,20 @@ export interface Extracted<D> {
     extract: (f: ProjectFile) => Promise<D>;
 }
 
-export type GlobAspectOptions<D> = AspectMetadata &
-    {
-        glob: string,
-    } & (Validated | Extracted<D>);
+export interface GlobAspectMetadata extends AspectMetadata {
+
+    /**
+     * Glob we're looking for
+     */
+    readonly glob: string;
+
+    /**
+     * If this is set, always emit an aspect even if there are no matches
+     */
+    readonly alwaysEmit?: boolean;
+}
+
+export type GlobAspectOptions<D> = GlobAspectMetadata & (Validated | Extracted<D>);
 
 function isExtracted(gao: GlobAspectOptions<any>): gao is GlobAspectOptions<any> & Extracted<any> {
     const maybe = gao as Extracted<any>;
@@ -106,6 +116,9 @@ export function globAspect<D = {}>(config: GlobAspectOptions<D>): Aspect<GlobAsp
                     }
                 }),
             };
+            if (!config.alwaysEmit && data.matches.length === 0) {
+                return [];
+            }
             return fingerprintOf({
                 type: config.name,
                 data,

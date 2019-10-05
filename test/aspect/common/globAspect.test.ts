@@ -31,8 +31,14 @@ import * as assert from "assert";
 
 describe("glob aspect", () => {
 
-    it("should find none in empty project", async () => {
+    it("should find none and not emit by default in empty project", async () => {
         const ga = globAspect({ name: "foo", glob: "thing", displayName: "" });
+        const fp = await extractify(ga, InMemoryProject.of());
+        assert.deepStrictEqual(fp, []);
+    });
+
+    it("should find none and emit in empty project", async () => {
+        const ga = globAspect({ name: "foo", glob: "thing", displayName: "", alwaysEmit: true });
         const fp = await extractify(ga, InMemoryProject.of());
         assert.strictEqual(fp.data.matches.length, 0);
     });
@@ -47,7 +53,13 @@ describe("glob aspect", () => {
     it("should find none with content test", async () => {
         const ga = globAspect({ name: "foo", glob: "thing", displayName: "", contentTest: () => false });
         const fp = await extractify(ga, InMemoryProject.of({ path: "thing", content: "x" }));
-        assert.strictEqual(fp.data.matches.length, 0);
+        assert.deepStrictEqual(fp, []);
+    });
+
+    it("should find none but emit with content test", async () => {
+        const ga = globAspect({ name: "foo", glob: "thing", alwaysEmit: true, displayName: "", contentTest: () => false });
+        const fp = await extractify(ga, InMemoryProject.of({ path: "thing", content: "x" }));
+        assert.deepStrictEqual(fp.data.matches, []);
     });
 
     it("should add custom data to match", async () => {
