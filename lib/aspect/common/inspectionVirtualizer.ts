@@ -23,7 +23,10 @@ import {
     GlobAspectData,
     isGlobMatchFingerprint,
 } from "../compose/globAspect";
-import { InspectionAspectData, isInspectionFingerprint } from "./inspectionAspect";
+import {
+    InspectionAspectData,
+    isInspectionFingerprint,
+} from "./inspectionAspect";
 
 /**
  * Virtualize all inspection fingerprints into virtual projects

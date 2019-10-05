@@ -14,8 +14,16 @@
  * limitations under the License.
  */
 
-import { logger, NoParameters, ProjectReview, ReviewComment } from "@atomist/automation-client";
-import { CodeTransform, ReviewerRegistration } from "@atomist/sdm";
+import {
+    logger,
+    NoParameters,
+    ProjectReview,
+    ReviewComment,
+} from "@atomist/automation-client";
+import {
+    CodeTransform,
+    ReviewerRegistration,
+} from "@atomist/sdm";
 import { ApplyFingerprint, Aspect, FP, sha256 } from "@atomist/sdm-pack-fingerprint";
 import { CodeInspection } from "@atomist/sdm/lib/api/registration/CodeInspectionRegistration";
 import { AspectMetadata } from "../compose/commonTypes";
