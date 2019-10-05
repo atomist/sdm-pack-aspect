@@ -18,6 +18,10 @@ import {
     logger,
     RepoRef,
 } from "@atomist/automation-client";
+import {
+    isVirtualProjectsInfo,
+    VirtualProjectInfo,
+} from "@atomist/sdm-pack-fingerprint";
 import { SpiderResult } from "../offline/spider/Spider";
 
 interface AnalysisTrackingRepo { description: string; url?: string; }
@@ -41,6 +45,7 @@ interface RepoForReporting {
     errorMessage?: string;
     stackTrace?: string;
     snapshotId?: string;
+    virtualProjectsReport?: { count: number, finderName: string };
 }
 interface AnalysisForReporting {
     description: string;
@@ -135,6 +140,11 @@ export interface AnalysisTrackingAspect {
     displayName: string | undefined;
 }
 
+interface AboutVirtualProjects {
+    finderName: string;
+    info: VirtualProjectInfo;
+}
+
 export class RepoBeingTracked {
 
     public repoRef: RepoRef | undefined = undefined;
@@ -143,6 +153,7 @@ export class RepoBeingTracked {
     public persistedSnapshotId: string | undefined;
     public failureDetails: FailureDetails | undefined = undefined;
     public skipReason: string | undefined;
+    public aboutVirtualProjects: AboutVirtualProjects | undefined;
     private analysisStartMillis: number | undefined;
 
     private readonly aspects: AspectBeingTracked[] = [];
@@ -157,6 +168,10 @@ export class RepoBeingTracked {
 
     public beganAnalysis(): void {
         this.analysisStartMillis = new Date().getTime();
+    }
+
+    public foundVirtualProjects(about: AboutVirtualProjects): void {
+        this.aboutVirtualProjects = about;
     }
 
     public setRepoRef(repoRef: RepoRef): void {
@@ -209,6 +224,10 @@ export class RepoBeingTracked {
             errorMessage: `Failed while trying to ${this.failureDetails.whileTryingTo}\n${this.failureDetails.message || ""}`,
             stackTrace: this.failureDetails.error ? this.failureDetails.error.stack : undefined,
         };
+        const virtualProjectsReport = this.aboutVirtualProjects && {
+            finderName: this.aboutVirtualProjects.finderName,
+            count: isVirtualProjectsInfo(this.aboutVirtualProjects.info) ? this.aboutVirtualProjects.info.virtualProjects.length : 0,
+        };
         return {
             ...this.params,
             progress: isDone ? "Stopped" : isGoing ? "Going" : "Planned",
@@ -216,13 +235,14 @@ export class RepoBeingTracked {
             millisTaken: this.millisTaken,
             snapshotId: this.persistedSnapshotId,
             aspects: this.aspects.map(a => a.report()),
+            virtualProjectsReport,
             ...errorFields,
         };
     }
 
     public spiderResult(): SpiderResult {
         if (!this.repoRef) {
-            throw new Error("Can't return a SpiderResult until repoRef is set");
+            throw new Error("Can't return a SpiderResult until repoRef is set. Please do that first");
         }
         return {
             repositoriesDetected: 1,

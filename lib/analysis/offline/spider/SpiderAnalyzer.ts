@@ -48,8 +48,7 @@ import {
 } from "./Spider";
 
 /**
- * Analyzer implementation that captures timings that are useful during
- * development, but don't need to be captured during regular execution.
+ * The original analyzer implementation for running locally.
  */
 export class SpiderAnalyzer implements Analyzer {
 
@@ -60,7 +59,8 @@ export class SpiderAnalyzer implements Analyzer {
 
         if (this.virtualProjectFinder) {
             // Seed the virtual project finder if we have one
-            await this.virtualProjectFinder.findVirtualProjectInfo(p);
+            const vpi = await this.virtualProjectFinder.findVirtualProjectInfo(p);
+            repoTracking.foundVirtualProjects({ finderName: this.virtualProjectFinder.name, info: vpi });
         }
         const pili = await fakePushImpactListenerInvocation(p);
         const keepGoing = await runExtracts(p, pili, this.aspects, fingerprints, this.timings, repoTracking);

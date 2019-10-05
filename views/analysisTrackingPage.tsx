@@ -9,6 +9,7 @@ interface AnalysisTrackingRepo {
     errorMessage?: string;
     stackTrace?: string;
     snapshotId?: string;
+    virtualProjectsReport?: { count: number, finderName: string };
     aspects: AnalysisTrackingAspect[];
 }
 
@@ -44,10 +45,13 @@ function displayRepository(repo: AnalysisTrackingRepo & { repoAnalysisId: string
     const insightsLink = repo.snapshotId ? <a href={"/repository?id=" + repo.snapshotId}>
         <img src="/hexagonal-fruit-of-power.png" className="linkToInsightsImage"></img>
     </a> : undefined;
+    const virtualProjectsDescription = !repo.virtualProjectsReport ? "Not checking repo for interior projects" :
+        `${repo.virtualProjectsReport.count} interior projects found by ${repo.virtualProjectsReport.finderName}`;
     const aspectSummary = repo.progress === "Planned" || repo.keptExisting ? undefined : summarizeAspects(repo.aspects);
     return <div className={className}>
         <p className="analysisRepoDescription">{repo.description} {gitLink} {insightsLink} </p>
-        <span className="timeTakenToAnalyzeRepo">{timeTaken}</span>
+        <section className="timeTakenToAnalyzeRepo">{timeTaken}</section>
+        <section className="aboutVirtualProjects">{virtualProjectsDescription}</section>
         {displayFailure(repo)}
         {aspectSummary}
     </div>;
@@ -138,7 +142,7 @@ export function AnalysisTrackingPage(props: AnalysisTrackingProps): React.ReactE
     }
     return <div>
         <h2>Refresh this page to see progress.</h2>
-        <a href="aspects/">Track aspect performance</a>
+        <a href="/analysis/aspects/">Track aspect performance</a>
         {listAnalyses(props.analyses)}
     </div>;
 }
