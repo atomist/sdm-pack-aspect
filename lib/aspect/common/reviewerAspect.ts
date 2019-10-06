@@ -153,12 +153,18 @@ export function reviewCommentCountAspect(opts: ReviewerAspectOptions): CountAspe
         extract: async () => [],
         consolidate: async fps => {
             const relevantFingerprints = fps.filter(fp => isReviewCommentFingerprint(fp) && fp.type === requiredType);
+            // Don't leave a zero count
+            if (relevantFingerprints.length === 0) {
+                return [];
+            }
+
             const toEmit: Array<FP<CountData>> = [];
             // Always put the full count on the root
             toEmit.push(fingerprintOf({
                 type,
                 data: { count: relevantFingerprints.length },
             }));
+
             // Fingerprint each subproject distinctly with its own count
             const nonRootPaths = distinctNonRootPaths(relevantFingerprints);
             for (const path of nonRootPaths) {
