@@ -60,13 +60,13 @@ export async function getAspectReports(fps: Array<{
     const categories = [];
     const loadedDetails = {};
 
-    const entropyCounts = _.sortBy(_.map(fus.reduce((p, c) => {
+    const entropyCounts = _.sortBy(_.map(fus.reduce((p: any, c: any) => {
         const e = _.get(p, c.type, { zero: 0, low: 0, medium: 0, high: 0 });
-        const band = (c as any).entropyBand.toLowerCase();
+        const band = c.entropyBand.toLowerCase();
         e[band] = (e[band] || 0) + 1;
         _.set(p, c.type, e);
         return p;
-    }, {}), (v, k) => ({ ...(v as any), type: k })), "high", "medium", "low", "zero").reverse();
+    }, {}), (v, k) => ({ ...(v), type: k })), "high", "medium", "low", "zero").reverse();
 
     for (const fu of fps) {
         for (const f of fu.fingerprints) {

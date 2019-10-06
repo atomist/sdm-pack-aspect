@@ -33,6 +33,7 @@ import * as assert from "assert";
 import {
     reviewCommentAspect,
     reviewCommentCountAspect,
+    // tslint:disable-next-line:deprecation
     reviewerAspects,
 } from "../../../lib/aspect/common/reviewerAspect";
 import { pathBefore } from "../../../lib/util/fingerprintUtils";
@@ -60,6 +61,7 @@ describe("reviewer aspects", () => {
         describe("aspect emission", () => {
 
             it("should not emit classifier by default", async () => {
+                // tslint:disable-next-line:deprecation
                 const ra = reviewerAspects({
                     reviewer: FlagNothingReviewer,
                     name: "clean",
@@ -69,6 +71,7 @@ describe("reviewer aspects", () => {
             });
 
             it("should emit classifier when asked", async () => {
+                // tslint:disable-next-line:deprecation
                 const ra = reviewerAspects({
                     reviewer: FlagNothingReviewer,
                     name: "clean",
@@ -79,6 +82,7 @@ describe("reviewer aspects", () => {
             });
 
             it("should emit classifier when given custom tag", async () => {
+                // tslint:disable-next-line:deprecation
                 const ra = reviewerAspects({
                     reviewer: FlagNothingReviewer,
                     name: "clean",
