@@ -96,15 +96,14 @@ describe("reviewer aspects", () => {
 
         describe("extract", () => {
 
-            it("should find count 0", async () => {
+            it("shouldn't find count 0", async () => {
                 const ra = reviewCommentCountAspect({
                     reviewer: FlagNothingReviewer,
                     name: "clean",
                     displayName: "clean",
                 });
                 const fps = toArray(await ra.consolidate([], undefined, undefined));
-                assert.strictEqual(fps.length, 1);
-                assert.strictEqual(fps[0].data.count, 0);
+                assert.strictEqual(fps.length, 0);
             });
         });
 
