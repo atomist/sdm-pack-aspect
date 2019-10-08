@@ -187,7 +187,7 @@ function toFingerprint(type: string, data: WeightedScore, path?: string): FP<Wei
         name: type,
         path,
         data,
-        sha: sha256(JSON.stringify(data.weightedScore)),
+        sha: sha256(JSON.stringify(data.weightedScores)),
     };
 }
 
