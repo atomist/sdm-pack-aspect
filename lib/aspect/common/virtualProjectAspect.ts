@@ -69,7 +69,10 @@ export function virtualProjectAspect(
         name: VirtualProjectType,
         displayName: "Virtual project",
         extract: async p => {
-            const findings = await Promise.all(finders.map(finder => finder(p)));
+            const findings = [];
+            for (const finder of finders) {
+                findings.push(await finder(p));
+            }
             return _.flatten(findings.map(finding =>
                 finding.paths.map(path => fingerprintOf({
                         type: VirtualProjectType,
