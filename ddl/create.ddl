@@ -41,22 +41,25 @@ CREATE TABLE repo_snapshots (
 
 -- Each fingerprint we've seen
 CREATE TABLE fingerprints (
+  id varchar NOT NULL,
+  workspace_id varchar NOT NULL,
   name text NOT NULL,
   feature_name text NOT NULL,
   sha varchar NOT NULL,
   data jsonb,
-  id varchar NOT NULL PRIMARY KEY,
-  display_name text,
-  display_value text
+  display_name varchar,
+  display_value varchar,
+  PRIMARY KEY(id, workspace_id)
 );
 
 -- Join table between repo_snapshots and fingerprints
 CREATE TABLE IF NOT EXISTS repo_fingerprints (
-  repo_snapshot_id varchar references repo_snapshots(id),
-  fingerprint_id varchar references fingerprints(id),
-  -- Path below the root if this is a virtual repo
+  repo_snapshot_id varchar references repo_snapshots(id) ON DELETE CASCADE,
+  fingerprint_workspace_id varchar NOT NULL,
+  fingerprint_id varchar NOT NULL,
   path varchar,
-  PRIMARY KEY (repo_snapshot_id, fingerprint_id, path)
+  FOREIGN KEY (fingerprint_id, fingerprint_workspace_id) REFERENCES fingerprints (id, workspace_id) ON DELETE CASCADE,
+  PRIMARY KEY (repo_snapshot_id, fingerprint_id, fingerprint_workspace_id, path)
 );
 
 -- Usage information about fingerprints
@@ -75,13 +78,12 @@ CREATE TABLE fingerprint_analytics (
 
 -- For each name/feature_name combination, the ideal for the given workspace
 CREATE TABLE ideal_fingerprints (
-  fingerprint_id varchar references fingerprints(id),
-  -- Workspace this ideal applies to
+  fingerprint_id varchar NOT NULL,
+  fingerprint_workspace_id varchar NOT NULL,
   workspace_id varchar NOT NULL,
-  -- Who says this is the ideal?
   authority varchar NOT NULL,
-  -- URL relating to the ideal, if available
   url varchar,
+  FOREIGN KEY (fingerprint_id, fingerprint_workspace_id) REFERENCES fingerprints (id, workspace_id) ON DELETE CASCADE,
   PRIMARY KEY (fingerprint_id, workspace_id)
 );
 
@@ -89,7 +91,8 @@ CREATE TYPE severity AS ENUM ('info', 'warn', 'error');
 
 -- Fingerprints with known problems. For example, security risks.
 CREATE TABLE problem_fingerprints (
-  fingerprint_id varchar references fingerprints(id),
+  fingerprint_id varchar NOT NULL,
+  fingerprint_workspace_id varchar NOT NULL,
   -- Workspace this problem report applies to.
   workspace_id varchar NOT NULL,
   -- Severity of this problem
@@ -101,6 +104,7 @@ CREATE TABLE problem_fingerprints (
   -- URL relating to the problem, if available
   url varchar,
   date_added timestamp NOT NULL,
+  FOREIGN KEY (fingerprint_id, fingerprint_workspace_id) REFERENCES fingerprints (id, workspace_id) ON DELETE CASCADE,
   PRIMARY KEY (fingerprint_id, workspace_id)
 );
 
@@ -117,4 +121,3 @@ CREATE INDEX ON fingerprint_analytics (feature_name);
 
 -- Index for tag data
 CREATE INDEX tag_index ON fingerprints ((data->'reason'));
-
