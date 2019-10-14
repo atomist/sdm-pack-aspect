@@ -119,7 +119,7 @@
     "start": "atm-start",
     "test": "mocha --require espower-typescript/guess \"test/**/*.test.ts\"",
     "test:one": "mocha --require espower-typescript/guess \"test/**/${TEST:-*.test.ts}\"",
-    "test:integration": "echo 'int test'",
+    "test:integration": "mocha --require espower-typescript/guess \"integration-test/**/*.test.ts\"",
     "integration-test": "run-s db:delete db:create test:integration",
     "typedoc": "npm run doc",
     "db:create": "psql --command \"CREATE USER org_viz WITH SUPERUSER PASSWORD 'atomist'\" && createdb -O org_viz org_viz && psql -f ./ddl/create.ddl org_viz",
