@@ -265,7 +265,7 @@ GROUP BY repo_snapshots.id`;
                 await client.query("DELETE FROM ideal_fingerprints WHERE workspace_id = $1 AND fingerprint_id IN " +
                     "(SELECT id from fingerprints where feature_name = $2 AND name = $3)",
                     [workspaceId, ideal.ideal.type, ideal.ideal.name]);
-                const fid = await this.ensureFingerprintStored(client, { fp: ideal.ideal, workspaceId });
+                const fid = await this.ensureFingerprintStored(client, { fingerprint: ideal.ideal, workspaceId });
                 await client.query(`INSERT INTO ideal_fingerprints (workspace_id, fingerprint_id, authority)
 values ($1, $2, 'local-user')`, [
                     workspaceId, fid]);
@@ -313,7 +313,7 @@ WHERE workspace_id = $1 AND ideal_fingerprints.fingerprint_id = fingerprints.id`
 values ($1, $2, $3, $4, current_timestamp)`;
         await doWithClient(sql, this.clientFactory, async client => {
             // Clear out any existing ideal
-            const fid = await this.ensureFingerprintStored(client, { fp: fp.fingerprint, workspaceId });
+            const fid = await this.ensureFingerprintStored(client, { fingerprint: fp.fingerprint, workspaceId });
             await client.query(sql, [
                 workspaceId, fid, fp.severity, fp.authority]);
         });
@@ -517,7 +517,7 @@ GROUP by repo_snapshots.id) stats;`;
             //  console.log("Persist fingerprint " + JSON.stringify(fp) + " for id " + id);
             // Create fp record if it doesn't exist
             try {
-                await this.ensureFingerprintStored(client, { fp, workspaceId });
+                await this.ensureFingerprintStored(client, { fingerprint: fp, workspaceId });
                 const insertRepoFingerprintSql = `INSERT INTO repo_fingerprints (
                     fingerprint_workspace_id, 
                     repo_snapshot_id,
@@ -548,17 +548,17 @@ Fingerprint: ${JSON.stringify(f.failedFingerprint, undefined, 2)}`);
      * @param {Client} client
      * @return {Promise<void>}
      */
-    private async ensureFingerprintStored(client: ClientBase, params: { fp: FP, workspaceId: string }): Promise<string> {
-        const { fp } = params;
-        const aspectName = fp.type || "unknown";
-        const fingerprintId = aspectName + "_" + fp.name + "_" + fp.sha;
+    private async ensureFingerprintStored(client: ClientBase, params: { fingerprint: FP, workspaceId: string }): Promise<string> {
+        const { fingerprint } = params;
+        const aspectName = fingerprint.type || "unknown";
+        const fingerprintId = aspectName + "_" + fingerprint.name + "_" + fingerprint.sha;
         //  console.log("Persist fingerprint " + JSON.stringify(fp) + " for id " + id);
         // Create fp record if it doesn't exist
         const insertFingerprintSql = `INSERT INTO fingerprints (id, name, feature_name, sha, data, display_name, display_value)
 VALUES ($1, $2, $3, $4, $5, $6, $7) ON CONFLICT DO NOTHING`;
-        logger.debug("Persisting fingerprint %j SQL\n%s", fp, insertFingerprintSql);
-        await client.query(insertFingerprintSql, [fingerprintId, fp.name, aspectName, fp.sha,
-            JSON.stringify(fp.data), fp.displayName, fp.displayValue]);
+        logger.debug("Persisting fingerprint %j SQL\n%s", fingerprint, insertFingerprintSql);
+        await client.query(insertFingerprintSql, [fingerprintId, fingerprint.name, aspectName, fingerprint.sha,
+            JSON.stringify(fingerprint.data), fingerprint.displayName, fingerprint.displayValue]);
         return fingerprintId;
     }
 
