@@ -50,7 +50,11 @@ export function storeFingerprintsFor(store: ProjectAnalysisResultStore): Publish
             fingerprints.length, ctx.context.workspaceId);
         const found = await store.loadByRepoRef(paResult.analysis.id, false);
         if (!!found) {
-            const results = await store.persistAdditionalFingerprints(paResult.analysis);
+            const results = await store.persistAdditionalFingerprints({
+                fingerprints: paResult.analysis.fingerprints,
+                id: paResult.analysis.id,
+                workspaceId: ctx.context.workspaceId
+            });
             logger.info("Persisting additional fingerprint results for %s: %j", paResult.analysis.id.url, results);
 
             for (const fp of fingerprints) {
