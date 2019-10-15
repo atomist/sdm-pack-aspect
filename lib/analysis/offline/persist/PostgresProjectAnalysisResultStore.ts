@@ -491,7 +491,7 @@ GROUP by repo_snapshots.id) stats;`;
             this.clientFactory,
             async client => {
                 const snapshotId = snapshotIdFor(analyzed.id);
-                return this.persistFingerprints(client, { pa: analyzed, snapshotId });
+                return this.persistFingerprints(client, { fingerprints: analyzed.fingerprints, snapshotId });
             }, {
             insertedCount: 0,
             failures: analyzed.fingerprints
@@ -500,10 +500,10 @@ GROUP by repo_snapshots.id) stats;`;
     }
 
     // Persist the fingerprints for this analysis
-    private async persistFingerprints(client: ClientBase, params: { pa: Analyzed, snapshotId: string }): Promise<FingerprintInsertionResult> {
+    private async persistFingerprints(client: ClientBase, params: { fingerprints: FP[], snapshotId: string }): Promise<FingerprintInsertionResult> {
         let insertedCount = 0;
         const failures: Array<{ failedFingerprint: FP; error: Error }> = [];
-        for (const fp of params.pa.fingerprints) {
+        for (const fp of params.fingerprints) {
             const aspectName = fp.type || "unknown";
             const fingerprintId = aspectName + "_" + fp.name + "_" + fp.sha;
             //  console.log("Persist fingerprint " + JSON.stringify(fp) + " for id " + id);
