@@ -267,7 +267,7 @@ GROUP BY repo_snapshots.id`;
                 await client.query("DELETE FROM ideal_fingerprints WHERE workspace_id = $1 AND fingerprint_id IN " +
                     "(SELECT id from fingerprints where feature_name = $2 AND name = $3)",
                     [workspaceId, ideal.ideal.type, ideal.ideal.name]);
-                const fid = await this.ensureFingerprintStored(ideal.ideal, client);
+                const fid = await this.ensureFingerprintStored(client, { fp: ideal.ideal });
                 await client.query(`INSERT INTO ideal_fingerprints (workspace_id, fingerprint_id, authority)
 values ($1, $2, 'local-user')`, [
                     workspaceId, fid]);
@@ -315,7 +315,7 @@ WHERE workspace_id = $1 AND ideal_fingerprints.fingerprint_id = fingerprints.id`
 values ($1, $2, $3, $4, current_timestamp)`;
         await doWithClient(sql, this.clientFactory, async client => {
             // Clear out any existing ideal
-            const fid = await this.ensureFingerprintStored(fp.fingerprint, client);
+            const fid = await this.ensureFingerprintStored(client, { fp: fp.fingerprint });
             await client.query(sql, [
                 workspaceId, fid, fp.severity, fp.authority]);
         });
@@ -517,7 +517,7 @@ GROUP by repo_snapshots.id) stats;`;
             //  console.log("Persist fingerprint " + JSON.stringify(fp) + " for id " + id);
             // Create fp record if it doesn't exist
             try {
-                await this.ensureFingerprintStored(fp, client);
+                await this.ensureFingerprintStored(client, { fp });
                 const insertRepoFingerprintSql = `INSERT INTO repo_fingerprints (
                     fingerprint_workspace_id, 
                     repo_snapshot_id,
@@ -548,7 +548,8 @@ Fingerprint: ${JSON.stringify(f.failedFingerprint, undefined, 2)}`);
      * @param {Client} client
      * @return {Promise<void>}
      */
-    private async ensureFingerprintStored(fp: FP, client: ClientBase): Promise<string> {
+    private async ensureFingerprintStored(client: ClientBase, params: { fp: FP }): Promise<string> {
+        const { fp } = params;
         const aspectName = fp.type || "unknown";
         const fingerprintId = aspectName + "_" + fp.name + "_" + fp.sha;
         //  console.log("Persist fingerprint " + JSON.stringify(fp) + " for id " + id);
