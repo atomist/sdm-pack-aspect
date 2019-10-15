@@ -38,6 +38,8 @@ describe("Postgres Result Store", () => {
         console.log(persistResult);
 
         assert.strictEqual(persistResult.failed.length, 0, "Failures: " + persistResult.failed.map(f => f.message).join(", "));
+        assert.strictEqual(persistResult.failedFingerprints.length, 0,
+            "Failures: " + persistResult.failedFingerprints.map(f => f.error).join(", "));
         assert(persistResult.succeeded.length > 0, "reports something was persisted");
     })
 })
