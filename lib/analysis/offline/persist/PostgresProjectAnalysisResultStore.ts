@@ -448,7 +448,7 @@ GROUP by repo_snapshots.id) stats;`;
             const snapshotId = snapshotIdFor(repoRef);
             await this.persistRepoSnapshot(client, snapshotId, analysisResult.workspaceId, repoRef,
                 (analysisResult as SpideredRepo).query)
-            const fingerprintPersistResults = await this.persistFingerprints(analysisResult.analysis, snapshotId, client);
+            const fingerprintPersistResults = await this.persistFingerprints(client, { pa: analysisResult.analysis, snapshotId });
             return {
                 ...emptyPersistResult,
                 succeeded: [snapshotId],
@@ -490,7 +490,8 @@ GROUP by repo_snapshots.id) stats;`;
         return doWithClient(`Persist additional fingerprints for project at ${analyzed.id.url}`,
             this.clientFactory,
             async client => {
-                return this.persistFingerprints(analyzed, snapshotIdFor(analyzed.id), client);
+                const snapshotId = snapshotIdFor(analyzed.id);
+                return this.persistFingerprints(client, { pa: analyzed, snapshotId });
             }, {
             insertedCount: 0,
             failures: analyzed.fingerprints
@@ -499,10 +500,10 @@ GROUP by repo_snapshots.id) stats;`;
     }
 
     // Persist the fingerprints for this analysis
-    private async persistFingerprints(pa: Analyzed, snapshotId: string, client: ClientBase): Promise<FingerprintInsertionResult> {
+    private async persistFingerprints(client: ClientBase, params: { pa: Analyzed, snapshotId: string }): Promise<FingerprintInsertionResult> {
         let insertedCount = 0;
         const failures: Array<{ failedFingerprint: FP; error: Error }> = [];
-        for (const fp of pa.fingerprints) {
+        for (const fp of params.pa.fingerprints) {
             const aspectName = fp.type || "unknown";
             const fingerprintId = aspectName + "_" + fp.name + "_" + fp.sha;
             //  console.log("Persist fingerprint " + JSON.stringify(fp) + " for id " + id);
@@ -511,7 +512,7 @@ GROUP by repo_snapshots.id) stats;`;
                 await this.ensureFingerprintStored(fp, client);
                 const insertRepoFingerprintSql = `INSERT INTO repo_fingerprints (repo_snapshot_id, fingerprint_id, path)
 VALUES ($1, $2, $3) ON CONFLICT DO NOTHING`;
-                await client.query(insertRepoFingerprintSql, [snapshotId, fingerprintId, fp.path || ""]);
+                await client.query(insertRepoFingerprintSql, [params.snapshotId, fingerprintId, fp.path || ""]);
                 insertedCount++;
             } catch (error) {
                 failures.push({ failedFingerprint: fp, error });
@@ -520,7 +521,7 @@ VALUES ($1, $2, $3) ON CONFLICT DO NOTHING`;
         failures.forEach(f => {
             logger.error(`Could not persist fingerprint.
 Error: ${f.error.message}
-Repo: ${snapshotId}
+Repo: ${params.snapshotId}
 Fingerprint: ${JSON.stringify(f.failedFingerprint, undefined, 2)}`);
         });
         return {
