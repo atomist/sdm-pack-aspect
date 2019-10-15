@@ -16,7 +16,7 @@
 
 import { RepoRef } from "@atomist/automation-client";
 import { FP } from "@atomist/sdm-pack-fingerprint";
-import { Analyzed } from "../../../aspect/AspectRegistry";
+import { Analyzed, AnalyzedWorkspace } from "../../../aspect/AspectRegistry";
 import {
     PlantedTree,
     TagUsage,
@@ -106,8 +106,8 @@ export interface ProjectAnalysisResultStore {
      * @return {Promise<PlantedTree>}
      */
     aspectDriftTree(workspaceId: string,
-                    percentile: number,
-                    options?: { repos?: boolean, type?: string }): Promise<PlantedTree>;
+        percentile: number,
+        options?: { repos?: boolean, type?: string }): Promise<PlantedTree>;
 
     /**
      * How many repos we've analyzed
@@ -145,7 +145,7 @@ export interface ProjectAnalysisResultStore {
     /**
      * Persist fingerprints for this snapshot id, which must already exist.
      */
-    persistAdditionalFingerprints(analyzed: Analyzed): Promise<FingerprintInsertionResult>;
+    persistAdditionalFingerprints(analyzed: AnalyzedWorkspace): Promise<FingerprintInsertionResult>;
 
     /**
      * Return distinct fingerprint type/name combinations in this workspace
@@ -174,9 +174,9 @@ export interface ProjectAnalysisResultStore {
      * @param name fingerprint name (optional)
      */
     fingerprintsInWorkspace(workspaceId: string,
-                            distinct: boolean,
-                            type?: string,
-                            name?: string): Promise<Array<FP & { id: string }>>;
+        distinct: boolean,
+        type?: string,
+        name?: string): Promise<Array<FP & { id: string }>>;
 
     fingerprintsForProject(id: string): Promise<Array<FP & { timestamp: Date, commitSha: string }>>;
 

@@ -33,7 +33,7 @@ import {
     Client,
     ClientBase,
 } from "pg";
-import { Analyzed } from "../../../aspect/AspectRegistry";
+import { Analyzed, AnalyzedWorkspace } from "../../../aspect/AspectRegistry";
 import { IdealStore } from "../../../aspect/IdealStore";
 import { ProblemUsage } from "../../../aspect/ProblemStore";
 import {
@@ -448,7 +448,11 @@ GROUP by repo_snapshots.id) stats;`;
             const snapshotId = snapshotIdFor(repoRef);
             await this.persistRepoSnapshot(client, snapshotId, analysisResult.workspaceId, repoRef,
                 (analysisResult as SpideredRepo).query)
-            const fingerprintPersistResults = await this.persistFingerprints(analysisResult.analysis, snapshotId, client);
+            const fingerprintPersistResults = await this.persistFingerprints(client,
+                {
+                    fingerprints: analysisResult.analysis.fingerprints,
+                    workspaceId: analysisResult.workspaceId, snapshotId
+                });
             return {
                 ...emptyPersistResult,
                 succeeded: [snapshotId],
@@ -486,11 +490,13 @@ GROUP by repo_snapshots.id) stats;`;
             ]);
     }
 
-    public async persistAdditionalFingerprints(analyzed: Analyzed): Promise<FingerprintInsertionResult> {
+    public async persistAdditionalFingerprints(analyzed: AnalyzedWorkspace): Promise<FingerprintInsertionResult> {
+        const { fingerprints, workspaceId } = analyzed;
         return doWithClient(`Persist additional fingerprints for project at ${analyzed.id.url}`,
             this.clientFactory,
             async client => {
-                return this.persistFingerprints(analyzed, snapshotIdFor(analyzed.id), client);
+                const snapshotId = snapshotIdFor(analyzed.id);
+                return this.persistFingerprints(client, { fingerprints, workspaceId, snapshotId });
             }, {
             insertedCount: 0,
             failures: analyzed.fingerprints
@@ -499,19 +505,26 @@ GROUP by repo_snapshots.id) stats;`;
     }
 
     // Persist the fingerprints for this analysis
-    private async persistFingerprints(pa: Analyzed, snapshotId: string, client: ClientBase): Promise<FingerprintInsertionResult> {
+    private async persistFingerprints(client: ClientBase, params: {
+        fingerprints: FP[], workspaceId: string,
+        snapshotId: string
+    }): Promise<FingerprintInsertionResult> {
         let insertedCount = 0;
         const failures: Array<{ failedFingerprint: FP; error: Error }> = [];
-        for (const fp of pa.fingerprints) {
+        for (const fp of params.fingerprints) {
             const aspectName = fp.type || "unknown";
             const fingerprintId = aspectName + "_" + fp.name + "_" + fp.sha;
             //  console.log("Persist fingerprint " + JSON.stringify(fp) + " for id " + id);
             // Create fp record if it doesn't exist
             try {
                 await this.ensureFingerprintStored(fp, client);
-                const insertRepoFingerprintSql = `INSERT INTO repo_fingerprints (repo_snapshot_id, fingerprint_id, path)
+                const insertRepoFingerprintSql = `INSERT INTO repo_fingerprints (
+                    fingerprint_workspace_id, 
+                    repo_snapshot_id,
+                    fingerprint_id,
+                    path)
 VALUES ($1, $2, $3) ON CONFLICT DO NOTHING`;
-                await client.query(insertRepoFingerprintSql, [snapshotId, fingerprintId, fp.path || ""]);
+                await client.query(insertRepoFingerprintSql, [params.workspaceId, params.snapshotId, fingerprintId, fp.path || ""]);
                 insertedCount++;
             } catch (error) {
                 failures.push({ failedFingerprint: fp, error });
@@ -520,7 +533,7 @@ VALUES ($1, $2, $3) ON CONFLICT DO NOTHING`;
         failures.forEach(f => {
             logger.error(`Could not persist fingerprint.
 Error: ${f.error.message}
-Repo: ${snapshotId}
+Repo: ${params.snapshotId}
 Fingerprint: ${JSON.stringify(f.failedFingerprint, undefined, 2)}`);
         });
         return {
