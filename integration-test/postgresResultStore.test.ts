@@ -20,7 +20,8 @@ describe("Postgres Result Store", () => {
         const repoRef = {
             owner: "satellite-of-love",
             repo: "rowsdower",
-            url: "https://github.com/satellite-of-love/rowsdower"
+            url: "https://github.com/satellite-of-love/rowsdower",
+            sha: "dead0x",
         };
         const analysis: ProjectAnalysisResult = {
             repoRef,
