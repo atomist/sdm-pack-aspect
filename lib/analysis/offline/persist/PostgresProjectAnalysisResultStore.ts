@@ -418,26 +418,24 @@ GROUP by repo_snapshots.id) stats;`;
         const repoRef = analysisResult.repoRef;
         if (!repoRef) {
             return {
+                ...emptyPersistResult,
                 attemptedCount: 1,
-                succeeded: [],
                 failed: [{
                     repoUrl: "missing repoRef",
                     whileTryingTo: "build object to persist",
                     message: "No RepoRef",
                 }],
-                failedFingerprints: [],
             };
         }
         if (!repoRef.url || !repoRef.sha) {
             return {
+                ...emptyPersistResult,
                 attemptedCount: 1,
-                succeeded: [],
                 failed: [{
-                    repoUrl: "missing repoUrl. Repo is named " + repoRef.repo,
+                    repoUrl: "missing url or SHA. Repo is named " + repoRef.repo,
                     whileTryingTo: "build object to persist",
                     message: `Incomplete RepoRef ${JSON.stringify(repoRef)}`,
                 }],
-                failedFingerprints: [],
             };
         }
 
