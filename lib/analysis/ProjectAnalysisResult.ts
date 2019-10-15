@@ -36,7 +36,8 @@ export interface ProjectAnalysisResult {
     readonly workspaceId: string;
 
     /**
-     * If this is a deep retrieval, analysis
+     * analysis
+     * This is not really optional
      */
     readonly analysis?: Analyzed;
 
