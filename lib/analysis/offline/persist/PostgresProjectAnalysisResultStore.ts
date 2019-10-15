@@ -70,8 +70,6 @@ import {
     driftTreeForSingleAspect,
     fingerprintsToReposTreeQuery,
 } from "./repoTree";
-import { workspaceId } from "@atomist/automation-client/lib/internal/transport/RequestProcessor";
-
 // tslint:disable:max-file-line-count
 
 export class PostgresProjectAnalysisResultStore implements ProjectAnalysisResultStore, IdealStore {
@@ -267,7 +265,7 @@ GROUP BY repo_snapshots.id`;
                 await client.query("DELETE FROM ideal_fingerprints WHERE workspace_id = $1 AND fingerprint_id IN " +
                     "(SELECT id from fingerprints where feature_name = $2 AND name = $3)",
                     [workspaceId, ideal.ideal.type, ideal.ideal.name]);
-                const fid = await this.ensureFingerprintStored(client, { fp: ideal.ideal });
+                const fid = await this.ensureFingerprintStored(client, { fp: ideal.ideal, workspaceId });
                 await client.query(`INSERT INTO ideal_fingerprints (workspace_id, fingerprint_id, authority)
 values ($1, $2, 'local-user')`, [
                     workspaceId, fid]);
@@ -315,7 +313,7 @@ WHERE workspace_id = $1 AND ideal_fingerprints.fingerprint_id = fingerprints.id`
 values ($1, $2, $3, $4, current_timestamp)`;
         await doWithClient(sql, this.clientFactory, async client => {
             // Clear out any existing ideal
-            const fid = await this.ensureFingerprintStored(client, { fp: fp.fingerprint });
+            const fid = await this.ensureFingerprintStored(client, { fp: fp.fingerprint, workspaceId });
             await client.query(sql, [
                 workspaceId, fid, fp.severity, fp.authority]);
         });
@@ -506,10 +504,12 @@ GROUP by repo_snapshots.id) stats;`;
 
     // Persist the fingerprints for this analysis
     private async persistFingerprints(client: ClientBase, params: {
-        fingerprints: FP[], workspaceId: string,
+        fingerprints: FP[],
+        workspaceId: string,
         snapshotId: string
     }): Promise<FingerprintInsertionResult> {
         let insertedCount = 0;
+        const { workspaceId } = params;
         const failures: Array<{ failedFingerprint: FP; error: Error }> = [];
         for (const fp of params.fingerprints) {
             const aspectName = fp.type || "unknown";
@@ -517,7 +517,7 @@ GROUP by repo_snapshots.id) stats;`;
             //  console.log("Persist fingerprint " + JSON.stringify(fp) + " for id " + id);
             // Create fp record if it doesn't exist
             try {
-                await this.ensureFingerprintStored(client, { fp });
+                await this.ensureFingerprintStored(client, { fp, workspaceId });
                 const insertRepoFingerprintSql = `INSERT INTO repo_fingerprints (
                     fingerprint_workspace_id, 
                     repo_snapshot_id,
@@ -548,7 +548,7 @@ Fingerprint: ${JSON.stringify(f.failedFingerprint, undefined, 2)}`);
      * @param {Client} client
      * @return {Promise<void>}
      */
-    private async ensureFingerprintStored(client: ClientBase, params: { fp: FP }): Promise<string> {
+    private async ensureFingerprintStored(client: ClientBase, params: { fp: FP, workspaceId: string }): Promise<string> {
         const { fp } = params;
         const aspectName = fp.type || "unknown";
         const fingerprintId = aspectName + "_" + fp.name + "_" + fp.sha;
