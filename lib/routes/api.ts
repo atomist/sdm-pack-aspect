@@ -21,7 +21,6 @@ import { ExpressCustomizer } from "@atomist/automation-client/lib/configuration"
 import { isInLocalMode } from "@atomist/sdm-core";
 import {
     Aspect,
-    isConcreteIdeal,
 } from "@atomist/sdm-pack-fingerprint";
 import * as bodyParser from "body-parser";
 import {
@@ -86,8 +85,8 @@ import {
  * Also expose Swagger API documentation.
  */
 export function api(projectAnalysisResultStore: ProjectAnalysisResultStore,
-                    aspectRegistry: AspectRegistry & AspectReportDetailsRegistry,
-                    secure: boolean): {
+    aspectRegistry: AspectRegistry & AspectReportDetailsRegistry,
+    secure: boolean): {
         customizer: ExpressCustomizer,
         routesToSuggestOnStartup: Array<{ title: string, route: string }>,
     } {
@@ -139,9 +138,9 @@ function exposeSwaggerDoc(express: Express, docRoute: string): void {
 }
 
 function exposeAspectMetadata(express: Express,
-                              store: ProjectAnalysisResultStore,
-                              aspectRegistry: AspectRegistry & AspectReportDetailsRegistry,
-                              secure: boolean): void {
+    store: ProjectAnalysisResultStore,
+    aspectRegistry: AspectRegistry & AspectReportDetailsRegistry,
+    secure: boolean): void {
     // Return the aspects metadata
     express.options("/api/v1/:workspace_id/aspects", corsHandler());
     express.get("/api/v1/:workspace_id/aspects", [corsHandler(), ...authHandlers(secure)], async (req, res, next) => {
@@ -194,9 +193,9 @@ function exposeListTags(express: Express, store: ProjectAnalysisResultStore, sec
 }
 
 function exposeFingerprintByType(express: Express,
-                                 aspectRegistry: AspectRegistry,
-                                 store: ProjectAnalysisResultStore,
-                                 secure: boolean): void {
+    aspectRegistry: AspectRegistry,
+    store: ProjectAnalysisResultStore,
+    secure: boolean): void {
     express.options("/api/v1/:workspace_id/fingerprint/:type", corsHandler());
     express.get("/api/v1/:workspace_id/fingerprint/:type", [corsHandler(), ...authHandlers(secure)], async (req, res, next) => {
         try {
@@ -220,9 +219,9 @@ function exposeFingerprintByType(express: Express,
 }
 
 function exposeFingerprintByTypeAndName(express: Express,
-                                        aspectRegistry: AspectRegistry,
-                                        store: ProjectAnalysisResultStore,
-                                        secure: boolean): void {
+    aspectRegistry: AspectRegistry,
+    store: ProjectAnalysisResultStore,
+    secure: boolean): void {
     express.options("/api/v1/:workspace_id/fingerprint/:type/:name", corsHandler());
     express.get("/api/v1/:workspace_id/fingerprint/:type/:name", [corsHandler(), ...authHandlers(secure)],
         async (req: Request, res: Response, next) => {
@@ -247,32 +246,8 @@ function exposeFingerprintByTypeAndName(express: Express,
                     byName,
                 });
 
-                const ideal = await aspectRegistry.idealStore.loadIdeal(workspaceId, fingerprintType, fingerprintName);
-                let target;
-                if (isConcreteIdeal(ideal)) {
-                    const aspect = aspectRegistry.aspectOf(fingerprintType);
-                    if (!!aspect && !!aspect.toDisplayableFingerprint) {
-                        target = {
-                            ...ideal.ideal,
-                            value: aspect.toDisplayableFingerprint(ideal.ideal),
-                        };
-                    } else if (!!ideal.ideal.data && !!ideal.ideal.data.displayValue) {
-                        target = {
-                            ...ideal.ideal,
-                            value: ideal.ideal.data.displayValue,
-                        };
-                    } else if (!!ideal.ideal.displayValue) {
-                        target = {
-                            ...ideal.ideal,
-                            value: ideal.ideal.displayValue,
-                        };
-                    }
-                }
 
-                res.json({
-                    ...pt,
-                    target,
-                });
+                res.json(pt);
             } catch (e) {
                 logger.warn("Error occurred getting one fingerprint: %s %s", e.message, e.stack);
                 next(e);
@@ -326,13 +301,6 @@ function exposeDrift(express: Express, aspectRegistry: AspectRegistry, store: Pr
 }
 
 function exposeIdealAndProblemSetting(express: Express, aspectRegistry: AspectRegistry, secure: boolean): void {
-    // Set an ideal
-    express.options("/api/v1/:workspace_id/ideal/:id", corsHandler());
-    express.put("/api/v1/:workspace_id/ideal/:id", [corsHandler(), ...authHandlers(secure)], (req, res, next) =>
-        aspectRegistry.idealStore.setIdeal(req.params.workspace_id, req.params.id).then(() => {
-            logger.info(`Set ideal to ${req.params.id}`);
-            res.sendStatus(201);
-        }, next));
 
     // Note this fingerprint as a problem
     express.options("/api/v1/:workspace_id/problem/:id", corsHandler());

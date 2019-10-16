@@ -270,7 +270,7 @@ function setFrozenLevelData(workspaceId, perLevelDataElements: d3.Selection<any,
             e.html(htmlDownTree[i]);
             return;
         }
-        e.html(htmlDownTree[i] + "<br/>" + htmlForSetIdeal(workspaceId, dataId) + htmlForNoteProblem(workspaceId, dataId));
+        e.html(htmlDownTree[i] + "<br/>" + htmlForNoteProblem(workspaceId, dataId));
     });
 }
 
@@ -286,35 +286,10 @@ function formatLevelData(data: { name: string, url?: string, viewUrl?: string, t
     return nameDisplay + viewLink + tagList;
 }
 
-function htmlForSetIdeal(workspaceId, dataId) {
-    return `<button id="setIdeal" onclick="${NameOfThisLibrary}.postSetIdeal('${workspaceId}','${dataId}')">
-                Set as ideal
-            </button><label for="setIdeal" id="setIdealLabel" class="nothingToSay">&nbsp;</label>`;
-}
-
 function htmlForNoteProblem(workspaceId, dataId) {
     return `<button id="noteProblem" onclick="${NameOfThisLibrary}.postNoteProblem('${workspaceId}','${dataId}')">
                 Note as problem
             </button><label for="noteProblem" id="noteProblemLabel" class="nothingToSay">&nbsp;</label>`;
-}
-
-export function postSetIdeal(workspaceId: string, fingerprintId: string) {
-    const postUrl = `../../api/v1/${workspaceId}/ideal/${encodeURIComponent(fingerprintId)}`;
-    const labelElement = document.getElementById("setIdealLabel");
-    fetch(postUrl, { method: "PUT" }).then(response => {
-        if (response.ok) {
-            labelElement.textContent = `Ideal set`;
-            labelElement.setAttribute("class", "success");
-            labelElement.setAttribute("display", "static");
-        } else {
-            labelElement.textContent = "Failed to set. consult the server logaments";
-            labelElement.setAttribute("class", "error");
-        }
-    },
-        e => {
-            labelElement.textContent = "Network error";
-            labelElement.setAttribute("class", "error");
-        });
 }
 
 export function postNoteProblem(workspaceId: string, fingerprintId: string) {

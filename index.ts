@@ -18,7 +18,6 @@ export * from "./lib/machine/aspectSupport";
 export * from "./lib/machine/configureAspects";
 export * from "./lib/aspect/AspectRegistry";
 export * from "./lib/aspect/AspectReportDetailsRegistry";
-export * from "./lib/aspect/IdealStore";
 export * from "./lib/aspect/ProblemStore";
 export * from "./lib/tagger/commonTaggers";
 export * from "./lib/aspect/compose/commonTypes";

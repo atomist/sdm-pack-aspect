@@ -11,8 +11,6 @@
 
 DROP TABLE IF EXISTS repo_fingerprints;
 
-DROP TABLE IF EXISTS ideal_fingerprints;
-
 DROP TABLE IF EXISTS problem_fingerprints;
 
 DROP TYPE IF EXISTS severity;
@@ -74,17 +72,6 @@ CREATE TABLE fingerprint_analytics (
   variants numeric,
   compliance numeric,
   PRIMARY KEY (name, feature_name, workspace_id)
-);
-
--- For each name/feature_name combination, the ideal for the given workspace
-CREATE TABLE ideal_fingerprints (
-  fingerprint_id varchar NOT NULL,
-  fingerprint_workspace_id varchar NOT NULL,
-  workspace_id varchar NOT NULL,
-  authority varchar NOT NULL,
-  url varchar,
-  FOREIGN KEY (fingerprint_id, fingerprint_workspace_id) REFERENCES fingerprints (id, workspace_id) ON DELETE CASCADE,
-  PRIMARY KEY (fingerprint_id, workspace_id)
 );
 
 CREATE TYPE severity AS ENUM ('info', 'warn', 'error');
