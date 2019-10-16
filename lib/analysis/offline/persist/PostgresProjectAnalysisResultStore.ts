@@ -549,15 +549,15 @@ Fingerprint: ${JSON.stringify(f.failedFingerprint, undefined, 2)}`);
      * @return {Promise<void>}
      */
     private async ensureFingerprintStored(client: ClientBase, params: { fingerprint: FP, workspaceId: string }): Promise<string> {
-        const { fingerprint } = params;
+        const { fingerprint, workspaceId } = params;
         const aspectName = fingerprint.type || "unknown";
         const fingerprintId = aspectName + "_" + fingerprint.name + "_" + fingerprint.sha;
         //  console.log("Persist fingerprint " + JSON.stringify(fp) + " for id " + id);
         // Create fp record if it doesn't exist
-        const insertFingerprintSql = `INSERT INTO fingerprints (id, name, feature_name, sha, data, display_name, display_value)
-VALUES ($1, $2, $3, $4, $5, $6, $7) ON CONFLICT DO NOTHING`;
+        const insertFingerprintSql = `INSERT INTO fingerprints (workspace_id, id, name, feature_name, sha, data, display_name, display_value)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT DO NOTHING`;
         logger.debug("Persisting fingerprint %j SQL\n%s", fingerprint, insertFingerprintSql);
-        await client.query(insertFingerprintSql, [fingerprintId, fingerprint.name, aspectName, fingerprint.sha,
+        await client.query(insertFingerprintSql, [workspaceId, fingerprintId, fingerprint.name, aspectName, fingerprint.sha,
             JSON.stringify(fingerprint.data), fingerprint.displayName, fingerprint.displayValue]);
         return fingerprintId;
     }
