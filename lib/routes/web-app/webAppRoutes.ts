@@ -24,10 +24,7 @@ import {
     metadata,
 } from "@atomist/sdm";
 import {
-    ConcreteIdeal,
     FP,
-    Ideal,
-    isConcreteIdeal,
 } from "@atomist/sdm-pack-fingerprint";
 import { Aspect } from "@atomist/sdm-pack-fingerprint/lib/machine/Aspect";
 import * as bodyParser from "body-parser";
@@ -45,7 +42,6 @@ import {
     RepoExplorer,
 } from "../../../views/repository";
 import {
-    PossibleIdealForDisplay,
     SunburstPage,
 } from "../../../views/sunburstPage";
 import { renderStaticReactNode } from "../../../views/topLevelPage";
@@ -143,13 +139,11 @@ function exposeRepositoryPage(conf: WebAppConfig): void {
             const aspectsAndFingerprints = await projectFingerprints(conf.aspectRegistry,
                 allFingerprints);
 
-            // assign style based on ideal
             const ffd: ProjectAspectForDisplay[] = aspectsAndFingerprints.map(aspectAndFingerprints => ({
                 ...aspectAndFingerprints,
                 fingerprints: aspectAndFingerprints.fingerprints.map(fp => ({
                     ...fp,
-                    idealDisplayString: displayIdeal(fp, aspectAndFingerprints.aspect),
-                    style: displayStyleAccordingToIdeal(fp),
+                    style: {},
                 })),
             }));
 
@@ -259,19 +253,18 @@ function exposeCustomReportPage(conf: WebAppConfig): void {
 
 // TODO fix any
 async function renderDataUrl(instanceMetadata: ExtensionPackMetadata,
-                             workspaceId: string,
-                             page: {
+    workspaceId: string,
+    page: {
         title: string,
         heading: string,
         subheading?: string,
         dataUrl: string,
     },
-                             aspectRegistry: AspectRegistry,
-                             httpClientFactory: HttpClientFactory,
-                             req: any,
-                             res: any): Promise<void> {
+    aspectRegistry: AspectRegistry,
+    httpClientFactory: HttpClientFactory,
+    req: any,
+    res: any): Promise<void> {
     let tree: TagTree;
-    const possibleIdealsForDisplay: PossibleIdealForDisplay[] = [];
 
     const fullUrl = `http://${req.get("host")}${page.dataUrl}`;
     try {
@@ -294,8 +287,6 @@ async function renderDataUrl(instanceMetadata: ExtensionPackMetadata,
             workspaceId,
             heading: page.heading,
             subheading: page.subheading,
-            currentIdeal: await lookForIdealDisplay(aspectRegistry, req.query.type, req.query.name),
-            possibleIdeals: possibleIdealsForDisplay,
             query: req.params.query,
             dataUrl: fullUrl,
             tree,
@@ -334,73 +325,9 @@ export function jsonToQueryString(json: object): string {
     ).join("&");
 }
 
-function displayIdeal(fingerprint: AugmentedFingerprintForDisplay, aspect: Aspect): string {
-    if (idealIsDifferentFromActual(fingerprint)) {
-        return defaultedToDisplayableFingerprint(aspect)((fingerprint.ideal as ConcreteIdeal).ideal);
-    }
-    if (idealIsElimination(fingerprint)) {
-        return "eliminate";
-    }
-    return "";
-}
-
-async function lookForIdealDisplay(aspectRegistry: AspectRegistry,
-                                   aspectType: string,
-                                   fingerprintName: string): Promise<{ displayValue: string } | undefined> {
-    if (!aspectType) {
-        return undefined;
-    }
-
-    const aspect = aspectRegistry.aspectOf(aspectType);
-    if (!aspect) {
-        return undefined;
-    }
-
-    const ideal = await aspectRegistry.idealStore
-        .loadIdeal("local", aspectType, fingerprintName);
-    if (!ideal) {
-        return undefined;
-    }
-    if (!isConcreteIdeal(ideal)) {
-        return { displayValue: "eliminate" };
-    }
-
-    return { displayValue: defaultedToDisplayableFingerprint(aspect)(ideal.ideal) };
-}
-
-function idealIsElimination(fingerprint: AugmentedFingerprintForDisplay): boolean {
-    return fingerprint.ideal && !isConcreteIdeal(fingerprint.ideal);
-}
-
-function idealIsDifferentFromActual(fingerprint: AugmentedFingerprintForDisplay): boolean {
-    return fingerprint.ideal && isConcreteIdeal(fingerprint.ideal) && fingerprint.ideal.ideal.sha !== fingerprint.sha;
-}
-
-function idealIsSameAsActual(fingerprint: AugmentedFingerprintForDisplay): boolean {
-    return fingerprint.ideal && isConcreteIdeal(fingerprint.ideal) && fingerprint.ideal.ideal.sha === fingerprint.sha;
-}
-
-function displayStyleAccordingToIdeal(fingerprint: AugmentedFingerprintForDisplay): CSSProperties {
-    const redStyle: CSSProperties = { color: "red" };
-    const greenStyle: CSSProperties = { color: "green" };
-
-    if (idealIsSameAsActual(fingerprint)) {
-        return greenStyle;
-    }
-    if (idealIsDifferentFromActual(fingerprint)) {
-        return redStyle;
-    }
-    if (idealIsElimination(fingerprint)) {
-        return redStyle;
-    }
-    return {};
-}
-
 export type AugmentedFingerprintForDisplay =
     FP &
-    Pick<ProjectFingerprintForDisplay, "displayValue" | "displayName"> & {
-        ideal?: Ideal;
-    };
+    Pick<ProjectFingerprintForDisplay, "displayValue" | "displayName">;
 
 export interface AugmentedAspectForDisplay {
     aspect: Aspect;
@@ -417,7 +344,6 @@ async function projectFingerprints(fm: AspectRegistry, allFingerprintsInOneProje
             for (const fp of originalFingerprints) {
                 fingerprints.push({
                     ...fp,
-                    // ideal: await this.opts.idealResolver(fp.name),
                     displayValue: defaultedToDisplayableFingerprint(aspect)(fp),
                     displayName: defaultedToDisplayableFingerprintName(aspect)(fp.name),
                 });

@@ -6,7 +6,9 @@ import { CustomReporters } from "../lib/customize/customReporters";
 import { RepoForDisplay } from "./repoList";
 import { collapsible } from "./utils";
 
-export interface FingerprintForDisplay extends Pick<FingerprintUsage, "type" | "name">, Pick<CohortAnalysis, "count" | "variants">, MaybeAnIdeal {
+export interface FingerprintForDisplay extends
+    Pick<FingerprintUsage, "type" | "name">,
+    Pick<CohortAnalysis, "count" | "variants"> {
     displayName: string;
     entropy?: number;
 }
@@ -34,28 +36,6 @@ export interface OverviewProps {
     virtualProjectCount: number;
 }
 
-export interface MaybeAnIdeal {
-    type: string;
-    name: string;
-    ideal?: {
-        displayValue: string;
-    };
-}
-
-function idealDisplay(af: MaybeAnIdeal): React.ReactElement {
-    let result = <span></span>;
-    if (af.ideal) {
-        const idealQueryLink: string = `./fingerprint/${af.type}/${af.name}?byOrg=true&progress=true`;
-
-        result = <span>
-            -
-            <a href={idealQueryLink}> Progress toward ideal {" "}
-                <b>{af.ideal.displayValue}</b>
-            </a>
-        </span>;
-    }
-    return result;
-}
 
 function displayAspect(f: AspectFingerprintsForDisplay, i: number): React.ReactElement {
     const key = "collapsible" + i;
@@ -116,7 +96,6 @@ function fingerprintListItem(f: FingerprintForDisplay): React.ReactElement {
         <i>{displayName}</i>: {f.count} projects, {" "}
         <a href={variantsQueryLink}>{f.variants} variants</a>{" "}{ent}{" "}
         <a href={existsLink}>Presence</a> {" "}
-        {idealDisplay(f)}
     </li>;
 }
 

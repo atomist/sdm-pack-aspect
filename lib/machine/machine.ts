@@ -21,7 +21,6 @@ import { PostgresProjectAnalysisResultStore } from "../analysis/offline/persist/
 import { ProjectAnalysisResultStore } from "../analysis/offline/persist/ProjectAnalysisResultStore";
 import { Analyzer } from "../analysis/offline/spider/Spider";
 import { SpiderAnalyzer } from "../analysis/offline/spider/SpiderAnalyzer";
-import { IdealStore } from "../aspect/IdealStore";
 import { ProblemStore } from "../aspect/ProblemStore";
 
 /**
@@ -32,6 +31,6 @@ export function createAnalyzer(aspects: Aspect[], virtualProjectFinder: VirtualP
     return new SpiderAnalyzer(aspects, virtualProjectFinder);
 }
 
-export function analysisResultStore(factory: ClientFactory): ProjectAnalysisResultStore & IdealStore & ProblemStore {
+export function analysisResultStore(factory: ClientFactory): ProjectAnalysisResultStore & ProblemStore {
     return new PostgresProjectAnalysisResultStore(factory);
 }
