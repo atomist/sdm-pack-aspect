@@ -523,7 +523,7 @@ GROUP by repo_snapshots.id) stats;`;
                     repo_snapshot_id,
                     fingerprint_id,
                     path)
-VALUES ($1, $2, $3) ON CONFLICT DO NOTHING`;
+VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING`;
                 await client.query(insertRepoFingerprintSql, [params.workspaceId, params.snapshotId, fingerprintId, fp.path || ""]);
                 insertedCount++;
             } catch (error) {
