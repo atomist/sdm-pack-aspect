@@ -27,7 +27,6 @@ import {
     ScorerReturn,
     WeightedScore,
 } from "../scorer/Score";
-import { IdealStore } from "./IdealStore";
 import {
     ProblemStore,
     UndesirableUsageChecker,
@@ -206,11 +205,6 @@ export interface AspectRegistry {
      * Find the aspect that manages fingerprints of this type
      */
     aspectOf(type: string): Aspect | undefined;
-
-    /**
-     * Function that can resolve ideal status for this aspect
-     */
-    readonly idealStore: IdealStore;
 
     readonly problemStore: ProblemStore;
 

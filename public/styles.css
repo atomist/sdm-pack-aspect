@@ -322,15 +322,7 @@ svg .slice:hover textPath.textOutline {
     stroke-linejoin: round;
 }
 
-/*
- * set ideal button stuff, on sunburst page
- */
-
 button {
-    margin: 5px;
-}
-
-label[for="setIdeal"] | label[for="noteProblem"] {
     margin: 5px;
 }
 

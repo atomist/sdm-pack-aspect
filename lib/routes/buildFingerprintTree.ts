@@ -15,11 +15,8 @@
  */
 
 import {
-    ConcreteIdeal,
     FP,
-    Ideal,
 } from "@atomist/sdm-pack-fingerprint";
-import { isConcreteIdeal } from "@atomist/sdm-pack-fingerprint/lib/machine/Ideal";
 import { AspectRegistry } from "../aspect/AspectRegistry";
 import {
     isSunburstTree,
@@ -127,13 +124,6 @@ export async function buildFingerprintTree(
                 childClassifier: kid => (kid as any).sha && kid.name !== "None" ? "Present" : "Absent",
                 collapseUnderName: name => name === "Absent",
             });
-    } else
-        if (showProgress) {
-        const ideal = await aspectRegistry.idealStore.loadIdeal(workspaceId, fingerprintType, fingerprintName);
-        if (!ideal || !isConcreteIdeal(ideal)) {
-            throw new Error(`No ideal to aspire to for ${fingerprintType}/${fingerprintName} in workspace '${workspaceId}'`);
-        }
-        decorateToShowProgressToIdeal(aspectRegistry, pt, ideal);
     }
 
     if (!showPresence) {
@@ -208,20 +198,6 @@ async function decorateProblemFingerprints(aspectRegistry: AspectRegistry, pt: P
             }
         }
         return true;
-    });
-}
-
-function decorateToShowProgressToIdeal(aspectRegistry: AspectRegistry, pt: PlantedTree, ideal: ConcreteIdeal): void {
-    pt.tree = groupSiblings(pt.tree, {
-        parentSelector: parent => parent.children.some(c => (c as any).sha),
-        childClassifier: kid => (kid as any).sha === ideal.ideal.sha ? "Ideal" : "No",
-        groupLayerDecorator: l => {
-            if (l.name === "Ideal") {
-                (l as any).color = "#168115";
-            } else {
-                (l as any).color = "#811824";
-            }
-        },
     });
 }
 

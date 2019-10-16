@@ -10,7 +10,6 @@ type DisplayName = string;
 
 export interface ProjectFingerprintForDisplay {
     displayName: DisplayName;
-    idealDisplayString: string;
     displayValue: string;
     style: React.CSSProperties;
 }
@@ -143,7 +142,6 @@ function displayTag(tag: TagUsage): React.ReactElement {
 function displayFingerprint(fingerprint: ProjectFingerprintForDisplay): React.ReactElement {
     return <li style={fingerprint.style} key={fingerprint.displayName}>
         <i>{fingerprint.displayName}</i>: {beSureThisIsAString(fingerprint.displayValue)}
-        {" "} {fingerprint.idealDisplayString && `(Ideal: ${fingerprint.idealDisplayString})`}
     </li>;
 }
 

@@ -3,26 +3,12 @@ import * as React from "react";
 import { describeSelectedTagsToAnimals, TagTree } from "../lib/routes/api";
 import { TagGroup } from "../lib/tree/TagGroup";
 
-// tslint:disable-next-line:no-empty-interface
-export interface CurrentIdealForDisplay {
-    displayValue: string;
-}
-
-export interface PossibleIdealForDisplay {
-    url?: string;
-    fingerprintName: string;
-    displayValue: string;
-    stringified: string;
-}
-
 export type FieldToDisplay = string;
 
 export interface SunburstPageProps {
     readonly workspaceId: string;
     readonly heading: string;
     readonly subheading?: string;
-    readonly currentIdeal: CurrentIdealForDisplay;
-    readonly possibleIdeals: PossibleIdealForDisplay[];
     readonly query: string;
     readonly dataUrl: string;
     readonly tree: TagTree; // we have the data already.
@@ -37,12 +23,6 @@ export interface SunburstPageProps {
      */
     fieldsToDisplay: FieldToDisplay[];
 
-}
-
-function displayCurrentIdeal(currentIdeal: CurrentIdealForDisplay): React.ReactElement {
-    return <h2>
-        Current ideal: {currentIdeal.displayValue}
-    </h2>;
 }
 
 interface PerLevelDataItem {
@@ -129,7 +109,6 @@ export function SunburstPage(props: SunburstPageProps): React.ReactElement {
         <h2>{props.subheading}</h2> :
         <h2>{describeSelectedTagsToAnimals(props.selectedTags)} - {props.tree.matchingRepoCount} of {props.tree.repoCount} repositories</h2>;
 
-    const idealDisplay = props.currentIdeal ? displayCurrentIdeal(props.currentIdeal) : "";
     return <div className="sunburst">
         <h1>{props.heading}</h1>
 
@@ -137,7 +116,6 @@ export function SunburstPage(props: SunburstPageProps): React.ReactElement {
 
         {tagButtons}
 
-        {idealDisplay}
         <div className="wrapper">
             <div id="putSvgHere" className="sunburstSvg"></div>
             <div id="dataAboutWhatYouClicked" className="sunburstData">{thingies}

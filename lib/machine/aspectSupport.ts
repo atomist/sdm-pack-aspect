@@ -295,10 +295,10 @@ function suggestRoute({ title, route }: { title: string, route: string }):
 }
 
 function orgVisualizationEndpoints(dbClientFactory: ClientFactory,
-                                   configuration: Configuration,
-                                   analysisTracking: AnalysisTracking,
-                                   options: AspectSupportOptions,
-                                   aspects: Aspect[]): {
+    configuration: Configuration,
+    analysisTracking: AnalysisTracking,
+    options: AspectSupportOptions,
+    aspects: Aspect[]): {
         routesToSuggestOnStartup: Array<{ title: string, route: string }>,
         customizers: ExpressCustomizer[],
     } {
@@ -306,7 +306,6 @@ function orgVisualizationEndpoints(dbClientFactory: ClientFactory,
     const fingerprintClassificationsFound = _.flatten(aspects.filter(isClassificationAspect).map(ca => ca.classifierMetadata));
     const scorerNames = Object.getOwnPropertyNames((options.scorers || {}));
     const aspectRegistry = new DefaultAspectRegistry({
-        idealStore: resultStore,
         problemStore: resultStore,
         aspects,
         undesirableUsageChecker: options.undesirableUsageChecker,

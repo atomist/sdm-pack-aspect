@@ -164,12 +164,6 @@ export interface Aspect<DATA = any> {
     toDisplayableFingerprintName?(fingerprintName: string): string;
 
     /**
-     * Based on the given fingerprint type and name, suggest ideals
-     * order of recommendation strength
-     */
-    suggestedIdeals?(type: string, fingerprintName: string): Promise<Ideal[]>;
-
-    /**
      * Workflows to be invoked on a fingerprint change. This supports use cases such as
      * reacting to a potential impactful change and cascading changes to other projects.
      */
