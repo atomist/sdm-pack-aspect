@@ -279,10 +279,10 @@ function suggestRoute({ title, route }: { title: string, route: string }):
 }
 
 function orgVisualizationEndpoints(dbClientFactory: ClientFactory,
-    configuration: Configuration,
-    analysisTracking: AnalysisTracking,
-    options: AspectSupportOptions,
-    aspects: Aspect[]): {
+                                   configuration: Configuration,
+                                   analysisTracking: AnalysisTracking,
+                                   options: AspectSupportOptions,
+                                   aspects: Aspect[]): {
         routesToSuggestOnStartup: Array<{ title: string, route: string }>,
         customizers: ExpressCustomizer[],
     } {
