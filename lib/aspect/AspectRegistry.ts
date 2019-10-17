@@ -27,10 +27,6 @@ import {
     ScorerReturn,
     WeightedScore,
 } from "../scorer/Score";
-import {
-    ProblemStore,
-    UndesirableUsageChecker,
-} from "./ProblemStore";
 
 /**
  * Implemented by ProjectAnalysis or any other structure
@@ -191,8 +187,8 @@ export interface AspectRegistry {
     scoreWorkspace(workspaceId: string, workspaceToScore: WorkspaceToScore): Promise<WeightedScore>;
 
     tagAndScoreRepos(workspaceId: string,
-                     repos: ProjectAnalysisResult[],
-                     opts: TagAndScoreOptions): Promise<ScoredRepo[]>;
+        repos: ProjectAnalysisResult[],
+        opts: TagAndScoreOptions): Promise<ScoredRepo[]>;
 
     availableTags: Tag[];
 
@@ -205,12 +201,5 @@ export interface AspectRegistry {
      * Find the aspect that manages fingerprints of this type
      */
     aspectOf(type: string): Aspect | undefined;
-
-    readonly problemStore: ProblemStore;
-
-    /**
-     * Return an UndesirableUsageChecker for this workspace
-     */
-    undesirableUsageCheckerFor(workspaceId: string): Promise<UndesirableUsageChecker | undefined>;
 
 }

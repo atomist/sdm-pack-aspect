@@ -107,7 +107,6 @@ export function api(projectAnalysisResultStore: ProjectAnalysisResultStore,
 
             configureAuth(express);
 
-            exposeIdealAndProblemSetting(express, aspectRegistry, secure);
             exposeAspectMetadata(express, projectAnalysisResultStore, aspectRegistry, secure);
             exposeListTags(express, projectAnalysisResultStore, secure);
             exposeListFingerprints(express, projectAnalysisResultStore, secure);
@@ -246,7 +245,6 @@ function exposeFingerprintByTypeAndName(express: Express,
                     byName,
                 });
 
-
                 res.json(pt);
             } catch (e) {
                 logger.warn("Error occurred getting one fingerprint: %s %s", e.message, e.stack);
@@ -298,17 +296,6 @@ function exposeDrift(express: Express, aspectRegistry: AspectRegistry, store: Pr
             next(err);
         }
     });
-}
-
-function exposeIdealAndProblemSetting(express: Express, aspectRegistry: AspectRegistry, secure: boolean): void {
-
-    // Note this fingerprint as a problem
-    express.options("/api/v1/:workspace_id/problem/:id", corsHandler());
-    express.put("/api/v1/:workspace_id/problem/:id", [corsHandler(), ...authHandlers(secure)], (req, res, next) =>
-        aspectRegistry.problemStore.noteProblem(req.params.workspace_id, req.params.id).then(() => {
-            logger.info(`Set problem at ${req.params.id}`);
-            res.sendStatus(201);
-        }, next));
 }
 
 /**

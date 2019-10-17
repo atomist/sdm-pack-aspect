@@ -30,7 +30,7 @@ import {
     Client,
     ClientBase,
 } from "pg";
-import { ProblemUsage } from "../../../aspect/ProblemStore";
+import { AnalyzedWorkspace } from "../../../aspect/AspectRegistry";
 import {
     PlantedTree,
     TagUsage,
@@ -65,7 +65,6 @@ import {
     driftTreeForSingleAspect,
     fingerprintsToReposTreeQuery,
 } from "./repoTree";
-import { AnalyzedWorkspace } from "../../../aspect/AspectRegistry";
 // tslint:disable:max-file-line-count
 
 export class PostgresProjectAnalysisResultStore implements ProjectAnalysisResultStore {
@@ -252,37 +251,6 @@ GROUP BY repo_snapshots.id`;
 
     public fingerprintUsageForType(workspaceId: string, type?: string): Promise<FingerprintUsage[]> {
         return fingerprintUsageForType(this.clientFactory, workspaceId, type);
-    }
-
-    public async noteProblem(workspaceId: string, fingerprintId: string): Promise<void> {
-        const fingerprint = await this.loadFingerprintById(fingerprintId);
-        if (!fingerprint) {
-            throw new Error(`Fingerprint with id=${fingerprintId} not found and cannot be noted as problem`);
-        }
-        await this.storeProblemFingerprint(workspaceId, { fingerprint, severity: "warn", authority: "local-user" });
-    }
-
-    public async storeProblemFingerprint(workspaceId: string, fp: ProblemUsage): Promise<void> {
-        const sql = `INSERT INTO problem_fingerprints (workspace_id, fingerprint_id, severity, authority, date_added)
-values ($1, $2, $3, $4, current_timestamp)`;
-        await doWithClient(sql, this.clientFactory, async client => {
-            const fid = await this.ensureFingerprintStored(client, { fingerprint: fp.fingerprint, workspaceId });
-            await client.query(sql, [
-                workspaceId, fid, fp.severity, fp.authority]);
-        });
-    }
-
-    public async loadProblems(workspaceId: string): Promise<ProblemUsage[]> {
-        const sql = `SELECT id, name, feature_name as type, sha, data, authority, severity, description, url
-FROM problem_fingerprints, fingerprints
-WHERE workspace_id = $1 AND problem_fingerprints.fingerprint_id = fingerprints.id`;
-        return doWithClient(sql, this.clientFactory, async client => {
-            const rows = await client.query(sql, [workspaceId]);
-            if (!rows.rows) {
-                return [];
-            }
-            return rows.rows.map(problemRowToProblem);
-        }, []);
     }
 
     public async loadFingerprintById(id: string): Promise<FP | undefined> {
@@ -503,21 +471,6 @@ VALUES ($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT DO NOTHING`;
     constructor(public readonly clientFactory: ClientFactory) {
     }
 
-}
-
-function problemRowToProblem(rawRow: any): ProblemUsage {
-    return {
-        fingerprint: {
-            name: rawRow.name,
-            type: rawRow.feature_name,
-            data: rawRow.data,
-            sha: rawRow.sha,
-        },
-        authority: rawRow.authority,
-        severity: rawRow.severity,
-        description: rawRow.description,
-        url: rawRow.url,
-    };
 }
 
 /**

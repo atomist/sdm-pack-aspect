@@ -160,27 +160,6 @@ export function globRequired(opts: { name: string, description: string, glob: st
 }
 
 /**
- * Flag repos with known undesirable usages, according to
- * the relevant UndesirableUsageChecker
- */
-export const isProblematic: WorkspaceSpecificTagger = {
-    description: "Undesirable usage",
-    severity: "error",
-    name: "problems",
-    createTest: async (workspaceId: string, aspectRegistry: AspectRegistry) => {
-        logger.info("Creating problem tagger for workspace %s", workspaceId);
-        const checker = await aspectRegistry.undesirableUsageCheckerFor(workspaceId);
-        if (checker) {
-            return async repo => repo.analysis.fingerprints.some(fp => {
-                const problems = checker.check(fp, workspaceId);
-                return problems.length > 0;
-            });
-        }
-        return async () => false;
-    },
-};
-
-/**
  * Tag repos with recent activity by a number of contributors.
  * Depends on git recency and git activity aspects
  */
