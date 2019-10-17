@@ -259,18 +259,12 @@ function setFrozenLevelData(workspaceId, perLevelDataElements: d3.Selection<any,
     }
     const htmlDownTree = htmlUpTree.reverse();
 
-    const dataId = (d.data as any).id;
     const levelCountAbove = htmlUpTree.length;
 
     perLevelDataElements.forEach((e, i) => {
         const className = i >= levelCountAbove ? "unfrozenLevelData" : "frozenLevelData";
-        e.attr("class", className);
-        if (!dataId || i !== (levelCountAbove - 1)) {
-            // no buttons
-            e.html(htmlDownTree[i]);
-            return;
-        }
-        e.html(htmlDownTree[i] + "<br/>" + htmlForNoteProblem(workspaceId, dataId));
+        e.attr("class", className); // this is probably useless now
+        e.html(htmlDownTree[i]);
     });
 }
 
@@ -284,29 +278,4 @@ function formatLevelData(data: { name: string, url?: string, viewUrl?: string, t
     const nameDisplay = data.url ? `<a href="${data.url}">${data.name}</a>` : data.name;
 
     return nameDisplay + viewLink + tagList;
-}
-
-function htmlForNoteProblem(workspaceId, dataId) {
-    return `<button id="noteProblem" onclick="${NameOfThisLibrary}.postNoteProblem('${workspaceId}','${dataId}')">
-                Note as problem
-            </button><label for="noteProblem" id="noteProblemLabel" class="nothingToSay">&nbsp;</label>`;
-}
-
-export function postNoteProblem(workspaceId: string, fingerprintId: string) {
-    const postUrl = `../../api/v1/${workspaceId}/problem/${encodeURIComponent(fingerprintId)}`;
-    const labelElement = document.getElementById("noteProblemLabel");
-    fetch(postUrl, { method: "PUT" }).then(response => {
-        if (response.ok) {
-            labelElement.textContent = `Problem noted`;
-            labelElement.setAttribute("class", "success");
-            labelElement.setAttribute("display", "static");
-        } else {
-            labelElement.textContent = "Failed to set. consult the server logaments";
-            labelElement.setAttribute("class", "error");
-        }
-    },
-        e => {
-            labelElement.textContent = "Network error";
-            labelElement.setAttribute("class", "error");
-        });
 }

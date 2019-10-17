@@ -51,11 +51,14 @@ describe("Postgres Result Store", () => {
 
         const persistResult = await subject.persist(analysis);
 
+        // Spot persistence failures early
         console.log(JSON.stringify(persistResult, null, 2));
-
         assert.strictEqual(persistResult.failed.length, 0, "Failures: " + persistResult.failed.map(f => f.message).join(", "));
         assert.strictEqual(persistResult.failedFingerprints.length, 0,
             "Failures: " + persistResult.failedFingerprints.map(f => f.error).join(", "));
         assert(persistResult.succeeded.length > 0, "reports something was persisted");
+
+        // now on to retrieval
+
     })
 })

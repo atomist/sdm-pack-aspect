@@ -11,8 +11,6 @@
 
 DROP TABLE IF EXISTS repo_fingerprints;
 
-DROP TABLE IF EXISTS problem_fingerprints;
-
 DROP TYPE IF EXISTS severity;
 
 DROP TABLE IF EXISTS fingerprints;
@@ -75,25 +73,6 @@ CREATE TABLE fingerprint_analytics (
 );
 
 CREATE TYPE severity AS ENUM ('info', 'warn', 'error');
-
--- Fingerprints with known problems. For example, security risks.
-CREATE TABLE problem_fingerprints (
-  fingerprint_id varchar NOT NULL,
-  fingerprint_workspace_id varchar NOT NULL,
-  -- Workspace this problem report applies to.
-  workspace_id varchar NOT NULL,
-  -- Severity of this problem
-  severity severity NOT NULL,
-  authority varchar NOT NULL,
-  -- Third party identifier if available, such as a CVE identifier
-  identifier varchar,
-  description text,
-  -- URL relating to the problem, if available
-  url varchar,
-  date_added timestamp NOT NULL,
-  FOREIGN KEY (fingerprint_id, fingerprint_workspace_id) REFERENCES fingerprints (id, workspace_id) ON DELETE CASCADE,
-  PRIMARY KEY (fingerprint_id, workspace_id)
-);
 
 CREATE INDEX ON repo_snapshots (workspace_id);
 
