@@ -85,8 +85,8 @@ import {
  * Also expose Swagger API documentation.
  */
 export function api(projectAnalysisResultStore: ProjectAnalysisResultStore,
-    aspectRegistry: AspectRegistry & AspectReportDetailsRegistry,
-    secure: boolean): {
+                    aspectRegistry: AspectRegistry & AspectReportDetailsRegistry,
+                    secure: boolean): {
         customizer: ExpressCustomizer,
         routesToSuggestOnStartup: Array<{ title: string, route: string }>,
     } {
@@ -138,9 +138,9 @@ function exposeSwaggerDoc(express: Express, docRoute: string): void {
 }
 
 function exposeAspectMetadata(express: Express,
-    store: ProjectAnalysisResultStore,
-    aspectRegistry: AspectRegistry & AspectReportDetailsRegistry,
-    secure: boolean): void {
+                              store: ProjectAnalysisResultStore,
+                              aspectRegistry: AspectRegistry & AspectReportDetailsRegistry,
+                              secure: boolean): void {
     // Return the aspects metadata
     express.options("/api/v1/:workspace_id/aspects", corsHandler());
     express.get("/api/v1/:workspace_id/aspects", [corsHandler(), ...authHandlers(secure)], async (req, res, next) => {
@@ -193,9 +193,9 @@ function exposeListTags(express: Express, store: ProjectAnalysisResultStore, sec
 }
 
 function exposeFingerprintByType(express: Express,
-    aspectRegistry: AspectRegistry,
-    store: ProjectAnalysisResultStore,
-    secure: boolean): void {
+                                 aspectRegistry: AspectRegistry,
+                                 store: ProjectAnalysisResultStore,
+                                 secure: boolean): void {
     express.options("/api/v1/:workspace_id/fingerprint/:type", corsHandler());
     express.get("/api/v1/:workspace_id/fingerprint/:type", [corsHandler(), ...authHandlers(secure)], async (req, res, next) => {
         try {
@@ -219,9 +219,9 @@ function exposeFingerprintByType(express: Express,
 }
 
 function exposeFingerprintByTypeAndName(express: Express,
-    aspectRegistry: AspectRegistry,
-    store: ProjectAnalysisResultStore,
-    secure: boolean): void {
+                                        aspectRegistry: AspectRegistry,
+                                        store: ProjectAnalysisResultStore,
+                                        secure: boolean): void {
     express.options("/api/v1/:workspace_id/fingerprint/:type/:name", corsHandler());
     express.get("/api/v1/:workspace_id/fingerprint/:type/:name", [corsHandler(), ...authHandlers(secure)],
         async (req: Request, res: Response, next) => {
@@ -245,7 +245,6 @@ function exposeFingerprintByTypeAndName(express: Express,
                     workspaceId,
                     byName,
                 });
-
 
                 res.json(pt);
             } catch (e) {

@@ -36,7 +36,6 @@ export interface OverviewProps {
     virtualProjectCount: number;
 }
 
-
 function displayAspect(f: AspectFingerprintsForDisplay, i: number): React.ReactElement {
     const key = "collapsible" + i;
     const expandByDefault = f.fingerprints.length === 1;
