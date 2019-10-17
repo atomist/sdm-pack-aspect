@@ -63,7 +63,6 @@ import {
 } from "../aspect/compose/classificationAspect";
 import { DefaultAspectRegistry } from "../aspect/DefaultAspectRegistry";
 import { isDeliveryAspect } from "../aspect/delivery/DeliveryAspect";
-import { UndesirableUsageChecker } from "../aspect/ProblemStore";
 import {
     AspectCompatibleScorer,
     emitScoringAspect,
@@ -140,13 +139,6 @@ export interface AspectSupportOptions {
      * Optional weightings for different scorers. The key is scorer name.
      */
     weightings?: ScoreWeightings;
-
-    /**
-     * Set this to flag undesirable fingerprints: For example,
-     * a dependency you wish to eliminate from all projects, or
-     * an internally inconsistent fingerprint state.
-     */
-    undesirableUsageChecker?: UndesirableUsageChecker;
 
     /**
      * Custom fingerprint routing. Used in local mode.
@@ -287,10 +279,10 @@ function suggestRoute({ title, route }: { title: string, route: string }):
 }
 
 function orgVisualizationEndpoints(dbClientFactory: ClientFactory,
-                                   configuration: Configuration,
-                                   analysisTracking: AnalysisTracking,
-                                   options: AspectSupportOptions,
-                                   aspects: Aspect[]): {
+    configuration: Configuration,
+    analysisTracking: AnalysisTracking,
+    options: AspectSupportOptions,
+    aspects: Aspect[]): {
         routesToSuggestOnStartup: Array<{ title: string, route: string }>,
         customizers: ExpressCustomizer[],
     } {
@@ -298,9 +290,7 @@ function orgVisualizationEndpoints(dbClientFactory: ClientFactory,
     const fingerprintClassificationsFound = _.flatten(aspects.filter(isClassificationAspect).map(ca => ca.classifierMetadata));
     const scorerNames = Object.getOwnPropertyNames((options.scorers || {}));
     const aspectRegistry = new DefaultAspectRegistry({
-        problemStore: resultStore,
         aspects,
-        undesirableUsageChecker: options.undesirableUsageChecker,
         scorers: toArray(options.inMemoryScorers || []).concat(scorerNames.map(exposeFingerprintScore)),
         workspaceScorers: options.workspaceScorers,
         scoreWeightings: options.weightings || DefaultScoreWeightings,

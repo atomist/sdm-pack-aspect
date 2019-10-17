@@ -57,12 +57,6 @@ import {
     AspectReportDetailsRegistry,
     AspectWithReportDetails,
 } from "./AspectReportDetailsRegistry";
-import {
-    chainUndesirableUsageCheckers,
-    ProblemStore,
-    problemStoreBackedUndesirableUsageCheckerFor,
-    UndesirableUsageChecker,
-} from "./ProblemStore";
 
 export class DefaultAspectRegistry implements AspectRegistry, AspectReportDetailsRegistry {
 
@@ -81,8 +75,8 @@ export class DefaultAspectRegistry implements AspectRegistry, AspectReportDetail
     }
 
     public async tagAndScoreRepos(workspaceId: string,
-                                  repos: ProjectAnalysisResult[],
-                                  tsOpts: TagAndScoreOptions): Promise<ScoredRepo[]> {
+        repos: ProjectAnalysisResult[],
+        tsOpts: TagAndScoreOptions): Promise<ScoredRepo[]> {
         const tagged = await showTiming(
             `Tag ${repos.length} repos with ${this.taggers.length} taggers`,
             async () => this.tagRepos({
@@ -138,26 +132,12 @@ export class DefaultAspectRegistry implements AspectRegistry, AspectReportDetail
         return undefined;
     }
 
-    public async undesirableUsageCheckerFor(workspaceId: string): Promise<UndesirableUsageChecker | undefined> {
-        // TODO going for check functions is inelegant
-        if (this.opts.undesirableUsageChecker) {
-            return chainUndesirableUsageCheckers(
-                (await problemStoreBackedUndesirableUsageCheckerFor(this.problemStore, workspaceId)).check,
-                this.opts.undesirableUsageChecker.check);
-        }
-        return undefined;
-    }
-
-    get problemStore(): ProblemStore {
-        return this.opts.problemStore;
-    }
-
     get scorers(): RepositoryScorer[] {
         return this.opts.scorers || [];
     }
 
     private async tagRepos(tagContext: TagContext,
-                           repos: ProjectAnalysisResult[]): Promise<TaggedRepo[]> {
+        repos: ProjectAnalysisResult[]): Promise<TaggedRepo[]> {
         const simpleTaggers = this.taggers.filter(isTagger);
         const workspaceSpecificTaggers = await Promise.all(this.taggers
             .filter(td => !isTagger(td))
@@ -178,9 +158,7 @@ export class DefaultAspectRegistry implements AspectRegistry, AspectReportDetail
     }
 
     constructor(private readonly opts: {
-        problemStore: ProblemStore,
         aspects: AspectWithReportDetails[],
-        undesirableUsageChecker: UndesirableUsageChecker,
         scorers?: RepositoryScorer[],
         workspaceScorers?: WorkspaceScorer[],
         scoreWeightings?: ScoreWeightings,

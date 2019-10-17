@@ -85,8 +85,8 @@ import {
  * Also expose Swagger API documentation.
  */
 export function api(projectAnalysisResultStore: ProjectAnalysisResultStore,
-                    aspectRegistry: AspectRegistry & AspectReportDetailsRegistry,
-                    secure: boolean): {
+    aspectRegistry: AspectRegistry & AspectReportDetailsRegistry,
+    secure: boolean): {
         customizer: ExpressCustomizer,
         routesToSuggestOnStartup: Array<{ title: string, route: string }>,
     } {
@@ -107,7 +107,6 @@ export function api(projectAnalysisResultStore: ProjectAnalysisResultStore,
 
             configureAuth(express);
 
-            exposeIdealAndProblemSetting(express, aspectRegistry, secure);
             exposeAspectMetadata(express, projectAnalysisResultStore, aspectRegistry, secure);
             exposeListTags(express, projectAnalysisResultStore, secure);
             exposeListFingerprints(express, projectAnalysisResultStore, secure);
@@ -138,9 +137,9 @@ function exposeSwaggerDoc(express: Express, docRoute: string): void {
 }
 
 function exposeAspectMetadata(express: Express,
-                              store: ProjectAnalysisResultStore,
-                              aspectRegistry: AspectRegistry & AspectReportDetailsRegistry,
-                              secure: boolean): void {
+    store: ProjectAnalysisResultStore,
+    aspectRegistry: AspectRegistry & AspectReportDetailsRegistry,
+    secure: boolean): void {
     // Return the aspects metadata
     express.options("/api/v1/:workspace_id/aspects", corsHandler());
     express.get("/api/v1/:workspace_id/aspects", [corsHandler(), ...authHandlers(secure)], async (req, res, next) => {
@@ -193,9 +192,9 @@ function exposeListTags(express: Express, store: ProjectAnalysisResultStore, sec
 }
 
 function exposeFingerprintByType(express: Express,
-                                 aspectRegistry: AspectRegistry,
-                                 store: ProjectAnalysisResultStore,
-                                 secure: boolean): void {
+    aspectRegistry: AspectRegistry,
+    store: ProjectAnalysisResultStore,
+    secure: boolean): void {
     express.options("/api/v1/:workspace_id/fingerprint/:type", corsHandler());
     express.get("/api/v1/:workspace_id/fingerprint/:type", [corsHandler(), ...authHandlers(secure)], async (req, res, next) => {
         try {
@@ -219,9 +218,9 @@ function exposeFingerprintByType(express: Express,
 }
 
 function exposeFingerprintByTypeAndName(express: Express,
-                                        aspectRegistry: AspectRegistry,
-                                        store: ProjectAnalysisResultStore,
-                                        secure: boolean): void {
+    aspectRegistry: AspectRegistry,
+    store: ProjectAnalysisResultStore,
+    secure: boolean): void {
     express.options("/api/v1/:workspace_id/fingerprint/:type/:name", corsHandler());
     express.get("/api/v1/:workspace_id/fingerprint/:type/:name", [corsHandler(), ...authHandlers(secure)],
         async (req: Request, res: Response, next) => {
@@ -297,17 +296,6 @@ function exposeDrift(express: Express, aspectRegistry: AspectRegistry, store: Pr
             next(err);
         }
     });
-}
-
-function exposeIdealAndProblemSetting(express: Express, aspectRegistry: AspectRegistry, secure: boolean): void {
-
-    // Note this fingerprint as a problem
-    express.options("/api/v1/:workspace_id/problem/:id", corsHandler());
-    express.put("/api/v1/:workspace_id/problem/:id", [corsHandler(), ...authHandlers(secure)], (req, res, next) =>
-        aspectRegistry.problemStore.noteProblem(req.params.workspace_id, req.params.id).then(() => {
-            logger.info(`Set problem at ${req.params.id}`);
-            res.sendStatus(201);
-        }, next));
 }
 
 /**

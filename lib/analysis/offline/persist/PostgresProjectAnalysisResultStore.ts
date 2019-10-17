@@ -31,7 +31,6 @@ import {
     ClientBase,
 } from "pg";
 import { AnalyzedWorkspace } from "../../../aspect/AspectRegistry";
-import { ProblemUsage } from "../../../aspect/ProblemStore";
 import {
     PlantedTree,
     TagUsage,
@@ -75,8 +74,8 @@ export class PostgresProjectAnalysisResultStore implements ProjectAnalysisResult
     }
 
     public aspectDriftTree(workspaceId: string,
-                           percentile: number,
-                           options?: { repos?: boolean, type?: string }): Promise<PlantedTree> {
+        percentile: number,
+        options?: { repos?: boolean, type?: string }): Promise<PlantedTree> {
         return !!options && !!options.type ?
             driftTreeForSingleAspect(workspaceId, percentile, options, this.clientFactory) :
             driftTreeForAllAspects(workspaceId, percentile, this.clientFactory);
@@ -128,9 +127,9 @@ WHERE workspace_id ${workspaceId === "*" ? "<>" : "="} $1
      * @return {Promise<ProjectAnalysisResult[]>}
      */
     private async loadInWorkspaceInternal(workspaceId: string,
-                                          deep: boolean,
-                                          additionalWhereClause: string = "true",
-                                          additionalParameters: any[] = []): Promise<ProjectAnalysisResult[]> {
+        deep: boolean,
+        additionalWhereClause: string = "true",
+        additionalParameters: any[] = []): Promise<ProjectAnalysisResult[]> {
         const reposOnly = `SELECT id, owner, name, url, commit_sha, timestamp, workspace_id
 FROM repo_snapshots
 WHERE workspace_id ${workspaceId !== "*" ? "=" : "<>"} $1
@@ -252,37 +251,6 @@ GROUP BY repo_snapshots.id`;
 
     public fingerprintUsageForType(workspaceId: string, type?: string): Promise<FingerprintUsage[]> {
         return fingerprintUsageForType(this.clientFactory, workspaceId, type);
-    }
-
-    public async noteProblem(workspaceId: string, fingerprintId: string): Promise<void> {
-        const fingerprint = await this.loadFingerprintById(fingerprintId);
-        if (!fingerprint) {
-            throw new Error(`Fingerprint with id=${fingerprintId} not found and cannot be noted as problem`);
-        }
-        await this.storeProblemFingerprint(workspaceId, { fingerprint, severity: "warn", authority: "local-user" });
-    }
-
-    public async storeProblemFingerprint(workspaceId: string, fp: ProblemUsage): Promise<void> {
-        const sql = `INSERT INTO problem_fingerprints (workspace_id, fingerprint_id, severity, authority, date_added)
-values ($1, $2, $3, $4, current_timestamp)`;
-        await doWithClient(sql, this.clientFactory, async client => {
-            const fid = await this.ensureFingerprintStored(client, { fingerprint: fp.fingerprint, workspaceId });
-            await client.query(sql, [
-                workspaceId, fid, fp.severity, fp.authority]);
-        });
-    }
-
-    public async loadProblems(workspaceId: string): Promise<ProblemUsage[]> {
-        const sql = `SELECT id, name, feature_name as type, sha, data, authority, severity, description, url
-FROM problem_fingerprints, fingerprints
-WHERE workspace_id = $1 AND problem_fingerprints.fingerprint_id = fingerprints.id`;
-        return doWithClient(sql, this.clientFactory, async client => {
-            const rows = await client.query(sql, [workspaceId]);
-            if (!rows.rows) {
-                return [];
-            }
-            return rows.rows.map(problemRowToProblem);
-        }, []);
     }
 
     public async loadFingerprintById(id: string): Promise<FP | undefined> {
@@ -408,7 +376,7 @@ GROUP by repo_snapshots.id) stats;`;
         }
     }
     private async persistRepoSnapshot(client: ClientBase, snapshotId: string, workspaceId: string, repoRef: RepoRef,
-                                      query?: string) {
+        query?: string) {
         const shaToUse = repoRef.sha;
         const repoSnapshotsInsertSql = `INSERT INTO repo_snapshots (id, workspace_id, provider_id, owner, name, url,
             commit_sha, query, timestamp)
@@ -505,30 +473,15 @@ VALUES ($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT DO NOTHING`;
 
 }
 
-function problemRowToProblem(rawRow: any): ProblemUsage {
-    return {
-        fingerprint: {
-            name: rawRow.name,
-            type: rawRow.feature_name,
-            data: rawRow.data,
-            sha: rawRow.sha,
-        },
-        authority: rawRow.authority,
-        severity: rawRow.severity,
-        description: rawRow.description,
-        url: rawRow.url,
-    };
-}
-
 /**
  * Raw fingerprints in the workspace
  * @return {Promise<FP[]>}
  */
 async function fingerprintsInWorkspace(clientFactory: ClientFactory,
-                                       workspaceId: string,
-                                       distinct: boolean,
-                                       type?: string,
-                                       name?: string): Promise<Array<FP & { id: string }>> {
+    workspaceId: string,
+    distinct: boolean,
+    type?: string,
+    name?: string): Promise<Array<FP & { id: string }>> {
     const sql = `SELECT ${distinct ? "DISTINCT" : ""} f.name, f.id, f.feature_name as type, f.sha, f.data
 FROM repo_snapshots rs
     RIGHT JOIN repo_fingerprints rf ON rf.repo_snapshot_id = rs.id
@@ -552,7 +505,7 @@ WHERE rs.workspace_id ${workspaceId === "*" ? "<>" : "="} $1
 }
 
 async function fingerprintsForProject(clientFactory: ClientFactory,
-                                      snapshotId: string): Promise<Array<FP & { timestamp: Date, commitSha: string }>> {
+    snapshotId: string): Promise<Array<FP & { timestamp: Date, commitSha: string }>> {
     const sql = `SELECT f.name as fingerprintName, f.feature_name, f.sha, f.data, rf.path, rs.timestamp, rs.commit_sha
 FROM repo_fingerprints rf, repo_snapshots rs, fingerprints f
 WHERE rs.id = $1 AND rf.repo_snapshot_id = rs.id AND rf.fingerprint_id = f.id
