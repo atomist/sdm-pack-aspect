@@ -46,7 +46,6 @@ export interface HasFingerprints {
  */
 export type Analyzed = HasFingerprints & { id: RepoRef };
 
-
 /**
  * Result of an analysis on a workspace. We must always have at least fingerprints and repo identification
  */
@@ -193,8 +192,8 @@ export interface AspectRegistry {
     scoreWorkspace(workspaceId: string, workspaceToScore: WorkspaceToScore): Promise<WeightedScore>;
 
     tagAndScoreRepos(workspaceId: string,
-        repos: ProjectAnalysisResult[],
-        opts: TagAndScoreOptions): Promise<ScoredRepo[]>;
+                     repos: ProjectAnalysisResult[],
+                     opts: TagAndScoreOptions): Promise<ScoredRepo[]>;
 
     availableTags: Tag[];
 

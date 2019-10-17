@@ -53,7 +53,7 @@ export function storeFingerprintsFor(store: ProjectAnalysisResultStore): Publish
             const results = await store.persistAdditionalFingerprints({
                 fingerprints: paResult.analysis.fingerprints,
                 id: paResult.analysis.id,
-                workspaceId: ctx.context.workspaceId
+                workspaceId: ctx.context.workspaceId,
             });
             logger.info("Persisting additional fingerprint results for %s: %j", paResult.analysis.id.url, results);
 
