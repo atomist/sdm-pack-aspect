@@ -16,7 +16,10 @@
 
 import { RepoRef } from "@atomist/automation-client";
 import { FP } from "@atomist/sdm-pack-fingerprint";
-import { Analyzed, AnalyzedWorkspace } from "../../../aspect/AspectRegistry";
+import {
+    Analyzed,
+    AnalyzedWorkspace,
+} from "../../../aspect/AspectRegistry";
 import {
     PlantedTree,
     TagUsage,

@@ -33,7 +33,10 @@ import {
     Client,
     ClientBase,
 } from "pg";
-import { Analyzed, AnalyzedWorkspace } from "../../../aspect/AspectRegistry";
+import {
+    Analyzed,
+    AnalyzedWorkspace,
+} from "../../../aspect/AspectRegistry";
 import { IdealStore } from "../../../aspect/IdealStore";
 import { ProblemUsage } from "../../../aspect/ProblemStore";
 import {
