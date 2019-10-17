@@ -186,7 +186,7 @@ export class DefaultAspectRegistry implements AspectRegistry, AspectReportDetail
         idealStore: IdealStore,
         problemStore: ProblemStore,
         aspects: AspectWithReportDetails[],
-        undesirableUsageChecker: UndesirableUsageChecker,
+        undesirableUsageChecker?: UndesirableUsageChecker,
         scorers?: RepositoryScorer[],
         workspaceScorers?: WorkspaceScorer[],
         scoreWeightings?: ScoreWeightings,
