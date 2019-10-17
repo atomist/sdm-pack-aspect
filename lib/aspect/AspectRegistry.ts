@@ -187,8 +187,8 @@ export interface AspectRegistry {
     scoreWorkspace(workspaceId: string, workspaceToScore: WorkspaceToScore): Promise<WeightedScore>;
 
     tagAndScoreRepos(workspaceId: string,
-        repos: ProjectAnalysisResult[],
-        opts: TagAndScoreOptions): Promise<ScoredRepo[]>;
+                     repos: ProjectAnalysisResult[],
+                     opts: TagAndScoreOptions): Promise<ScoredRepo[]>;
 
     availableTags: Tag[];
 
