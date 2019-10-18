@@ -77,7 +77,9 @@ describe("Postgres Result Store", () => {
         assert.deepEqual(retrievedFingerprint, { ...fingerprintToStore, id: retrievedFingerprint.id },
             "It should match what was stored, with the addition of id");
 
-        //  const loadedByRepoRef = await subject.loadByRepoRef();
+        const loadedByRepoRef = await subject.loadByRepoRef(repoRef, true);
+
+        assert.deepStrictEqual(loadedByRepoRef.analysis, analysis, "Should be the same as was stored");
 
         // const loadedById = await subject.loadById();
 
