@@ -19,19 +19,21 @@ import { sdmConfigClientFactory } from "../lib/analysis/offline/persist/pgClient
 import * as assert from "power-assert";
 import { ProjectAnalysisResult } from "../lib/analysis/ProjectAnalysisResult";
 import { FP } from "@atomist/sdm-pack-fingerprint";
+import { fingerprintsToReposTreeQuery, driftTreeForAllAspects } from "../lib/analysis/offline/persist/repoTree";
 
 describe("Postgres Result Store", () => {
     it("does something", async () => {
         const subject = new PostgresProjectAnalysisResultStore(sdmConfigClientFactory({}));
 
-
-        const workspaceId = "TJVC";
+        const workspaceId1 = "TJVC";
+        const workspaceId2 = "ARGO";
         const fingerprintToStore: FP<any> = {
             type: "MST3k",
             name: "Rowsdower",
             displayName: "The Loyal Traitor",
             sha: "8x4d",
-            data: { yell: "ROWSDOWER!!!" }
+            data: { yell: "ROWSDOWER!!!" },
+            path: "/hey"
         }
         const repoRef = {
             owner: "satellite-of-love",
@@ -41,7 +43,7 @@ describe("Postgres Result Store", () => {
         };
         const analysis: ProjectAnalysisResult = {
             repoRef,
-            workspaceId,
+            workspaceId: workspaceId1,
             timestamp: new Date(),
             analysis: {
                 id: repoRef,
@@ -58,7 +60,37 @@ describe("Postgres Result Store", () => {
             "Failures: " + persistResult.failedFingerprints.map(f => f.error).join(", "));
         assert(persistResult.succeeded.length > 0, "reports something was persisted");
 
-        // now on to retrieval
+        // retrieve
+        const distinct = false;
+        const allFingerprintsInWorkspace = await subject.fingerprintsInWorkspace(workspaceId1, distinct);
+
+        assert.strictEqual(allFingerprintsInWorkspace.length, 1);
+        const retrievedFingerprint = allFingerprintsInWorkspace[0];
+        assert.deepEqual(retrievedFingerprint, fingerprintToStore);
+
+        //  const loadedByRepoRef = await subject.loadByRepoRef();
+
+        // const loadedById = await subject.loadById();
+
+        // analyze, to get the fingerprint_analytics populated
+        // const fingerprintUsage = await subject.fingerprintUsageForType()
+
+        // // this has to be used somewhere
+        // const ftrTreeQueryResult = await fingerprintsToReposTreeQuery();
+
+        // // and the drift tree
+        // const driftTreeResult = await driftTreeForAllAspects();
+
+        // const kinds = await subject.distinctFingerprintKinds();
+
+        // subject.deleteOldSnapshotForRepository();
+
+        // subject.fingerprintsForProject();
+
+        // subject.averageFingerprintCount();
+
+        // subject.distinctRepoFingerprintKinds();
+
 
     })
 })
