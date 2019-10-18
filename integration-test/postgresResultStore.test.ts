@@ -19,7 +19,10 @@ import { sdmConfigClientFactory } from "../lib/analysis/offline/persist/pgClient
 import * as assert from "power-assert";
 import { ProjectAnalysisResult } from "../lib/analysis/ProjectAnalysisResult";
 import { FP } from "@atomist/sdm-pack-fingerprint";
-import { fingerprintsToReposTreeQuery, driftTreeForAllAspects } from "../lib/analysis/offline/persist/repoTree";
+import {
+    driftTreeForAllAspects,
+    fingerprintsToReposTreeQuery,
+} from "../lib/analysis/offline/persist/repoTree";
 
 describe("Postgres Result Store", () => {
     it("does something", async () => {
