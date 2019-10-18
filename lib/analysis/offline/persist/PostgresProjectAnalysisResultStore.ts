@@ -201,6 +201,9 @@ GROUP BY repo_snapshots.id`;
             deep,
             "repo_snapshots.owner = $2 AND repo_snapshots.name = $3 AND repo_snapshots.commit_sha = $4",
             [repo.owner, repo.repo, repo.sha]);
+        if (hits.length > 1) {
+            throw new Error("Too many hits by repoRef. Got " + hits.length + " for repoUrl " + repo.url)
+        }
         return hits.length === 1 ? hits[0] : undefined;
     }
 
