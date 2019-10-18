@@ -23,6 +23,7 @@ import {
     driftTreeForAllAspects,
     fingerprintsToReposTreeQuery,
 } from "../lib/analysis/offline/persist/repoTree";
+import { DoWithClientError } from "../lib/analysis/offline/persist/pgUtils";
 
 describe("Postgres Result Store", () => {
     it("stores analysis and retrieves it", async () => {
@@ -71,17 +72,23 @@ describe("Postgres Result Store", () => {
         // retrieve
         const distinct = false;
         const allFingerprintsInWorkspace = await subject.fingerprintsInWorkspace(workspaceId1, distinct);
-
         assert.strictEqual(allFingerprintsInWorkspace.length, 1, "expected 1 fingerprint in workspace");
         const retrievedFingerprint = allFingerprintsInWorkspace[0];
         assert.deepEqual(retrievedFingerprint, { ...fingerprintToStore, id: retrievedFingerprint.id },
             "It should match what was stored, with the addition of id");
 
+        // try {
         // retrieve another way
         const loadedByRepoRef1 = await subject.loadByRepoRef(workspaceId1, repoRef, false);
         assert(!!loadedByRepoRef1, "Wanna get one");
+        console.log("Shallow loadByRepoRef was successful")
         const loadedByRepoRefDeep = await subject.loadByRepoRef(workspaceId1, repoRef, true);
-        assert.deepStrictEqual(loadedByRepoRefDeep.analysis, analysis, "Should be the same as was stored");
+        console.log("Deep load by reporef has returned")
+        assert.deepStrictEqual(loadedByRepoRefDeep.analysis.fingerprints.length, 1, "Should be the same as was stored");
+        assert.deepStrictEqual(loadedByRepoRefDeep.analysis.fingerprints[0].displayName, "The Loyal Traitor", "Should be about the same as was stored");
+        // } catch (err) {
+        //     assert.fail(err.message + "\n" + (err as DoWithClientError).operationDescription);
+        // }
 
         // const loadedById = await subject.loadById();
 
