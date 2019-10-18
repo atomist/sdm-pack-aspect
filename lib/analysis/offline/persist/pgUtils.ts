@@ -27,6 +27,7 @@ export type ClientFactory = () => Promise<PoolClient>;
  * Connection errors result in an exception.
  * Errors thrown by the passed-in function result are logged, and the
  * provided defaultResult is returned (or else undefined).
+ * The defaultResult can be a constant _or_ a function of the error.
  *
  * @param {() => } clientFactory factory for clients
  * @param {(c: ) => Promise<R>} what a function to run with the client
@@ -35,9 +36,9 @@ export type ClientFactory = () => Promise<PoolClient>;
  * @return {Promise<R>}
  */
 export async function doWithClient<R>(description: string,
-                                      clientFactory: ClientFactory,
-                                      what: (c: PoolClient) => Promise<R>,
-                                      defaultResult?: R | ((e: Error) => R)): Promise<R> {
+    clientFactory: ClientFactory,
+    what: (c: PoolClient) => Promise<R>,
+    defaultResult?: R | ((e: Error) => R)): Promise<R> {
     const startTime = new Date().getTime();
     const client = await clientFactory();
     let result: R;
