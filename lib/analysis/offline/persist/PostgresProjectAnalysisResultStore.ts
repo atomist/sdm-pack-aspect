@@ -199,8 +199,8 @@ GROUP BY repo_snapshots.id`;
         return hits.length === 1 ? hits[0] : undefined;
     }
 
-    public async loadByRepoRef(repo: RepoRef, deep: boolean): Promise<ProjectAnalysisResult | undefined> {
-        const hits = await this.loadInWorkspaceInternal("*",
+    public async loadByRepoRef(workspaceId: string, repo: RepoRef, deep: boolean): Promise<ProjectAnalysisResult | undefined> {
+        const hits = await this.loadInWorkspaceInternal(workspaceId,
             deep,
             "repo_snapshots.owner = $2 AND repo_snapshots.name = $3 AND repo_snapshots.commit_sha = $4",
             [repo.owner, repo.repo, repo.sha]);
