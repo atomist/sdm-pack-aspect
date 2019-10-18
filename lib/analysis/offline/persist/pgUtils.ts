@@ -21,6 +21,8 @@ import {
 
 export type ClientFactory = () => Promise<PoolClient>;
 
+export type DoWithClientError = Error & { operationDescription: string }
+
 /**
  * Perform the given operations with a database client connection
  *
@@ -36,20 +38,21 @@ export type ClientFactory = () => Promise<PoolClient>;
  * @return {Promise<R>}
  */
 export async function doWithClient<R>(description: string,
-                                      clientFactory: ClientFactory,
-                                      what: (c: PoolClient) => Promise<R>,
-                                      defaultResult?: R | ((e: Error) => R)): Promise<R> {
+    clientFactory: ClientFactory,
+    what: (c: PoolClient) => Promise<R>,
+    defaultResult?: R | ((e: DoWithClientError) => R)): Promise<R> {
     const startTime = new Date().getTime();
     const client = await clientFactory();
     let result: R;
     try {
         result = await what(client);
     } catch (err) {
-        logger.warn("Error accessing database: ", err);
+        logger.warn(`Error accessing database in '${description}': `, err);
         if (typeof defaultResult === "function") {
+            err.operationDescription = description;
             // if you really want a default value that is a function,
             // then pass a function of error that returns that function, please.
-            return (defaultResult as (e: Error) => R)(err);
+            return (defaultResult as (e: DoWithClientError) => R)(err);
         }
         return defaultResult;
     } finally {
