@@ -64,7 +64,7 @@ describe("Postgres Result Store", () => {
         const distinct = false;
         const allFingerprintsInWorkspace = await subject.fingerprintsInWorkspace(workspaceId1, distinct);
 
-        assert.strictEqual(allFingerprintsInWorkspace.length, 1);
+        assert.strictEqual(allFingerprintsInWorkspace.length, 1, "expected 1 fingerprint in workspace");
         const retrievedFingerprint = allFingerprintsInWorkspace[0];
         assert.deepEqual(retrievedFingerprint, fingerprintToStore);
 
