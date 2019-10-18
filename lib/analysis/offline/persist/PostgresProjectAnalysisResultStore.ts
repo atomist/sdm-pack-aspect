@@ -311,7 +311,7 @@ GROUP by repo_snapshots.id) stats;`;
     }
 
     private async persistOne(client: ClientBase, analysisResult: ProjectAnalysisResult): Promise<PersistResult> {
-        const repoRef = analysisResult.repoRef;
+        const { workspaceId, repoRef } = analysisResult;
         if (!repoRef) {
             return {
                 ...emptyPersistResult,
@@ -337,7 +337,7 @@ GROUP by repo_snapshots.id) stats;`;
 
         try {
             // Whack any snapshot we already hold for this repository
-            await deleteOldSnapshotForRepository(client, { repoRef });
+            await deleteOldSnapshotForRepository(client, { workspaceId, repoRef });
 
             // Use this as unique database id
             const snapshotId = snapshotIdFor(repoRef);
@@ -563,7 +563,7 @@ ORDER BY fa.entropy DESC`;
 /**
  * Delete the data we hold for this repository.
  */
-async function deleteOldSnapshotForRepository(client: ClientBase, params: { repoRef: RepoRef }): Promise<void> {
+async function deleteOldSnapshotForRepository(client: ClientBase, params: { workspaceId: string, repoRef: RepoRef }): Promise<void> {
     const { repoRef } = params;
     const deleteFingerpintsSql = `DELETE from repo_fingerprints WHERE repo_snapshot_id IN
     (SELECT id from repo_snapshots WHERE url = $1)`;
