@@ -17,7 +17,7 @@ From the root of this repository (not this directory), build a container:
 
 Then run it, mounting this repo's files, and get a shell:
 
-`docker run --rm --mount source=$(pwd),target=/app,type=bind -it node-and-pg /bin/bash`
+`docker run --rm --name integration-test --mount source=$(pwd),target=/app,type=bind -it node-and-pg /bin/bash`
 
 Inside that shell, do this once:
 
