@@ -564,13 +564,15 @@ ORDER BY fa.entropy DESC`;
  * Delete the data we hold for this repository.
  */
 async function deleteOldSnapshotForRepository(client: ClientBase, params: { workspaceId: string, repoRef: RepoRef }): Promise<void> {
-    const { repoRef } = params;
-    const deleteFingerpintsSql = `DELETE from repo_fingerprints WHERE repo_snapshot_id IN
-    (SELECT id from repo_snapshots WHERE url = $1)`;
+    const { workspaceId, repoRef } = params;
+    const deleteFingerpintsSql = `DELETE from repo_fingerprints WHERE 
+    fingerprint_workspace_id = $1
+    AND repo_snapshot_id IN
+    (SELECT id from repo_snapshots WHERE workspace_id = $1 AND url = $2)`;
     await client.query(deleteFingerpintsSql,
-        [repoRef.url]);
-    await client.query(`DELETE from repo_snapshots WHERE url = $1`,
-        [repoRef.url]);
+        [workspaceId, repoRef.url]);
+    await client.query(`DELETE from repo_snapshots WHERE workspace_id = $1 AND url = $2`,
+        [workspaceId, repoRef.url]);
 }
 
 function rowToRepoRef(row: { provider_id: string, owner: string, name: string, url: string, sha?: string, commit_sha?: string }): RemoteRepoRef {
