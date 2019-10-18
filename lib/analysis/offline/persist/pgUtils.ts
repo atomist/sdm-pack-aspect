@@ -36,9 +36,9 @@ export type ClientFactory = () => Promise<PoolClient>;
  * @return {Promise<R>}
  */
 export async function doWithClient<R>(description: string,
-    clientFactory: ClientFactory,
-    what: (c: PoolClient) => Promise<R>,
-    defaultResult?: R | ((e: Error) => R)): Promise<R> {
+                                      clientFactory: ClientFactory,
+                                      what: (c: PoolClient) => Promise<R>,
+                                      defaultResult?: R | ((e: Error) => R)): Promise<R> {
     const startTime = new Date().getTime();
     const client = await clientFactory();
     let result: R;
