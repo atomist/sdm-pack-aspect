@@ -23,8 +23,8 @@ DROP TABLE IF EXISTS fingerprint_analytics;
 -- Application code should delete any previously held data for this
 -- repository so we only have one snapshot for every repository
 CREATE TABLE repo_snapshots (
- id varchar NOT NULL PRIMARY KEY,
  workspace_id varchar NOT NULL,
+ id varchar NOT NULL,
  provider_id text NOT NULL,
  owner text NOT NULL,
  name text NOT NULL,
@@ -32,29 +32,31 @@ CREATE TABLE repo_snapshots (
  branch text,
  commit_sha varchar NOT NULL,
  timestamp TIMESTAMP  NOT NULL,
- query text
+ query text,
+ PRIMARY KEY(workspace_id, id)
 );
 
 -- Each fingerprint we've seen
 CREATE TABLE fingerprints (
-  id varchar NOT NULL,
   workspace_id varchar NOT NULL,
+  id varchar NOT NULL,
   name text NOT NULL,
   feature_name text NOT NULL,
   sha varchar NOT NULL,
   data jsonb,
   display_name varchar,
   display_value varchar,
-  PRIMARY KEY(id, workspace_id)
+  PRIMARY KEY(workspace_id, id)
 );
 
 -- Join table between repo_snapshots and fingerprints
 CREATE TABLE IF NOT EXISTS repo_fingerprints (
-  repo_snapshot_id varchar references repo_snapshots(id) ON DELETE CASCADE,
   fingerprint_workspace_id varchar NOT NULL,
+  repo_snapshot_id varchar,
   fingerprint_id varchar NOT NULL,
   path varchar,
-  FOREIGN KEY (fingerprint_id, fingerprint_workspace_id) REFERENCES fingerprints (id, workspace_id) ON DELETE CASCADE,
+  FOREIGN KEY (fingerprint_workspace_id, fingerprint_id) REFERENCES fingerprints (workspace_id, id) ON DELETE CASCADE,
+  FOREIGN KEY (fingerprint_workspace_id, repo_snapshot_id) REFERENCES repo_snapshots(workspace_id, id) ON DELETE CASCADE,
   PRIMARY KEY (repo_snapshot_id, fingerprint_id, fingerprint_workspace_id, path)
 );
 
@@ -74,10 +76,8 @@ CREATE TABLE fingerprint_analytics (
 
 CREATE TYPE severity AS ENUM ('info', 'warn', 'error');
 
-CREATE INDEX ON repo_snapshots (workspace_id);
-
-CREATE INDEX ON repo_fingerprints (repo_snapshot_id);
-CREATE INDEX ON repo_fingerprints (fingerprint_id);
+CREATE INDEX ON repo_fingerprints (fingerprint_workspace_id, repo_snapshot_id);
+CREATE INDEX ON repo_fingerprints (fingerprint_workspace_id, fingerprint_id);
 
 CREATE INDEX ON fingerprints (name);
 CREATE INDEX ON fingerprints (feature_name);
