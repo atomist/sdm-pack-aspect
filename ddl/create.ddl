@@ -51,13 +51,13 @@ CREATE TABLE fingerprints (
 
 -- Join table between repo_snapshots and fingerprints
 CREATE TABLE IF NOT EXISTS repo_fingerprints (
-  fingerprint_workspace_id varchar NOT NULL,
+  workspace_id varchar NOT NULL,
   repo_snapshot_id varchar,
   fingerprint_id varchar NOT NULL,
   path varchar,
-  FOREIGN KEY (fingerprint_workspace_id, fingerprint_id) REFERENCES fingerprints (workspace_id, id) ON DELETE CASCADE,
-  FOREIGN KEY (fingerprint_workspace_id, repo_snapshot_id) REFERENCES repo_snapshots(workspace_id, id) ON DELETE CASCADE,
-  PRIMARY KEY (repo_snapshot_id, fingerprint_id, fingerprint_workspace_id, path)
+  FOREIGN KEY (workspace_id, fingerprint_id) REFERENCES fingerprints (workspace_id, id) ON DELETE CASCADE,
+  FOREIGN KEY (workspace_id, repo_snapshot_id) REFERENCES repo_snapshots(workspace_id, id) ON DELETE CASCADE,
+  PRIMARY KEY (repo_snapshot_id, fingerprint_id, workspace_id, path)
 );
 
 -- Usage information about fingerprints
@@ -76,8 +76,8 @@ CREATE TABLE fingerprint_analytics (
 
 CREATE TYPE severity AS ENUM ('info', 'warn', 'error');
 
-CREATE INDEX ON repo_fingerprints (fingerprint_workspace_id, repo_snapshot_id);
-CREATE INDEX ON repo_fingerprints (fingerprint_workspace_id, fingerprint_id);
+CREATE INDEX ON repo_fingerprints (workspace_id, repo_snapshot_id);
+CREATE INDEX ON repo_fingerprints (workspace_id, fingerprint_id);
 
 CREATE INDEX ON fingerprints (name);
 CREATE INDEX ON fingerprints (feature_name);

@@ -416,7 +416,7 @@ GROUP by repo_snapshots.id) stats;`;
             try {
                 await this.ensureFingerprintStored(client, { fingerprint: fp, workspaceId });
                 const insertRepoFingerprintSql = `INSERT INTO repo_fingerprints (
-                    fingerprint_workspace_id,
+                    workspace_id,
                     repo_snapshot_id,
                     fingerprint_id,
                     path)
@@ -482,7 +482,7 @@ FROM repo_snapshots rs
     RIGHT JOIN repo_fingerprints rf ON rf.repo_snapshot_id = rs.id
     INNER JOIN fingerprints f ON rf.fingerprint_id = f.id
 WHERE rs.workspace_id ${workspaceEquals} $1 
-    AND rf.fingerprint_workspace_id ${workspaceEquals} $1
+    AND rf.workspace_id ${workspaceEquals} $1
     AND f.workspace_id ${workspaceEquals} $1
     AND ${type ? "f.feature_name = $2" : "true"} AND ${name ? "f.name = $3" : "true"}`;
     const result = await doWithClient<Array<StoredFingerprint> | Error>(sql, clientFactory, async client => {
@@ -569,7 +569,7 @@ ORDER BY fa.entropy DESC`;
 async function deleteOldSnapshotForRepository(client: ClientBase, params: { workspaceId: string, repoRef: RepoRef }): Promise<void> {
     const { workspaceId, repoRef } = params;
     const deleteFingerpintsSql = `DELETE from repo_fingerprints WHERE 
-    fingerprint_workspace_id = $1
+    workspace_id = $1
     AND repo_snapshot_id IN
     (SELECT id from repo_snapshots WHERE workspace_id = $1 AND url = $2)`;
     await client.query(deleteFingerpintsSql,
