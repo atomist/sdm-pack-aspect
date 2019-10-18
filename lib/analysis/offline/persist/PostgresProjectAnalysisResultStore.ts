@@ -74,8 +74,8 @@ export class PostgresProjectAnalysisResultStore implements ProjectAnalysisResult
     }
 
     public aspectDriftTree(workspaceId: string,
-                           percentile: number,
-                           options?: { repos?: boolean, type?: string }): Promise<PlantedTree> {
+        percentile: number,
+        options?: { repos?: boolean, type?: string }): Promise<PlantedTree> {
         return !!options && !!options.type ?
             driftTreeForSingleAspect(workspaceId, percentile, options, this.clientFactory) :
             driftTreeForAllAspects(workspaceId, percentile, this.clientFactory);
@@ -127,30 +127,36 @@ WHERE workspace_id ${workspaceId === "*" ? "<>" : "="} $1
      * @return {Promise<ProjectAnalysisResult[]>}
      */
     private async loadInWorkspaceInternal(workspaceId: string,
-                                          deep: boolean,
-                                          additionalWhereClause: string = "true",
-                                          additionalParameters: any[] = []): Promise<ProjectAnalysisResult[]> {
-        const reposOnly = `SELECT id, owner, name, url, commit_sha, timestamp, workspace_id
+        deep: boolean,
+        additionalWhereClause: string = "true",
+        additionalParameters: any[] = []): Promise<ProjectAnalysisResult[]> {
+        const workspaceEquals = workspaceId !== "*" ? "=" : "<>";
+        const reposOnly = `SELECT id, owner, name, url, commit_sha, timestamp, repo_snapshots.workspace_id
 FROM repo_snapshots
-WHERE workspace_id ${workspaceId !== "*" ? "=" : "<>"} $1
+WHERE repo_snapshots.workspace_id ${workspaceEquals} $1
 AND ${additionalWhereClause}`;
-        const reposAndFingerprints = `SELECT repo_snapshots.id,
+        const reposAndFingerprints = `SELECT 
+        repo_snapshots.workspace_id,
+        repo_snapshots.id,
         repo_snapshots.owner,
         repo_snapshots.name,
         repo_snapshots.url,
         repo_snapshots.commit_sha,
         repo_snapshots.timestamp,
-        repo_snapshots.workspace_id,
         json_agg(json_build_object('path', path, 'id', fingerprint_id)) as fingerprint_refs
 FROM repo_snapshots
-    LEFT JOIN repo_fingerprints ON repo_snapshots.id = repo_fingerprints.repo_snapshot_id
-WHERE workspace_id ${workspaceId !== "*" ? "=" : "<>"} $1
+    LEFT JOIN repo_fingerprints ON repo_snapshots.id = repo_fingerprints.repo_snapshot_id 
+    AND repo_fingerprints.workspace_id = repo_snapshots.workspace_id
+WHERE repo_snapshots.workspace_id ${workspaceEquals} $1
+AND repo_fingerprints.workspace_id ${workspaceEquals} $1
 AND ${additionalWhereClause}
-GROUP BY repo_snapshots.id`;
-        const queryForRepoRows = doWithClient<Error | Array<ProjectAnalysisResult & { fingerprintRefs: Array<{ id: string, path: string }> }>>("repoRows",
+GROUP BY repo_snapshots.workspace_id, repo_snapshots.id`;
+        const sql = deep ? reposAndFingerprints : reposOnly;
+        const queryForRepoRows = doWithClient<Error | Array<ProjectAnalysisResult & { fingerprintRefs: Array<{ id: string, path: string }> }>>(
+            sql,
             this.clientFactory, async client => {
                 // Load all fingerprints in workspace so we can look up
-                const repoSnapshotRows = await client.query(deep ? reposAndFingerprints : reposOnly,
+                const repoSnapshotRows = await client.query(sql,
                     [workspaceId, ...additionalParameters]);
                 return repoSnapshotRows.rows.map(whyDoesPostgresPutANewlineOnSomeFields).map(row => {
                     const repoRef = rowToRepoRef(row);
@@ -373,7 +379,7 @@ GROUP by repo_snapshots.id) stats;`;
         }
     }
     private async persistRepoSnapshot(client: ClientBase, snapshotId: string, workspaceId: string, repoRef: RepoRef,
-                                      query?: string) {
+        query?: string) {
         const shaToUse = repoRef.sha;
         const repoSnapshotsInsertSql = `INSERT INTO repo_snapshots (id, workspace_id, provider_id, owner, name, url,
             commit_sha, query, timestamp)
@@ -417,7 +423,6 @@ GROUP by repo_snapshots.id) stats;`;
         for (const fp of params.fingerprints) {
             const aspectName = fp.type || "unknown";
             const fingerprintId = aspectName + "_" + fp.name + "_" + fp.sha;
-            //  console.log("Persist fingerprint " + JSON.stringify(fp) + " for id " + id);
             // Create fp record if it doesn't exist
             try {
                 await this.ensureFingerprintStored(client, { fingerprint: fp, workspaceId });
@@ -455,7 +460,6 @@ Fingerprint: ${JSON.stringify(f.failedFingerprint, undefined, 2)}`);
         const { fingerprint, workspaceId } = params;
         const aspectName = fingerprint.type || "unknown";
         const fingerprintId = aspectName + "_" + fingerprint.name + "_" + fingerprint.sha;
-        //  console.log("Persist fingerprint " + JSON.stringify(fp) + " for id " + id);
         // Create fp record if it doesn't exist
         const insertFingerprintSql = `INSERT INTO fingerprints (workspace_id, id, name, feature_name, sha, data, display_name, display_value)
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT DO NOTHING`;
@@ -477,10 +481,10 @@ type StoredFingerprint = FP & { id: string };
  * @return {Promise<FP[]>}
  */
 async function fingerprintsInWorkspace(clientFactory: ClientFactory,
-                                       workspaceId: string,
-                                       distinct: boolean,
-                                       type?: string,
-                                       name?: string): Promise<StoredFingerprint[]> {
+    workspaceId: string,
+    distinct: boolean,
+    type?: string,
+    name?: string): Promise<StoredFingerprint[]> {
     const workspaceEquals = workspaceId === "*" ? "<>" : "=";
     const sql = `SELECT ${distinct ? "DISTINCT" : ""} f.name, f.id, f.feature_name as type, f.sha, f.data,
      f.display_name as "displayName", rf.path
@@ -513,7 +517,7 @@ WHERE rs.workspace_id ${workspaceEquals} $1
 }
 
 async function fingerprintsForProject(clientFactory: ClientFactory,
-                                      snapshotId: string): Promise<Array<FP & { timestamp: Date, commitSha: string }>> {
+    snapshotId: string): Promise<Array<FP & { timestamp: Date, commitSha: string }>> {
     const sql = `SELECT f.name as fingerprintName, f.feature_name, f.sha, f.data, rf.path, rs.timestamp, rs.commit_sha
 FROM repo_fingerprints rf, repo_snapshots rs, fingerprints f
 WHERE rs.id = $1 AND rf.repo_snapshot_id = rs.id AND rf.fingerprint_id = f.id
@@ -576,7 +580,7 @@ async function deleteOldSnapshotForRepository(client: ClientBase, params: { work
     const deleteFingerpintsSql = `DELETE from repo_fingerprints WHERE
     workspace_id = $1
     AND repo_snapshot_id IN
-    (SELECT id from repo_snapshots WHERE workspace_id = $1 AND url = $2)`;
+    (SELECT id from repo_snapshots rs WHERE rs.workspace_id = $1 AND url = $2)`;
     await client.query(deleteFingerpintsSql,
         [workspaceId, repoRef.url]);
     await client.query(`DELETE from repo_snapshots WHERE workspace_id = $1 AND url = $2`,
