@@ -66,7 +66,8 @@ describe("Postgres Result Store", () => {
 
         assert.strictEqual(allFingerprintsInWorkspace.length, 1, "expected 1 fingerprint in workspace");
         const retrievedFingerprint = allFingerprintsInWorkspace[0];
-        assert.deepEqual(retrievedFingerprint, fingerprintToStore);
+        assert.deepEqual(retrievedFingerprint, { ...fingerprintToStore, id: retrievedFingerprint.id },
+            "It should match what was stored, with the addition of id");
 
         //  const loadedByRepoRef = await subject.loadByRepoRef();
 
