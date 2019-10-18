@@ -151,7 +151,7 @@ async function analyzeOneRepo<FoundRepo>(
     tracking.setRepoRef(repoRef);
 
     // we might choose to skip this one
-    if (await existingRecordShouldBeKept(world, repoRef)) {
+    if (await existingRecordShouldBeKept(world, workspaceId, repoRef)) {
         // enhancement: record timestamp of kept record
         tracking.keptExisting();
         return;
@@ -210,8 +210,9 @@ async function existingRecordShouldBeKept(
         persister: ProjectAnalysisResultStore,
         keepExistingPersisted: ProjectAnalysisResultFilter,
     },
+    workspaceId: string,
     repoId: RepoId): Promise<boolean> {
-    const found = await opts.persister.loadByRepoRef(repoId, true);
+    const found = await opts.persister.loadByRepoRef(workspaceId, repoId, true);
     if (!found || !found.analysis) {
         return false;
     }

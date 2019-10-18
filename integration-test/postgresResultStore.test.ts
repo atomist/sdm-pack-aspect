@@ -78,9 +78,9 @@ describe("Postgres Result Store", () => {
             "It should match what was stored, with the addition of id");
 
         // retrieve another way
-        const loadedByRepoRef1 = await subject.loadByRepoRef(repoRef, false);
+        const loadedByRepoRef1 = await subject.loadByRepoRef(workspaceId1, repoRef, false);
         assert(!!loadedByRepoRef1, "Wanna get one");
-        const loadedByRepoRefDeep = await subject.loadByRepoRef(repoRef, true);
+        const loadedByRepoRefDeep = await subject.loadByRepoRef(workspaceId1, repoRef, true);
         assert.deepStrictEqual(loadedByRepoRefDeep.analysis, analysis, "Should be the same as was stored");
 
         // const loadedById = await subject.loadById();

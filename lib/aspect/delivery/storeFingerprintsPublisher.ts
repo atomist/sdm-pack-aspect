@@ -40,15 +40,16 @@ export function storeFingerprintsFor(store: ProjectAnalysisResultStore): Publish
             id: repoIdentification as any,
             fingerprints,
         };
+        const workspaceId = ctx.context.workspaceId;
         const paResult: ProjectAnalysisResult = {
             repoRef: repoIdentification as any,
-            workspaceId: ctx.context.workspaceId,
+            workspaceId,
             timestamp: undefined,
             analysis,
         };
         logger.info("Routing %d fingerprints to local database for workspace %s",
             fingerprints.length, ctx.context.workspaceId);
-        const found = await store.loadByRepoRef(paResult.analysis.id, false);
+        const found = await store.loadByRepoRef(workspaceId, paResult.analysis.id, false);
         if (!!found) {
             const results = await store.persistAdditionalFingerprints({
                 fingerprints: paResult.analysis.fingerprints,
