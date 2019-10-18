@@ -90,7 +90,8 @@ describe("Postgres Result Store", () => {
         //     assert.fail(err.message + "\n" + (err as DoWithClientError).operationDescription);
         // }
 
-        // const loadedById = await subject.loadById();
+        const loadedById = await subject.loadById(persistResult.succeeded[0], false, workspaceId1);
+        assert(!!loadedById, "Wanna get one by ID");
 
         // analyze, to get the fingerprint_analytics populated
         // const fingerprintUsage = await subject.fingerprintUsageForType()
