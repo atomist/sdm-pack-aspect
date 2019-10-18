@@ -147,7 +147,7 @@ FROM repo_snapshots
 WHERE workspace_id ${workspaceId !== "*" ? "=" : "<>"} $1
 AND ${additionalWhereClause}
 GROUP BY repo_snapshots.id`;
-        const queryForRepoRows = doWithClient(deep ? reposAndFingerprints : reposOnly,
+        const queryForRepoRows = doWithClient<Error | Array<ProjectAnalysisResult & { fingerprintRefs: Array<{ id: string, path: string }> }>>("repoRows",
             this.clientFactory, async client => {
                 // Load all fingerprints in workspace so we can look up
                 const repoSnapshotRows = await client.query(deep ? reposAndFingerprints : reposOnly,
@@ -167,27 +167,30 @@ GROUP BY repo_snapshots.id`;
                         analysis: undefined,
                     };
                 });
-            }, []);
-        if (deep) {
-            // We do this join manually instead of returning JSON because of the extent of the duplication
-            // and the resulting memory usage.
-            // We parallelize the 2 needed queries to reduce latency
-            const getFingerprints = this.fingerprintsInWorkspaceRecord(workspaceId);
-            const [repoRows, fingerprints] = await Promise.all([queryForRepoRows, getFingerprints]);
-            for (const repo of repoRows) {
-                repo.analysis = {
-                    id: repo.repoRef,
-                    fingerprints: repo.fingerprintRefs.map(fref => {
-                        return {
-                            ...fingerprints[fref.id],
-                            path: fref.path,
-                        };
-                    }),
-                };
-            }
-            return repoRows;
+            }, e => e);
+        if (!deep) {
+            return rejectError(queryForRepoRows);
         }
-        return queryForRepoRows;
+        // We do this join manually instead of returning JSON because of the extent of the duplication
+        // and the resulting memory usage.
+        // We parallelize the 2 needed queries to reduce latency
+        const getFingerprints = this.fingerprintsInWorkspaceRecord(workspaceId);
+        const [repoRows, fingerprints] = await Promise.all([queryForRepoRows, getFingerprints]);
+        if (isError(repoRows)) {
+            throw repoRows;
+        }
+        return repoRows.map(repo => ({
+            ...repo,
+            analysis: {
+                id: repo.repoRef,
+                fingerprints: repo.fingerprintRefs.map(fref => {
+                    return {
+                        ...fingerprints[fref.id],
+                        path: fref.path,
+                    };
+                }),
+            }
+        }));
     }
 
     public async loadById(id: string, deep: boolean, workspaceId?: string): Promise<ProjectAnalysisResult | undefined> {
@@ -598,4 +601,12 @@ function whyDoesPostgresPutANewlineOnSomeFields<T extends { commit_sha?: string,
 
 function snapshotIdFor(repoRef: RepoRef): string {
     return repoRef.url.replace("/", "") + "_" + repoRef.sha;
+}
+
+function isError(e: any): e is Error {
+    return !!e.stack
+}
+
+function rejectError<T>(result: Promise<T | Error>): Promise<T> {
+    return result.then(tOrError => isError(tOrError) ? Promise.reject(tOrError) : tOrError);
 }
