@@ -42,7 +42,7 @@ describe("Postgres Result Store", () => {
             owner: "satellite-of-love",
             repo: "rowsdower",
             url: "https://github.com/satellite-of-love/rowsdower",
-            sha: "dead0x",
+            sha: "37787bc4241ff3d3fad165c5b30882ba7603d771",
         };
         const analysis: ProjectAnalysisResult = {
             repoRef,
@@ -77,9 +77,11 @@ describe("Postgres Result Store", () => {
         assert.deepEqual(retrievedFingerprint, { ...fingerprintToStore, id: retrievedFingerprint.id },
             "It should match what was stored, with the addition of id");
 
-        const loadedByRepoRef = await subject.loadByRepoRef(repoRef, true);
-
-        assert.deepStrictEqual(loadedByRepoRef.analysis, analysis, "Should be the same as was stored");
+        // retrieve another way
+        const loadedByRepoRef1 = await subject.loadByRepoRef(repoRef, false);
+        assert(!!loadedByRepoRef1, "Wanna get one");
+        const loadedByRepoRefDeep = await subject.loadByRepoRef(repoRef, true);
+        assert.deepStrictEqual(loadedByRepoRefDeep.analysis, analysis, "Should be the same as was stored");
 
         // const loadedById = await subject.loadById();
 
