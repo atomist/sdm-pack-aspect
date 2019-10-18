@@ -475,12 +475,15 @@ async function fingerprintsInWorkspace(clientFactory: ClientFactory,
     distinct: boolean,
     type?: string,
     name?: string): Promise<Array<StoredFingerprint>> {
+    const workspaceEquals = workspaceId === "*" ? "<>" : "=";
     const sql = `SELECT ${distinct ? "DISTINCT" : ""} f.name, f.id, f.feature_name as type, f.sha, f.data,
      f.display_name as "displayName", rf.path
 FROM repo_snapshots rs
     RIGHT JOIN repo_fingerprints rf ON rf.repo_snapshot_id = rs.id
     INNER JOIN fingerprints f ON rf.fingerprint_id = f.id
-WHERE rs.workspace_id ${workspaceId === "*" ? "<>" : "="} $1
+WHERE rs.workspace_id ${workspaceEquals} $1 
+    AND rf.fingerprint_workspace_id ${workspaceEquals} $1
+    AND f.workspace_id ${workspaceEquals} $1
     AND ${type ? "f.feature_name = $2" : "true"} AND ${name ? "f.name = $3" : "true"}`;
     const result = await doWithClient<Array<StoredFingerprint> | Error>(sql, clientFactory, async client => {
         const params = [workspaceId];
