@@ -22,7 +22,7 @@ import { FP } from "@atomist/sdm-pack-fingerprint";
 import { fingerprintsToReposTreeQuery, driftTreeForAllAspects } from "../lib/analysis/offline/persist/repoTree";
 
 describe("Postgres Result Store", () => {
-    it("does something", async () => {
+    it("stores analysis and retrieves it", async () => {
         const subject = new PostgresProjectAnalysisResultStore(sdmConfigClientFactory({}));
 
         const workspaceId1 = "TJVC";
@@ -59,6 +59,11 @@ describe("Postgres Result Store", () => {
         assert.strictEqual(persistResult.failedFingerprints.length, 0,
             "Failures: " + persistResult.failedFingerprints.map(f => f.error).join(", "));
         assert(persistResult.succeeded.length > 0, "reports something was persisted");
+
+        // Now store the same thing, but in a different workspace.
+        const persistResult2 = await subject.persist({ ...analysis, workspaceId: workspaceId2 });
+        assert(persistResult2.succeeded.length > 0, "reports something was persisted in workspace 2");
+
 
         // retrieve
         const distinct = false;
