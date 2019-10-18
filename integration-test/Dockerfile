@@ -1,7 +1,6 @@
 FROM node:10
 
-RUN apt-get update
-RUN apt-get install -y postgresql
+RUN apt update && apt install -y postgresql
 
 USER postgres
 
