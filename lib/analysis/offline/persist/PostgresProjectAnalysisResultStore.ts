@@ -253,15 +253,6 @@ GROUP BY repo_snapshots.id`;
         return fingerprintUsageForType(this.clientFactory, workspaceId, type);
     }
 
-    public async loadFingerprintById(id: string): Promise<FP | undefined> {
-        const sql = `SELECT id, name, feature_name as type, sha, data FROM fingerprints
-WHERE id = $1`;
-        return doWithClient(sql, this.clientFactory, async client => {
-            const rows = await client.query(sql, [id]);
-            return rows.rows.length === 1 ? rows.rows[0] : undefined;
-        });
-    }
-
     /**
      * Key is persistent fingerprint id
      */
