@@ -286,8 +286,8 @@ GROUP BY repo_snapshots.workspace_id, repo_snapshots.id`;
         return fingerprintsInWorkspace(this.clientFactory, workspaceId, distinct, type, name);
     }
 
-    public async fingerprintsForProject(snapshotId: string): Promise<Array<FP & { timestamp: Date, commitSha: string }>> {
-        return fingerprintsForProject(this.clientFactory, snapshotId);
+    public async fingerprintsForProject(workspaceId: string, snapshotId: string): Promise<Array<FP & { timestamp: Date, commitSha: string }>> {
+        return fingerprintsForProject(this.clientFactory, workspaceId, snapshotId);
     }
 
     public async averageFingerprintCount(workspaceId?: string): Promise<number> {
@@ -530,13 +530,19 @@ WHERE rs.workspace_id ${workspaceEquals} $1
 }
 
 async function fingerprintsForProject(clientFactory: ClientFactory,
+    workspaceId: string,
     snapshotId: string): Promise<Array<FP & { timestamp: Date, commitSha: string }>> {
-    const sql = `SELECT f.name as fingerprintName, f.feature_name, f.sha, f.data, rf.path, rs.timestamp, rs.commit_sha
+    const sql = `SELECT f.name as fingerprintName, f.feature_name, f.sha, f.data, rf.path, rs.timestamp, rs.commit_sha,
+    f.display_name as "displayName", f.display_value as "displayValue"
 FROM repo_fingerprints rf, repo_snapshots rs, fingerprints f
-WHERE rs.id = $1 AND rf.repo_snapshot_id = rs.id AND rf.fingerprint_id = f.id
-ORDER BY feature_name, fingerprintName ASC`;
+WHERE rs.id = $2 
+  AND rf.repo_snapshot_id = rs.id 
+  AND rf.fingerprint_id = f.id
+  AND rs.workspace_id = $1
+  AND rf.workspace_id = $1
+  AND f.workspace_id = $1 ORDER BY feature_name, fingerprintName ASC`;
     return doWithClient(sql, clientFactory, async client => {
-        const rows = await client.query(sql, [snapshotId]);
+        const rows = await client.query(sql, [workspaceId, snapshotId]);
         return rows.rows.map(row => {
             return {
                 name: row.fingerprintname,
@@ -546,6 +552,8 @@ ORDER BY feature_name, fingerprintName ASC`;
                 path: row.path,
                 timestamp: row.timestamp,
                 commitSha: row.commit_sha,
+                displayName: row.displayName,
+                displayValue: row.displayValue,
             };
         });
     }, []);
