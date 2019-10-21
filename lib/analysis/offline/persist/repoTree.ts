@@ -45,7 +45,7 @@ SELECT row_to_json(fingerprint_groups) FROM (
                     AND repo_snapshots.workspace_id ${workspaceEquals} $1
                 ) repo
          ) as children FROM fingerprints
-         WHERE fingerprints.feature_name = $2 
+         WHERE fingerprints.feature_name = $2
          AND fingerprints.name ${tq.byName ? "=" : "<>"} $3
          AND fingerprints.workspace_id ${workspaceEquals} $1
 ) fp WHERE children is not NULL) as fingerprint_groups
@@ -88,8 +88,8 @@ function isError(e: any): e is Error {
 }
 
 export async function driftTreeForAllAspects(workspaceId: string,
-    percentile: number,
-    clientFactory: ClientFactory): Promise<PlantedTree> {
+                                             percentile: number,
+                                             clientFactory: ClientFactory): Promise<PlantedTree> {
     const sql = driftTreeSql(workspaceId, { repos: false });
     const circles = [
         { meaning: "report" },
@@ -117,9 +117,9 @@ export async function driftTreeForAllAspects(workspaceId: string,
 }
 
 export async function driftTreeForSingleAspect(workspaceId: string,
-    percentile: number,
-    options: { repos?: boolean, type?: string },
-    clientFactory: ClientFactory): Promise<PlantedTree> {
+                                               percentile: number,
+                                               options: { repos?: boolean, type?: string },
+                                               clientFactory: ClientFactory): Promise<PlantedTree> {
     const sql = driftTreeSql(workspaceId, options);
     return doWithClient(sql, clientFactory, async client => {
         const result = await client.query(sql,
