@@ -168,7 +168,10 @@ function driftTreeSql(workspaceId: string, options: { repos?: boolean, type?: st
                     SELECT distinct _rs1.url, _rs1.owner, _rs1.name, _rs1.url, _f1.feature_name as type, _f1.name as fingerprint_name, 1 as size
                        FROM repo_snapshots _rs1, repo_fingerprints _rf1, fingerprints _f1
                        WHERE _rs1.id = _rf1.repo_snapshot_id 
-                       AND _rf1.fingerprint_id = _f1.id) as repos
+                       AND _rf1.fingerprint_id = _f1.id
+                       AND _rs1.workspace_id ${workspaceEquals} $1
+                       AND _rf1.workspace_id ${workspaceEquals} $1 
+                       AND _f1.workspace_id ${workspaceEquals} $1) as repos
                 WHERE workspace_id ${workspaceEquals} $1
                     AND entropy >=
                         (SELECT percentile_disc($2) within group (order by entropy)
