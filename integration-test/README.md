@@ -29,3 +29,7 @@ cd /app
 Then run the tests (repeat if necessary):
  
 `npm run integration-test`
+
+Here's a handy command to look around in the database in the container, while it's running:
+
+`docker exec -it integration-test psql -d org_viz`

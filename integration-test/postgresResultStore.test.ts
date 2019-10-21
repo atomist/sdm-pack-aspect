@@ -166,8 +166,7 @@ describe("Postgres Result Store", () => {
             lookSuccessful("other workspace", persistResult2);
         }
 
-        // analyze, to get the fingerprint_analytics populated
-
+        // analyze, to get the fingerprint_analytics populated for both workspaces
         await computeAnalytics({
             persister: subject,
             analyzer: { aspectOf() { return {} as Aspect } }
@@ -179,6 +178,7 @@ describe("Postgres Result Store", () => {
         },
             workspaceId2);
 
+        // now! Test the aggregate selection methods
         const fingerprintUsage = await subject.fingerprintUsageForType(workspaceId1);
 
         assert.strictEqual(fingerprintUsage.length, 1, "Better be one usage too");
