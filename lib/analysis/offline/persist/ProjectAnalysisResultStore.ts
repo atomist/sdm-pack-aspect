@@ -183,11 +183,4 @@ export interface ProjectAnalysisResultStore {
      */
     fingerprintsForProject(workspaceId: string, snapshotId: string): Promise<Array<FP & { timestamp: Date, commitSha: string }>>;
 
-    /**
-     * Return the average number of fingerprints in the workspace
-     * @param {string} workspaceId
-     * @return {Promise<number>}
-     */
-    averageFingerprintCount(workspaceId?: string): Promise<number>;
-
 }

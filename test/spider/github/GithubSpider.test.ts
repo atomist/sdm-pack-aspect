@@ -185,10 +185,6 @@ class FakeProjectAnalysisResultStore implements ProjectAnalysisResultStore {
         throw new Error("Method not implemented.");
     }
 
-    public async averageFingerprintCount(workspaceId?: string): Promise<number> {
-        return -1;
-    }
-
 }
 
 function opts(): SpiderOptions {
