@@ -29,7 +29,7 @@ import { TreeQuery } from "./ProjectAnalysisResultStore";
  */
 function nonMatchingRepos(tq: TreeQuery): string {
     const workspaceEquals = tq.workspaceId === "*" ? "<>" : "=";
-    return `SELECT  null as id, $4 as name, null as sha, null as data, $1 as type,
+    return `SELECT  null as id, $4 as name, null as sha, null as data, $1 as type, $4::text as display_name, null as display_value,
             (
            SELECT json_agg(row_to_json(repo))
            FROM (
