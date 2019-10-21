@@ -214,7 +214,7 @@ function exposeFingerprintReportPage(conf: WebAppConfig): void {
         const fingerprintDisplayName = defaultedToDisplayableFingerprintName(aspect)(name);
 
         const workspaceId = req.query.workspaceId || "*";
-        let dataUrl = `/api/v1/${workspaceId}/fingerprint/${
+        const dataUrl = `/api/v1/${workspaceId}/fingerprint/${
             encodeURIComponent(type)}/${
             encodeURIComponent(name)}?byOrg=${
             req.query.byOrg === "true"}&trim=${
@@ -248,17 +248,17 @@ function exposeCustomReportPage(conf: WebAppConfig): void {
 
 // TODO fix any
 async function renderDataUrl(instanceMetadata: ExtensionPackMetadata,
-    workspaceId: string,
-    page: {
+                             workspaceId: string,
+                             page: {
         title: string,
         heading: string,
         subheading?: string,
         dataUrl: string,
     },
-    aspectRegistry: AspectRegistry,
-    httpClientFactory: HttpClientFactory,
-    req: any,
-    res: any): Promise<void> {
+                             aspectRegistry: AspectRegistry,
+                             httpClientFactory: HttpClientFactory,
+                             req: any,
+                             res: any): Promise<void> {
     let tree: TagTree;
 
     const fullUrl = `http://${req.get("host")}${page.dataUrl}`;
