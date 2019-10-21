@@ -146,7 +146,12 @@ describe("Postgres Result Store", () => {
             const persistResult = await subject.persist(analysis);
             lookSuccessful("second", persistResult);
         }
-        _.merge(analysis, { workspaceId: workspaceId2 });
+        _.merge(analysis, {
+            workspaceId: workspaceId2,
+            analysis: {
+                fingerprints: { 0: { displayName: "That dirty traitor" } } // this might break it
+            }
+        });
         {     // Now store the same thing, but in a different workspace.
             const persistResult2 = await subject.persist(analysis);
             lookSuccessful("other workspace", persistResult2);
@@ -168,6 +173,11 @@ describe("Postgres Result Store", () => {
             analyzer: { aspectOf() { return {} as Aspect } }
         },
             workspaceId1);
+        await computeAnalytics({
+            persister: subject,
+            analyzer: { aspectOf() { return {} as Aspect } }
+        },
+            workspaceId2);
 
         const fingerprintUsage = await subject.fingerprintUsageForType(workspaceId1);
 
