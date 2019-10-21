@@ -41,6 +41,7 @@ describe("Postgres Result Store", () => {
             type: "MST3k",
             name: "Rowsdower",
             displayName: "The Loyal Traitor",
+            displayValue: "Rowsdower again!",
             sha: "8x4d",
             data: { yell: "ROWSDOWER!!!" },
             path: "/hey"
