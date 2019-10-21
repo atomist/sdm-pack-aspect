@@ -18,7 +18,10 @@ import { PostgresProjectAnalysisResultStore } from "../lib/analysis/offline/pers
 import { sdmConfigClientFactory } from "../lib/analysis/offline/persist/pgClientFactory";
 import * as assert from "power-assert";
 import { ProjectAnalysisResult } from "../lib/analysis/ProjectAnalysisResult";
-import { FP, Aspect } from "@atomist/sdm-pack-fingerprint";
+import {
+    Aspect,
+    FP,
+} from "@atomist/sdm-pack-fingerprint";
 import {
     driftTreeForAllAspects,
     fingerprintsToReposTreeQuery,
