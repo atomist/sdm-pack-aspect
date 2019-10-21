@@ -57,10 +57,9 @@ export async function buildFingerprintTree(
         otherLabel: string,
         byOrg: boolean,
         trim: boolean,
-        showProgress: boolean,
     }): Promise<PlantedTree> {
 
-    const { workspaceId, byName, fingerprintName, fingerprintType, otherLabel, byOrg, trim, showProgress } = params;
+    const { workspaceId, byName, fingerprintName, fingerprintType, otherLabel, byOrg, trim } = params;
     const showPresence = !!otherLabel;
 
     const { store, aspectRegistry } = world;
