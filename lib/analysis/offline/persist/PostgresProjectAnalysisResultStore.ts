@@ -539,10 +539,12 @@ ORDER BY feature_name, fingerprintName ASC`;
 }
 
 async function fingerprintUsageForType(clientFactory: ClientFactory, workspaceId: string, type?: string): Promise<FingerprintUsage[]> {
+    const workspaceEquals = workspaceId === "*" ? "!=" : "="
     const sql = `SELECT distinct fa.name, fa.feature_name as type, fa.variants, fa.count, fa.entropy, fa.compliance, f.display_name
 FROM fingerprint_analytics fa, fingerprints f
-WHERE fa.workspace_id ${workspaceId === "*" ? "!=" : "="} $1
-AND f.name = fa.name AND f.feature_name = fa.feature_name
+WHERE fa.workspace_id ${workspaceEquals} $1
+AND f.workspace_id ${workspaceEquals} $1
+AND f.name = fa.name AND f.feature_name = fa.feature_name 
 AND  ${type ? "fa.feature_name = $2" : "true"}
 ORDER BY fa.entropy DESC`;
     return doWithClient<FingerprintUsage[]>(sql, clientFactory, async client => {
