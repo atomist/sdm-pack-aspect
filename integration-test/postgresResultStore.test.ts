@@ -193,7 +193,7 @@ describe("Postgres Result Store", () => {
             aspectName: "MST3k", rootName: "*", byName: false
         }, sdmConfigClientFactory({}));
 
-        console.log(JSON.stringify(ftrTreeQueryResult.tree, null, 2));
+        //console.log(JSON.stringify(ftrTreeQueryResult.tree, null, 2));
 
         assert.strictEqual(ftrTreeQueryResult.tree.children.length, 2, "There should be 2 variants in this tree");
 
