@@ -130,7 +130,7 @@ describe("Postgres Result Store", () => {
         };
 
         // store analyses with 2 different variants in workspace1; then one of the same ones in workspace2
-        // and finally a third in workspace2.
+        // and finally a third in workspace2 -- with an extra fingerprint name not seen in the first workspace.
         // Each workspace should see 2 variants, and not the variant that's only in the other.
 
         {
@@ -159,7 +159,12 @@ describe("Postgres Result Store", () => {
         _.merge(analysis,
             {
                 repoRef: { repo: "tombinh", url: "https://github.com/satellite-of-love/tombinh" },
-                analysis: { fingerprints: { 0: { sha: "873yfhrsd", data: { yell: "consent" } } } }
+                analysis: {
+                    fingerprints: {
+                        0: { sha: "873yfhrsd", data: { yell: "consent" } },
+                        1: { ...fingerprintToStore, type: "MST3k", name: "Mitchell", displayName: "MITCHELL" }
+                    }
+                }
             });
         {     // Now store another different thing, in the second workspace
             const persistResult2 = await subject.persist(analysis);
@@ -185,15 +190,18 @@ describe("Postgres Result Store", () => {
         const fu = fingerprintUsage[0];
         assert.strictEqual(fu.variants, 2, "We made two variants of this one in the workspace");
 
-        console.log(fu);
+        //console.log(fu);
 
         // next aggregate method
         const ftrTreeQueryResult = await fingerprintsToReposTreeQuery({
             workspaceId: workspaceId1,
-            aspectName: "MST3k", rootName: "*", byName: false
+            aspectName: "MST3k",
+            rootName: "*",
+            byName: false,
+            otherLabel: "Moar",
         }, sdmConfigClientFactory({}));
 
-        //console.log(JSON.stringify(ftrTreeQueryResult.tree, null, 2));
+        console.log(JSON.stringify(ftrTreeQueryResult.tree, null, 2));
 
         assert.strictEqual(ftrTreeQueryResult.tree.children.length, 2, "There should be 2 variants in this tree");
 
