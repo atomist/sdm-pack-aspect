@@ -452,6 +452,9 @@ Fingerprint: ${JSON.stringify(f.failedFingerprint, undefined, 2)}`);
 
     /**
      * Persist the given fingerprint if it's not already known
+     * 
+     * If this SHA has already been persisted for this fingerprint, repo, and workspace,
+     * then the old one will not be updated.
      * @param {FP} fp
      * @param {Client} client
      * @return {Promise<void>}
@@ -464,7 +467,7 @@ Fingerprint: ${JSON.stringify(f.failedFingerprint, undefined, 2)}`);
         console.log("Fingerprint value: " + fingerprint.displayValue)
         const insertFingerprintSql = `INSERT INTO fingerprints 
         (workspace_id, id, name, feature_name, sha, data, display_name, display_value)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`;
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT DO NOTHING`;
         logger.debug("Persisting fingerprint %j SQL\n%s", fingerprint, insertFingerprintSql);
         await client.query(insertFingerprintSql,
             [workspaceId, fingerprintId, fingerprint.name, aspectName, fingerprint.sha,
