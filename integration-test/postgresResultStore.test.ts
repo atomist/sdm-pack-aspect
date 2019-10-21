@@ -100,6 +100,10 @@ describe("Postgres Result Store", () => {
 
         const loadedById = await subject.loadById(persistResult.succeeded[0], false, workspaceId1);
         assert(!!loadedById, "Wanna get one by ID");
+
+        // retrieve another way
+        const loadedByProject = await subject.fingerprintsForProject(workspaceId1, loadedByRepoRefDeep.id);
+        assert.strictEqual(loadedByProject.length, 1, "No spying on others' fingerprints")
     });
 
 
@@ -228,11 +232,8 @@ describe("Postgres Result Store", () => {
         assert.strictEqual(kinds2.length, 2, "He can only be in two repositories (in this test)");
 
 
-        // subject.fingerprintsForProject();
 
         // subject.averageFingerprintCount();
-
-        // subject.distinctRepoFingerprintKinds();
 
         // subject.tags()
 

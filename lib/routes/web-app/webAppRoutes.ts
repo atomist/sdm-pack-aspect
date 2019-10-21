@@ -128,7 +128,7 @@ function exposeRepositoryPage(conf: WebAppConfig): void {
                 return;
             }
 
-            const everyFingerprint = await conf.store.fingerprintsForProject(id);
+            const everyFingerprint = await conf.store.fingerprintsForProject(workspaceId, id);
             const virtualPaths = _.uniq(everyFingerprint.map(f => f.path)).filter(p => !!p);
             const allFingerprints = everyFingerprint.filter(fp => fp.path === queryPath);
             // TODO this is nasty. why query deep in the first place?
@@ -248,17 +248,17 @@ function exposeCustomReportPage(conf: WebAppConfig): void {
 
 // TODO fix any
 async function renderDataUrl(instanceMetadata: ExtensionPackMetadata,
-                             workspaceId: string,
-                             page: {
+    workspaceId: string,
+    page: {
         title: string,
         heading: string,
         subheading?: string,
         dataUrl: string,
     },
-                             aspectRegistry: AspectRegistry,
-                             httpClientFactory: HttpClientFactory,
-                             req: any,
-                             res: any): Promise<void> {
+    aspectRegistry: AspectRegistry,
+    httpClientFactory: HttpClientFactory,
+    req: any,
+    res: any): Promise<void> {
     let tree: TagTree;
 
     const fullUrl = `http://${req.get("host")}${page.dataUrl}`;
