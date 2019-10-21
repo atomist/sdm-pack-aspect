@@ -231,10 +231,6 @@ describe("Postgres Result Store", () => {
         const kinds2 = await subject.distinctRepoFingerprintKinds(workspaceId1);
         assert.strictEqual(kinds2.length, 2, "He can only be in two repositories (in this test)");
 
-
-
-        // subject.averageFingerprintCount();
-
         // subject.tags()
 
     })

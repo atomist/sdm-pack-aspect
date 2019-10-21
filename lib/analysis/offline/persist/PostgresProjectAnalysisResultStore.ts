@@ -290,21 +290,6 @@ GROUP BY repo_snapshots.workspace_id, repo_snapshots.id`;
         return fingerprintsForProject(this.clientFactory, workspaceId, snapshotId);
     }
 
-    public async averageFingerprintCount(workspaceId?: string): Promise<number> {
-        const sql = `SELECT avg(count) as average_fingerprints from (SELECT repo_snapshots.id, count(feature_name) from repo_snapshots,
-(select distinct feature_name, repo_snapshot_id, repo_fingerprints.path
-  FROM repo_fingerprints, fingerprints
-  WHERE repo_fingerprints.fingerprint_id = fingerprints.id)
-AS aspects
-WHERE workspace_id ${workspaceId === "*" ? "<>" : "="} $1
-AND repo_snapshot_id = repo_snapshots.id
-GROUP by repo_snapshots.id) stats;`;
-        return doWithClient(sql, this.clientFactory, async client => {
-            const rows = await client.query(sql, [workspaceId || "*"]);
-            return rows.rows.length === 1 ? rows.rows[0].average_fingerprints : -1;
-        }, () => -1);
-    }
-
     public async persistAnalytics(data: Array<{ workspaceId: string, kind: FingerprintKind, cohortAnalysis: CohortAnalysis }>): Promise<boolean> {
         return doWithClient("Persist analytics", this.clientFactory, async client => {
             for (const { kind, workspaceId, cohortAnalysis } of data) {
