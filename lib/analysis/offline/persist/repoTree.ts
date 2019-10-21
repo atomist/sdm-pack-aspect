@@ -28,6 +28,7 @@ import { TreeQuery } from "./ProjectAnalysisResultStore";
  * Return results for non-matching fingerprints
  */
 function nonMatchingRepos(tq: TreeQuery): string {
+    const workspaceEquals = tq.workspaceId === "*" ? "<>" : "=";
     return `SELECT  null as id, $4 as name, null as sha, null as data, $1 as type,
             (
            SELECT json_agg(row_to_json(repo))
@@ -35,7 +36,7 @@ function nonMatchingRepos(tq: TreeQuery): string {
                   SELECT
                     repo_snapshots.id, repo_snapshots.owner, repo_snapshots.name, repo_snapshots.url, 1 as size
                   FROM repo_snapshots
-                   WHERE workspace_id ${tq.workspaceId === "*" ? "<>" : "="} $1
+                   WHERE workspace_id ${workspaceEquals} $1
                    AND repo_snapshots.id not in (select repo_fingerprints.repo_snapshot_id
                     FROM repo_fingerprints WHERE repo_fingerprints.fingerprint_id in
                         (SELECT id from fingerprints where fingerprints.feature_name = $2
@@ -46,6 +47,7 @@ function nonMatchingRepos(tq: TreeQuery): string {
 }
 
 function fingerprintsToReposQuery(tq: TreeQuery): string {
+    const workspaceEquals = tq.workspaceId === "*" ? "<>" : "=";
     // We always select by aspect (aka feature_name, aka type), and sometimes also by fingerprint name.
     const sql = `
 SELECT row_to_json(fingerprint_groups) FROM (
@@ -61,7 +63,8 @@ SELECT row_to_json(fingerprint_groups) FROM (
                   FROM repo_fingerprints, repo_snapshots
                    WHERE repo_fingerprints.fingerprint_id = fingerprints.id
                     AND repo_snapshots.id = repo_fingerprints.repo_snapshot_id
-                    AND workspace_id ${tq.workspaceId === "*" ? "<>" : "="} $1
+                    AND repo_fingerprints.workspace_id ${workspaceEquals} $1
+                    AND repo_snapshots.workspace_id ${workspaceEquals} $1
                 ) repo
          ) as children FROM fingerprints
          WHERE fingerprints.feature_name = $2 and fingerprints.name ${tq.byName ? "=" : "<>"} $3
