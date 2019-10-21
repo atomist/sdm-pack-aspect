@@ -54,13 +54,11 @@ export async function buildFingerprintTree(
         fingerprintName: string,
         fingerprintType: string,
         byName: boolean,
-        otherLabel: string,
         byOrg: boolean,
         trim: boolean,
     }): Promise<PlantedTree> {
 
-    const { workspaceId, byName, fingerprintName, fingerprintType, otherLabel, byOrg, trim } = params;
-    const showPresence = !!otherLabel;
+    const { workspaceId, byName, fingerprintName, fingerprintType, byOrg, trim } = params;
 
     const { store, aspectRegistry } = world;
 
@@ -68,7 +66,6 @@ export async function buildFingerprintTree(
     let pt = await store.fingerprintsToReposTree({
         workspaceId,
         byName,
-        otherLabel,
         rootName: fingerprintName,
         aspectName: fingerprintType,
     });
@@ -106,27 +103,11 @@ export async function buildFingerprintTree(
 
     resolveAspectNames(aspectRegistry, pt.tree);
 
-    // if (!showPresence) {
-    //     // Suppress branches from aspects that use name "None" for not found
-    //     pt.tree = killChildren(pt.tree, c => c.name === "None");
-    // }
-
     if (byOrg) {
         pt = splitByOrg(pt);
     }
-    if (showPresence) {
-        pt.tree = groupSiblings(pt.tree,
-            {
-                parentSelector: parent => parent.children.some(c => (c as any).sha),
-                childClassifier: kid => (kid as any).sha && kid.name !== "None" ? "Present" : "Absent",
-                collapseUnderName: name => name === "Absent",
-            });
-    }
 
-    if (!showPresence) {
-        // Don't do this if we are looking at presence, as sized nodes will swamp absent nodes with default 1
-        applyTerminalSizing(aspect, pt.tree);
-    }
+    applyTerminalSizing(aspect, pt.tree);
     pt.tree = addRepositoryViewUrl(pt.tree);
 
     // Group all fingerprint nodes by their name at the first level
