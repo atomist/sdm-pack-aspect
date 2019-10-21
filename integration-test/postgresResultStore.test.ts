@@ -179,17 +179,23 @@ describe("Postgres Result Store", () => {
             workspaceId2);
 
         // now! Test the aggregate selection methods
+
         const fingerprintUsage = await subject.fingerprintUsageForType(workspaceId1);
-
         assert.strictEqual(fingerprintUsage.length, 1, "Better be one usage too");
-
         const fu = fingerprintUsage[0];
         assert.strictEqual(fu.variants, 2, "We made two variants of this one in the workspace");
 
         console.log(fu);
 
-        // // this has to be used somewhere
-        // const ftrTreeQueryResult = await fingerprintsToReposTreeQuery();
+        // next aggregate method
+        const ftrTreeQueryResult = await fingerprintsToReposTreeQuery({
+            workspaceId: workspaceId1,
+            aspectName: "MST3k", rootName: "*", byName: false
+        }, sdmConfigClientFactory({}));
+
+        console.log(JSON.stringify(ftrTreeQueryResult.tree, null, 2));
+
+        assert.strictEqual(ftrTreeQueryResult.tree.children.length, 2, "There should be 2 variants in this tree");
 
         // // and the drift tree
         // const driftTreeResult = await driftTreeForAllAspects();
