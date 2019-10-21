@@ -28,6 +28,8 @@ import {
 } from "../lib/analysis/offline/persist/repoTree";
 import { DoWithClientError } from "../lib/analysis/offline/persist/pgUtils";
 import { computeAnalytics } from "../lib/analysis/offline/spider/analytics";
+import * as _ from "lodash"; // default import does not work with our mocha command
+import { PersistResult } from "../lib/analysis/offline/persist/ProjectAnalysisResultStore";
 
 describe("Postgres Result Store", () => {
     it("stores analysis and retrieves it", async () => {
@@ -96,6 +98,68 @@ describe("Postgres Result Store", () => {
 
         const loadedById = await subject.loadById(persistResult.succeeded[0], false, workspaceId1);
         assert(!!loadedById, "Wanna get one by ID");
+    });
+    it("Can aggregate only within a workspace", async () => {
+
+        const subject = new PostgresProjectAnalysisResultStore(sdmConfigClientFactory({}));
+
+        const workspaceId1 = "TJVC-agg";
+        const workspaceId2 = "ARGO-agg";
+        const fingerprintToStore: FP<any> = {
+            type: "MST3k",
+            name: "Rowsdower",
+            displayName: "The Loyal Traitor",
+            sha: "8x4d",
+            data: { yell: "ROWSDOWER!!!" },
+            path: "/hey"
+        }
+        const repoRef = {
+            owner: "satellite-of-love",
+            repo: "rowsdower",
+            url: "https://github.com/satellite-of-love/rowsdower",
+            sha: "37787bc4241ff3d3fad165c5b30882ba7603d771",
+        };
+        const analysis: ProjectAnalysisResult = {
+            repoRef,
+            workspaceId: workspaceId1,
+            timestamp: new Date(),
+            analysis: {
+                id: repoRef,
+                fingerprints: [fingerprintToStore]
+            }
+        };
+
+        // store analyses with 2 different variants in workspace1; then one of the same ones in workspace2
+        // and finally a third in workspace2.
+        // Each workspace should see 2 variants, and not the variant that's only in the other.
+
+        {
+            const persistResult = await subject.persist(analysis);
+            lookSuccessful("first", persistResult);
+        }
+        _.merge(analysis,
+            {
+                repoRef: { repo: "servo", url: "https://github.com/satellite-of-love/servo" },
+                analysis: { fingerprints: { 0: { sha: "349857", data: { yell: "wat" } } } }
+            });
+        {
+            const persistResult = await subject.persist(analysis);
+            lookSuccessful("second", persistResult);
+        }
+        _.merge(analysis, { workspaceId: workspaceId2 });
+        {     // Now store the same thing, but in a different workspace.
+            const persistResult2 = await subject.persist(analysis);
+            lookSuccessful("other workspace", persistResult2);
+        }
+        _.merge(analysis,
+            {
+                repoRef: { repo: "tombinh", url: "https://github.com/satellite-of-love/tombinh" },
+                analysis: { fingerprints: { 0: { sha: "873yfhrsd", data: { yell: "consent" } } } }
+            });
+        {     // Now store another different thing, in the second workspace
+            const persistResult2 = await subject.persist(analysis);
+            lookSuccessful("other workspace", persistResult2);
+        }
 
         // analyze, to get the fingerprint_analytics populated
 
@@ -110,6 +174,7 @@ describe("Postgres Result Store", () => {
         assert.strictEqual(fingerprintUsage.length, 1, "Better be one usage too");
 
         const fu = fingerprintUsage[0];
+        assert.strictEqual(fu.variants, 2, "We made two variants of this one in the workspace");
 
         console.log(fu);
 
@@ -131,4 +196,13 @@ describe("Postgres Result Store", () => {
 
 
     })
-})
+});
+
+function lookSuccessful(description: string, persistResult: PersistResult) {
+    console.log(JSON.stringify(persistResult, null, 2));
+    assert.strictEqual(persistResult.failed.length, 0, description + "Failures: " + persistResult.failed.map(f => f.message).join(", "));
+    assert.strictEqual(persistResult.failedFingerprints.length, 0,
+        description + "Failures: " + persistResult.failedFingerprints.map(f => f.error).join(", "));
+    assert(persistResult.succeeded.length > 0, description + "reports something was persisted");
+
+}
