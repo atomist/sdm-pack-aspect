@@ -209,26 +209,24 @@ describe("Postgres Result Store", () => {
 
         assert.strictEqual(ftrTreeQueryResult.tree.children.length, 2, "There should be 2 variants in this tree");
 
-        // and the drift tree
+        // and the drift tree, two different ways
         const driftTreeResult = await driftTreeForAllAspects(workspaceId1, 90, clientFactory);
 
-        console.log(JSON.stringify(driftTreeResult, null, 2));
+        //console.log(JSON.stringify(driftTreeResult, null, 2));
         assert.strictEqual(driftTreeResult.tree.children.length, 1, "There is only one")
 
-        {
-            const aspectDriftTree = await subject.aspectDriftTree(workspaceId1, 90, { repos: true })
-        }
-
         const aspectDriftTree = await subject.aspectDriftTree(workspaceId1, 90, { repos: true, type: "MST3k" })
-        console.log("Aspect drift tree: " + JSON.stringify(aspectDriftTree, null, 2));
+        //console.log("Aspect drift tree: " + JSON.stringify(aspectDriftTree, null, 2));
         assert.strictEqual(aspectDriftTree.tree.children.length, 1, "There is only one of these as well")
         const fingerprintsWithinAspect = aspectDriftTree.tree.children[0];
         assert.strictEqual((fingerprintsWithinAspect as SunburstTree).children.length, 2, "We only get two of these in this workspace");
 
+        // the data in this test didn't trigger a failure, but at least I can be confident I didn't break it horribly
+        const kinds = await subject.distinctFingerprintKinds(workspaceId1);
+        assert.strictEqual(kinds.length, 1, "There can be only one ROWSDOWER");
+        const kinds2 = await subject.distinctRepoFingerprintKinds(workspaceId1);
+        assert.strictEqual(kinds2.length, 2, "He can only be in two repositories (in this test)");
 
-        // const kinds = await subject.distinctFingerprintKinds();
-
-        // subject.deleteOldSnapshotForRepository();
 
         // subject.fingerprintsForProject();
 
@@ -236,6 +234,7 @@ describe("Postgres Result Store", () => {
 
         // subject.distinctRepoFingerprintKinds();
 
+        // subject.tags()
 
     })
 });

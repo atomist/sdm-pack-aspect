@@ -74,8 +74,8 @@ export class PostgresProjectAnalysisResultStore implements ProjectAnalysisResult
     }
 
     public aspectDriftTree(workspaceId: string,
-                           percentile: number,
-                           options?: { repos?: boolean, type?: string }): Promise<PlantedTree> {
+        percentile: number,
+        options?: { repos?: boolean, type?: string }): Promise<PlantedTree> {
         return !!options && !!options.type ?
             driftTreeForSingleAspect(workspaceId, percentile, options, this.clientFactory) :
             driftTreeForAllAspects(workspaceId, percentile, this.clientFactory);
@@ -127,9 +127,9 @@ WHERE workspace_id ${workspaceId === "*" ? "<>" : "="} $1
      * @return {Promise<ProjectAnalysisResult[]>}
      */
     private async loadInWorkspaceInternal(workspaceId: string,
-                                          deep: boolean,
-                                          additionalWhereClause: string = "true",
-                                          additionalParameters: any[] = []): Promise<ProjectAnalysisResult[]> {
+        deep: boolean,
+        additionalWhereClause: string = "true",
+        additionalParameters: any[] = []): Promise<ProjectAnalysisResult[]> {
         const workspaceEquals = workspaceId !== "*" ? "=" : "<>";
         const reposOnly = `SELECT id, owner, name, url, commit_sha, timestamp, repo_snapshots.workspace_id
 FROM repo_snapshots
@@ -221,10 +221,13 @@ GROUP BY repo_snapshots.workspace_id, repo_snapshots.id`;
     }
 
     public async distinctFingerprintKinds(workspaceId: string): Promise<FingerprintKind[]> {
+        const workspaceEquals = workspaceId === "*" ? "<>" : "=";
         const sql = `SELECT DISTINCT f.name, feature_name as type
   FROM repo_fingerprints rf, repo_snapshots rs, fingerprints f
   WHERE rf.repo_snapshot_id = rs.id AND rf.fingerprint_id = f.id
-    AND rs.workspace_id ${workspaceId === "*" ? "<>" : "="} $1`;
+    AND rs.workspace_id ${workspaceEquals} $1
+    AND rf.workspace_id ${workspaceEquals} $1
+    AND f.workspace_id ${workspaceEquals} $1`;
         return doWithClient(sql, this.clientFactory, async client => {
             const result = await client.query(sql, [workspaceId]);
             return result.rows;
@@ -232,10 +235,14 @@ GROUP BY repo_snapshots.workspace_id, repo_snapshots.id`;
     }
 
     public async distinctRepoFingerprintKinds(workspaceId: string): Promise<Array<{ owner: string, repo: string, fingerprints: FingerprintKind[] }>> {
+
+        const workspaceEquals = workspaceId === "*" ? "<>" : "=";
         const sql = `SELECT DISTINCT rs.owner, rs.name as repo, f.name, feature_name as type
   FROM repo_fingerprints rf, repo_snapshots rs, fingerprints f
   WHERE rf.repo_snapshot_id = rs.id AND rf.fingerprint_id = f.id
-    AND rs.workspace_id ${workspaceId === "*" ? "<>" : "="} $1`;
+    AND rs.workspace_id ${workspaceEquals} $1
+    AND rf.workspace_id ${workspaceEquals} $1
+    AND f.workspace_id ${workspaceEquals} $1`;
         return doWithClient(sql, this.clientFactory, async client => {
             const result = await client.query(sql, [workspaceId]);
             return _.map(_.groupBy(result.rows, r => `${r.owner}/${r.repo}`), (v, k) => {
@@ -379,7 +386,7 @@ GROUP by repo_snapshots.id) stats;`;
         }
     }
     private async persistRepoSnapshot(client: ClientBase, snapshotId: string, workspaceId: string, repoRef: RepoRef,
-                                      query?: string) {
+        query?: string) {
         const shaToUse = repoRef.sha;
         const repoSnapshotsInsertSql = `INSERT INTO repo_snapshots (id, workspace_id, provider_id, owner, name, url,
             commit_sha, query, timestamp)
@@ -487,10 +494,10 @@ type StoredFingerprint = FP & { id: string };
  * @return {Promise<FP[]>}
  */
 async function fingerprintsInWorkspace(clientFactory: ClientFactory,
-                                       workspaceId: string,
-                                       distinct: boolean,
-                                       type?: string,
-                                       name?: string): Promise<StoredFingerprint[]> {
+    workspaceId: string,
+    distinct: boolean,
+    type?: string,
+    name?: string): Promise<StoredFingerprint[]> {
     const workspaceEquals = workspaceId === "*" ? "<>" : "=";
     const sql = `SELECT ${distinct ? "DISTINCT" : ""} f.name, f.id, f.feature_name as type, f.sha, f.data,
      f.display_name as "displayName", f.display_value as "displayValue", rf.path
@@ -523,7 +530,7 @@ WHERE rs.workspace_id ${workspaceEquals} $1
 }
 
 async function fingerprintsForProject(clientFactory: ClientFactory,
-                                      snapshotId: string): Promise<Array<FP & { timestamp: Date, commitSha: string }>> {
+    snapshotId: string): Promise<Array<FP & { timestamp: Date, commitSha: string }>> {
     const sql = `SELECT f.name as fingerprintName, f.feature_name, f.sha, f.data, rf.path, rs.timestamp, rs.commit_sha
 FROM repo_fingerprints rf, repo_snapshots rs, fingerprints f
 WHERE rs.id = $1 AND rf.repo_snapshot_id = rs.id AND rf.fingerprint_id = f.id
