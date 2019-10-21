@@ -18,12 +18,13 @@ import { PostgresProjectAnalysisResultStore } from "../lib/analysis/offline/pers
 import { sdmConfigClientFactory } from "../lib/analysis/offline/persist/pgClientFactory";
 import * as assert from "power-assert";
 import { ProjectAnalysisResult } from "../lib/analysis/ProjectAnalysisResult";
-import { FP } from "@atomist/sdm-pack-fingerprint";
+import { FP, Aspect } from "@atomist/sdm-pack-fingerprint";
 import {
     driftTreeForAllAspects,
     fingerprintsToReposTreeQuery,
 } from "../lib/analysis/offline/persist/repoTree";
 import { DoWithClientError } from "../lib/analysis/offline/persist/pgUtils";
+import { computeAnalytics } from "../lib/analysis/offline/spider/analytics";
 
 describe("Postgres Result Store", () => {
     it("stores analysis and retrieves it", async () => {
@@ -94,7 +95,20 @@ describe("Postgres Result Store", () => {
         assert(!!loadedById, "Wanna get one by ID");
 
         // analyze, to get the fingerprint_analytics populated
-        // const fingerprintUsage = await subject.fingerprintUsageForType()
+
+        await computeAnalytics({
+            persister: subject,
+            analyzer: { aspectOf() { return {} as Aspect } }
+        },
+            workspaceId1);
+
+        const fingerprintUsage = await subject.fingerprintUsageForType(workspaceId1);
+
+        assert.strictEqual(fingerprintUsage.length, 1, "Better be one usage too");
+
+        const fu = fingerprintUsage[0];
+
+        console.log(fu);
 
         // // this has to be used somewhere
         // const ftrTreeQueryResult = await fingerprintsToReposTreeQuery();
