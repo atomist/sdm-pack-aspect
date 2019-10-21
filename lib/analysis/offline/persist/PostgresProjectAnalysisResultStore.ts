@@ -493,7 +493,7 @@ async function fingerprintsInWorkspace(clientFactory: ClientFactory,
     name?: string): Promise<StoredFingerprint[]> {
     const workspaceEquals = workspaceId === "*" ? "<>" : "=";
     const sql = `SELECT ${distinct ? "DISTINCT" : ""} f.name, f.id, f.feature_name as type, f.sha, f.data,
-     f.display_name as "displayName", rf.path
+     f.display_name as "displayName", f.display_value as "displayValue", rf.path
 FROM repo_snapshots rs
     RIGHT JOIN repo_fingerprints rf ON rf.repo_snapshot_id = rs.id
     INNER JOIN fingerprints f ON rf.fingerprint_id = f.id
