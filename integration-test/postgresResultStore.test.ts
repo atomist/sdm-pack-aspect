@@ -109,6 +109,7 @@ describe("Postgres Result Store", () => {
             type: "MST3k",
             name: "Rowsdower",
             displayName: "The Loyal Traitor",
+            displayValue: "Rowsdower again!",
             sha: "8x4d",
             data: { yell: "ROWSDOWER!!!" },
             path: "/hey"
@@ -130,7 +131,7 @@ describe("Postgres Result Store", () => {
         };
 
         // store analyses with 2 different variants in workspace1; then one of the same ones in workspace2
-        // and finally a third in workspace2 -- with an extra fingerprint name not seen in the first workspace.
+        // and finally a third in workspace2
         // Each workspace should see 2 variants, and not the variant that's only in the other.
 
         {
@@ -162,7 +163,6 @@ describe("Postgres Result Store", () => {
                 analysis: {
                     fingerprints: {
                         0: { sha: "873yfhrsd", data: { yell: "consent" } },
-                        1: { ...fingerprintToStore, type: "MST3k", name: "Mitchell", displayName: "MITCHELL" }
                     }
                 }
             });
@@ -198,7 +198,6 @@ describe("Postgres Result Store", () => {
             aspectName: "MST3k",
             rootName: "*",
             byName: false,
-            otherLabel: "Moar",
         }, sdmConfigClientFactory({}));
 
         console.log(JSON.stringify(ftrTreeQueryResult.tree, null, 2));

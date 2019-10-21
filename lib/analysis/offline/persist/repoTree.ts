@@ -24,28 +24,6 @@ import {
 } from "./pgUtils";
 import { TreeQuery } from "./ProjectAnalysisResultStore";
 
-/**
- * Return results for non-matching fingerprints
- */
-function nonMatchingRepos(tq: TreeQuery): string {
-    const workspaceEquals = tq.workspaceId === "*" ? "<>" : "=";
-    return `SELECT  null as id, $4 as name, null as sha, null as data, $1 as type, $4::text as display_name, null as display_value,
-            (
-           SELECT json_agg(row_to_json(repo))
-           FROM (
-                  SELECT
-                    repo_snapshots.id, repo_snapshots.owner, repo_snapshots.name, repo_snapshots.url, 1 as size
-                  FROM repo_snapshots
-                   WHERE workspace_id ${workspaceEquals} $1
-                   AND repo_snapshots.id not in (select repo_fingerprints.repo_snapshot_id
-                    FROM repo_fingerprints WHERE repo_fingerprints.fingerprint_id in
-                        (SELECT id from fingerprints where fingerprints.feature_name = $2
-                            AND fingerprints.name ${tq.byName ? "=" : "<>"} $3))
-                ) repo
-         )
-         children`;
-}
-
 function fingerprintsToReposQuery(tq: TreeQuery): string {
     const workspaceEquals = tq.workspaceId === "*" ? "<>" : "=";
     // We always select by aspect (aka feature_name, aka type), and sometimes also by fingerprint name.
@@ -70,7 +48,6 @@ SELECT row_to_json(fingerprint_groups) FROM (
          WHERE fingerprints.feature_name = $2 
          AND fingerprints.name ${tq.byName ? "=" : "<>"} $3
          AND fingerprints.workspace_id ${workspaceEquals} $1
-         ${tq.otherLabel ? ("UNION ALL " + nonMatchingRepos(tq)) : ""}
 ) fp WHERE children is not NULL) as fingerprint_groups
 `;
     logger.debug("Running fingerprintsToRepos SQL\n%s", sql);
@@ -84,9 +61,6 @@ export async function fingerprintsToReposTreeQuery(tq: TreeQuery, clientFactory:
     const sql = fingerprintsToReposQuery(tq);
     const children = await doWithClient(sql, clientFactory, async client => {
         const bindParams = [tq.workspaceId, tq.aspectName, tq.rootName];
-        if (tq.otherLabel) {
-            bindParams.push(tq.otherLabel);
-        }
         const results = await client.query(sql, bindParams);
         const data = results.rows[0];
         return data.row_to_json.children;
