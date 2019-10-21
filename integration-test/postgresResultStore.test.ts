@@ -30,6 +30,7 @@ import { DoWithClientError } from "../lib/analysis/offline/persist/pgUtils";
 import { computeAnalytics } from "../lib/analysis/offline/spider/analytics";
 import * as _ from "lodash"; // default import does not work with our mocha command
 import { PersistResult } from "../lib/analysis/offline/persist/ProjectAnalysisResultStore";
+import { SunburstTree } from "../lib/tree/sunburst";
 
 describe("Postgres Result Store", () => {
     it("stores analysis and retrieves it", async () => {
@@ -100,9 +101,12 @@ describe("Postgres Result Store", () => {
         const loadedById = await subject.loadById(persistResult.succeeded[0], false, workspaceId1);
         assert(!!loadedById, "Wanna get one by ID");
     });
+
+
     it("Can aggregate only within a workspace", async () => {
 
-        const subject = new PostgresProjectAnalysisResultStore(sdmConfigClientFactory({}));
+        const clientFactory = sdmConfigClientFactory({});
+        const subject = new PostgresProjectAnalysisResultStore(clientFactory);
 
         const workspaceId1 = "TJVC-agg";
         const workspaceId2 = "ARGO-agg";
@@ -199,14 +203,28 @@ describe("Postgres Result Store", () => {
             aspectName: "MST3k",
             rootName: "*",
             byName: false,
-        }, sdmConfigClientFactory({}));
+        }, clientFactory);
 
-        console.log(JSON.stringify(ftrTreeQueryResult.tree, null, 2));
+        // console.log(JSON.stringify(ftrTreeQueryResult.tree, null, 2));
 
         assert.strictEqual(ftrTreeQueryResult.tree.children.length, 2, "There should be 2 variants in this tree");
 
-        // // and the drift tree
-        // const driftTreeResult = await driftTreeForAllAspects();
+        // and the drift tree
+        const driftTreeResult = await driftTreeForAllAspects(workspaceId1, 90, clientFactory);
+
+        console.log(JSON.stringify(driftTreeResult, null, 2));
+        assert.strictEqual(driftTreeResult.tree.children.length, 1, "There is only one")
+
+        {
+            const aspectDriftTree = await subject.aspectDriftTree(workspaceId1, 90, { repos: true })
+        }
+
+        const aspectDriftTree = await subject.aspectDriftTree(workspaceId1, 90, { repos: true, type: "MST3k" })
+        console.log("Aspect drift tree: " + JSON.stringify(aspectDriftTree, null, 2));
+        assert.strictEqual(aspectDriftTree.tree.children.length, 1, "There is only one of these as well")
+        const fingerprintsWithinAspect = aspectDriftTree.tree.children[0];
+        assert.strictEqual((fingerprintsWithinAspect as SunburstTree).children.length, 2, "We only get two of these in this workspace");
+
 
         // const kinds = await subject.distinctFingerprintKinds();
 
