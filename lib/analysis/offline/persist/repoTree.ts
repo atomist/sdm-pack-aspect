@@ -78,19 +78,17 @@ SELECT row_to_json(fingerprint_groups) FROM (
 export async function fingerprintsToReposTreeQuery(tq: TreeQuery, clientFactory: ClientFactory): Promise<PlantedTree> {
     const sql = fingerprintsToReposQuery(tq);
     const children = await doWithClient(sql, clientFactory, async client => {
-        try {
-            const bindParams = [tq.workspaceId, tq.aspectName, tq.rootName];
-            if (tq.otherLabel) {
-                bindParams.push(tq.otherLabel);
-            }
-            const results = await client.query(sql, bindParams);
-            const data = results.rows[0];
-            return data.row_to_json.children;
-        } catch (err) {
-            logger.error("Error running SQL %s: %s", sql, err);
-            throw err;
+        const bindParams = [tq.workspaceId, tq.aspectName, tq.rootName];
+        if (tq.otherLabel) {
+            bindParams.push(tq.otherLabel);
         }
-    }, []);
+        const results = await client.query(sql, bindParams);
+        const data = results.rows[0];
+        return data.row_to_json.children;
+    }, e => e);
+    if (isError(children)) {
+        throw children;
+    }
     const result = {
         tree: {
             name: tq.rootName,
@@ -106,9 +104,13 @@ export async function fingerprintsToReposTreeQuery(tq: TreeQuery, clientFactory:
     return camelcaseKeys(result, { deep: true }) as any;
 }
 
+function isError(e: any): e is Error {
+    return !!e.stack;
+}
+
 export async function driftTreeForAllAspects(workspaceId: string,
-                                             percentile: number,
-                                             clientFactory: ClientFactory): Promise<PlantedTree> {
+    percentile: number,
+    clientFactory: ClientFactory): Promise<PlantedTree> {
     const sql = driftTreeSql(workspaceId, { repos: false });
     const circles = [
         { meaning: "report" },
@@ -136,9 +138,9 @@ export async function driftTreeForAllAspects(workspaceId: string,
 }
 
 export async function driftTreeForSingleAspect(workspaceId: string,
-                                               percentile: number,
-                                               options: { repos?: boolean, type?: string },
-                                               clientFactory: ClientFactory): Promise<PlantedTree> {
+    percentile: number,
+    options: { repos?: boolean, type?: string },
+    clientFactory: ClientFactory): Promise<PlantedTree> {
     const sql = driftTreeSql(workspaceId, options);
     return doWithClient(sql, clientFactory, async client => {
         const result = await client.query(sql,
@@ -148,10 +150,10 @@ export async function driftTreeForSingleAspect(workspaceId: string,
                 { meaning: "type" },
                 { meaning: "fingerprint entropy" },
             ] : [
-                { meaning: "type" },
-                { meaning: "fingerprint entropy" },
-                { meaning: "repos" },
-            ],
+                    { meaning: "type" },
+                    { meaning: "fingerprint entropy" },
+                    { meaning: "repos" },
+                ],
             tree: {
                 name: options.type,
                 children: result.rows[0].children.children,
