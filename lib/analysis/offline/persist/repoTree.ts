@@ -67,7 +67,9 @@ SELECT row_to_json(fingerprint_groups) FROM (
                     AND repo_snapshots.workspace_id ${workspaceEquals} $1
                 ) repo
          ) as children FROM fingerprints
-         WHERE fingerprints.feature_name = $2 and fingerprints.name ${tq.byName ? "=" : "<>"} $3
+         WHERE fingerprints.feature_name = $2 
+         AND fingerprints.name ${tq.byName ? "=" : "<>"} $3
+         AND fingerprints.workspace_id ${workspaceEquals} $1
          ${tq.otherLabel ? ("UNION ALL " + nonMatchingRepos(tq)) : ""}
 ) fp WHERE children is not NULL) as fingerprint_groups
 `;
