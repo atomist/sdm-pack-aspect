@@ -21,7 +21,7 @@ import {
 
 export type ClientFactory = () => Promise<PoolClient>;
 
-export type DoWithClientError = Error & { operationDescription: string }
+export type DoWithClientError = Error & { operationDescription: string };
 
 /**
  * Perform the given operations with a database client connection
@@ -38,9 +38,9 @@ export type DoWithClientError = Error & { operationDescription: string }
  * @return {Promise<R>}
  */
 export async function doWithClient<R>(description: string,
-    clientFactory: ClientFactory,
-    what: (c: PoolClient) => Promise<R>,
-    defaultResult?: R | ((e: DoWithClientError) => R)): Promise<R> {
+                                      clientFactory: ClientFactory,
+                                      what: (c: PoolClient) => Promise<R>,
+                                      defaultResult?: R | ((e: DoWithClientError) => R)): Promise<R> {
     const startTime = new Date().getTime();
     const client = await clientFactory();
     let result: R;
