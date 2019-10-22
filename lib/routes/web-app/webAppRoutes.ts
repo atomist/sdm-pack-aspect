@@ -161,7 +161,7 @@ function exposeRepositoryPage(conf: WebAppConfig): void {
                 conf.instanceMetadata));
             return;
         } catch (e) {
-            logger.error(e);
+            logger.error("Oh no, failure constructing repository page:\n" + e.stack);
             next(e);
         }
     });
