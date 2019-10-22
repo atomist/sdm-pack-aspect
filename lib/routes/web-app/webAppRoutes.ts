@@ -46,8 +46,8 @@ import {
 } from "../../../views/sunburstPage";
 import { renderStaticReactNode } from "../../../views/topLevelPage";
 import { ProjectAnalysisResultStore } from "../../analysis/offline/persist/ProjectAnalysisResultStore";
-import { AnalysisTracking } from "../../analysis/tracking/analysisTracker";
-import { exposeAnalysisTrackingPage } from "../../analysis/tracking/analysisTrackingRoutes";
+import { AnalysisTracker } from "../../analysis/tracking/analysisTracker";
+import { exposeAnalysisTrackerPage } from "../../analysis/tracking/analysisTrackingRoutes";
 import {
     AspectRegistry,
 } from "../../aspect/AspectRegistry";
@@ -73,7 +73,7 @@ import { WebAppConfig } from "./webAppConfig";
 export function addWebAppRoutes(
     aspectRegistry: AspectRegistry,
     store: ProjectAnalysisResultStore,
-    analysisTracking: AnalysisTracking,
+    analysisTracking: AnalysisTracker,
     httpClientFactory: HttpClientFactory,
     instanceMetadata: ExtensionPackMetadata): {
         customizer: ExpressCustomizer,
@@ -107,7 +107,7 @@ export function addWebAppRoutes(
             exposeExplorePage(conf);
             exposeFingerprintReportPage(conf);
             exposeCustomReportPage(conf);
-            exposeAnalysisTrackingPage(conf);
+            exposeAnalysisTrackerPage(conf);
 
         },
     };

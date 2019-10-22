@@ -1,5 +1,7 @@
 import * as React from "react";
 
+type WorkspaceId = string;
+
 interface AnalysisTrackingRepo {
     description: string;
     url?: string;
@@ -10,16 +12,17 @@ interface AnalysisTrackingRepo {
     stackTrace?: string;
     snapshotId?: string;
     virtualProjectsReport?: { count: number, finderName: string };
-    aspects: AnalysisTrackingAspect[];
+    aspects: AnalysisTrackerAspect[];
 }
 
-interface AnalysisTrackingAspect {
+interface AnalysisTrackerAspect {
     aspectName: string;
     fingerprintsFound: number;
     visible: boolean;
     error?: Error;
 }
-interface AnalysisTrackingAnalysis {
+interface AnalysisTrackerAnalysis {
+    workspaceId: WorkspaceId;
     description: string;
     analysisKey: string;
     progress: "Going" | "Stopped";
@@ -28,11 +31,11 @@ interface AnalysisTrackingAnalysis {
     completedAt?: Date;
 }
 
-export interface AnalysisTrackingProps {
-    analyses: AnalysisTrackingAnalysis[];
+export interface AnalysisTrackerProps {
+    analyses: AnalysisTrackerAnalysis[];
 }
 
-function displayRepository(repo: AnalysisTrackingRepo & { repoAnalysisId: string }): React.ReactElement {
+function displayRepository(workspaceId: WorkspaceId, repo: AnalysisTrackingRepo & { repoAnalysisId: string }): React.ReactElement {
     let className = "analysisTrackingRepo " + repo.progress;
     if (repo.keptExisting) {
         className += " keptExistingAnalysis";
@@ -42,7 +45,7 @@ function displayRepository(repo: AnalysisTrackingRepo & { repoAnalysisId: string
     }
     const timeTaken = repo.millisTaken ? `Took ${repo.millisTaken / 1000}s` : undefined;
     const gitLink = repo.url ? <a href={repo.url}><img src="/git.png" className="linkToSourceImage"></img></a> : undefined;
-    const insightsLink = repo.snapshotId ? <a href={"/repository?id=" + repo.snapshotId}>
+    const insightsLink = repo.snapshotId ? <a href={"/repository?id=" + repo.snapshotId + "&workspaceId=" + workspaceId}>
         <img src="/hexagonal-fruit-of-power.png" className="linkToInsightsImage"></img>
     </a> : undefined;
     const virtualProjectsDescription = !repo.virtualProjectsReport ? "Not checking repo for interior projects" :
@@ -57,7 +60,7 @@ function displayRepository(repo: AnalysisTrackingRepo & { repoAnalysisId: string
     </div>;
 }
 
-function summarizeAspects(aspects: AnalysisTrackingAspect[]): React.ReactElement {
+function summarizeAspects(aspects: AnalysisTrackerAspect[]): React.ReactElement {
     const fingerprintTotal = aspects.map(a => a.fingerprintsFound).filter(f => !!f).reduce((a, b) => a + b, 0);
     const errors = aspects.filter(a => !!a.error);
     const errorDisplays = errors.length > 0 ? <div>{errors.map(displayAspectError)}</div> : undefined;
@@ -84,13 +87,13 @@ function displayFailure(repo: { errorMessage?: string, stackTrace?: string }): R
     </div>;
 }
 
-function listRepositories(title: string, repos: AnalysisTrackingRepo[]): React.ReactElement {
+function listRepositories(title: string, workspaceId: WorkspaceId, repos: AnalysisTrackingRepo[]): React.ReactElement {
     return <div className="repoList">{title}
-        {repos.map((r, i) => displayRepository({ ...r, repoAnalysisId: "" + i }))}
+        {repos.map((r, i) => displayRepository(workspaceId, { ...r, repoAnalysisId: "" + i }))}
     </div>;
 }
 
-function displayAnalysis(analysis: AnalysisTrackingAnalysis): React.ReactElement {
+function displayAnalysis(analysis: AnalysisTrackerAnalysis): React.ReactElement {
     const analysisStatusClass = analysis.progress === "Going" ? "ongoingAnalysis" : "nongoingAnalysis";
     const dates = analysis.completedAt ? <p className="analysisDates">Completed at: {analysis.completedAt.toString()}</p> : undefined;
     return <div className={analysisStatusClass}>
@@ -99,14 +102,14 @@ function displayAnalysis(analysis: AnalysisTrackingAnalysis): React.ReactElement
         {displayAnalysisFailure(analysis)}
         <h4>Repositories:</h4>
         <div className="repositoryColumns">
-            {listRepositories("Planned", analysis.repos.filter(r => r.progress === "Planned"))}
-            {listRepositories("Going", analysis.repos.filter(r => r.progress === "Going"))}
-            {listRepositories("Finished", analysis.repos.filter(r => r.progress === "Stopped"))}
+            {listRepositories("Planned", analysis.workspaceId, analysis.repos.filter(r => r.progress === "Planned"))}
+            {listRepositories("Going", analysis.workspaceId, analysis.repos.filter(r => r.progress === "Going"))}
+            {listRepositories("Finished", analysis.workspaceId, analysis.repos.filter(r => r.progress === "Stopped"))}
         </div>
     </div>;
 }
 
-function displayAnalysisFailure(analysis: AnalysisTrackingAnalysis): React.ReactElement {
+function displayAnalysisFailure(analysis: AnalysisTrackerAnalysis): React.ReactElement {
     if (!analysis.error) {
         return undefined;
     }
@@ -116,11 +119,11 @@ function displayAnalysisFailure(analysis: AnalysisTrackingAnalysis): React.React
     </div>;
 }
 
-function listAnalyses(analyses: AnalysisTrackingAnalysis[]): React.ReactElement {
+function listAnalyses(analyses: AnalysisTrackerAnalysis[]): React.ReactElement {
     return <div className="analysisList">{analyses.sort(runningFirst).map(displayAnalysis)}</div>;
 }
 
-function runningFirst(a1: AnalysisTrackingAnalysis, a2: AnalysisTrackingAnalysis): number {
+function runningFirst(a1: AnalysisTrackerAnalysis, a2: AnalysisTrackerAnalysis): number {
     if (a1.progress === "Going" && a2.progress === "Stopped") {
         return -1;
     }
@@ -134,7 +137,7 @@ function runningFirst(a1: AnalysisTrackingAnalysis, a2: AnalysisTrackingAnalysis
     return 0;
 }
 
-export function AnalysisTrackingPage(props: AnalysisTrackingProps): React.ReactElement {
+export function AnalysisTrackerPage(props: AnalysisTrackerProps): React.ReactElement {
     if (props.analyses.length === 0) {
         return <div>No analyses in progress.
             Start one at the command line:{" "}
