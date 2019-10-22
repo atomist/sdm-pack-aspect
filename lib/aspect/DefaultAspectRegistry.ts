@@ -74,8 +74,8 @@ export class DefaultAspectRegistry implements AspectRegistry, AspectReportDetail
     }
 
     public async tagAndScoreRepos(workspaceId: string,
-        repos: ProjectAnalysisResult[],
-        tsOpts: TagAndScoreOptions): Promise<ScoredRepo[]> {
+                                  repos: ProjectAnalysisResult[],
+                                  tsOpts: TagAndScoreOptions): Promise<ScoredRepo[]> {
         const tagged = await showTiming(
             `Tag ${repos.length} repos with ${this.taggers.length} taggers`,
             async () => this.tagRepos({
@@ -134,7 +134,7 @@ export class DefaultAspectRegistry implements AspectRegistry, AspectReportDetail
     }
 
     private async tagRepos(tagContext: TagContext,
-        repos: ProjectAnalysisResult[]): Promise<TaggedRepo[]> {
+                           repos: ProjectAnalysisResult[]): Promise<TaggedRepo[]> {
         const simpleTaggers = this.taggers.filter(isTagger);
         const workspaceSpecificTaggers = await Promise.all(this.taggers
             .filter(td => !isTagger(td))
