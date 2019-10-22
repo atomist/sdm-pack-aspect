@@ -16,7 +16,6 @@
 
 import {
     AnalysisTracker,
-    AnalysisTracking,
 } from "./../../../lib/analysis/tracking/analysisTracker";
 /*
  * Copyright © 2019 Atomist, Inc.
