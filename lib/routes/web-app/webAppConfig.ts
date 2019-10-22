@@ -25,7 +25,7 @@ import { ExtensionPackMetadata } from "@atomist/sdm";
 
 import { HttpClientFactory } from "@atomist/automation-client";
 
-import { AnalysisTracking } from "../../analysis/tracking/analysisTracker";
+import { AnalysisTracker } from "../../analysis/tracking/analysisTracker";
 import { AspectRegistry } from "../../aspect/AspectRegistry";
 
 export interface WebAppConfig {
@@ -35,5 +35,5 @@ export interface WebAppConfig {
     store: ProjectAnalysisResultStore;
     instanceMetadata: ExtensionPackMetadata;
     httpClientFactory: HttpClientFactory;
-    analysisTracking: AnalysisTracking;
+    analysisTracking: AnalysisTracker;
 }

@@ -51,7 +51,6 @@ import {
 } from "../analysis/offline/spider/analyzeCommand";
 import {
     AnalysisTracker,
-    AnalysisTracking,
 } from "../analysis/tracking/analysisTracker";
 import {
     RepositoryScorer,
@@ -288,7 +287,7 @@ function suggestRoute({ title, route }: { title: string, route: string }):
 
 function orgVisualizationEndpoints(dbClientFactory: ClientFactory,
                                    configuration: Configuration,
-                                   analysisTracking: AnalysisTracking,
+                                   analysisTracking: AnalysisTracker,
                                    options: AspectSupportOptions,
                                    aspects: Aspect[]): {
         routesToSuggestOnStartup: Array<{ title: string, route: string }>,

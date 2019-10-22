@@ -24,7 +24,7 @@ import {
 import { Aspect } from "@atomist/sdm-pack-fingerprint";
 import { Analyzed } from "../../../aspect/AspectRegistry";
 import {
-    AnalysisTracking,
+    AnalysisTracker,
     RepoBeingTracked,
 } from "../../tracking/analysisTracker";
 import {
@@ -65,7 +65,7 @@ export class AnalysisRun<FoundRepo> {
             howToClone: (rr: RepoRef, fr: FoundRepo) => Promise<GitProject>,
             analyzer: Analyzer;
             persister: ProjectAnalysisResultStore,
-            analysisTracking: AnalysisTracking,
+            analysisTracking: AnalysisTracker,
 
             keepExistingPersisted: ProjectAnalysisResultFilter,
             projectFilter?: (p: Project) => Promise<boolean>;
@@ -87,6 +87,7 @@ export class AnalysisRun<FoundRepo> {
     public async run(): Promise<SpiderResult> {
 
         const analysisBeingTracked = this.world.analysisTracking.startAnalysis({
+            workspaceId: this.params.workspaceId,
             description: this.params.description,
         });
 

@@ -122,7 +122,7 @@ const AnalyzeLocalCommandParametersDefinition: ParametersObject<AnalyzeLocalComm
 };
 
 function analyzeFromGitHubOrganization(analyzer: Analyzer,
-                                       analysisTracking: AnalysisTracking): CommandListener<AnalyzeGitHubOrganizationCommandParameters> {
+                                       analysisTracking: AnalysisTracker): CommandListener<AnalyzeGitHubOrganizationCommandParameters> {
     return async d => {
         if (!d.parameters.owner) {
             await d.addressChannels("ERROR: Please provide the GitHub owner");
@@ -139,7 +139,7 @@ function analyzeFromGitHubOrganization(analyzer: Analyzer,
     };
 }
 
-function analyzeFromGitHubByQuery(analyzer: Analyzer, analysisTracking: AnalysisTracking): CommandListener<AnalyzeGitHubByQueryCommandParameters> {
+function analyzeFromGitHubByQuery(analyzer: Analyzer, analysisTracking: AnalysisTracker): CommandListener<AnalyzeGitHubByQueryCommandParameters> {
     return async d => {
         const spiderAppOptions: SpiderAppOptions = d.parameters;
         logger.info("analyze github by query invoked with " + JSON.stringify(spiderAppOptions));
@@ -154,7 +154,7 @@ function analyzeFromGitHubByQuery(analyzer: Analyzer, analysisTracking: Analysis
 
 export function analyzeGitHubOrganizationCommandRegistration(
     analyzer: Analyzer,
-    analysisTracking: AnalysisTracking): CommandHandlerRegistration<AnalyzeGitHubCommandParameters> {
+    analysisTracking: AnalysisTracker): CommandHandlerRegistration<AnalyzeGitHubCommandParameters> {
     return {
         name: "analyzeRepositoriesFromGitHubOrganization",
         intent: ["analyze github organization"],
@@ -166,7 +166,7 @@ export function analyzeGitHubOrganizationCommandRegistration(
 
 export function analyzeGitHubByQueryCommandRegistration(
     analyzer: Analyzer,
-    analysisTracking: AnalysisTracking): CommandHandlerRegistration<AnalyzeGitHubCommandParameters> {
+    analysisTracking: AnalysisTracker): CommandHandlerRegistration<AnalyzeGitHubCommandParameters> {
     return {
         name: "analyzeRepositoriesFromGitHubByQuery",
         intent: ["analyze github by query"],
@@ -177,9 +177,9 @@ export function analyzeGitHubByQueryCommandRegistration(
 }
 
 import * as path from "path";
-import { AnalysisTracking } from "../../tracking/analysisTracker";
+import { AnalysisTracker } from "../../tracking/analysisTracker";
 
-function analyzeFromLocal(analyzer: Analyzer, analysisTracking: AnalysisTracking): CommandListener<AnalyzeLocalCommandParameters> {
+function analyzeFromLocal(analyzer: Analyzer, analysisTracking: AnalysisTracker): CommandListener<AnalyzeLocalCommandParameters> {
     return async d => {
         if (!path.isAbsolute(d.parameters.localDirectory)) {
             await d.addressChannels("Please provide an absolute path. You provided: " + d.parameters.localDirectory);
@@ -199,7 +199,7 @@ function analyzeFromLocal(analyzer: Analyzer, analysisTracking: AnalysisTracking
 
 export function analyzeLocalCommandRegistration(
     analyzer: Analyzer,
-    analysisTracking: AnalysisTracking): CommandHandlerRegistration<AnalyzeLocalCommandParameters> {
+    analysisTracking: AnalysisTracker): CommandHandlerRegistration<AnalyzeLocalCommandParameters> {
     return {
         name: "analyzeRepositoriesFromLocalFilesystem",
         intent: ["analyze local repositories"],
