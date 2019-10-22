@@ -103,8 +103,8 @@ export interface ProjectAnalysisResultStore {
      * @return {Promise<PlantedTree>}
      */
     aspectDriftTree(workspaceId: string,
-                    percentile: number,
-                    options?: { repos?: boolean, type?: string }): Promise<PlantedTree>;
+        percentile: number,
+        options?: { repos?: boolean, type?: string }): Promise<PlantedTree>;
 
     /**
      * How many repos we've analyzed
@@ -156,8 +156,6 @@ export interface ProjectAnalysisResultStore {
 
     fingerprintUsageForType(workspaceId: string, type?: string): Promise<FingerprintUsage[]>;
 
-    tags(workspaceId: string): Promise<TagUsage[]>;
-
     /**
      * Persist a record of analytics. Can be invoked repeatedly on the same data without error.
      */
@@ -171,9 +169,9 @@ export interface ProjectAnalysisResultStore {
      * @param name fingerprint name (optional)
      */
     fingerprintsInWorkspace(workspaceId: string,
-                            distinct: boolean,
-                            type?: string,
-                            name?: string): Promise<Array<FP & { id: string }>>;
+        distinct: boolean,
+        type?: string,
+        name?: string): Promise<Array<FP & { id: string }>>;
 
     /**
      * Return all the fingerprints from a single analysis
