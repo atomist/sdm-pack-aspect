@@ -71,7 +71,7 @@ export function exposeRepositoriesData(express: Express,
                 await res.send(data);
 
             } catch (e) {
-                logger.error(e);
+                logger.error(e.stack);
                 next(e);
             }
         });
@@ -125,7 +125,7 @@ export function exposeRepositoryData(express: Express,
                 await res.json(data);
 
             } catch (e) {
-                logger.error(e);
+                logger.error(e.stack);
                 next(e);
             }
         });
