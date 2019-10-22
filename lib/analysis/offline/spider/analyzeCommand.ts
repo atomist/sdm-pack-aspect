@@ -122,8 +122,12 @@ const AnalyzeLocalCommandParametersDefinition: ParametersObject<AnalyzeLocalComm
 };
 
 function analyzeFromGitHubOrganization(analyzer: Analyzer,
-                                       analysisTracking: AnalysisTracking): CommandListener<AnalyzeGitHubOrganizationCommandParameters> {
+    analysisTracking: AnalysisTracking): CommandListener<AnalyzeGitHubOrganizationCommandParameters> {
     return async d => {
+        if (!d.parameters.owner) {
+            await d.addressChannels("ERROR: Please provide the GitHub owner");
+            return { code: 1 }
+        }
         const spiderAppOptions: SpiderAppOptions = d.parameters;
         logger.info("analyze github org invoked with " + JSON.stringify(spiderAppOptions));
 
