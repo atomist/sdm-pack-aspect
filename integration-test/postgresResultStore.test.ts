@@ -66,7 +66,7 @@ describe("Postgres Result Store", () => {
         const persistResult = await subject.persist(analysis);
 
         // Spot persistence failures early
-        console.log(JSON.stringify(persistResult, null, 2));
+        // console.log(JSON.stringify(persistResult, null, 2));
         assert.strictEqual(persistResult.failed.length, 0, "Failures: " + persistResult.failed.map(f => f.message).join(", "));
         assert.strictEqual(persistResult.failedFingerprints.length, 0,
             "Failures: " + persistResult.failedFingerprints.map(f => f.error).join(", "));
@@ -89,9 +89,7 @@ describe("Postgres Result Store", () => {
         // retrieve another way
         const loadedByRepoRef1 = await subject.loadByRepoRef(workspaceId1, repoRef, false);
         assert(!!loadedByRepoRef1, "Wanna get one");
-        console.log("Shallow loadByRepoRef was successful")
         const loadedByRepoRefDeep = await subject.loadByRepoRef(workspaceId1, repoRef, true);
-        console.log("Deep load by reporef has returned")
         assert.deepStrictEqual(loadedByRepoRefDeep.analysis.fingerprints.length, 1, "Should be the same as was stored");
         assert.deepStrictEqual(loadedByRepoRefDeep.analysis.fingerprints[0].displayName, "The Loyal Traitor", "Should be about the same as was stored");
         // } catch (err) {
@@ -231,13 +229,16 @@ describe("Postgres Result Store", () => {
         const kinds2 = await subject.distinctRepoFingerprintKinds(workspaceId1);
         assert.strictEqual(kinds2.length, 2, "He can only be in two repositories (in this test)");
 
-        // subject.tags()
+        // const tagsResult = await subject.tags(workspaceId1);
+
+        // console.log("Tags result: " + JSON.stringify(tagsResult, null, 2));
+        // assert.strictEqual(tagsResult.length, 1, "What does this do");
 
     })
 });
 
 function lookSuccessful(description: string, persistResult: PersistResult) {
-    console.log(JSON.stringify(persistResult, null, 2));
+    // console.log(JSON.stringify(persistResult, null, 2));
     assert.strictEqual(persistResult.failed.length, 0, description + "Failures: " + persistResult.failed.map(f => f.message).join(", "));
     assert.strictEqual(persistResult.failedFingerprints.length, 0,
         description + "Failures: " + persistResult.failedFingerprints.map(f => f.error).join(", "));
