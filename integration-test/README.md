@@ -19,16 +19,11 @@ Then run it, mounting this repo's files, and get a shell:
 
 `docker run --rm --name integration-test --mount source=$(pwd),target=/app,type=bind -it node-and-pg /bin/bash`
 
-Inside that shell, do this once:
-
-```
-service postgresql start
-cd /app
-```
-
-Then run the tests (repeat if necessary):
+Inside that shell, run the tests (repeat if necessary):
  
 `npm run integration-test`
+
+The first time, the db:delete command will fail because the database didn't exist. This is fine.
 
 Here's a handy command to look around in the database in the container, while it's running:
 
