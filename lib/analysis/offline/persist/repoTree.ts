@@ -25,7 +25,7 @@ import {
 import { TreeQuery } from "./ProjectAnalysisResultStore";
 
 function fingerprintsToReposQuery(tq: TreeQuery): string {
-    const workspaceEquals = tq.workspaceId === "*" ? "<>" : "=";
+    const workspaceEquals = "=";
     // We always select by aspect (aka feature_name, aka type), and sometimes also by fingerprint name.
     const sql = `
 SELECT row_to_json(fingerprint_groups) FROM (
@@ -88,8 +88,8 @@ function isError(e: any): e is Error {
 }
 
 export async function driftTreeForAllAspects(workspaceId: string,
-                                             percentile: number,
-                                             clientFactory: ClientFactory): Promise<PlantedTree> {
+    percentile: number,
+    clientFactory: ClientFactory): Promise<PlantedTree> {
     const sql = driftTreeSql(workspaceId, { repos: false });
     const circles = [
         { meaning: "report" },
@@ -117,9 +117,9 @@ export async function driftTreeForAllAspects(workspaceId: string,
 }
 
 export async function driftTreeForSingleAspect(workspaceId: string,
-                                               percentile: number,
-                                               options: { repos?: boolean, type?: string },
-                                               clientFactory: ClientFactory): Promise<PlantedTree> {
+    percentile: number,
+    options: { repos?: boolean, type?: string },
+    clientFactory: ClientFactory): Promise<PlantedTree> {
     const sql = driftTreeSql(workspaceId, options);
     return doWithClient(sql, clientFactory, async client => {
         const result = await client.query(sql,
@@ -143,18 +143,18 @@ export async function driftTreeForSingleAspect(workspaceId: string,
 }
 
 function driftTreeSql(workspaceId: string, options: { repos?: boolean, type?: string }): string {
-    const workspaceEquals = workspaceId === "*" ? "<>" : "=";
+    const workspaceEquals = "=";
     if (!options.repos) {
         return `SELECT row_to_json(data) as children
     FROM (SELECT f0.type as name, f0.type as type, json_agg(aspects) as children
         FROM (SELECT distinct feature_name as type from fingerprint_analytics) f0, (
             SELECT name, name as fingerprint_name, feature_name as type, variants, count, entropy, variants as size
                 FROM fingerprint_analytics f1
-                WHERE workspace_id ${workspaceId === "*" ? "<>" : "="} $1
+                WHERE workspace_id = $1
                     AND entropy >=
                         (SELECT percentile_disc($2) within group (order by entropy)
                             FROM fingerprint_analytics
-                            WHERE workspace_id ${workspaceId === "*" ? "<>" : "="} $1)
+                            WHERE workspace_id = $1)
                 ORDER BY entropy DESC, fingerprint_name ASC) as aspects
     WHERE aspects.type = f0.type ${options.type ? `AND aspects.type = $3` : ""}
     GROUP by f0.type) as data`;
