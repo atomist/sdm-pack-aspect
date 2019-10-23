@@ -108,6 +108,7 @@ export function api(projectAnalysisResultStore: ProjectAnalysisResultStore,
             configureAuth(express);
 
             exposeAspectMetadata(express, projectAnalysisResultStore, aspectRegistry, secure);
+            exposeListTags(express, projectAnalysisResultStore, secure);
             exposeListFingerprints(express, projectAnalysisResultStore, secure);
             exposeRepositoriesData(express, projectAnalysisResultStore, secure);
             exposeRepositoryData(express, projectAnalysisResultStore, secure);
@@ -178,6 +179,15 @@ function exposeListFingerprints(express: Express, store: ProjectAnalysisResultSt
         store.fingerprintUsageForType(req.params.workspace_id || "local").then(fingerprintUsage => {
             logger.debug("Returning fingerprints: %j", fingerprintUsage);
             res.json({ list: fingerprintUsage });
+        }, next));
+}
+
+function exposeListTags(express: Express, store: ProjectAnalysisResultStore, secure: boolean): void {
+    express.options("/api/v1/:workspace_id/tags", corsHandler());
+    express.get("/api/v1/:workspace_id/tags", [corsHandler(), ...authHandlers(secure)], (req, res, next) =>
+        store.tags(req.params.workspace_id || "local").then(tags => {
+            logger.debug("Returning tags: %j", tags);
+            res.json({ list: tags });
         }, next));
 }
 

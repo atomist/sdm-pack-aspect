@@ -228,6 +228,12 @@ describe("Postgres Result Store", () => {
         assert.strictEqual(kinds.length, 1, "There can be only one ROWSDOWER");
         const kinds2 = await subject.distinctRepoFingerprintKinds(workspaceId1);
         assert.strictEqual(kinds2.length, 2, "He can only be in two repositories (in this test)");
+
+        // const tagsResult = await subject.tags(workspaceId1);
+
+        // console.log("Tags result: " + JSON.stringify(tagsResult, null, 2));
+        // assert.strictEqual(tagsResult.length, 1, "What does this do");
+
     })
 });
 
