@@ -116,7 +116,7 @@ export function addWebAppRoutes(
 function exposeRepositoryPage(conf: WebAppConfig): void {
     conf.express.get("/repository", ...conf.handlers, async (req, res, next) => {
         try {
-            const workspaceId = req.query.workspaceId || "*";
+            const workspaceId = req.query.workspaceId || "local";
             const id = req.query.id;
             const queryPath = req.query.path || "";
             const category = req.query.category || "*";
@@ -170,7 +170,7 @@ function exposeRepositoryPage(conf: WebAppConfig): void {
 function exposeExplorePage(conf: WebAppConfig): void {
     conf.express.get("/explore", ...conf.handlers, (req, res, next) => {
         const tags = req.query.tags || "";
-        const workspaceId = req.query.workspaceId || "*";
+        const workspaceId = req.query.workspaceId || "local";
         const dataUrl = `/api/v1/${workspaceId}/explore?tags=${tags}`;
         const readable = describeSelectedTagsToAnimals(tags.split(","));
         return renderDataUrl(conf.instanceMetadata, workspaceId, {
@@ -184,7 +184,7 @@ function exposeExplorePage(conf: WebAppConfig): void {
 
 function exposeDriftPage(conf: WebAppConfig): void {
     conf.express.get("/drift", ...conf.handlers, (req, res, next) => {
-        const workspaceId = req.query.workspaceId || "*";
+        const workspaceId = req.query.workspaceId || "local";
         const percentile = req.query.percentile || 0;
         const type = req.query.type;
         const dataUrl = `/api/v1/${workspaceId}/drift` +
@@ -213,7 +213,7 @@ function exposeFingerprintReportPage(conf: WebAppConfig): void {
         }
         const fingerprintDisplayName = defaultedToDisplayableFingerprintName(aspect)(name);
 
-        const workspaceId = req.query.workspaceId || "*";
+        const workspaceId = req.query.workspaceId || "local";
         const dataUrl = `/api/v1/${workspaceId}/fingerprint/${
             encodeURIComponent(type)}/${
             encodeURIComponent(name)}?byOrg=${
@@ -231,7 +231,7 @@ function exposeFingerprintReportPage(conf: WebAppConfig): void {
 function exposeCustomReportPage(conf: WebAppConfig): void {
     conf.express.get("/report/:name", ...conf.handlers, (req, res, next) => {
         const name = req.params.name;
-        const workspaceId = req.query.workspaceId || "*";
+        const workspaceId = req.query.workspaceId || "local";
         const queryString = jsonToQueryString(req.query);
         const dataUrl = `/api/v1/${workspaceId}/report/${name}?${queryString}`;
         const reporter = CustomReporters[name];
@@ -248,17 +248,17 @@ function exposeCustomReportPage(conf: WebAppConfig): void {
 
 // TODO fix any
 async function renderDataUrl(instanceMetadata: ExtensionPackMetadata,
-                             workspaceId: string,
-                             page: {
+    workspaceId: string,
+    page: {
         title: string,
         heading: string,
         subheading?: string,
         dataUrl: string,
     },
-                             aspectRegistry: AspectRegistry,
-                             httpClientFactory: HttpClientFactory,
-                             req: any,
-                             res: any): Promise<void> {
+    aspectRegistry: AspectRegistry,
+    httpClientFactory: HttpClientFactory,
+    req: any,
+    res: any): Promise<void> {
     let tree: TagTree;
 
     const fullUrl = `http://${req.get("host")}${page.dataUrl}`;
