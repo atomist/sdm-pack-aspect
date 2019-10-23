@@ -156,6 +156,8 @@ export interface ProjectAnalysisResultStore {
 
     fingerprintUsageForType(workspaceId: string, type?: string): Promise<FingerprintUsage[]>;
 
+    tags(workspaceId: string): Promise<TagUsage[]>;
+
     /**
      * Persist a record of analytics. Can be invoked repeatedly on the same data without error.
      */
