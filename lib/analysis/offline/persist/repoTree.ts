@@ -88,8 +88,8 @@ function isError(e: any): e is Error {
 }
 
 export async function driftTreeForAllAspects(workspaceId: string,
-    percentile: number,
-    clientFactory: ClientFactory): Promise<PlantedTree> {
+                                             percentile: number,
+                                             clientFactory: ClientFactory): Promise<PlantedTree> {
     const sql = driftTreeSql(workspaceId, { repos: false });
     const circles = [
         { meaning: "report" },
@@ -117,9 +117,9 @@ export async function driftTreeForAllAspects(workspaceId: string,
 }
 
 export async function driftTreeForSingleAspect(workspaceId: string,
-    percentile: number,
-    options: { repos?: boolean, type?: string },
-    clientFactory: ClientFactory): Promise<PlantedTree> {
+                                               percentile: number,
+                                               options: { repos?: boolean, type?: string },
+                                               clientFactory: ClientFactory): Promise<PlantedTree> {
     const sql = driftTreeSql(workspaceId, options);
     return doWithClient(sql, clientFactory, async client => {
         const result = await client.query(sql,
