@@ -228,13 +228,44 @@ describe("Postgres Result Store", () => {
         assert.strictEqual(kinds.length, 1, "There can be only one ROWSDOWER");
         const kinds2 = await subject.distinctRepoFingerprintKinds(workspaceId1);
         assert.strictEqual(kinds2.length, 2, "He can only be in two repositories (in this test)");
+    });
 
-        // const tagsResult = await subject.tags(workspaceId1);
+    it("retrieves fingerprints with a 'reason' field as tags", async () => {
+        const subject = new PostgresProjectAnalysisResultStore(sdmConfigClientFactory({}));
 
-        // console.log("Tags result: " + JSON.stringify(tagsResult, null, 2));
-        // assert.strictEqual(tagsResult.length, 1, "What does this do");
+        const workspaceId1 = "TJVC";
+        const taggingFingerprint: FP<any> = {
+            type: "MST3k",
+            name: "Taggydoober",
+            sha: "8x4d",
+            data: { reason: "ROWSDOWER!!!", description: "This will be returned" },
+            path: "/hey"
+        }
+        const repoRef = {
+            owner: "satellite-of-love",
+            repo: "rowsdower",
+            url: "https://github.com/satellite-of-love/rowsdower",
+            sha: "37787bc4241ff3d3fad165c5b30882ba7603d771",
+        };
+        const analysis: ProjectAnalysisResult = {
+            repoRef,
+            workspaceId: workspaceId1,
+            timestamp: new Date(),
+            analysis: {
+                id: repoRef,
+                fingerprints: [taggingFingerprint],
+            }
+        };
 
-    })
+        const persistResult = await subject.persist(analysis);
+        lookSuccessful("tag", persistResult);
+
+        const tagsResult = await subject.tags(workspaceId1);
+
+        console.log("Tags result: " + JSON.stringify(tagsResult, null, 2));
+        assert.strictEqual(tagsResult.length, 1, "What does this do");
+
+    });
 });
 
 function lookSuccessful(description: string, persistResult: PersistResult) {
