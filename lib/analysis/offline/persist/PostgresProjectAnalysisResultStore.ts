@@ -259,7 +259,9 @@ GROUP BY repo_snapshots.workspace_id, repo_snapshots.id`;
         const sql = `SELECT fp.name as name, fp.data ->> 'description' as description, fp.feature_name as parent, count(fp.name)
   FROM repo_snapshots rs, repo_fingerprints j, fingerprints fp
   WHERE j.repo_snapshot_id = rs.id and j.fingerprint_id = fp.id
-    AND rs.workspace_id ${workspaceId === "*" ? "<>" : "="} $1
+    AND rs.workspace_id = $1
+    AND j.workspace_id = $1
+    AND fp.workspace_id = $1
     AND fp.data ->> 'reason' IS NOT NULL
   GROUP BY fp.name, parent, description`;
         return doWithClient(sql, this.clientFactory, async client => {
