@@ -29,7 +29,7 @@ export type SortOrder = "name" | "score";
 export function exposeRepositoryListPage(conf: WebAppConfig): void {
     conf.express.get("/repositories", ...conf.handlers, async (req, res, next) => {
         try {
-            const workspaceId = req.query.workspace || req.params.workspace_id || "*";
+            const workspaceId = req.query.workspace || req.params.workspace_id || "local";
             const sortOrder: SortOrder = req.query.sortOrder || "score";
             const byOrg = req.query.byOrg !== "false";
             const category = req.query.category || "*";
@@ -45,31 +45,31 @@ export function exposeRepositoryListPage(conf: WebAppConfig): void {
 
             const relevantRepos = await conf.aspectRegistry.tagAndScoreRepos(workspaceId, relevantAnalysisResults, { category });
             const repos: RepoForDisplay[] = relevantRepos
-            .map(ar => ({
-                url: ar.analysis.id.url,
-                repo: ar.analysis.id.repo,
-                owner: ar.analysis.id.owner,
-                id: ar.id,
-                score: ar.weightedScore.weightedScore,
-                showFullPath: !byOrg,
-            }));
+                .map(ar => ({
+                    url: ar.analysis.id.url,
+                    repo: ar.analysis.id.repo,
+                    owner: ar.analysis.id.owner,
+                    id: ar.id,
+                    score: ar.weightedScore.weightedScore,
+                    showFullPath: !byOrg,
+                }));
             const virtualProjectCount = await conf.store.virtualProjectCount(workspaceId);
 
             const fingerprintUsage = await conf.store.fingerprintUsageForType(workspaceId);
 
-            const orgScore = await conf.aspectRegistry.scoreWorkspace(workspaceId, { fingerprintUsage, repos});
+            const orgScore = await conf.aspectRegistry.scoreWorkspace(workspaceId, { fingerprintUsage, repos });
             res.send(renderStaticReactNode(
-            RepoList({
-                orgScore,
-                repos,
-                virtualProjectCount,
-                sortOrder,
-                byOrg,
-                expand: !byOrg,
-                category,
-            }),
-            byOrg ? "Repositories by Organization" : "Repositories Ranked",
-            conf.instanceMetadata));
+                RepoList({
+                    orgScore,
+                    repos,
+                    virtualProjectCount,
+                    sortOrder,
+                    byOrg,
+                    expand: !byOrg,
+                    category,
+                }),
+                byOrg ? "Repositories by Organization" : "Repositories Ranked",
+                conf.instanceMetadata));
             return;
         } catch (e) {
             next(e);
