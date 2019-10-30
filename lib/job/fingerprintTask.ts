@@ -15,7 +15,6 @@
  */
 
 import {
-    GitHubRepoRef,
     logger,
     MappedParameters,
     QueryNoCacheOptions,
@@ -40,6 +39,7 @@ import {
     GitHubAppInstallationByOwner,
     IngestScmCommit,
     ScmCommitInput,
+    ScmProvider,
     ScmProviderById,
 } from "../typings/types";
 
@@ -74,7 +74,7 @@ export function calculateFingerprintTask(sdm: SoftwareDeliveryMachine,
         },
         listener: async ci => {
             try {
-                const provider = _.get(await ci.context.graphClient.query<ScmProviderById.Query, ScmProviderById.Variables>({
+                const provider: ScmProvider = _.get(await ci.context.graphClient.query<ScmProviderById.Query, ScmProviderById.Variables>({
                     name: "ScmProviderById",
                     variables: {
                         providerId: ci.parameters.providerId,
@@ -92,12 +92,24 @@ export function calculateFingerprintTask(sdm: SoftwareDeliveryMachine,
 
                 const token = _.get(provider, "credential.secret") || _.get(app, "token.secret");
 
-                const id = GitHubRepoRef.from({
-                    owner: ci.parameters.owner,
-                    repo: ci.parameters.name,
+                const id = ci.configuration.sdm.repoRefResolver.repoRefFromPush({
                     branch: ci.parameters.branch,
-                    rawApiBase: provider.apiUrl,
-                });
+                    repo: {
+                        name: ci.parameters.name,
+                        owner: ci.parameters.owner,
+                        org: {
+                            provider: {
+                                providerType: provider.providerType,
+                                apiUrl: provider.apiUrl,
+                                url: provider.url,
+                            },
+                        },
+                    },
+                    after: {
+                        sha: undefined,
+                    },
+                } as any);
+
                 const credentials = !!token ? { token } : undefined;
 
                 await ci.configuration.sdm.projectLoader.doWithProject({ ...ci, id, credentials }, async p => {
@@ -158,8 +170,9 @@ export function calculateFingerprintTask(sdm: SoftwareDeliveryMachine,
                                     owner: ci.parameters.owner,
                                     provider: {
                                         apiUrl: provider.apiUrl,
+                                        url: provider.url,
                                         providerId: ci.parameters.providerId,
-                                        providerType: ProviderType.github_com,
+                                        providerType: provider.providerType,
                                     },
                                 },
                             },
