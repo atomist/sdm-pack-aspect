@@ -24,6 +24,7 @@ import {
     ExtensionPackMetadata,
     metadata,
     PushImpact,
+    TransformPresentation,
 } from "@atomist/sdm";
 import {
     DeliveryGoals,
@@ -31,6 +32,7 @@ import {
 } from "@atomist/sdm-core";
 import { toArray } from "@atomist/sdm-core/lib/util/misc/array";
 import {
+    ApplyTargetParameters,
     Aspect,
     fingerprintSupport,
     makeVirtualProjectAware,
@@ -188,6 +190,11 @@ export interface AspectSupportOptions {
      * Defaults to true
      */
     registerAspects?: boolean;
+
+    /**
+     * Optional transformPresentation to control how to raise PRs for target applications
+     */
+    transformPresentation?: TransformPresentation<ApplyTargetParameters>;
 }
 
 /**
@@ -255,6 +262,7 @@ export function aspectSupport(options: AspectSupportOptions): ExtensionPack {
                         aspectsFactory: options.aspectsFactory,
                         rebase: options.rebase,
                         publishFingerprints: options.publishFingerprints,
+                        transformPresentation: options.transformPresentation,
                     }));
                 }
 
