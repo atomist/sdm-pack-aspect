@@ -185,7 +185,7 @@ function exposeListFingerprints(express: Express, store: ProjectAnalysisResultSt
 function exposeListTags(express: Express, store: ProjectAnalysisResultStore, secure: boolean): void {
     express.options("/api/v1/:workspace_id/tags", corsHandler());
     express.get("/api/v1/:workspace_id/tags", [corsHandler(), ...authHandlers(secure)], (req, res, next) =>
-        store.tags(req.params.workspace_id || "local").then(tags => {
+        store.allTags(req.params.workspace_id || "local").then(tags => {
             logger.debug("Returning tags: %j", tags);
             res.json({ list: tags });
         }, next));

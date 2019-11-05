@@ -260,9 +260,8 @@ describe("Postgres Result Store", () => {
         const persistResult = await subject.persist(analysis);
         lookSuccessful("tag", persistResult);
 
-        const tagsResult = await subject.tags(workspaceId1);
+        const tagsResult = await subject.allTags(workspaceId1);
 
-        console.log("Tags result: " + JSON.stringify(tagsResult, null, 2));
         assert.strictEqual(tagsResult.length, 1, "What does this do");
 
     });
