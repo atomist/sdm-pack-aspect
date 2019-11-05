@@ -152,7 +152,7 @@ class FakeProjectAnalysisResultStore implements ProjectAnalysisResultStore {
         return [];
     }
 
-    public async tags(workspaceId: string): Promise<TagUsage[]> {
+    public async allTags(workspaceId: string): Promise<TagUsage[]> {
         return [];
     }
 

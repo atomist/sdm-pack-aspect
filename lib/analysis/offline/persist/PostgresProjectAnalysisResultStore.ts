@@ -255,7 +255,7 @@ GROUP BY repo_snapshots.workspace_id, repo_snapshots.id`;
         }, []);
     }
 
-    public tags(workspaceId: string): Promise<TagUsage[]> {
+    public allTags(workspaceId: string): Promise<TagUsage[]> {
         const sql = `SELECT fp.name as name, fp.data ->> 'description' as description, fp.feature_name as parent, count(fp.name)
   FROM repo_snapshots rs, repo_fingerprints j, fingerprints fp
   WHERE j.repo_snapshot_id = rs.id and j.fingerprint_id = fp.id
