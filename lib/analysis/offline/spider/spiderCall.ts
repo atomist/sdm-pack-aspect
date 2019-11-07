@@ -75,8 +75,8 @@ export interface SpiderAppOptions {
  * Spider a GitHub.com org
  */
 export async function spider(params: SpiderAppOptions,
-    analyzer: Analyzer,
-    analysisTracking: AnalysisTracker): Promise<SpiderResult> {
+                             analyzer: Analyzer,
+                             analysisTracking: AnalysisTracker): Promise<SpiderResult> {
     const { search, workspaceId } = params;
     const org = params.owner;
     const searchInRepoName = search ? ` ${search} in:name` : "";
