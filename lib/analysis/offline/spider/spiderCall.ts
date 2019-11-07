@@ -75,8 +75,8 @@ export interface SpiderAppOptions {
  * Spider a GitHub.com org
  */
 export async function spider(params: SpiderAppOptions,
-                             analyzer: Analyzer,
-                             analysisTracking: AnalysisTracker): Promise<SpiderResult> {
+    analyzer: Analyzer,
+    analysisTracking: AnalysisTracker): Promise<SpiderResult> {
     const { search, workspaceId } = params;
     const org = params.owner;
     const searchInRepoName = search ? ` ${search} in:name` : "";
@@ -118,6 +118,7 @@ export async function spider(params: SpiderAppOptions,
 
     let keepExistingPersisted = neverKeepExisting; // default
     if (params.update !== undefined && params.update !== null) { // parameter is defined
+        logger.info(params.update ? "Updating all analyses" : "Keeping existing analyses");
         keepExistingPersisted = params.update ? neverKeepExisting : alwaysKeepExisting;
     }
     return spiderYo.spider(criteria,
