@@ -53,9 +53,9 @@ export async function computeAnalytics(
  * Calculate and persist entropy for one fingerprint kind
  */
 export async function computeAnalyticsForFingerprintKind(persister: ProjectAnalysisResultStore,
-    workspaceId: string,
-    type: string,
-    name: string): Promise<void> {
+                                                         workspaceId: string,
+                                                         type: string,
+                                                         name: string): Promise<void> {
     const fingerprints = await persister.fingerprintsInWorkspace(workspaceId, false, type, name);
     if (fingerprints.length === 0) {
         return;

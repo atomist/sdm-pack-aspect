@@ -62,10 +62,10 @@ import {
     describeSelectedTagsToAnimals,
     TagTree,
 } from "../api";
+import { supportComputeAnalyticsButton } from "./computeAnalytics";
 import { exposeOverviewPage } from "./overviewPage";
 import { exposeRepositoryListPage } from "./repositoryListPage";
 import { WebAppConfig } from "./webAppConfig";
-import { supportComputeAnalyticsButton } from "./computeAnalytics";
 
 /**
  * Add the org page route to Atomist SDM Express server.
@@ -109,7 +109,7 @@ export function addWebAppRoutes(
             exposeFingerprintReportPage(conf);
             exposeCustomReportPage(conf);
             exposeAnalysisTrackerPage(conf);
-            supportComputeAnalyticsButton(conf, aspectRegistry, store)
+            supportComputeAnalyticsButton(conf, aspectRegistry, store);
 
         },
     };
@@ -250,17 +250,17 @@ function exposeCustomReportPage(conf: WebAppConfig): void {
 
 // TODO fix any
 async function renderDataUrl(instanceMetadata: ExtensionPackMetadata,
-    workspaceId: string,
-    page: {
+                             workspaceId: string,
+                             page: {
         title: string,
         heading: string,
         subheading?: string,
         dataUrl: string,
     },
-    aspectRegistry: AspectRegistry,
-    httpClientFactory: HttpClientFactory,
-    req: any,
-    res: any): Promise<void> {
+                             aspectRegistry: AspectRegistry,
+                             httpClientFactory: HttpClientFactory,
+                             req: any,
+                             res: any): Promise<void> {
     let tree: TagTree;
 
     const fullUrl = `http://${req.get("host")}${page.dataUrl}`;

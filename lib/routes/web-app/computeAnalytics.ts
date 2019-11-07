@@ -1,13 +1,13 @@
-import { WebAppConfig } from "./webAppConfig";
-import { computeAnalytics } from "../../analysis/offline/spider/analytics";
-import { ProjectAnalysisResultStore } from "../../analysis/offline/persist/ProjectAnalysisResultStore";
 import { Aspect } from "@atomist/sdm-pack-fingerprint";
+import { ProjectAnalysisResultStore } from "../../analysis/offline/persist/ProjectAnalysisResultStore";
+import { computeAnalytics } from "../../analysis/offline/spider/analytics";
+import { WebAppConfig } from "./webAppConfig";
 
 export function supportComputeAnalyticsButton(conf: WebAppConfig,
-    analyzer: {
+                                              analyzer: {
         aspectOf(aspectName: string): Aspect<any> | undefined,
     },
-    persister: ProjectAnalysisResultStore) {
+                                              persister: ProjectAnalysisResultStore) {
     conf.express.post("/computeAnalytics", ...conf.handlers, async (req, res, next) => {
         try {
             // Ideally we'd do this in the background somehow
