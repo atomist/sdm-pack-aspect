@@ -80,7 +80,7 @@ function displayUnfoundAspects(unfoundAspects: UnfoundAspectForDisplay[]): React
 function displayUnfoundAspect(unfoundAspectForDisplay: UnfoundAspectForDisplay, i: number): React.ReactElement {
     const link = !!unfoundAspectForDisplay.documentationUrl ?
         <a href={unfoundAspectForDisplay.documentationUrl}>{unfoundAspectForDisplay.displayName}</a> : unfoundAspectForDisplay.displayName;
-    return <li className="unfound">
+    return <li key="undounf" className="unfound">
         {link}
     </li>;
 }
@@ -119,13 +119,13 @@ function displayDashboards(props: OverviewProps): React.ReactElement {
         <ul>
             {collapsible("explore", "Explore",
                 <ul>
-                    <li>Drift Report</li>
+                    <li key="dashboard-1">Drift Report</li>
                     <ul>
-                        <li key="code-1"><a href="./drift?percentile=98">Aspects with the
+                        <li key="dashboard-1a"><a href="./drift?percentile=98">Aspects with the
                             greatest entropy</a></li>
-                        <li key="code-1"><a href="./drift">Entropy for all aspects</a></li>
+                        <li key="dashboard-1b"><a href="./drift">Entropy for all aspects</a></li>
                     </ul>
-                    <li><a href="./explore">Interactive explorer</a> - Explore your {props.repos.length} repositories by tag</li>
+                    <li key="dashboard-2"><a href="./explore">Interactive explorer</a> - Explore your {props.repos.length} repositories by tag</li>
                 </ul>,
                 true)}
             {collapsible("repo-nav", "Repository List",
@@ -176,12 +176,12 @@ function displayDeveloperResources(): React.ReactElement {
     return <div>
         <h2>Developer</h2>
         <ul>
-            <li><a href="https://github.com/atomist-blogs/org-visualizer/blob/master/docs/developer.md">Developer
+            <li key="developer-1"><a href="https://github.com/atomist-blogs/org-visualizer/blob/master/docs/developer.md">Developer
                 Guide</a> - Developer documentation on <a href="https://github.com/atomist-blogs">GitHub</a></li>
-            <li><a href="./api-docs">Swagger documentation</a> - Interactive documentation for API endpoints running on
+            <li key="developer-2"><a href="./api-docs">Swagger documentation</a> - Interactive documentation for API endpoints running on
                 this server
             </li>
-            <li><a href="./api/v1/*/fingerprint/npm-project-deps/tslint?byOrg=true">Example of backing JSON data</a> -
+            <li key="developer-3"><a href="./api/v1/*/fingerprint/npm-project-deps/tslint?byOrg=true">Example of backing JSON data</a> -
                 Example tree structured data return
             </li>
         </ul>
