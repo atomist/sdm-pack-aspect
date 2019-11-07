@@ -99,6 +99,10 @@ function fingerprintListItem(f: FingerprintForDisplay): React.ReactElement {
 export function displayAspects(props: OverviewProps): React.ReactElement {
     return <div>
         <h2>Aspects ({props.foundAspects.length})</h2>
+        If this section looks out of date, then:
+        <form method="POST" action="/computeAnalytics">
+            <input type="submit" id="pleaseMakeThisComputeAnalyticsOnClick" value="Compute analytics"></input>
+        </form>
         <div className="importantAspects">
             <ul>
                 {props.foundAspects.map(displayAspect)}
@@ -106,6 +110,7 @@ export function displayAspects(props: OverviewProps): React.ReactElement {
         </div>
         {displayUnfoundAspects(props.unfoundAspects)}
     </div>;
+
 }
 
 function displayDashboards(props: OverviewProps): React.ReactElement {
