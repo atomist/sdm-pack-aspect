@@ -21,7 +21,6 @@ import { ExpressCustomizer } from "@atomist/automation-client/lib/configuration"
 import { isInLocalMode } from "@atomist/sdm-core";
 import {
     Aspect,
-    isConcreteIdeal,
 } from "@atomist/sdm-pack-fingerprint";
 import * as bodyParser from "body-parser";
 import {
@@ -108,7 +107,6 @@ export function api(projectAnalysisResultStore: ProjectAnalysisResultStore,
 
             configureAuth(express);
 
-            exposeIdealAndProblemSetting(express, aspectRegistry, secure);
             exposeAspectMetadata(express, projectAnalysisResultStore, aspectRegistry, secure);
             exposeListTags(express, projectAnalysisResultStore, secure);
             exposeListFingerprints(express, projectAnalysisResultStore, secure);
@@ -187,7 +185,7 @@ function exposeListFingerprints(express: Express, store: ProjectAnalysisResultSt
 function exposeListTags(express: Express, store: ProjectAnalysisResultStore, secure: boolean): void {
     express.options("/api/v1/:workspace_id/tags", corsHandler());
     express.get("/api/v1/:workspace_id/tags", [corsHandler(), ...authHandlers(secure)], (req, res, next) =>
-        store.tags(req.params.workspace_id || "local").then(tags => {
+        store.allTags(req.params.workspace_id || "local").then(tags => {
             logger.debug("Returning tags: %j", tags);
             res.json({ list: tags });
         }, next));
@@ -200,7 +198,7 @@ function exposeFingerprintByType(express: Express,
     express.options("/api/v1/:workspace_id/fingerprint/:type", corsHandler());
     express.get("/api/v1/:workspace_id/fingerprint/:type", [corsHandler(), ...authHandlers(secure)], async (req, res, next) => {
         try {
-            const workspaceId = req.params.workspace_id || "*";
+            const workspaceId = req.params.workspace_id || "local";
             const type = req.params.type;
             const fps: FingerprintUsage[] = await store.fingerprintUsageForType(workspaceId, type);
             fillInAspectNamesInList(aspectRegistry, fps);
@@ -230,15 +228,11 @@ function exposeFingerprintByTypeAndName(express: Express,
             const fingerprintType = req.params.type;
             const fingerprintName = req.params.name;
             const byName = req.params.name !== "*";
-            const showProgress = req.query.progress === "true";
             const trim = req.query.trim === "true";
             const byOrg = req.query.byOrg === "true";
-            const otherLabel = req.query.otherLabel;
 
             try {
                 const pt = await buildFingerprintTree({ aspectRegistry, store }, {
-                    otherLabel,
-                    showProgress,
                     byOrg,
                     trim,
                     fingerprintType,
@@ -247,32 +241,7 @@ function exposeFingerprintByTypeAndName(express: Express,
                     byName,
                 });
 
-                const ideal = await aspectRegistry.idealStore.loadIdeal(workspaceId, fingerprintType, fingerprintName);
-                let target;
-                if (isConcreteIdeal(ideal)) {
-                    const aspect = aspectRegistry.aspectOf(fingerprintType);
-                    if (!!aspect && !!aspect.toDisplayableFingerprint) {
-                        target = {
-                            ...ideal.ideal,
-                            value: aspect.toDisplayableFingerprint(ideal.ideal),
-                        };
-                    } else if (!!ideal.ideal.data && !!ideal.ideal.data.displayValue) {
-                        target = {
-                            ...ideal.ideal,
-                            value: ideal.ideal.data.displayValue,
-                        };
-                    } else if (!!ideal.ideal.displayValue) {
-                        target = {
-                            ...ideal.ideal,
-                            value: ideal.ideal.displayValue,
-                        };
-                    }
-                }
-
-                res.json({
-                    ...pt,
-                    target,
-                });
+                res.json(pt);
             } catch (e) {
                 logger.warn("Error occurred getting one fingerprint: %s %s", e.message, e.stack);
                 next(e);
@@ -325,24 +294,6 @@ function exposeDrift(express: Express, aspectRegistry: AspectRegistry, store: Pr
     });
 }
 
-function exposeIdealAndProblemSetting(express: Express, aspectRegistry: AspectRegistry, secure: boolean): void {
-    // Set an ideal
-    express.options("/api/v1/:workspace_id/ideal/:id", corsHandler());
-    express.put("/api/v1/:workspace_id/ideal/:id", [corsHandler(), ...authHandlers(secure)], (req, res, next) =>
-        aspectRegistry.idealStore.setIdeal(req.params.workspace_id, req.params.id).then(() => {
-            logger.info(`Set ideal to ${req.params.id}`);
-            res.sendStatus(201);
-        }, next));
-
-    // Note this fingerprint as a problem
-    express.options("/api/v1/:workspace_id/problem/:id", corsHandler());
-    express.put("/api/v1/:workspace_id/problem/:id", [corsHandler(), ...authHandlers(secure)], (req, res, next) =>
-        aspectRegistry.problemStore.noteProblem(req.params.workspace_id, req.params.id).then(() => {
-            logger.info(`Set problem at ${req.params.id}`);
-            res.sendStatus(201);
-        }, next));
-}
-
 /**
  * Explore by tags
  */
@@ -350,7 +301,7 @@ function exposeExplore(express: Express, aspectRegistry: AspectRegistry, store: 
     express.options("/api/v1/:workspace_id/explore", corsHandler());
     express.get("/api/v1/:workspace_id/explore", [corsHandler(), ...authHandlers(secure)], async (req, res, next) => {
         try {
-            const workspaceId = req.params.workspace_id || "*";
+            const workspaceId = req.params.workspace_id || "local";
             const repos = await store.loadInWorkspace(workspaceId, true);
             const selectedTags: string[] = req.query.tags ? req.query.tags.split(",") : [];
             const category = req.query.category;
@@ -392,8 +343,6 @@ function exposeExplore(express: Express, aspectRegistry: AspectRegistry, store: 
                 selectedTags,
                 repoCount: repos.length,
                 matchingRepoCount: relevantRepos.length,
-                // TODO fix this
-                averageFingerprintCount: -1,
                 ...repoTree,
                 workspaceId,
             };
@@ -410,11 +359,6 @@ export interface TagContext {
      * All repos available
      */
     repoCount: number;
-
-    /**
-     * Average number of distinct fingerprint types in the workspace
-     */
-    averageFingerprintCount: number;
 
     workspaceId: string;
 

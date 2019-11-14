@@ -21,10 +21,7 @@ import {
     RepoRef,
 } from "@atomist/automation-client";
 import {
-    ConcreteIdeal,
     FP,
-    Ideal,
-    isConcreteIdeal,
 } from "@atomist/sdm-pack-fingerprint";
 import { toName } from "@atomist/sdm-pack-fingerprint/lib/adhoc/preferences";
 import * as camelcaseKeys from "camelcase-keys";
@@ -33,9 +30,7 @@ import {
     Client,
     ClientBase,
 } from "pg";
-import { Analyzed } from "../../../aspect/AspectRegistry";
-import { IdealStore } from "../../../aspect/IdealStore";
-import { ProblemUsage } from "../../../aspect/ProblemStore";
+import { AnalyzedWorkspace } from "../../../aspect/AspectRegistry";
 import {
     PlantedTree,
     TagUsage,
@@ -70,10 +65,9 @@ import {
     driftTreeForSingleAspect,
     fingerprintsToReposTreeQuery,
 } from "./repoTree";
-
 // tslint:disable:max-file-line-count
 
-export class PostgresProjectAnalysisResultStore implements ProjectAnalysisResultStore, IdealStore {
+export class PostgresProjectAnalysisResultStore implements ProjectAnalysisResultStore {
 
     public fingerprintsToReposTree(treeQuery: TreeQuery): Promise<PlantedTree> {
         return fingerprintsToReposTreeQuery(treeQuery, this.clientFactory);
@@ -90,7 +84,7 @@ export class PostgresProjectAnalysisResultStore implements ProjectAnalysisResult
     public distinctRepoCount(workspaceId: string): Promise<number> {
         const sql = `SELECT COUNT(1) FROM (SELECT DISTINCT url
 FROM repo_snapshots
-WHERE workspace_id ${workspaceId === "*" ? "<>" : "="} $1) as repos`;
+WHERE workspace_id = $1) as repos`;
         return doWithClient(sql, this.clientFactory, async client => {
             const result = await client.query(sql,
                 [workspaceId]);
@@ -100,9 +94,10 @@ WHERE workspace_id ${workspaceId === "*" ? "<>" : "="} $1) as repos`;
 
     public virtualProjectCount(workspaceId: string): Promise<number> {
         const sql = `SELECT COUNT(1) FROM (SELECT DISTINCT repo_snapshot_id, path
-FROM repo_snapshots, repo_fingerprints
-WHERE workspace_id ${workspaceId === "*" ? "<>" : "="} $1
-  AND repo_fingerprints.repo_snapshot_id = repo_snapshots.id) as virtual_repos`;
+FROM repo_snapshots rs, repo_fingerprints rf
+WHERE rs.workspace_id = $1
+  AND rs.workspace_id = rf.workspace_id
+  AND rf.repo_snapshot_id = rs.id) as virtual_repos`;
         return doWithClient(sql, this.clientFactory, async client => {
             const result = await client.query(sql,
                 [workspaceId]);
@@ -111,7 +106,7 @@ WHERE workspace_id ${workspaceId === "*" ? "<>" : "="} $1
     }
 
     public latestTimestamp(workspaceId: string): Promise<Date> {
-        const sql = `SELECT timestamp FROM repo_snapshots WHERE workspace_id ${workspaceId === "*" ? "<>" : "="} $1
+        const sql = `SELECT timestamp FROM repo_snapshots WHERE workspace_id = $1
         ORDER BY timestamp DESC LIMIT 1`;
         return doWithClient(sql, this.clientFactory, async client => {
             const result = await client.query(sql,
@@ -121,7 +116,7 @@ WHERE workspace_id ${workspaceId === "*" ? "<>" : "="} $1
     }
 
     public loadInWorkspace(workspaceId: string, deep: boolean): Promise<ProjectAnalysisResult[]> {
-        return this.loadInWorkspaceInternal(workspaceId || "*", deep);
+        return this.loadInWorkspaceInternal(workspaceId || "local", deep);
     }
 
     /**
@@ -136,27 +131,33 @@ WHERE workspace_id ${workspaceId === "*" ? "<>" : "="} $1
                                           deep: boolean,
                                           additionalWhereClause: string = "true",
                                           additionalParameters: any[] = []): Promise<ProjectAnalysisResult[]> {
-        const reposOnly = `SELECT id, owner, name, url, commit_sha, timestamp, workspace_id
+        const workspaceEquals = "=";
+        const reposOnly = `SELECT id, owner, name, url, commit_sha, timestamp, repo_snapshots.workspace_id
 FROM repo_snapshots
-WHERE workspace_id ${workspaceId !== "*" ? "=" : "<>"} $1
+WHERE repo_snapshots.workspace_id ${workspaceEquals} $1
 AND ${additionalWhereClause}`;
-        const reposAndFingerprints = `SELECT repo_snapshots.id,
+        const reposAndFingerprints = `SELECT
+        repo_snapshots.workspace_id,
+        repo_snapshots.id,
         repo_snapshots.owner,
         repo_snapshots.name,
         repo_snapshots.url,
         repo_snapshots.commit_sha,
         repo_snapshots.timestamp,
-        repo_snapshots.workspace_id,
         json_agg(json_build_object('path', path, 'id', fingerprint_id)) as fingerprint_refs
 FROM repo_snapshots
     LEFT JOIN repo_fingerprints ON repo_snapshots.id = repo_fingerprints.repo_snapshot_id
-WHERE workspace_id ${workspaceId !== "*" ? "=" : "<>"} $1
+    AND repo_fingerprints.workspace_id = repo_snapshots.workspace_id
+WHERE repo_snapshots.workspace_id ${workspaceEquals} $1
+AND repo_fingerprints.workspace_id ${workspaceEquals} $1
 AND ${additionalWhereClause}
-GROUP BY repo_snapshots.id`;
-        const queryForRepoRows = doWithClient(deep ? reposAndFingerprints : reposOnly,
+GROUP BY repo_snapshots.workspace_id, repo_snapshots.id`;
+        const sql = deep ? reposAndFingerprints : reposOnly;
+        const queryForRepoRows = doWithClient<Error | Array<ProjectAnalysisResult & { fingerprintRefs: Array<{ id: string, path: string }> }>>(
+            sql,
             this.clientFactory, async client => {
                 // Load all fingerprints in workspace so we can look up
-                const repoSnapshotRows = await client.query(deep ? reposAndFingerprints : reposOnly,
+                const repoSnapshotRows = await client.query(sql,
                     [workspaceId, ...additionalParameters]);
                 return repoSnapshotRows.rows.map(whyDoesPostgresPutANewlineOnSomeFields).map(row => {
                     const repoRef = rowToRepoRef(row);
@@ -173,40 +174,46 @@ GROUP BY repo_snapshots.id`;
                         analysis: undefined,
                     };
                 });
-            }, []);
-        if (deep) {
-            // We do this join manually instead of returning JSON because of the extent of the duplication
-            // and the resulting memory usage.
-            // We parallelize the 2 needed queries to reduce latency
-            const getFingerprints = this.fingerprintsInWorkspaceRecord(workspaceId);
-            const [repoRows, fingerprints] = await Promise.all([queryForRepoRows, getFingerprints]);
-            for (const repo of repoRows) {
-                repo.analysis = {
-                    id: repo.repoRef,
-                    fingerprints: repo.fingerprintRefs.map(fref => {
-                        return {
-                            ...fingerprints[fref.id],
-                            path: fref.path,
-                        };
-                    }),
-                };
-            }
-            return repoRows;
+            }, e => e);
+        if (!deep) {
+            return rejectError(queryForRepoRows);
         }
-        return queryForRepoRows;
+        // We do this join manually instead of returning JSON because of the extent of the duplication
+        // and the resulting memory usage.
+        // We parallelize the 2 needed queries to reduce latency
+        const getFingerprints = this.fingerprintsInWorkspaceRecord(workspaceId);
+        const [repoRows, fingerprints] = await Promise.all([queryForRepoRows, getFingerprints]);
+        if (isError(repoRows)) {
+            throw repoRows;
+        }
+        return repoRows.map(repo => ({
+            ...repo,
+            analysis: {
+                id: repo.repoRef,
+                fingerprints: repo.fingerprintRefs.map(fref => {
+                    return {
+                        ...fingerprints[fref.id],
+                        path: fref.path,
+                    };
+                }),
+            },
+        }));
     }
 
-    public async loadById(id: string, deep: boolean, workspaceId?: string): Promise<ProjectAnalysisResult | undefined> {
-        const hits = await this.loadInWorkspaceInternal(workspaceId || "*", deep,
+    public async loadById(id: string, deep: boolean, workspaceId: string): Promise<ProjectAnalysisResult | undefined> {
+        const hits = await this.loadInWorkspaceInternal(workspaceId || "local", deep,
             "repo_snapshots.id = $2", [id]);
         return hits.length === 1 ? hits[0] : undefined;
     }
 
-    public async loadByRepoRef(repo: RepoRef, deep: boolean): Promise<ProjectAnalysisResult | undefined> {
-        const hits = await this.loadInWorkspaceInternal("*",
+    public async loadByRepoRef(workspaceId: string, repo: RepoRef, deep: boolean): Promise<ProjectAnalysisResult | undefined> {
+        const hits = await this.loadInWorkspaceInternal(workspaceId,
             deep,
             "repo_snapshots.owner = $2 AND repo_snapshots.name = $3 AND repo_snapshots.commit_sha = $4",
             [repo.owner, repo.repo, repo.sha]);
+        if (hits.length > 1) {
+            throw new Error("Too many hits by repoRef. Got " + hits.length + " for repoUrl " + repo.url);
+        }
         return hits.length === 1 ? hits[0] : undefined;
     }
 
@@ -215,10 +222,13 @@ GROUP BY repo_snapshots.id`;
     }
 
     public async distinctFingerprintKinds(workspaceId: string): Promise<FingerprintKind[]> {
+        const workspaceEquals = "=";
         const sql = `SELECT DISTINCT f.name, feature_name as type
   FROM repo_fingerprints rf, repo_snapshots rs, fingerprints f
   WHERE rf.repo_snapshot_id = rs.id AND rf.fingerprint_id = f.id
-    AND rs.workspace_id ${workspaceId === "*" ? "<>" : "="} $1`;
+    AND rs.workspace_id ${workspaceEquals} $1
+    AND rf.workspace_id ${workspaceEquals} $1
+    AND f.workspace_id ${workspaceEquals} $1`;
         return doWithClient(sql, this.clientFactory, async client => {
             const result = await client.query(sql, [workspaceId]);
             return result.rows;
@@ -226,10 +236,14 @@ GROUP BY repo_snapshots.id`;
     }
 
     public async distinctRepoFingerprintKinds(workspaceId: string): Promise<Array<{ owner: string, repo: string, fingerprints: FingerprintKind[] }>> {
+
+        const workspaceEquals = "=";
         const sql = `SELECT DISTINCT rs.owner, rs.name as repo, f.name, feature_name as type
   FROM repo_fingerprints rf, repo_snapshots rs, fingerprints f
   WHERE rf.repo_snapshot_id = rs.id AND rf.fingerprint_id = f.id
-    AND rs.workspace_id ${workspaceId === "*" ? "<>" : "="} $1`;
+    AND rs.workspace_id ${workspaceEquals} $1
+    AND rf.workspace_id ${workspaceEquals} $1
+    AND f.workspace_id ${workspaceEquals} $1`;
         return doWithClient(sql, this.clientFactory, async client => {
             const result = await client.query(sql, [workspaceId]);
             return _.map(_.groupBy(result.rows, r => `${r.owner}/${r.repo}`), (v, k) => {
@@ -242,11 +256,13 @@ GROUP BY repo_snapshots.id`;
         }, []);
     }
 
-    public tags(workspaceId: string): Promise<TagUsage[]> {
+    public allTags(workspaceId: string): Promise<TagUsage[]> {
         const sql = `SELECT fp.name as name, fp.data ->> 'description' as description, fp.feature_name as parent, count(fp.name)
   FROM repo_snapshots rs, repo_fingerprints j, fingerprints fp
   WHERE j.repo_snapshot_id = rs.id and j.fingerprint_id = fp.id
-    AND rs.workspace_id ${workspaceId === "*" ? "<>" : "="} $1
+    AND rs.workspace_id = $1
+    AND j.workspace_id = $1
+    AND fp.workspace_id = $1
     AND fp.data ->> 'reason' IS NOT NULL
   GROUP BY fp.name, parent, description`;
         return doWithClient(sql, this.clientFactory, async client => {
@@ -257,104 +273,6 @@ GROUP BY repo_snapshots.id`;
 
     public fingerprintUsageForType(workspaceId: string, type?: string): Promise<FingerprintUsage[]> {
         return fingerprintUsageForType(this.clientFactory, workspaceId, type);
-    }
-
-    public async storeIdeal(workspaceId: string, ideal: Ideal): Promise<void> {
-        if (isConcreteIdeal(ideal)) {
-            await doWithClient("Store ideal", this.clientFactory, async client => {
-                // Clear out any existing ideal
-                await client.query("DELETE FROM ideal_fingerprints WHERE workspace_id = $1 AND fingerprint_id IN " +
-                    "(SELECT id from fingerprints where feature_name = $2 AND name = $3)",
-                    [workspaceId, ideal.ideal.type, ideal.ideal.name]);
-                const fid = await this.ensureFingerprintStored(ideal.ideal, client);
-                await client.query(`INSERT INTO ideal_fingerprints (workspace_id, fingerprint_id, authority)
-values ($1, $2, 'local-user')`, [
-                    workspaceId, fid]);
-            });
-        } else {
-            throw new Error("Elimination ideals not yet supported");
-        }
-    }
-
-    public async setIdeal(workspaceId: string, fingerprintId: string): Promise<void> {
-        const ideal = await this.loadFingerprintById(fingerprintId);
-        if (!ideal) {
-            throw new Error(`Fingerprint with id=${fingerprintId} not found and cannot be used as an ideal`);
-        }
-        const ci: ConcreteIdeal = {
-            reason: "Local database",
-            ideal,
-        };
-        await this.storeIdeal(workspaceId, ci);
-    }
-
-    public async loadIdeals(workspaceId: string): Promise<Ideal[]> {
-        const sql = `SELECT id, name, feature_name as type, sha, data
-FROM ideal_fingerprints, fingerprints
-WHERE workspace_id = $1 AND ideal_fingerprints.fingerprint_id = fingerprints.id`;
-        return doWithClient(sql, this.clientFactory, async client => {
-            const rows = await client.query(sql, [workspaceId]);
-            if (!rows.rows) {
-                return [];
-            }
-            return rows.rows.map(idealRowToIdeal);
-        }, []);
-    }
-
-    public async noteProblem(workspaceId: string, fingerprintId: string): Promise<void> {
-        const fingerprint = await this.loadFingerprintById(fingerprintId);
-        if (!fingerprint) {
-            throw new Error(`Fingerprint with id=${fingerprintId} not found and cannot be noted as problem`);
-        }
-        await this.storeProblemFingerprint(workspaceId, { fingerprint, severity: "warn", authority: "local-user" });
-    }
-
-    public async storeProblemFingerprint(workspaceId: string, fp: ProblemUsage): Promise<void> {
-        const sql = `INSERT INTO problem_fingerprints (workspace_id, fingerprint_id, severity, authority, date_added)
-values ($1, $2, $3, $4, current_timestamp)`;
-        await doWithClient(sql, this.clientFactory, async client => {
-            // Clear out any existing ideal
-            const fid = await this.ensureFingerprintStored(fp.fingerprint, client);
-            await client.query(sql, [
-                workspaceId, fid, fp.severity, fp.authority]);
-        });
-    }
-
-    public async loadProblems(workspaceId: string): Promise<ProblemUsage[]> {
-        const sql = `SELECT id, name, feature_name as type, sha, data, authority, severity, description, url
-FROM problem_fingerprints, fingerprints
-WHERE workspace_id = $1 AND problem_fingerprints.fingerprint_id = fingerprints.id`;
-        return doWithClient(sql, this.clientFactory, async client => {
-            const rows = await client.query(sql, [workspaceId]);
-            if (!rows.rows) {
-                return [];
-            }
-            return rows.rows.map(problemRowToProblem);
-        }, []);
-    }
-
-    public async loadIdeal(workspaceId: string, type: string, name: string): Promise<Ideal> {
-        const sql = `SELECT id, name, feature_name as type, sha, data, display_name, display_value
-FROM ideal_fingerprints, fingerprints
-WHERE workspace_id = $1 AND ideal_fingerprints.fingerprint_id = fingerprints.id
-AND feature_name = $2 AND name = $3`;
-        const rawRow = await doWithClient(sql, this.clientFactory, async client => {
-            const rows = await client.query(sql, [workspaceId, type, name]);
-            return rows.rows.length === 1 ? rows.rows[0] : undefined;
-        });
-        if (!rawRow) {
-            return undefined;
-        }
-        return camelcaseKeys(idealRowToIdeal(rawRow), { deep: true }) as any;
-    }
-
-    public async loadFingerprintById(id: string): Promise<FP | undefined> {
-        const sql = `SELECT id, name, feature_name as type, sha, data FROM fingerprints
-WHERE id = $1`;
-        return doWithClient(sql, this.clientFactory, async client => {
-            const rows = await client.query(sql, [id]);
-            return rows.rows.length === 1 ? rows.rows[0] : undefined;
-        });
     }
 
     /**
@@ -371,23 +289,8 @@ WHERE id = $1`;
         return fingerprintsInWorkspace(this.clientFactory, workspaceId, distinct, type, name);
     }
 
-    public async fingerprintsForProject(snapshotId: string): Promise<Array<FP & { timestamp: Date, commitSha: string }>> {
-        return fingerprintsForProject(this.clientFactory, snapshotId);
-    }
-
-    public async averageFingerprintCount(workspaceId?: string): Promise<number> {
-        const sql = `SELECT avg(count) as average_fingerprints from (SELECT repo_snapshots.id, count(feature_name) from repo_snapshots,
-(select distinct feature_name, repo_snapshot_id, repo_fingerprints.path
-  FROM repo_fingerprints, fingerprints
-  WHERE repo_fingerprints.fingerprint_id = fingerprints.id)
-AS aspects
-WHERE workspace_id ${workspaceId === "*" ? "<>" : "="} $1
-AND repo_snapshot_id = repo_snapshots.id
-GROUP by repo_snapshots.id) stats;`;
-        return doWithClient(sql, this.clientFactory, async client => {
-            const rows = await client.query(sql, [workspaceId || "*"]);
-            return rows.rows.length === 1 ? rows.rows[0].average_fingerprints : -1;
-        }, () => -1);
+    public async fingerprintsForProject(workspaceId: string, snapshotId: string): Promise<Array<FP & { timestamp: Date, commitSha: string }>> {
+        return fingerprintsForProject(this.clientFactory, workspaceId, snapshotId);
     }
 
     public async persistAnalytics(data: Array<{ workspaceId: string, kind: FingerprintKind, cohortAnalysis: CohortAnalysis }>): Promise<boolean> {
@@ -415,85 +318,87 @@ GROUP by repo_snapshots.id) stats;`;
     }
 
     private async persistOne(client: ClientBase, analysisResult: ProjectAnalysisResult): Promise<PersistResult> {
-        const repoRef = analysisResult.repoRef;
+        const { workspaceId, repoRef } = analysisResult;
         if (!repoRef) {
             return {
+                ...emptyPersistResult,
                 attemptedCount: 1,
-                succeeded: [],
                 failed: [{
                     repoUrl: "missing repoRef",
                     whileTryingTo: "build object to persist",
                     message: "No RepoRef",
                 }],
-                failedFingerprints: [],
             };
         }
         if (!repoRef.url || !repoRef.sha) {
             return {
+                ...emptyPersistResult,
                 attemptedCount: 1,
-                succeeded: [],
                 failed: [{
-                    repoUrl: "missing repoUrl. Repo is named " + repoRef.repo,
+                    repoUrl: "missing url or SHA. Repo is named " + repoRef.repo,
                     whileTryingTo: "build object to persist",
                     message: `Incomplete RepoRef ${JSON.stringify(repoRef)}`,
                 }],
-                failedFingerprints: [],
             };
         }
 
         try {
             // Whack any snapshot we already hold for this repository
-            await deleteOldSnapshotForRepository(repoRef, client);
+            await deleteOldSnapshotForRepository(client, { workspaceId, repoRef });
 
             // Use this as unique database id
-            const id = snapshotIdFor(repoRef);
-            const shaToUse = repoRef.sha;
-            const repoSnapshotsInsertSql = `INSERT INTO repo_snapshots (id, workspace_id, provider_id, owner, name, url,
-    commit_sha, query, timestamp)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, current_timestamp)`;
-            logger.debug("Executing SQL:\n%s", repoSnapshotsInsertSql);
-            await client.query(repoSnapshotsInsertSql,
-                [id,
-                    analysisResult.workspaceId,
-                    "github",
-                    repoRef.owner,
-                    repoRef.repo,
-                    repoRef.url,
-                    shaToUse,
-                    (analysisResult as SpideredRepo).query,
-                ]);
-            const fingerprintPersistResults = await this.persistFingerprints(analysisResult.analysis, id, client);
-            fingerprintPersistResults.failures.forEach(f => {
-                logger.error(`Could not persist fingerprint.
-    Error: ${f.error.message}
-    Repo: ${repoRef.url}
-    Fingerprint: ${JSON.stringify(f.failedFingerprint, undefined, 2)}`);
-            });
+            const snapshotId = snapshotIdFor(repoRef);
+            await this.persistRepoSnapshot(client, snapshotId, analysisResult.workspaceId, repoRef,
+                (analysisResult as SpideredRepo).query);
+            const fingerprintPersistResults = await this.persistFingerprints(client,
+                {
+                    fingerprints: analysisResult.analysis.fingerprints,
+                    workspaceId: analysisResult.workspaceId, snapshotId,
+                });
             return {
-                succeeded: [id],
+                ...emptyPersistResult,
+                succeeded: [snapshotId],
                 attemptedCount: 1,
-                failed: [],
                 failedFingerprints: fingerprintPersistResults.failures,
             };
         } catch (err) {
             return {
+                ...emptyPersistResult,
                 attemptedCount: 1,
-                succeeded: [],
                 failed: [{
                     repoUrl: repoRef.url,
                     whileTryingTo: "persist in DB",
                     message: err.message,
                 }],
-                failedFingerprints: [],
             };
         }
     }
+    private async persistRepoSnapshot(client: ClientBase, snapshotId: string, workspaceId: string, repoRef: RepoRef,
+                                      query?: string): Promise<void> {
+        const shaToUse = repoRef.sha;
+        const repoSnapshotsInsertSql = `INSERT INTO repo_snapshots (id, workspace_id, provider_id, owner, name, url,
+            commit_sha, query, timestamp)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, current_timestamp)`;
+        logger.debug("Executing SQL:\n%s", repoSnapshotsInsertSql);
+        await client.query(repoSnapshotsInsertSql,
+            [snapshotId,
+                workspaceId,
+                "github",
+                repoRef.owner,
+                repoRef.repo,
+                repoRef.url,
+                shaToUse,
+                query,
+            ]);
+    }
 
-    public async persistAdditionalFingerprints(analyzed: Analyzed): Promise<FingerprintInsertionResult> {
+    public async persistAdditionalFingerprints(analyzed: AnalyzedWorkspace): Promise<FingerprintInsertionResult> {
+        const { fingerprints, workspaceId } = analyzed;
         return doWithClient(`Persist additional fingerprints for project at ${analyzed.id.url}`,
             this.clientFactory,
             async client => {
-                return this.persistFingerprints(analyzed, snapshotIdFor(analyzed.id), client);
+                const snapshotId = snapshotIdFor(analyzed.id);
+                return this.persistFingerprints(client, { fingerprints, workspaceId, snapshotId });
             }, {
             insertedCount: 0,
             failures: analyzed.fingerprints
@@ -502,24 +407,38 @@ VALUES ($1, $2, $3, $4, $5, $6, $7, $8, current_timestamp)`;
     }
 
     // Persist the fingerprints for this analysis
-    private async persistFingerprints(pa: Analyzed, id: string, client: ClientBase): Promise<FingerprintInsertionResult> {
+    private async persistFingerprints(client: ClientBase, params: {
+        fingerprints: FP[],
+        workspaceId: string,
+        snapshotId: string,
+    }): Promise<FingerprintInsertionResult> {
         let insertedCount = 0;
+        const { workspaceId } = params;
         const failures: Array<{ failedFingerprint: FP; error: Error }> = [];
-        for (const fp of pa.fingerprints) {
+        for (const fp of params.fingerprints) {
             const aspectName = fp.type || "unknown";
             const fingerprintId = aspectName + "_" + fp.name + "_" + fp.sha;
-            //  console.log("Persist fingerprint " + JSON.stringify(fp) + " for id " + id);
             // Create fp record if it doesn't exist
             try {
-                await this.ensureFingerprintStored(fp, client);
-                const insertRepoFingerprintSql = `INSERT INTO repo_fingerprints (repo_snapshot_id, fingerprint_id, path)
-VALUES ($1, $2, $3) ON CONFLICT DO NOTHING`;
-                await client.query(insertRepoFingerprintSql, [id, fingerprintId, fp.path || ""]);
+                await this.ensureFingerprintStored(client, { fingerprint: fp, workspaceId });
+                const insertRepoFingerprintSql = `INSERT INTO repo_fingerprints (
+                    workspace_id,
+                    repo_snapshot_id,
+                    fingerprint_id,
+                    path)
+VALUES ($1, $2, $3, $4) ON CONFLICT DO NOTHING`;
+                await client.query(insertRepoFingerprintSql, [params.workspaceId, params.snapshotId, fingerprintId, fp.path || ""]);
                 insertedCount++;
             } catch (error) {
                 failures.push({ failedFingerprint: fp, error });
             }
         }
+        failures.forEach(f => {
+            logger.error(`Could not persist fingerprint.
+Error: ${f.error.message}
+Repo: ${params.snapshotId}
+Fingerprint: ${JSON.stringify(f.failedFingerprint, undefined, 2)}`);
+        });
         return {
             insertedCount,
             failures,
@@ -528,20 +447,25 @@ VALUES ($1, $2, $3) ON CONFLICT DO NOTHING`;
 
     /**
      * Persist the given fingerprint if it's not already known
+     *
+     * If this SHA has already been persisted for this fingerprint, repo, and workspace,
+     * then the old one will not be updated.
      * @param {FP} fp
      * @param {Client} client
      * @return {Promise<void>}
      */
-    private async ensureFingerprintStored(fp: FP, client: ClientBase): Promise<string> {
-        const aspectName = fp.type || "unknown";
-        const fingerprintId = aspectName + "_" + fp.name + "_" + fp.sha;
-        //  console.log("Persist fingerprint " + JSON.stringify(fp) + " for id " + id);
+    private async ensureFingerprintStored(client: ClientBase, params: { fingerprint: FP, workspaceId: string }): Promise<string> {
+        const { fingerprint, workspaceId } = params;
+        const aspectName = fingerprint.type || "unknown";
+        const fingerprintId = aspectName + "_" + fingerprint.name + "_" + fingerprint.sha;
         // Create fp record if it doesn't exist
-        const insertFingerprintSql = `INSERT INTO fingerprints (id, name, feature_name, sha, data, display_name, display_value)
-VALUES ($1, $2, $3, $4, $5, $6, $7) ON CONFLICT DO NOTHING`;
-        logger.debug("Persisting fingerprint %j SQL\n%s", fp, insertFingerprintSql);
-        await client.query(insertFingerprintSql, [fingerprintId, fp.name, aspectName, fp.sha,
-            JSON.stringify(fp.data), fp.displayName, fp.displayValue]);
+        const insertFingerprintSql = `INSERT INTO fingerprints
+        (workspace_id, id, name, feature_name, sha, data, display_name, display_value)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8) ON CONFLICT DO NOTHING`;
+        logger.debug("Persisting fingerprint %j SQL\n%s", fingerprint, insertFingerprintSql);
+        await client.query(insertFingerprintSql,
+            [workspaceId, fingerprintId, fingerprint.name, aspectName, fingerprint.sha,
+                JSON.stringify(fingerprint.data), fingerprint.displayName, fingerprint.displayValue]);
         return fingerprintId;
     }
 
@@ -550,31 +474,7 @@ VALUES ($1, $2, $3, $4, $5, $6, $7) ON CONFLICT DO NOTHING`;
 
 }
 
-function idealRowToIdeal(rawRow: any): Ideal {
-    if (!!rawRow.data) {
-        const result: ConcreteIdeal = {
-            ideal: rawRow,
-            reason: `Local database row ${rawRow.id}`,
-        };
-        return result;
-    }
-    throw new Error("Elimination ideals not yet supported");
-}
-
-function problemRowToProblem(rawRow: any): ProblemUsage {
-    return {
-        fingerprint: {
-            name: rawRow.name,
-            type: rawRow.feature_name,
-            data: rawRow.data,
-            sha: rawRow.sha,
-        },
-        authority: rawRow.authority,
-        severity: rawRow.severity,
-        description: rawRow.description,
-        url: rawRow.url,
-    };
-}
+type StoredFingerprint = FP & { id: string };
 
 /**
  * Raw fingerprints in the workspace
@@ -584,14 +484,18 @@ async function fingerprintsInWorkspace(clientFactory: ClientFactory,
                                        workspaceId: string,
                                        distinct: boolean,
                                        type?: string,
-                                       name?: string): Promise<Array<FP & { id: string }>> {
-    const sql = `SELECT ${distinct ? "DISTINCT" : ""} f.name, f.id, f.feature_name as type, f.sha, f.data
+                                       name?: string): Promise<StoredFingerprint[]> {
+    const workspaceEquals = "=";
+    const sql = `SELECT ${distinct ? "DISTINCT" : ""} f.name, f.id, f.feature_name as type, f.sha, f.data,
+     f.display_name as "displayName", f.display_value as "displayValue", rf.path
 FROM repo_snapshots rs
     RIGHT JOIN repo_fingerprints rf ON rf.repo_snapshot_id = rs.id
     INNER JOIN fingerprints f ON rf.fingerprint_id = f.id
-WHERE rs.workspace_id ${workspaceId === "*" ? "<>" : "="} $1
+WHERE rs.workspace_id ${workspaceEquals} $1
+    AND rf.workspace_id ${workspaceEquals} $1
+    AND f.workspace_id ${workspaceEquals} $1
     AND ${type ? "f.feature_name = $2" : "true"} AND ${name ? "f.name = $3" : "true"}`;
-    return doWithClient(sql, clientFactory, async client => {
+    const result = await doWithClient<StoredFingerprint[] | Error>(sql, clientFactory, async client => {
         const params = [workspaceId];
         if (!!type) {
             params.push(type);
@@ -604,17 +508,28 @@ WHERE rs.workspace_id ${workspaceId === "*" ? "<>" : "="} $1
         const fps = rows.rows;
         logger.debug("%d fingerprints in workspace '%s'", fps.length, workspaceId);
         return fps;
-    }, []);
+    }, e => e);
+    if (!Array.isArray(result)) {
+        throw result;
+    }
+
+    return result;
 }
 
 async function fingerprintsForProject(clientFactory: ClientFactory,
+                                      workspaceId: string,
                                       snapshotId: string): Promise<Array<FP & { timestamp: Date, commitSha: string }>> {
-    const sql = `SELECT f.name as fingerprintName, f.feature_name, f.sha, f.data, rf.path, rs.timestamp, rs.commit_sha
+    const sql = `SELECT f.name as fingerprintName, f.feature_name, f.sha, f.data, rf.path, rs.timestamp, rs.commit_sha,
+    f.display_name as "displayName", f.display_value as "displayValue"
 FROM repo_fingerprints rf, repo_snapshots rs, fingerprints f
-WHERE rs.id = $1 AND rf.repo_snapshot_id = rs.id AND rf.fingerprint_id = f.id
-ORDER BY feature_name, fingerprintName ASC`;
+WHERE rs.id = $2
+  AND rf.repo_snapshot_id = rs.id
+  AND rf.fingerprint_id = f.id
+  AND rs.workspace_id = $1
+  AND rf.workspace_id = $1
+  AND f.workspace_id = $1 ORDER BY feature_name, fingerprintName ASC`;
     return doWithClient(sql, clientFactory, async client => {
-        const rows = await client.query(sql, [snapshotId]);
+        const rows = await client.query(sql, [workspaceId, snapshotId]);
         return rows.rows.map(row => {
             return {
                 name: row.fingerprintname,
@@ -624,15 +539,19 @@ ORDER BY feature_name, fingerprintName ASC`;
                 path: row.path,
                 timestamp: row.timestamp,
                 commitSha: row.commit_sha,
+                displayName: row.displayName,
+                displayValue: row.displayValue,
             };
         });
     }, []);
 }
 
 async function fingerprintUsageForType(clientFactory: ClientFactory, workspaceId: string, type?: string): Promise<FingerprintUsage[]> {
+    const workspaceEquals = "=";
     const sql = `SELECT distinct fa.name, fa.feature_name as type, fa.variants, fa.count, fa.entropy, fa.compliance, f.display_name
 FROM fingerprint_analytics fa, fingerprints f
-WHERE fa.workspace_id ${workspaceId === "*" ? "!=" : "="} $1
+WHERE fa.workspace_id ${workspaceEquals} $1
+AND f.workspace_id ${workspaceEquals} $1
 AND f.name = fa.name AND f.feature_name = fa.feature_name
 AND  ${type ? "fa.feature_name = $2" : "true"}
 ORDER BY fa.entropy DESC`;
@@ -666,13 +585,16 @@ ORDER BY fa.entropy DESC`;
 /**
  * Delete the data we hold for this repository.
  */
-async function deleteOldSnapshotForRepository(repoRef: RepoRef, client: ClientBase): Promise<void> {
-    const deleteFingperintsSql = `DELETE from repo_fingerprints WHERE repo_snapshot_id IN
-    (SELECT id from repo_snapshots WHERE url = $1)`;
-    await client.query(deleteFingperintsSql,
-        [repoRef.url]);
-    await client.query(`DELETE from repo_snapshots WHERE url = $1`,
-        [repoRef.url]);
+async function deleteOldSnapshotForRepository(client: ClientBase, params: { workspaceId: string, repoRef: RepoRef }): Promise<void> {
+    const { workspaceId, repoRef } = params;
+    const deleteFingerpintsSql = `DELETE from repo_fingerprints WHERE
+    workspace_id = $1
+    AND repo_snapshot_id IN
+    (SELECT id from repo_snapshots rs WHERE rs.workspace_id = $1 AND url = $2)`;
+    await client.query(deleteFingerpintsSql,
+        [workspaceId, repoRef.url]);
+    await client.query(`DELETE from repo_snapshots WHERE workspace_id = $1 AND url = $2`,
+        [workspaceId, repoRef.url]);
 }
 
 function rowToRepoRef(row: { provider_id: string, owner: string, name: string, url: string, sha?: string, commit_sha?: string }): RemoteRepoRef {
@@ -693,4 +615,12 @@ function whyDoesPostgresPutANewlineOnSomeFields<T extends { commit_sha?: string,
 
 function snapshotIdFor(repoRef: RepoRef): string {
     return repoRef.url.replace("/", "") + "_" + repoRef.sha;
+}
+
+function isError(e: any): e is Error {
+    return !!e.stack;
+}
+
+function rejectError<T>(result: Promise<T | Error>): Promise<T> {
+    return result.then(tOrError => isError(tOrError) ? Promise.reject(tOrError) : tOrError);
 }

@@ -20,7 +20,7 @@ import { StableDirectoryManager } from "@atomist/automation-client/lib/spi/clone
 import { TmpDirectoryManager } from "@atomist/automation-client/lib/spi/clone/tmpDirectoryManager";
 import * as _ from "lodash";
 import { ProjectAnalysisResult } from "../../ProjectAnalysisResult";
-import { AnalysisTracking } from "../../tracking/analysisTracker";
+import { AnalysisTracker } from "../../tracking/analysisTracker";
 import { sdmConfigClientFactory } from "../persist/pgClientFactory";
 import { PostgresProjectAnalysisResultStore } from "../persist/PostgresProjectAnalysisResultStore";
 import { DefaultPoolSize } from "./common";
@@ -76,7 +76,7 @@ export interface SpiderAppOptions {
  */
 export async function spider(params: SpiderAppOptions,
                              analyzer: Analyzer,
-                             analysisTracking: AnalysisTracking): Promise<SpiderResult> {
+                             analysisTracking: AnalysisTracker): Promise<SpiderResult> {
     const { search, workspaceId } = params;
     const org = params.owner;
     const searchInRepoName = search ? ` ${search} in:name` : "";
@@ -118,6 +118,7 @@ export async function spider(params: SpiderAppOptions,
 
     let keepExistingPersisted = neverKeepExisting; // default
     if (params.update !== undefined && params.update !== null) { // parameter is defined
+        logger.info(params.update ? "Updating all analyses" : "Keeping existing analyses");
         keepExistingPersisted = params.update ? neverKeepExisting : alwaysKeepExisting;
     }
     return spiderYo.spider(criteria,

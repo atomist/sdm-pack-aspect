@@ -21,7 +21,6 @@ import {
     FP,
 } from "@atomist/sdm-pack-fingerprint";
 import * as _ from "lodash";
-import { FingerprintUsage } from "../analysis/offline/persist/ProjectAnalysisResultStore";
 import { ProjectAnalysisResult } from "../analysis/ProjectAnalysisResult";
 import { TagContext } from "../routes/api";
 import {
@@ -57,13 +56,6 @@ import {
     AspectReportDetailsRegistry,
     AspectWithReportDetails,
 } from "./AspectReportDetailsRegistry";
-import { IdealStore } from "./IdealStore";
-import {
-    chainUndesirableUsageCheckers,
-    ProblemStore,
-    problemStoreBackedUndesirableUsageCheckerFor,
-    UndesirableUsageChecker,
-} from "./ProblemStore";
 
 export class DefaultAspectRegistry implements AspectRegistry, AspectReportDetailsRegistry {
 
@@ -88,8 +80,6 @@ export class DefaultAspectRegistry implements AspectRegistry, AspectReportDetail
             `Tag ${repos.length} repos with ${this.taggers.length} taggers`,
             async () => this.tagRepos({
                 repoCount: repos.length,
-                // TODO fix this
-                averageFingerprintCount: -1,
                 workspaceId,
                 aspectRegistry: this,
             }, repos));
@@ -139,24 +129,6 @@ export class DefaultAspectRegistry implements AspectRegistry, AspectReportDetail
         return undefined;
     }
 
-    public async undesirableUsageCheckerFor(workspaceId: string): Promise<UndesirableUsageChecker | undefined> {
-        // TODO going for check functions is inelegant
-        if (this.opts.undesirableUsageChecker) {
-            return chainUndesirableUsageCheckers(
-                (await problemStoreBackedUndesirableUsageCheckerFor(this.problemStore, workspaceId)).check,
-                this.opts.undesirableUsageChecker.check);
-        }
-        return undefined;
-    }
-
-    get idealStore(): IdealStore {
-        return this.opts.idealStore;
-    }
-
-    get problemStore(): ProblemStore {
-        return this.opts.problemStore;
-    }
-
     get scorers(): RepositoryScorer[] {
         return this.opts.scorers || [];
     }
@@ -183,10 +155,7 @@ export class DefaultAspectRegistry implements AspectRegistry, AspectReportDetail
     }
 
     constructor(private readonly opts: {
-        idealStore: IdealStore,
-        problemStore: ProblemStore,
         aspects: AspectWithReportDetails[],
-        undesirableUsageChecker?: UndesirableUsageChecker,
         scorers?: RepositoryScorer[],
         workspaceScorers?: WorkspaceScorer[],
         scoreWeightings?: ScoreWeightings,

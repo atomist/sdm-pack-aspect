@@ -16,7 +16,6 @@
 
 import {
     AnalysisTracker,
-    AnalysisTracking,
 } from "./../../../lib/analysis/tracking/analysisTracker";
 /*
  * Copyright © 2019 Atomist, Inc.
@@ -128,7 +127,7 @@ class FakeProjectAnalysisResultStore implements ProjectAnalysisResultStore {
         throw new Error("Method not implemented.");
     }
 
-    public async loadByRepoRef(repo: RepoRef): Promise<ProjectAnalysisResult> {
+    public async loadByRepoRef(workspaceId: string, repo: RepoRef): Promise<ProjectAnalysisResult> {
         return oneResult;
     }
 
@@ -153,7 +152,7 @@ class FakeProjectAnalysisResultStore implements ProjectAnalysisResultStore {
         return [];
     }
 
-    public async tags(workspaceId: string): Promise<TagUsage[]> {
+    public async allTags(workspaceId: string): Promise<TagUsage[]> {
         return [];
     }
 
@@ -183,10 +182,6 @@ class FakeProjectAnalysisResultStore implements ProjectAnalysisResultStore {
 
     public fingerprintsInWorkspaceRecord(): Promise<Record<string, FP & { id: string }>> {
         throw new Error("Method not implemented.");
-    }
-
-    public async averageFingerprintCount(workspaceId?: string): Promise<number> {
-        return -1;
     }
 
 }

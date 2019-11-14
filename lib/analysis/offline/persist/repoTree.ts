@@ -24,28 +24,8 @@ import {
 } from "./pgUtils";
 import { TreeQuery } from "./ProjectAnalysisResultStore";
 
-/**
- * Return results for non-matching fingerprints
- */
-function nonMatchingRepos(tq: TreeQuery): string {
-    return `SELECT  null as id, $4 as name, null as sha, null as data, $1 as type,
-            (
-           SELECT json_agg(row_to_json(repo))
-           FROM (
-                  SELECT
-                    repo_snapshots.id, repo_snapshots.owner, repo_snapshots.name, repo_snapshots.url, 1 as size
-                  FROM repo_snapshots
-                   WHERE workspace_id ${tq.workspaceId === "*" ? "<>" : "="} $1
-                   AND repo_snapshots.id not in (select repo_fingerprints.repo_snapshot_id
-                    FROM repo_fingerprints WHERE repo_fingerprints.fingerprint_id in
-                        (SELECT id from fingerprints where fingerprints.feature_name = $2
-                            AND fingerprints.name ${tq.byName ? "=" : "<>"} $3))
-                ) repo
-         )
-         children`;
-}
-
 function fingerprintsToReposQuery(tq: TreeQuery): string {
+    const workspaceEquals = "=";
     // We always select by aspect (aka feature_name, aka type), and sometimes also by fingerprint name.
     const sql = `
 SELECT row_to_json(fingerprint_groups) FROM (
@@ -61,11 +41,13 @@ SELECT row_to_json(fingerprint_groups) FROM (
                   FROM repo_fingerprints, repo_snapshots
                    WHERE repo_fingerprints.fingerprint_id = fingerprints.id
                     AND repo_snapshots.id = repo_fingerprints.repo_snapshot_id
-                    AND workspace_id ${tq.workspaceId === "*" ? "<>" : "="} $1
+                    AND repo_fingerprints.workspace_id ${workspaceEquals} $1
+                    AND repo_snapshots.workspace_id ${workspaceEquals} $1
                 ) repo
          ) as children FROM fingerprints
-         WHERE fingerprints.feature_name = $2 and fingerprints.name ${tq.byName ? "=" : "<>"} $3
-         ${tq.otherLabel ? ("UNION ALL " + nonMatchingRepos(tq)) : ""}
+         WHERE fingerprints.feature_name = $2
+         AND fingerprints.name ${tq.byName ? "=" : "<>"} $3
+         AND fingerprints.workspace_id ${workspaceEquals} $1
 ) fp WHERE children is not NULL) as fingerprint_groups
 `;
     logger.debug("Running fingerprintsToRepos SQL\n%s", sql);
@@ -78,19 +60,14 @@ SELECT row_to_json(fingerprint_groups) FROM (
 export async function fingerprintsToReposTreeQuery(tq: TreeQuery, clientFactory: ClientFactory): Promise<PlantedTree> {
     const sql = fingerprintsToReposQuery(tq);
     const children = await doWithClient(sql, clientFactory, async client => {
-        try {
-            const bindParams = [tq.workspaceId, tq.aspectName, tq.rootName];
-            if (tq.otherLabel) {
-                bindParams.push(tq.otherLabel);
-            }
-            const results = await client.query(sql, bindParams);
-            const data = results.rows[0];
-            return data.row_to_json.children;
-        } catch (err) {
-            logger.error("Error running SQL %s: %s", sql, err);
-            throw err;
-        }
-    }, []);
+        const bindParams = [tq.workspaceId, tq.aspectName, tq.rootName];
+        const results = await client.query(sql, bindParams);
+        const data = results.rows[0];
+        return data.row_to_json.children;
+    }, e => e);
+    if (isError(children)) {
+        throw children;
+    }
     const result = {
         tree: {
             name: tq.rootName,
@@ -104,6 +81,10 @@ export async function fingerprintsToReposTreeQuery(tq: TreeQuery, clientFactory:
     };
     validatePlantedTree(result);
     return camelcaseKeys(result, { deep: true }) as any;
+}
+
+function isError(e: any): e is Error {
+    return !!e.stack;
 }
 
 export async function driftTreeForAllAspects(workspaceId: string,
@@ -148,10 +129,10 @@ export async function driftTreeForSingleAspect(workspaceId: string,
                 { meaning: "type" },
                 { meaning: "fingerprint entropy" },
             ] : [
-                { meaning: "type" },
-                { meaning: "fingerprint entropy" },
-                { meaning: "repos" },
-            ],
+                    { meaning: "type" },
+                    { meaning: "fingerprint entropy" },
+                    { meaning: "repos" },
+                ],
             tree: {
                 name: options.type,
                 children: result.rows[0].children.children,
@@ -162,17 +143,18 @@ export async function driftTreeForSingleAspect(workspaceId: string,
 }
 
 function driftTreeSql(workspaceId: string, options: { repos?: boolean, type?: string }): string {
+    const workspaceEquals = "=";
     if (!options.repos) {
         return `SELECT row_to_json(data) as children
     FROM (SELECT f0.type as name, f0.type as type, json_agg(aspects) as children
         FROM (SELECT distinct feature_name as type from fingerprint_analytics) f0, (
             SELECT name, name as fingerprint_name, feature_name as type, variants, count, entropy, variants as size
                 FROM fingerprint_analytics f1
-                WHERE workspace_id ${workspaceId === "*" ? "<>" : "="} $1
+                WHERE workspace_id = $1
                     AND entropy >=
                         (SELECT percentile_disc($2) within group (order by entropy)
                             FROM fingerprint_analytics
-                            WHERE workspace_id ${workspaceId === "*" ? "<>" : "="} $1)
+                            WHERE workspace_id = $1)
                 ORDER BY entropy DESC, fingerprint_name ASC) as aspects
     WHERE aspects.type = f0.type ${options.type ? `AND aspects.type = $3` : ""}
     GROUP by f0.type) as data`;
@@ -182,13 +164,19 @@ function driftTreeSql(workspaceId: string, options: { repos?: boolean, type?: st
     FROM (SELECT f0.type as name, f0.type as type, json_agg(aspects) as children
         FROM (SELECT distinct feature_name as type from fingerprint_analytics) f0, (
             SELECT f1.name, f1.name as fingerprint_name, f1.feature_name as type, f1.variants, f1.count, f1.entropy, f1.variants as size, json_agg(repos) as children
-                FROM fingerprint_analytics f1, (SELECT distinct _rs1.url, _rs1.owner, _rs1.name, _rs1.url, _f1.feature_name as type, _f1.name as fingerprint_name, 1 as size
-                FROM repo_snapshots _rs1, repo_fingerprints _rf1, fingerprints _f1 WHERE _rs1.id = _rf1.repo_snapshot_id AND _rf1.fingerprint_id = _f1.id) as repos
-                WHERE workspace_id ${workspaceId === "*" ? "<>" : "="} $1
+                FROM fingerprint_analytics f1, (
+                    SELECT distinct _rs1.url, _rs1.owner, _rs1.name, _rs1.url, _f1.feature_name as type, _f1.name as fingerprint_name, 1 as size
+                       FROM repo_snapshots _rs1, repo_fingerprints _rf1, fingerprints _f1
+                       WHERE _rs1.id = _rf1.repo_snapshot_id
+                       AND _rf1.fingerprint_id = _f1.id
+                       AND _rs1.workspace_id ${workspaceEquals} $1
+                       AND _rf1.workspace_id ${workspaceEquals} $1
+                       AND _f1.workspace_id ${workspaceEquals} $1) as repos
+                WHERE workspace_id ${workspaceEquals} $1
                     AND entropy >=
                         (SELECT percentile_disc($2) within group (order by entropy)
                             FROM fingerprint_analytics
-                            WHERE workspace_id ${workspaceId === "*" ? "<>" : "="} $1)
+                            WHERE workspace_id ${workspaceEquals} $1)
                     AND repos.type = f1.feature_name AND repos.fingerprint_name = f1.name
                 GROUP BY f1.name, f1.feature_name, f1.variants, f1.count, f1.entropy
                 ORDER BY entropy DESC, fingerprint_name ASC) as aspects

@@ -27,11 +27,6 @@ import {
     ScorerReturn,
     WeightedScore,
 } from "../scorer/Score";
-import { IdealStore } from "./IdealStore";
-import {
-    ProblemStore,
-    UndesirableUsageChecker,
-} from "./ProblemStore";
 
 /**
  * Implemented by ProjectAnalysis or any other structure
@@ -45,6 +40,11 @@ export interface HasFingerprints {
  * Result of an analysis. We must always have at least fingerprints and repo identification
  */
 export type Analyzed = HasFingerprints & { id: RepoRef };
+
+/**
+ * Result of an analysis on a workspace. We must always have at least fingerprints and repo identification
+ */
+export type AnalyzedWorkspace = HasFingerprints & { id: RepoRef, workspaceId: string };
 
 /**
  * Tag based on fingerprint data.
@@ -201,17 +201,5 @@ export interface AspectRegistry {
      * Find the aspect that manages fingerprints of this type
      */
     aspectOf(type: string): Aspect | undefined;
-
-    /**
-     * Function that can resolve ideal status for this aspect
-     */
-    readonly idealStore: IdealStore;
-
-    readonly problemStore: ProblemStore;
-
-    /**
-     * Return an UndesirableUsageChecker for this workspace
-     */
-    undesirableUsageCheckerFor(workspaceId: string): Promise<UndesirableUsageChecker | undefined>;
 
 }

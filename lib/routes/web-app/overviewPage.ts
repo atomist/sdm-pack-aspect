@@ -17,9 +17,6 @@
 import { logger } from "@atomist/automation-client";
 import {
     Aspect,
-    Ideal,
-    idealCoordinates,
-    isConcreteIdeal,
     supportsEntropy,
 } from "@atomist/sdm-pack-fingerprint";
 import * as _ from "lodash";
@@ -39,10 +36,8 @@ export function exposeOverviewPage(conf: WebAppConfig,
     conf.express.get(topLevelRoute, ...conf.handlers, async (req, res, next) => {
         try {
             const repos = await conf.store.loadInWorkspace(req.query.workspace || req.params.workspace_id, false);
-            const workspaceId = "*";
+            const workspaceId = "local";
             const fingerprintUsage = await conf.store.fingerprintUsageForType(workspaceId);
-
-            const ideals = await conf.aspectRegistry.idealStore.loadIdeals(workspaceId);
 
             const aspectsEligibleForDisplay = conf.aspectRegistry.aspects
                 .filter(a => !!a.displayName)
@@ -53,7 +48,7 @@ export function exposeOverviewPage(conf: WebAppConfig,
                     return {
                         aspect,
                         fingerprints: fingerprintsForThisAspect
-                            .map(fp => formatFingerprintUsageForDisplay(aspect, ideals, fp)),
+                            .map(fp => formatFingerprintUsageForDisplay(aspect, fp)),
                     };
                 });
 
@@ -94,19 +89,9 @@ function cleverlyExplainError(conf: WebAppConfig, e: Error): string {
     return `Failed to load page. Please check the log output of ${conf.instanceMetadata.name}`;
 }
 
-function idealMatchesFingerprint(id: Ideal, fp: FingerprintUsage): boolean {
-    const c = idealCoordinates(id);
-    return c.type === fp.type && c.name === fp.name;
-}
-
-function formatFingerprintUsageForDisplay(aspect: Aspect, ideals: Ideal[], fp: FingerprintUsage): FingerprintForDisplay {
-    const foundIdeal = ideals.find(ide => idealMatchesFingerprint(ide, fp));
-    const ideal = foundIdeal && isConcreteIdeal(foundIdeal) && aspect.toDisplayableFingerprint ?
-        { displayValue: aspect.toDisplayableFingerprint(foundIdeal.ideal) }
-        : undefined;
+function formatFingerprintUsageForDisplay(aspect: Aspect, fp: FingerprintUsage): FingerprintForDisplay {
     return {
         ...fp,
-        ideal,
         displayName: defaultedToDisplayableFingerprintName(aspect)(fp.name),
         entropy: supportsEntropy(aspect) ? fp.entropy : undefined,
     };

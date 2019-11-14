@@ -24,7 +24,7 @@ import {
 import { execPromise } from "@atomist/sdm";
 import * as fs from "fs-extra";
 import * as path from "path";
-import { AnalysisTracking } from "../../../tracking/analysisTracker";
+import { AnalysisTracker } from "../../../tracking/analysisTracker";
 import {
     AnalysisRun,
 } from "../common";
@@ -40,7 +40,7 @@ export class LocalSpider implements Spider {
 
     public async spider(criteria: ScmSearchCriteria,
                         analyzer: Analyzer,
-                        analysisTracking: AnalysisTracking,
+                        analysisTracking: AnalysisTracker,
                         opts: SpiderOptions,
     ): Promise<SpiderResult> {
 
@@ -56,11 +56,11 @@ export class LocalSpider implements Spider {
             keepExistingPersisted: opts.keepExistingPersisted,
             projectFilter: criteria.projectTest,
         }, {
-                workspaceId: opts.workspaceId,
-                description: "local analysis under " + this.localDirectory,
-                maxRepos: 1000,
-                poolSize: opts.poolSize,
-            });
+            workspaceId: opts.workspaceId,
+            description: "local analysis under " + this.localDirectory,
+            maxRepos: 1000,
+            poolSize: opts.poolSize,
+        });
 
         return go.run();
     }

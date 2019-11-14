@@ -20,7 +20,7 @@ import {
 } from "@atomist/automation-client";
 import * as Octokit from "@octokit/rest";
 import * as _ from "lodash";
-import { AnalysisTracking } from "../../../tracking/analysisTracker";
+import { AnalysisTracker } from "../../../tracking/analysisTracker";
 import {
     AnalysisRun,
     DefaultPoolSize,
@@ -50,7 +50,7 @@ export class GitHubSpider implements Spider {
 
     public async spider(criteria: ScmSearchCriteria,
                         analyzer: Analyzer,
-                        analysisTracking: AnalysisTracking,
+                        analysisTracking: AnalysisTracker,
                         opts: SpiderOptions): Promise<SpiderResult> {
 
         const run = new AnalysisRun<GitHubSearchResult>({

@@ -24,10 +24,7 @@ import {
     metadata,
 } from "@atomist/sdm";
 import {
-    ConcreteIdeal,
     FP,
-    Ideal,
-    isConcreteIdeal,
 } from "@atomist/sdm-pack-fingerprint";
 import { Aspect } from "@atomist/sdm-pack-fingerprint/lib/machine/Aspect";
 import * as bodyParser from "body-parser";
@@ -45,13 +42,12 @@ import {
     RepoExplorer,
 } from "../../../views/repository";
 import {
-    PossibleIdealForDisplay,
     SunburstPage,
 } from "../../../views/sunburstPage";
 import { renderStaticReactNode } from "../../../views/topLevelPage";
 import { ProjectAnalysisResultStore } from "../../analysis/offline/persist/ProjectAnalysisResultStore";
-import { AnalysisTracking } from "../../analysis/tracking/analysisTracker";
-import { exposeAnalysisTrackingPage } from "../../analysis/tracking/analysisTrackingRoutes";
+import { AnalysisTracker } from "../../analysis/tracking/analysisTracker";
+import { exposeAnalysisTrackerPage } from "../../analysis/tracking/analysisTrackingRoutes";
 import {
     AspectRegistry,
 } from "../../aspect/AspectRegistry";
@@ -66,6 +62,7 @@ import {
     describeSelectedTagsToAnimals,
     TagTree,
 } from "../api";
+import { supportComputeAnalyticsButton } from "./computeAnalytics";
 import { exposeOverviewPage } from "./overviewPage";
 import { exposeRepositoryListPage } from "./repositoryListPage";
 import { WebAppConfig } from "./webAppConfig";
@@ -77,7 +74,7 @@ import { WebAppConfig } from "./webAppConfig";
 export function addWebAppRoutes(
     aspectRegistry: AspectRegistry,
     store: ProjectAnalysisResultStore,
-    analysisTracking: AnalysisTracking,
+    analysisTracking: AnalysisTracker,
     httpClientFactory: HttpClientFactory,
     instanceMetadata: ExtensionPackMetadata): {
         customizer: ExpressCustomizer,
@@ -111,7 +108,8 @@ export function addWebAppRoutes(
             exposeExplorePage(conf);
             exposeFingerprintReportPage(conf);
             exposeCustomReportPage(conf);
-            exposeAnalysisTrackingPage(conf);
+            exposeAnalysisTrackerPage(conf);
+            supportComputeAnalyticsButton(conf, aspectRegistry, store);
 
         },
     };
@@ -120,19 +118,19 @@ export function addWebAppRoutes(
 function exposeRepositoryPage(conf: WebAppConfig): void {
     conf.express.get("/repository", ...conf.handlers, async (req, res, next) => {
         try {
-            const workspaceId = req.query.workspaceId || "*";
+            const workspaceId = req.query.workspaceId || "local";
             const id = req.query.id;
             const queryPath = req.query.path || "";
             const category = req.query.category || "*";
 
-            const analysisResult = await conf.store.loadById(id, true);
+            const analysisResult = await conf.store.loadById(id, true, workspaceId);
 
             if (!analysisResult) {
                 res.send(`No project at ${JSON.stringify(id)}`);
                 return;
             }
 
-            const everyFingerprint = await conf.store.fingerprintsForProject(id);
+            const everyFingerprint = await conf.store.fingerprintsForProject(workspaceId, id);
             const virtualPaths = _.uniq(everyFingerprint.map(f => f.path)).filter(p => !!p);
             const allFingerprints = everyFingerprint.filter(fp => fp.path === queryPath);
             // TODO this is nasty. why query deep in the first place?
@@ -143,13 +141,11 @@ function exposeRepositoryPage(conf: WebAppConfig): void {
             const aspectsAndFingerprints = await projectFingerprints(conf.aspectRegistry,
                 allFingerprints);
 
-            // assign style based on ideal
             const ffd: ProjectAspectForDisplay[] = aspectsAndFingerprints.map(aspectAndFingerprints => ({
                 ...aspectAndFingerprints,
                 fingerprints: aspectAndFingerprints.fingerprints.map(fp => ({
                     ...fp,
-                    idealDisplayString: displayIdeal(fp, aspectAndFingerprints.aspect),
-                    style: displayStyleAccordingToIdeal(fp),
+                    style: {},
                 })),
             }));
 
@@ -167,7 +163,7 @@ function exposeRepositoryPage(conf: WebAppConfig): void {
                 conf.instanceMetadata));
             return;
         } catch (e) {
-            logger.error(e);
+            logger.error("Oh no, failure constructing repository page:\n" + e.stack);
             next(e);
         }
     });
@@ -176,7 +172,7 @@ function exposeRepositoryPage(conf: WebAppConfig): void {
 function exposeExplorePage(conf: WebAppConfig): void {
     conf.express.get("/explore", ...conf.handlers, (req, res, next) => {
         const tags = req.query.tags || "";
-        const workspaceId = req.query.workspaceId || "*";
+        const workspaceId = req.query.workspaceId || "local";
         const dataUrl = `/api/v1/${workspaceId}/explore?tags=${tags}`;
         const readable = describeSelectedTagsToAnimals(tags.split(","));
         return renderDataUrl(conf.instanceMetadata, workspaceId, {
@@ -190,7 +186,7 @@ function exposeExplorePage(conf: WebAppConfig): void {
 
 function exposeDriftPage(conf: WebAppConfig): void {
     conf.express.get("/drift", ...conf.handlers, (req, res, next) => {
-        const workspaceId = req.query.workspaceId || "*";
+        const workspaceId = req.query.workspaceId || "local";
         const percentile = req.query.percentile || 0;
         const type = req.query.type;
         const dataUrl = `/api/v1/${workspaceId}/drift` +
@@ -212,7 +208,6 @@ function exposeFingerprintReportPage(conf: WebAppConfig): void {
     conf.express.get("/fingerprint/:type/:name", ...conf.handlers, (req, res, next) => {
         const type = req.params.type;
         const name = req.params.name;
-        const otherLabel = req.query.otherLabel;
         const aspect = conf.aspectRegistry.aspectOf(type);
         if (!aspect) {
             res.status(400).send("No aspect found for type " + type);
@@ -220,16 +215,12 @@ function exposeFingerprintReportPage(conf: WebAppConfig): void {
         }
         const fingerprintDisplayName = defaultedToDisplayableFingerprintName(aspect)(name);
 
-        const workspaceId = req.query.workspaceId || "*";
-        let dataUrl = `/api/v1/${workspaceId}/fingerprint/${
+        const workspaceId = req.query.workspaceId || "local";
+        const dataUrl = `/api/v1/${workspaceId}/fingerprint/${
             encodeURIComponent(type)}/${
             encodeURIComponent(name)}?byOrg=${
-            req.query.byOrg === "true"}&progress=${
-            req.query.progress === "true"}&trim=${
+            req.query.byOrg === "true"}&trim=${
             req.query.trim === "true"}`;
-        if (otherLabel) {
-            dataUrl += `&otherLabel=${otherLabel}`;
-        }
         renderDataUrl(conf.instanceMetadata, workspaceId, {
             dataUrl,
             title: `Atomist aspect drift`,
@@ -242,7 +233,7 @@ function exposeFingerprintReportPage(conf: WebAppConfig): void {
 function exposeCustomReportPage(conf: WebAppConfig): void {
     conf.express.get("/report/:name", ...conf.handlers, (req, res, next) => {
         const name = req.params.name;
-        const workspaceId = req.query.workspaceId || "*";
+        const workspaceId = req.query.workspaceId || "local";
         const queryString = jsonToQueryString(req.query);
         const dataUrl = `/api/v1/${workspaceId}/report/${name}?${queryString}`;
         const reporter = CustomReporters[name];
@@ -271,7 +262,6 @@ async function renderDataUrl(instanceMetadata: ExtensionPackMetadata,
                              req: any,
                              res: any): Promise<void> {
     let tree: TagTree;
-    const possibleIdealsForDisplay: PossibleIdealForDisplay[] = [];
 
     const fullUrl = `http://${req.get("host")}${page.dataUrl}`;
     try {
@@ -294,8 +284,6 @@ async function renderDataUrl(instanceMetadata: ExtensionPackMetadata,
             workspaceId,
             heading: page.heading,
             subheading: page.subheading,
-            currentIdeal: await lookForIdealDisplay(aspectRegistry, req.query.type, req.query.name),
-            possibleIdeals: possibleIdealsForDisplay,
             query: req.params.query,
             dataUrl: fullUrl,
             tree,
@@ -334,73 +322,9 @@ export function jsonToQueryString(json: object): string {
     ).join("&");
 }
 
-function displayIdeal(fingerprint: AugmentedFingerprintForDisplay, aspect: Aspect): string {
-    if (idealIsDifferentFromActual(fingerprint)) {
-        return defaultedToDisplayableFingerprint(aspect)((fingerprint.ideal as ConcreteIdeal).ideal);
-    }
-    if (idealIsElimination(fingerprint)) {
-        return "eliminate";
-    }
-    return "";
-}
-
-async function lookForIdealDisplay(aspectRegistry: AspectRegistry,
-                                   aspectType: string,
-                                   fingerprintName: string): Promise<{ displayValue: string } | undefined> {
-    if (!aspectType) {
-        return undefined;
-    }
-
-    const aspect = aspectRegistry.aspectOf(aspectType);
-    if (!aspect) {
-        return undefined;
-    }
-
-    const ideal = await aspectRegistry.idealStore
-        .loadIdeal("local", aspectType, fingerprintName);
-    if (!ideal) {
-        return undefined;
-    }
-    if (!isConcreteIdeal(ideal)) {
-        return { displayValue: "eliminate" };
-    }
-
-    return { displayValue: defaultedToDisplayableFingerprint(aspect)(ideal.ideal) };
-}
-
-function idealIsElimination(fingerprint: AugmentedFingerprintForDisplay): boolean {
-    return fingerprint.ideal && !isConcreteIdeal(fingerprint.ideal);
-}
-
-function idealIsDifferentFromActual(fingerprint: AugmentedFingerprintForDisplay): boolean {
-    return fingerprint.ideal && isConcreteIdeal(fingerprint.ideal) && fingerprint.ideal.ideal.sha !== fingerprint.sha;
-}
-
-function idealIsSameAsActual(fingerprint: AugmentedFingerprintForDisplay): boolean {
-    return fingerprint.ideal && isConcreteIdeal(fingerprint.ideal) && fingerprint.ideal.ideal.sha === fingerprint.sha;
-}
-
-function displayStyleAccordingToIdeal(fingerprint: AugmentedFingerprintForDisplay): CSSProperties {
-    const redStyle: CSSProperties = { color: "red" };
-    const greenStyle: CSSProperties = { color: "green" };
-
-    if (idealIsSameAsActual(fingerprint)) {
-        return greenStyle;
-    }
-    if (idealIsDifferentFromActual(fingerprint)) {
-        return redStyle;
-    }
-    if (idealIsElimination(fingerprint)) {
-        return redStyle;
-    }
-    return {};
-}
-
 export type AugmentedFingerprintForDisplay =
     FP &
-    Pick<ProjectFingerprintForDisplay, "displayValue" | "displayName"> & {
-        ideal?: Ideal;
-    };
+    Pick<ProjectFingerprintForDisplay, "displayValue" | "displayName">;
 
 export interface AugmentedAspectForDisplay {
     aspect: Aspect;
@@ -417,7 +341,6 @@ async function projectFingerprints(fm: AspectRegistry, allFingerprintsInOneProje
             for (const fp of originalFingerprints) {
                 fingerprints.push({
                     ...fp,
-                    // ideal: await this.opts.idealResolver(fp.name),
                     displayValue: defaultedToDisplayableFingerprint(aspect)(fp),
                     displayName: defaultedToDisplayableFingerprintName(aspect)(fp.name),
                 });

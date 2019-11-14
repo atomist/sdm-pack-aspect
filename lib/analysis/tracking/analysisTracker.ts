@@ -29,7 +29,10 @@ interface AnalysisTrackingRepo { description: string; url?: string; }
 type AnalysisProgress = "Going" | "Stopped";
 type RepoProgress = "Planned" | "Going" | "Stopped";
 
+type WorkspaceId = string;
+
 interface AnalysisForTracking {
+    workspaceId: WorkspaceId;
     description: string;
     analysisKey: string;
     progress: AnalysisProgress;
@@ -48,6 +51,7 @@ interface RepoForReporting {
     virtualProjectsReport?: { count: number, finderName: string };
 }
 interface AnalysisForReporting {
+    workspaceId: string;
     description: string;
     analysisKey: string;
     progress: AnalysisProgress;
@@ -58,11 +62,6 @@ interface AnalysisForReporting {
 
 export interface AnalysisReport {
     analyses: AnalysisForReporting[];
-}
-
-export interface AnalysisTracking {
-    startAnalysis(params: Pick<AnalysisForTracking, "description">): AnalysisBeingTracked;
-    report(): AnalysisReport;
 }
 
 export interface FailureDetails {
@@ -135,7 +134,7 @@ export class AspectBeingTracked {
     }
 }
 
-export interface AnalysisTrackingAspect {
+export interface AnalysisTrackerAspect {
     name: string;
     displayName: string | undefined;
 }
@@ -183,7 +182,7 @@ export class RepoBeingTracked {
         this.existingWasKept = true;
     }
 
-    public plan(aspect: AnalysisTrackingAspect, aboutToRun: WayToGetFingerprintsFromAnAspect): AspectBeingTracked {
+    public plan(aspect: AnalysisTrackerAspect, aboutToRun: WayToGetFingerprintsFromAnAspect): AspectBeingTracked {
         const newAspect = new AspectBeingTracked({
             aspectName: aspect.name,
             visible: !!aspect.displayName, // this determines whether the aspect will display on the Insights page
@@ -302,13 +301,13 @@ export class AnalysisBeingTracked {
  * Track analyses for display of status on a page.
  * You want exactly one of these in your SDM.
  */
-export class AnalysisTracker implements AnalysisTracking {
+export class AnalysisTracker {
 
     private counter: number = 1;
     private readonly analyses: AnalysisBeingTracked[] = [];
 
     // is there an "unpick" ?
-    public startAnalysis(params: Pick<AnalysisForTracking, "description">): AnalysisBeingTracked {
+    public startAnalysis(params: Pick<AnalysisForTracking, "workspaceId" | "description">): AnalysisBeingTracked {
         const analysisId = "analysis#" + this.counter++;
         const newAnalysis: AnalysisBeingTracked = new AnalysisBeingTracked({
             ...params,

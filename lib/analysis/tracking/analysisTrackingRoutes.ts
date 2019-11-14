@@ -16,18 +16,18 @@
 
 import { logger } from "@atomist/automation-client";
 import * as _ from "lodash";
-import { AnalysisTrackingPage } from "../../../views/analysisTrackingPage";
+import { AnalysisTrackerPage } from "../../../views/analysisTrackingPage";
 import { AspectTrackingPage } from "../../../views/aspectTrackingPage";
 import { renderStaticReactNode } from "../../../views/topLevelPage";
 import { WebAppConfig } from "../../routes/web-app/webAppConfig";
 
-export function exposeAnalysisTrackingPage(conf: WebAppConfig): void {
+export function exposeAnalysisTrackerPage(conf: WebAppConfig): void {
     conf.express.get("/analysis", ...conf.handlers, async (req, res, next) => {
         try {
             const data = conf.analysisTracking.report();
 
             res.send(renderStaticReactNode(
-                AnalysisTrackingPage(data), `Analyzing projects`,
+                AnalysisTrackerPage(data), `Analyzing projects`,
                 conf.instanceMetadata));
         } catch (e) {
             logger.error(e.stack);

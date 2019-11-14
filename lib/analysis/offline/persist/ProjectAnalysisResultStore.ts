@@ -16,7 +16,10 @@
 
 import { RepoRef } from "@atomist/automation-client";
 import { FP } from "@atomist/sdm-pack-fingerprint";
-import { Analyzed } from "../../../aspect/AspectRegistry";
+import {
+    Analyzed,
+    AnalyzedWorkspace,
+} from "../../../aspect/AspectRegistry";
 import {
     PlantedTree,
     TagUsage,
@@ -73,12 +76,6 @@ export interface TreeQuery {
      * Look for one particular fingerprint?
      */
     byName: boolean;
-
-    /**
-     * If this is supplied, query for results even without fingerprints from this aspect
-     * and use this as the name
-     */
-    otherLabel?: string;
 }
 
 export interface FingerprintInsertionResult {
@@ -133,19 +130,19 @@ export interface ProjectAnalysisResultStore {
      */
     loadInWorkspace(workspaceId: string, deep: boolean): Promise<ProjectAnalysisResult[]>;
 
-    loadByRepoRef(repo: RepoRef, deep: boolean): Promise<ProjectAnalysisResult | undefined>;
+    loadByRepoRef(workspaceId: string, repo: RepoRef, deep: boolean): Promise<ProjectAnalysisResult | undefined>;
 
     /**
      * Load by our database id
      */
-    loadById(id: string, deep: boolean, workspaceId?: string): Promise<ProjectAnalysisResult | undefined>;
+    loadById(id: string, deep: boolean, workspaceId: string): Promise<ProjectAnalysisResult | undefined>;
 
     persist(repos: ProjectAnalysisResult | AsyncIterable<ProjectAnalysisResult> | ProjectAnalysisResult[]): Promise<PersistResult>;
 
     /**
      * Persist fingerprints for this snapshot id, which must already exist.
      */
-    persistAdditionalFingerprints(analyzed: Analyzed): Promise<FingerprintInsertionResult>;
+    persistAdditionalFingerprints(analyzed: AnalyzedWorkspace): Promise<FingerprintInsertionResult>;
 
     /**
      * Return distinct fingerprint type/name combinations in this workspace
@@ -159,7 +156,7 @@ export interface ProjectAnalysisResultStore {
 
     fingerprintUsageForType(workspaceId: string, type?: string): Promise<FingerprintUsage[]>;
 
-    tags(workspaceId: string): Promise<TagUsage[]>;
+    allTags(workspaceId: string): Promise<TagUsage[]>;
 
     /**
      * Persist a record of analytics. Can be invoked repeatedly on the same data without error.
@@ -178,13 +175,12 @@ export interface ProjectAnalysisResultStore {
                             type?: string,
                             name?: string): Promise<Array<FP & { id: string }>>;
 
-    fingerprintsForProject(id: string): Promise<Array<FP & { timestamp: Date, commitSha: string }>>;
-
     /**
-     * Return the average number of fingerprints in the workspace
-     * @param {string} workspaceId
-     * @return {Promise<number>}
+     * Return all the fingerprints from a single analysis
+     *
+     * @param workspaceId workspace ID
+     * @param snapshotId ID of the repository snapshot
      */
-    averageFingerprintCount(workspaceId?: string): Promise<number>;
+    fingerprintsForProject(workspaceId: string, snapshotId: string): Promise<Array<FP & { timestamp: Date, commitSha: string }>>;
 
 }

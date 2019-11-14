@@ -91,7 +91,7 @@
     "ts-node": "^8.3.0",
     "tslint": "^5.19.0",
     "typedoc": "^0.15.0",
-    "typescript": "^3.6.3",
+    "typescript": "^3.6.4",
     "webpack": "^4.37.0",
     "webpack-cli": "^3.3.6"
   },
@@ -119,8 +119,13 @@
     "start": "atm-start",
     "test": "mocha --require espower-typescript/guess \"test/**/*.test.ts\"",
     "test:one": "mocha --require espower-typescript/guess \"test/**/${TEST:-*.test.ts}\"",
+    "test:integration": "mocha --require espower-typescript/guess \"integration-test/**/*.test.ts\"",
+    "integration-test": "run-s --continue-on-error db:delete db:create test:integration",
     "typedoc": "npm run doc",
-    "db:create": "psql --command \"CREATE USER org_viz WITH SUPERUSER PASSWORD 'atomist'\" && createdb -O org_viz org_viz && psql -f ./ddl/create.ddl org_viz",
+    "db:create": "run-s db:create-user db:create-db db:create-tables",
+    "db:create-user": "psql --command \"CREATE USER org_viz WITH SUPERUSER PASSWORD 'atomist'\"",
+    "db:create-db": "createdb -O org_viz org_viz",
+    "db:create-tables": "psql -f ./ddl/create.ddl org_viz",
     "db:delete": "psql --command \"DROP DATABASE org_viz\" --command \"DROP ROLE org_viz\""
   },
   "engines": {

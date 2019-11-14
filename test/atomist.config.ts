@@ -73,10 +73,6 @@ import { buildTimeAspect } from "../lib/aspect/delivery/BuildAspect";
 import { storeFingerprints } from "../lib/aspect/delivery/storeFingerprintsPublisher";
 import { BranchCount } from "../lib/aspect/git/branchCount";
 import { GitRecency } from "../lib/aspect/git/gitActivity";
-import {
-    chainUndesirableUsageCheckers,
-    UndesirableUsageChecker,
-} from "../lib/aspect/ProblemStore";
 import { ExposedSecrets } from "../lib/aspect/secret/exposedSecrets";
 import {
     aspectSupport,
@@ -118,17 +114,6 @@ const store = new PostgresProjectAnalysisResultStore(sdmConfigClientFactory(load
 interface TestGoals extends DeliveryGoals {
     build: Build;
 }
-
-const undesirableUsageChecker: UndesirableUsageChecker = chainUndesirableUsageCheckers(
-    fingerprint => fingerprint.type === NpmDeps.name && fingerprint.name === "axios" ?
-        {
-            severity: "warn",
-            authority: "Christian",
-            description: "Don't use Axios",
-            fingerprint,
-        } :
-        undefined,
-);
 
 /**
  * Sample configuration to enable testing
@@ -182,9 +167,6 @@ export const configuration: Configuration = configure<TestGoals>(async sdm => {
 
             inMemoryTaggers: taggers({}),
 
-            // Customize this to respond to undesirable usages
-            undesirableUsageChecker,
-
             publishFingerprints: storeFingerprints(store),
             virtualProjectFinder,
 
@@ -213,7 +195,7 @@ function aspects(): Aspect[] {
             unit: "tag",
             url: "fingerprint/docker-base-image/*?byOrg=true&trim=false",
             description: "Docker base images in use across all repositories in your workspace, " +
-            "broken out by image label and repositories where used.",
+                "broken out by image label and repositories where used.",
         }),
         DockerfilePath,
         enrich(DockerPorts, {
@@ -222,7 +204,7 @@ function aspects(): Aspect[] {
             unit: "port",
             url: "fingerprint/docker-ports/docker-ports?byOrg=true&trim=false",
             description: "Ports exposed in Docker configuration in use  across all repositories in your workspace, " +
-            "broken out by port number and repositories where used.",
+                "broken out by port number and repositories where used.",
             manage: false,
         }),
         license(),
@@ -238,7 +220,7 @@ function aspects(): Aspect[] {
             unit: "branch",
             url: `fingerprint/${BranchCount.name}/${BranchCount.name}?byOrg=true&trim=false`,
             description: "Number of Git branches across repositories in your workspace, " +
-            "grouped by Drift Level.",
+                "grouped by Drift Level.",
             manage: false,
         }),
         GitRecency,
@@ -255,10 +237,10 @@ function aspects(): Aspect[] {
         globAspect({ name: "readme", displayName: "Readme file", glob: "README.md" }),
 
         projectClassificationAspect({
-                name: "javaBuild",
-                displayName: "Java build tool",
-                toDisplayableFingerprintName: () => "Java build tool",
-            },
+            name: "javaBuild",
+            displayName: "Java build tool",
+            toDisplayableFingerprintName: () => "Java build tool",
+        },
             { tags: "maven", reason: "has Maven POM", test: async p => p.hasFile("pom.xml") },
             { tags: "gradle", reason: "has build.gradle", test: async p => p.hasFile("build.gradle") },
         ),
@@ -320,14 +302,6 @@ export function taggers(opts: Partial<TaggersParams>): TaggerDefinition[] {
             description: "C# build",
             test: async repo => repo.analysis.fingerprints.some(fp => isFileMatchFingerprint(fp) &&
                 fp.name.includes("csproj") && fp.data.matches.length > 0),
-        },
-        {
-            name: "bad",
-            description: "Has problems",
-            createTest: async (wsid, ar) => {
-                const uc = await ar.undesirableUsageCheckerFor(wsid);
-                return async repo => repo.analysis.fingerprints.some(fp => uc.check(fp, wsid).length > 0);
-            },
         },
     ];
 }

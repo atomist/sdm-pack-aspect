@@ -166,20 +166,6 @@ paths:
                 - false
               required: false
               default: true
-            - name: progress
-              in: query
-              description: Show progress to ideal
-              type: string
-              enum:
-                - true
-                - false
-              required: false
-              default: false
-            - name: otherLabel
-              in: query
-              description: If set, returns a response for all repos, whether or not the technology is present, with the label being shown
-              type: string
-              required: false
             - name: trim
               in: query
               description: Trim outer ring (repositories). Only relevant if name=*
@@ -247,31 +233,6 @@ paths:
                   $ref: "#/definitions/Tree"
           "400":
             description: Invalid status value
-  /{workspace}/ideal/{id}:
-        put:
-            tags:
-              - ideal
-            summary: Set an ideal fingerprint
-            description: Set an ideal fingerprint
-            operationId: setIdeal
-            produces:
-              - application/json
-            parameters:
-              - name: workspace
-                in: path
-                description: Workspace id
-                required: true
-                type: string
-              - name: id
-                in: path
-                description: Ideal id
-                required: true
-                type: string
-            responses:
-              "201":
-                description: successful operation
-              "400":
-                description: Invalid status value
   /{workspace}/entropy/{type}/{name}:
         put:
             tags:

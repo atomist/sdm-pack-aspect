@@ -27,7 +27,7 @@ import { ScmSearchCriteria } from "./ScmSearchCriteria";
 import { Aspect } from "@atomist/sdm-pack-fingerprint";
 import * as _ from "lodash";
 import {
-    AnalysisTracking,
+    AnalysisTracker,
     RepoBeingTracked,
 } from "../../tracking/analysisTracker";
 
@@ -117,6 +117,6 @@ export interface Spider {
 
     spider(criteria: ScmSearchCriteria,
            analyzer: Analyzer,
-           analysisTracking: AnalysisTracking,
+           analysisTracking: AnalysisTracker,
            opts: SpiderOptions): Promise<SpiderResult>;
 }

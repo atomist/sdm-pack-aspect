@@ -10,7 +10,6 @@ type DisplayName = string;
 
 export interface ProjectFingerprintForDisplay {
     displayName: DisplayName;
-    idealDisplayString: string;
     displayValue: string;
     style: React.CSSProperties;
 }
@@ -24,7 +23,7 @@ export interface RepoExplorerProps {
     repo: ScoredRepo;
     aspects: ProjectAspectForDisplay[];
     category: "*" | string;
-    timestamp: Date;
+    timestamp?: Date;
 
     /** Paths under the root */
     virtualPaths: string[];
@@ -38,7 +37,7 @@ export function RepoExplorer(props: RepoExplorerProps): React.ReactElement {
         <h1>{insightsImage} {props.repo.analysis.id.owner} / <a
             href={props.repo.analysis.id.url}>{props.repo.analysis.id.repo}</a> /
             {props.repo.analysis.id.path}</h1>
-        <p className="analysesProvenanceDetail">Analyzed at: {props.timestamp.toString()}</p>
+        <p className="analysesProvenanceDetail">Analyzed at: {props.timestamp ? props.timestamp.toString() : "never"}</p>
         <p className="analysesProvenanceDetail">Analyzed commit: {props.repo.analysis.id.sha}</p>
 
         {categoryDescription}
@@ -143,7 +142,6 @@ function displayTag(tag: TagUsage): React.ReactElement {
 function displayFingerprint(fingerprint: ProjectFingerprintForDisplay): React.ReactElement {
     return <li style={fingerprint.style} key={fingerprint.displayName}>
         <i>{fingerprint.displayName}</i>: {beSureThisIsAString(fingerprint.displayValue)}
-        {" "} {fingerprint.idealDisplayString && `(Ideal: ${fingerprint.idealDisplayString})`}
     </li>;
 }
 

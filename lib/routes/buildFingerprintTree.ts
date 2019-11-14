@@ -15,11 +15,8 @@
  */
 
 import {
-    ConcreteIdeal,
     FP,
-    Ideal,
 } from "@atomist/sdm-pack-fingerprint";
-import { isConcreteIdeal } from "@atomist/sdm-pack-fingerprint/lib/machine/Ideal";
 import { AspectRegistry } from "../aspect/AspectRegistry";
 import {
     isSunburstTree,
@@ -57,14 +54,11 @@ export async function buildFingerprintTree(
         fingerprintName: string,
         fingerprintType: string,
         byName: boolean,
-        otherLabel: string,
         byOrg: boolean,
         trim: boolean,
-        showProgress: boolean,
     }): Promise<PlantedTree> {
 
-    const { workspaceId, byName, fingerprintName, fingerprintType, otherLabel, byOrg, trim, showProgress } = params;
-    const showPresence = !!otherLabel;
+    const { workspaceId, byName, fingerprintName, fingerprintType, byOrg, trim } = params;
 
     const { store, aspectRegistry } = world;
 
@@ -72,13 +66,10 @@ export async function buildFingerprintTree(
     let pt = await store.fingerprintsToReposTree({
         workspaceId,
         byName,
-        otherLabel,
         rootName: fingerprintName,
         aspectName: fingerprintType,
     });
     // logger.debug("Returning fingerprint tree '%s': %j", fingerprintName, pt);
-
-    await decorateProblemFingerprints(aspectRegistry, pt);
 
     const aspect = aspectRegistry.aspectOf(fingerprintType);
 
@@ -112,34 +103,11 @@ export async function buildFingerprintTree(
 
     resolveAspectNames(aspectRegistry, pt.tree);
 
-    // if (!showPresence) {
-    //     // Suppress branches from aspects that use name "None" for not found
-    //     pt.tree = killChildren(pt.tree, c => c.name === "None");
-    // }
-
     if (byOrg) {
         pt = splitByOrg(pt);
     }
-    if (showPresence) {
-        pt.tree = groupSiblings(pt.tree,
-            {
-                parentSelector: parent => parent.children.some(c => (c as any).sha),
-                childClassifier: kid => (kid as any).sha && kid.name !== "None" ? "Present" : "Absent",
-                collapseUnderName: name => name === "Absent",
-            });
-    } else
-        if (showProgress) {
-        const ideal = await aspectRegistry.idealStore.loadIdeal(workspaceId, fingerprintType, fingerprintName);
-        if (!ideal || !isConcreteIdeal(ideal)) {
-            throw new Error(`No ideal to aspire to for ${fingerprintType}/${fingerprintName} in workspace '${workspaceId}'`);
-        }
-        decorateToShowProgressToIdeal(aspectRegistry, pt, ideal);
-    }
 
-    if (!showPresence) {
-        // Don't do this if we are looking at presence, as sized nodes will swamp absent nodes with default 1
-        applyTerminalSizing(aspect, pt.tree);
-    }
+    applyTerminalSizing(aspect, pt.tree);
     pt.tree = addRepositoryViewUrl(pt.tree);
 
     // Group all fingerprint nodes by their name at the first level
@@ -188,41 +156,6 @@ function applyTerminalSizing(aspect: Aspect, t: SunburstTree): void {
             return true;
         });
     }
-}
-
-async function decorateProblemFingerprints(aspectRegistry: AspectRegistry, pt: PlantedTree): Promise<void> {
-    const usageChecker = await aspectRegistry.undesirableUsageCheckerFor("local");
-    // Flag bad fingerprints with a special color
-    await visitAsync(pt.tree, async l => {
-        if ((l as any).sha) {
-            const problems = usageChecker ? usageChecker.check(l as any, "local") : undefined;
-            if (problems && problems.length > 0) {
-                (l as any).color = "#810325";
-                (l as any).problems = problems.map(problem => ({
-                    // Need to dispense with the fingerprint, which would make this circular
-                    description: problem.description,
-                    severity: problem.severity,
-                    authority: problem.authority,
-                    url: problem.url,
-                }));
-            }
-        }
-        return true;
-    });
-}
-
-function decorateToShowProgressToIdeal(aspectRegistry: AspectRegistry, pt: PlantedTree, ideal: ConcreteIdeal): void {
-    pt.tree = groupSiblings(pt.tree, {
-        parentSelector: parent => parent.children.some(c => (c as any).sha),
-        childClassifier: kid => (kid as any).sha === ideal.ideal.sha ? "Ideal" : "No",
-        groupLayerDecorator: l => {
-            if (l.name === "Ideal") {
-                (l as any).color = "#168115";
-            } else {
-                (l as any).color = "#811824";
-            }
-        },
-    });
 }
 
 /**

@@ -24,7 +24,7 @@ import {
 import { Aspect } from "@atomist/sdm-pack-fingerprint";
 import { Analyzed } from "../../../aspect/AspectRegistry";
 import {
-    AnalysisTracking,
+    AnalysisTracker,
     RepoBeingTracked,
 } from "../../tracking/analysisTracker";
 import {
@@ -65,7 +65,7 @@ export class AnalysisRun<FoundRepo> {
             howToClone: (rr: RepoRef, fr: FoundRepo) => Promise<GitProject>,
             analyzer: Analyzer;
             persister: ProjectAnalysisResultStore,
-            analysisTracking: AnalysisTracking,
+            analysisTracking: AnalysisTracker,
 
             keepExistingPersisted: ProjectAnalysisResultFilter,
             projectFilter?: (p: Project) => Promise<boolean>;
@@ -87,17 +87,25 @@ export class AnalysisRun<FoundRepo> {
     public async run(): Promise<SpiderResult> {
 
         const analysisBeingTracked = this.world.analysisTracking.startAnalysis({
+            workspaceId: this.params.workspaceId,
             description: this.params.description,
         });
 
+        let trackedRepos: Array<TrackedRepo<FoundRepo>>;
         try {
 
             const plannedRepos = await takeFromIterator(this.params.maxRepos, this.world.howToFindRepos());
-            const trackedRepos: Array<TrackedRepo<FoundRepo>> =
+            trackedRepos =
                 plannedRepos.map(pr => ({
                     tracking: analysisBeingTracked.plan(this.world.describeFoundRepo(pr)),
                     foundRepo: pr,
                 }));
+        } catch (error) {
+            analysisBeingTracked.failed(error);
+            return emptySpiderResult;
+        }
+
+        try {
 
             // run poolSize at the same time
             const chewThroughThese = trackedRepos.slice();
@@ -110,14 +118,15 @@ export class AnalysisRun<FoundRepo> {
             logger.debug("Computing analytics over all fingerprints...");
             // Question for Rod: should this run intermittently or only at the end?
             // Answer from Rod: intermittently.
-
+            // but any failure in the middle of analysis can cause the analytics to be incomplete/missing.
             await computeAnalytics(this.world, this.params.workspaceId);
             const finalResult = trackedRepos.map(tr => tr.tracking.spiderResult()).reduce(combineSpiderResults, emptySpiderResult);
             analysisBeingTracked.stop();
             return finalResult;
         } catch (error) {
+            const finalResult = trackedRepos.map(tr => tr.tracking.spiderResult()).reduce(combineSpiderResults, emptySpiderResult);
             analysisBeingTracked.failed(error);
-            return emptySpiderResult;
+            return finalResult;
         }
     }
 }
@@ -151,9 +160,14 @@ async function analyzeOneRepo<FoundRepo>(
     tracking.setRepoRef(repoRef);
 
     // we might choose to skip this one
-    if (await existingRecordShouldBeKept(world, repoRef)) {
-        // enhancement: record timestamp of kept record
-        tracking.keptExisting();
+    try {
+        if (await existingRecordShouldBeKept(world, workspaceId, repoRef)) {
+            // enhancement: record timestamp of kept record
+            tracking.keptExisting();
+            return;
+        }
+    } catch (error) {
+        tracking.failed({ whileTryingTo: "check whether to keep existing", error });
         return;
     }
 
@@ -210,8 +224,9 @@ async function existingRecordShouldBeKept(
         persister: ProjectAnalysisResultStore,
         keepExistingPersisted: ProjectAnalysisResultFilter,
     },
+    workspaceId: string,
     repoId: RepoId): Promise<boolean> {
-    const found = await opts.persister.loadByRepoRef(repoId, true);
+    const found = await opts.persister.loadByRepoRef(workspaceId, repoId, true);
     if (!found || !found.analysis) {
         return false;
     }
