@@ -46,9 +46,9 @@ export interface Cloner {
 export class GitHubSpider implements Spider {
 
     public async spider(criteria: ScmSearchCriteria,
-                        analyzer: Analyzer,
-                        analysisTracking: AnalysisTracking,
-                        opts: SpiderOptions): Promise<SpiderResult> {
+        analyzer: Analyzer,
+        analysisTracking: AnalysisTracking,
+        opts: SpiderOptions): Promise<SpiderResult> {
 
         const run = new AnalysisRun<GitHubSearchResult>({
             howToFindRepos: () => this.queryFunction(process.env.GITHUB_TOKEN, criteria),
@@ -123,6 +123,11 @@ export interface GitHubSearchResult {
     query: string;
 }
 
+/**
+ * Query for GitHub repositories
+ * @param token 
+ * @param criteria 
+ */
 export async function* queryByCriteria(token: string, criteria: ScmSearchCriteria): AsyncIterable<GitHubSearchResult> {
     const octokit = new Octokit({
         auth: token ? "token " + token : undefined,
